@@ -3,6 +3,10 @@ RestComm Mobile - Android SDK
 
 Android Mobile SDK to easily integrate communication features (messaging, presence, voice, video, screensharing) based on [RestComm](http://restcomm.com/) into native Mobile Applications.
 
+Want to Contribute ? 
+========
+[See our Contributors Guide](https://github.com/Mobicents/RestComm/wiki/Contribute-to-RestComm)
+
 Issue Tracking and Roadmap
 ========
 [Issue Tracker](https://github.com/Mobicents/restcomm-ios-sdk/issues)
