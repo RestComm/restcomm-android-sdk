@@ -3,50 +3,22 @@ package com.example.sipmessagetest;
 import java.text.ParseException;
 import java.util.*;
 
-import gov.nist.android.javaxx.sip.SipStackExt;
-import gov.nist.android.javaxx.sip.clientauthutils.AuthenticationHelper;
-import gov.nist.android.javaxx.sip.header.extensions.ReplacesHeader;
-
-import javaxx.sip.ClientTransaction;
-import javaxx.sip.Dialog;
-import javaxx.sip.DialogTerminatedEvent;
-import javaxx.sip.IOExceptionEvent;
-import javaxx.sip.InvalidArgumentException;
-import javaxx.sip.ListeningPoint;
-import javaxx.sip.PeerUnavailableException;
-import javaxx.sip.RequestEvent;
-import javaxx.sip.ResponseEvent;
-import javaxx.sip.ServerTransaction;
-import javaxx.sip.SipException;
-import javaxx.sip.SipFactory;
-import javaxx.sip.SipListener;
-import javaxx.sip.SipProvider;
-import javaxx.sip.SipStack;
-import javaxx.sip.TimeoutEvent;
-import javaxx.sip.TransactionTerminatedEvent;
-import javaxx.sip.TransactionUnavailableException;
-import javaxx.sip.address.Address;
-import javaxx.sip.address.AddressFactory;
-import javaxx.sip.address.SipURI;
-import javaxx.sip.address.URI;
-import javaxx.sip.header.AuthorizationHeader;
-import javaxx.sip.header.CSeqHeader;
-import javaxx.sip.header.CallIdHeader;
-import javaxx.sip.header.ContactHeader;
-import javaxx.sip.header.ContentTypeHeader;
-import javaxx.sip.header.ExpiresHeader;
-import javaxx.sip.header.FromHeader;
-import javaxx.sip.header.Header;
-import javaxx.sip.header.HeaderFactory;
-import javaxx.sip.header.MaxForwardsHeader;
-import javaxx.sip.header.RecordRouteHeader;
-import javaxx.sip.header.RouteHeader;
-import javaxx.sip.header.SupportedHeader;
-import javaxx.sip.header.ToHeader;
-import javaxx.sip.header.ViaHeader;
-import javaxx.sip.message.MessageFactory;
-import javaxx.sip.message.Request;
-import javaxx.sip.message.Response;
+import android.javax.sip.ClientTransaction;
+import android.javax.sip.InvalidArgumentException;
+import android.javax.sip.SipException;
+import android.javax.sip.address.Address;
+import android.javax.sip.address.SipURI;
+import android.javax.sip.address.URI;
+import android.javax.sip.header.CSeqHeader;
+import android.javax.sip.header.CallIdHeader;
+import android.javax.sip.header.ContentTypeHeader;
+import android.javax.sip.header.FromHeader;
+import android.javax.sip.header.MaxForwardsHeader;
+import android.javax.sip.header.RouteHeader;
+import android.javax.sip.header.SupportedHeader;
+import android.javax.sip.header.ToHeader;
+import android.javax.sip.header.ViaHeader;
+import android.javax.sip.message.Request;
 import android.os.AsyncTask;
 
 public class SipSendMessage extends AsyncTask<Object, Object, Object>  {
@@ -55,16 +27,13 @@ public class SipSendMessage extends AsyncTask<Object, Object, Object>  {
 			InvalidArgumentException, SipException {
 
 		SipStackAndroid.getInstance();
-		SipURI from = SipStackAndroid.addressFactory.createSipURI(SipStackAndroid.getInstance().sipUserName, SipStackAndroid.getInstance().localEndpoint);
+		SipURI from = SipStackAndroid.addressFactory.createSipURI(SipStackAndroid.getInstance().sipUserName, SipStackAndroid.getInstance().getLocalEndpoint());
 		SipStackAndroid.getInstance();
 		Address fromNameAddress = SipStackAndroid.addressFactory.createAddress(from);
 		SipStackAndroid.getInstance();
 		// fromNameAddress.setDisplayName(sipUsername);
 		FromHeader fromHeader = SipStackAndroid.headerFactory.createFromHeader(fromNameAddress,
 				"Tzt0ZEP92");
-
-		// String username = to.substring(to.indexOf(":") + 1, to.indexOf("@"));
-		// String address = to.substring(to.indexOf("@") + 1);
 
 		SipStackAndroid.getInstance();
 		URI toAddress = SipStackAndroid.addressFactory.createURI(to);
@@ -100,23 +69,19 @@ public class SipSendMessage extends AsyncTask<Object, Object, Object>  {
 				.createSupportedHeader("replaces, outbound");
 		request.addHeader(supportedHeader);
 
-		SipStackAndroid.getInstance();
-		SipURI routeUri = SipStackAndroid.addressFactory.createSipURI(null, SipStackAndroid.getInstance().remoteIp);
+		SipURI routeUri = SipStackAndroid.addressFactory.createSipURI(null, SipStackAndroid.getInstance().getRemoteIp());
 		routeUri.setTransportParam(SipStackAndroid.transport);
 		routeUri.setLrParam();
-		routeUri.setPort(SipStackAndroid.remotePort);
+		routeUri.setPort(SipStackAndroid.getRemotePort());
 
 		SipStackAndroid.getInstance();
 		Address routeAddress = SipStackAndroid.addressFactory.createAddress(routeUri);
-		SipStackAndroid.getInstance();
 		RouteHeader route =SipStackAndroid.headerFactory.createRouteHeader(routeAddress);
 		request.addHeader(route);
-		SipStackAndroid.getInstance();
 		ContentTypeHeader contentTypeHeader = SipStackAndroid.headerFactory
 				.createContentTypeHeader("text", "plain");
 		request.setContent(message, contentTypeHeader);
 		System.out.println(request);
-		SipStackAndroid.getInstance();
 		ClientTransaction transaction = SipStackAndroid.sipProvider
 				.getNewClientTransaction(request);
 		// Send the request statefully, through the client transaction.
@@ -126,41 +91,22 @@ public class SipSendMessage extends AsyncTask<Object, Object, Object>  {
 
 
 
-	private Address createContactAddress() {
-		try {
-			SipStackAndroid.getInstance();
-			return SipStackAndroid.addressFactory.createAddress("sip:"
-					+ SipStackAndroid.getInstance().sipUserName + "@"
-					+ SipStackAndroid.getInstance().localEndpoint
-					+ ";transport=udp" + ";registering_acc=23_23_228_238");
-		} catch (ParseException e) {
-			return null;
-		}
-	}
-
 	private ArrayList<ViaHeader> createViaHeader() {
 		ArrayList<ViaHeader> viaHeaders = new ArrayList<ViaHeader>();
 		ViaHeader myViaHeader;
 		try {
-			SipStackAndroid.getInstance();
-			SipStackAndroid.getInstance();
 			myViaHeader = SipStackAndroid.headerFactory.createViaHeader(
-					SipStackAndroid.localIp, SipStackAndroid.localPort,
+					SipStackAndroid.getLocalIp(), SipStackAndroid.getLocalPort(),
 					SipStackAndroid.transport, null);
 			myViaHeader.setRPort();
 			viaHeaders.add(myViaHeader);
 		} catch (ParseException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (InvalidArgumentException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		return viaHeaders;
-
 	}
-
-
 
 	@Override
 	protected Object doInBackground(Object... params) {

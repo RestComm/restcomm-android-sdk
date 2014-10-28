@@ -1,6 +1,6 @@
 package com.example.sipmessagetest;
 
-import gov.nist.android.javaxx.sip.clientauthutils.UserCredentials;
+import android.gov.nist.javax.sip.clientauthutils.UserCredentials;
 
 
 public class UserCredentialsImpl implements UserCredentials {

@@ -6,41 +6,53 @@ import java.net.NetworkInterface;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
+import java.util.Random;
 
 import org.apache.http.conn.util.InetAddressUtils;
 
-import gov.nist.android.core.InternalErrorHandler;
-import gov.nist.android.javaxx.sip.SipStackExt;
-import gov.nist.android.javaxx.sip.clientauthutils.AuthenticationHelper;
-import gov.nist.android.javaxx.sip.message.SIPMessage;
+import com.example.sipmessagetest.SipEvent.SipEventType;
 
+import android.gov.nist.javax.sip.SipStackExt;
+import android.gov.nist.javax.sip.SipStackImpl;
+import android.gov.nist.javax.sip.clientauthutils.AuthenticationHelper;
+import android.gov.nist.javax.sip.header.extensions.JoinHeader;
+import android.gov.nist.javax.sip.message.SIPMessage;
 import android.os.AsyncTask;
-import javaxx.sip.ClientTransaction;
-import javaxx.sip.Dialog;
-import javaxx.sip.DialogTerminatedEvent;
-import javaxx.sip.IOExceptionEvent;
-import javaxx.sip.InvalidArgumentException;
-import javaxx.sip.ListeningPoint;
-import javaxx.sip.PeerUnavailableException;
-import javaxx.sip.RequestEvent;
-import javaxx.sip.ResponseEvent;
-import javaxx.sip.ServerTransaction;
-import javaxx.sip.SipException;
-import javaxx.sip.SipFactory;
-import javaxx.sip.SipListener;
-import javaxx.sip.SipProvider;
-import javaxx.sip.SipStack;
-import javaxx.sip.TimeoutEvent;
-import javaxx.sip.TransactionTerminatedEvent;
-import javaxx.sip.address.AddressFactory;
-import javaxx.sip.header.ContactHeader;
-import javaxx.sip.header.HeaderFactory;
-import javaxx.sip.message.MessageFactory;
-import javaxx.sip.message.Request;
-import javaxx.sip.message.Response;
+import android.javax.sip.ClientTransaction;
+import android.javax.sip.Dialog;
+import android.javax.sip.DialogState;
+import android.javax.sip.DialogTerminatedEvent;
+import android.javax.sip.IOExceptionEvent;
+import android.javax.sip.InvalidArgumentException;
+import android.javax.sip.ListeningPoint;
+import android.javax.sip.PeerUnavailableException;
+import android.javax.sip.RequestEvent;
+import android.javax.sip.ResponseEvent;
+import android.javax.sip.ServerTransaction;
+import android.javax.sip.SipException;
+import android.javax.sip.SipFactory;
+import android.javax.sip.SipListener;
+import android.javax.sip.SipProvider;
+import android.javax.sip.SipStack;
+import android.javax.sip.TimeoutEvent;
+import android.javax.sip.TransactionAlreadyExistsException;
+import android.javax.sip.TransactionDoesNotExistException;
+import android.javax.sip.TransactionTerminatedEvent;
+import android.javax.sip.TransactionUnavailableException;
+import android.javax.sip.address.AddressFactory;
+import android.javax.sip.address.SipURI;
+import android.javax.sip.header.CSeqHeader;
+import android.javax.sip.header.CallIdHeader;
+import android.javax.sip.header.ContentTypeHeader;
+import android.javax.sip.header.FromHeader;
+import android.javax.sip.header.HeaderFactory;
+import android.javax.sip.header.ToHeader;
+import android.javax.sip.header.ViaHeader;
+import android.javax.sip.message.MessageFactory;
+import android.javax.sip.message.Request;
+import android.javax.sip.message.Response;
 
 public class SipStackAndroid extends AsyncTask<Object, Object, Object>
 		implements SipListener {
@@ -54,16 +66,53 @@ public class SipStackAndroid extends AsyncTask<Object, Object, Object>
 
 	public static ListeningPoint udpListeningPoint;
 	
-	public static String localIp;// = "10.0.3.15";
-	public static int localPort = 5080;
-	public static String localEndpoint = localIp + ":" + localPort;
+	private static String localIp;// = "10.0.3.15";
+	private static int localPort = 5080;
+	//private static String localEndpoint = localIp + ":" + localPort;
 	public static String transport = "udp";
 
-	public static String remoteIp = "23.23.228.238";
-	public static int remotePort = 5080;
-	public static String remoteEndpoint = remoteIp + ":" + remotePort;
+	private static String remoteIp = "23.23.228.238";
+	private static int remotePort = 5060;
+	//private static String remoteEndpoint = remoteIp + ":" + remotePort;
+	public static String getLocalIp() {
+		return localIp;
+	}
+	public static void setLocalIp(String localIp) {
+		SipStackAndroid.localIp = localIp;
+	}
+	public static int getLocalPort() {
+		return localPort;
+	}
+	public static void setLocalPort(int localPort) {
+		SipStackAndroid.localPort = localPort;
+	}
+	public static String getLocalEndpoint() {
+		return localIp + ":" + localPort;
+	}
+	
+	public static String getRemoteIp() {
+		return remoteIp;
+	}
+	public static void setRemoteIp(String remoteIp) {
+		SipStackAndroid.remoteIp = remoteIp;
+	}
+	public static int getRemotePort() {
+		return remotePort;
+	}
+	public static void setRemotePort(int remotePort) {
+		SipStackAndroid.remotePort = remotePort;
+	}
+	public static String getRemoteEndpoint() {
+		return remoteIp + ":" + remotePort;
+	}
+	
+
 	public static String sipUserName;
-	public String sipPassword;
+	public static String sipPassword;
+	private Dialog dialog;
+	// Save the created ACK request, to respond to retransmitted 2xx
+    private Request ackRequest;
+    private boolean ackReceived;
 	
 	
 	private ArrayList<ISipEventListener> sipEventListenerList = new ArrayList<ISipEventListener>();
@@ -87,7 +136,7 @@ public class SipStackAndroid extends AsyncTask<Object, Object, Object>
 	}
 
 	protected SipStackAndroid() {
-		initialize();
+		
 	}
 
 	public static SipStackAndroid getInstance() {
@@ -100,17 +149,17 @@ public class SipStackAndroid extends AsyncTask<Object, Object, Object>
 	}
 
 	private static void initialize() {
-		localIp = getIPAddress(true);
-		localEndpoint = localIp + ":" + localPort;
-		remoteEndpoint = remoteIp + ":" + remotePort;
+		
+		setLocalIp(getIPAddress(true));
+		
 		sipStack = null;
 		sipFactory = SipFactory.getInstance();
-		sipFactory.setPathName("gov.nist.android");
+		sipFactory.setPathName("android.gov.nist");
 
 		Properties properties = new Properties();
-		properties.setProperty("javaxx.sip.OUTBOUND_PROXY", remoteEndpoint + "/"
+		properties.setProperty("android.javax.sip.OUTBOUND_PROXY", getRemoteEndpoint() + "/"
 				+ transport);
-		properties.setProperty("javaxx.sip.STACK_NAME", "androidSip");
+		properties.setProperty("android.javax.sip.STACK_NAME", "androidSip");
 
 		try {
 			// Create SipStack object
@@ -143,7 +192,13 @@ public class SipStackAndroid extends AsyncTask<Object, Object, Object>
 
 	@Override
 	protected Object doInBackground(Object... params) {
+		String sipUsername = (String) params[0];
+		String sippassword = (String) params[1];
+		String sipDomain = (String) params[2];
 
+		sipUserName = sipUsername;
+		sipPassword = sippassword;
+		setRemoteIp(sipDomain);
 		initialize();
 		return null;
 	}
@@ -152,24 +207,31 @@ public class SipStackAndroid extends AsyncTask<Object, Object, Object>
 
 	@Override
 	public void processRequest(RequestEvent arg0) {
-		sendOk(arg0);
+		//sendOk(arg0);
 		Request request = (Request) arg0.getRequest();
-
+		ServerTransaction serverTransactionId = arg0
+				.getServerTransaction();
+		SIPMessage sp = (SIPMessage)request;
 		System.out.println(request.getMethod());
 		if(request.getMethod().equals("MESSAGE")){
-			SIPMessage sp = (SIPMessage)request;
+			sendOk(arg0);
+		
+
 			try {
 				String message = sp.getMessageContent();
+
 				//System.out.println(sp.getFrom().getAddress());
-				dispatchSipEvent(new SipEvent(this, "MESSAGE", message,sp.getFrom().getAddress().toString()));
+				dispatchSipEvent(new SipEvent(this,SipEventType.MESSAGE, message,sp.getFrom().getAddress().toString()));
 				
 			} catch (UnsupportedEncodingException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
-			
+		}
+		else if (request.getMethod().equals(Request.BYE)) {
+			processBye(request, serverTransactionId);
+			dispatchSipEvent(new SipEvent(this,SipEventType.BYE,"",sp.getFrom().getAddress().toString() ));
 
-			
 		}
 	}
 	public void sendOk(RequestEvent requestEvt){
@@ -224,7 +286,14 @@ public class SipStackAndroid extends AsyncTask<Object, Object, Object>
 	@Override
 	public void processResponse(ResponseEvent arg0) {
 		Response response = (Response) arg0.getResponse();
+		Dialog responseDialog = null;
 		ClientTransaction tid = arg0.getClientTransaction();
+		if(tid != null) {
+			responseDialog = tid.getDialog();
+		} else {
+			responseDialog = arg0.getDialog();
+		}
+		 CSeqHeader cseq = (CSeqHeader) response.getHeader(CSeqHeader.NAME);
 		System.out.println(response.getStatusCode());
 		if (response.getStatusCode() == Response.PROXY_AUTHENTICATION_REQUIRED
 				|| response.getStatusCode() == Response.UNAUTHORIZED) {
@@ -242,10 +311,93 @@ public class SipStackAndroid extends AsyncTask<Object, Object, Object>
 			}
 			
 		}
+		else if (response.getStatusCode() == Response.OK){
+			 if (cseq.getMethod().equals(Request.INVITE)) {
+					
+                 System.out.println("Dialog after 200 OK  " + dialog);
+                 //System.out.println("Dialog State after 200 OK  " + dialog.getState());
+                 try {
+                	 Request ackRequest = responseDialog.createAck(cseq.getSeqNumber());
+                	  System.out.println("Sending ACK");
+                	 responseDialog.sendAck(ackRequest);
+				} catch (InvalidArgumentException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (SipException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+               
+               
+                 // JvB: test REFER, reported bug in tag handling
+                 // dialog.sendRequest(  sipProvider.getNewClientTransaction( dialog.createRequest("REFER") ));
+
+             } else if (cseq.getMethod().equals(Request.CANCEL)) {
+                 if (dialog.getState() == DialogState.CONFIRMED) {
+                     // oops cancel went in too late. Need to hang up the
+                     // dialog.
+                     System.out
+                             .println("Sending BYE -- cancel went in too late !!");
+                     Request byeRequest = null;
+					try {
+						byeRequest = dialog.createRequest(Request.BYE);
+					} catch (SipException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+                     ClientTransaction ct = null;
+					try {
+						ct = sipProvider
+						         .getNewClientTransaction(byeRequest);
+					} catch (TransactionUnavailableException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+                     try {
+						dialog.sendRequest(ct);
+					} catch (TransactionDoesNotExistException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (SipException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+
+                 }
+
+             }
+		}
+		
 
 	}
 
+
+
 	
+
+	
+	  public void processBye(Request request,
+	            ServerTransaction serverTransactionId) {
+	        try {
+	            System.out.println("shootist:  got a bye .");
+	            if (serverTransactionId == null) {
+	                System.out.println("shootist:  null TID.");
+	                return;
+	            }
+	            Dialog dialog = serverTransactionId.getDialog();
+	            System.out.println("Dialog State = " + dialog.getState());
+	            Response response = messageFactory.createResponse(200, request);
+	            serverTransactionId.sendResponse(response);
+	            System.out.println("shootist:  Sending OK.");
+	            System.out.println("Dialog State = " + dialog.getState());
+
+	        } catch (Exception ex) {
+	            ex.printStackTrace();
+	            System.exit(0);
+
+	        }
+	    }
+
 	public static String getIPAddress(boolean useIPv4) {
 		try {
 			List<NetworkInterface> interfaces = Collections
@@ -275,5 +427,9 @@ public class SipStackAndroid extends AsyncTask<Object, Object, Object>
 		} // for now eat exceptions
 		return "";
 	}
+	public int ackCount = 0;
+
+
+
 
 }
