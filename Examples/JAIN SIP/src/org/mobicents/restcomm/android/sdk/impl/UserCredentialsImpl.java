@@ -1,4 +1,4 @@
-package com.example.sipmessagetest;
+package org.mobicents.restcomm.android.sdk.impl;
 
 import android.gov.nist.javax.sip.clientauthutils.UserCredentials;
 

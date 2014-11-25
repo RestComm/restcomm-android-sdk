@@ -1,22 +1,16 @@
 package com.example.sipmessagetest;
 
-import java.net.InetAddress;
-import java.net.NetworkInterface;
-import java.net.SocketException;
-import java.util.Enumeration;
-
-import com.example.sipmessagetest.SipEvent.SipEventType;
-
+import org.mobicents.restcomm.android.sdk.IDevice;
+import org.mobicents.restcomm.android.sdk.NotInitializedException;
+import org.mobicents.restcomm.android.sdk.SipProfile;
+import org.mobicents.restcomm.android.sdk.impl.DeviceImpl;
 import android.support.v7.app.ActionBarActivity;
 import android.text.method.ScrollingMovementMethod;
-import android.content.Context;
-import android.media.AudioManager;
-import android.net.rtp.AudioCodec;
-import android.net.rtp.AudioGroup;
-import android.net.rtp.AudioStream;
-import android.net.rtp.RtpStream;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.os.Bundle;
-import android.os.StrictMode;
+import android.preference.PreferenceManager;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -26,38 +20,43 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 public class MainActivity extends ActionBarActivity implements OnClickListener,
-		ISipEventListener {
-
+		 OnSharedPreferenceChangeListener {
+	SharedPreferences prefs;
 	Button btnSubmit;
 	EditText editTextUser;
-	EditText editTextPassword;
 	EditText editTextDomain;
 	EditText editTextTo;
 	EditText editTextMessage;
 	TextView textViewChat;
 	String chatText = "";
-	AudioManager audio;
-	AudioStream audioStream;
-	AudioGroup audioGroup;
+	SipProfile sipProfile;
+
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
-
+		sipProfile = new SipProfile();
+		DeviceImpl.GetInstance().Initialize(getApplicationContext(), sipProfile);
+		
 		Button btnRegister = (Button) findViewById(R.id.btnSubmit);
 		btnRegister.setOnClickListener(this);
 		Button btnSend = (Button) findViewById(R.id.btnSend);
 		btnSend.setOnClickListener(this);
 		Button btnCall = (Button) findViewById(R.id.btnCall);
 		btnCall.setOnClickListener(this);
-		editTextUser = (EditText) findViewById(R.id.editTextUser);
-		editTextPassword = (EditText) findViewById(R.id.editTextPassword);
-		editTextDomain = (EditText) findViewById(R.id.editTextDomain);
+
 		editTextTo = (EditText) findViewById(R.id.editTextTo);
 		editTextMessage = (EditText) findViewById(R.id.editTextMessage);
 		textViewChat = (TextView) findViewById(R.id.textViewChat);
 		textViewChat.setMovementMethod(new ScrollingMovementMethod());
+		// ////////////////////////////////////////////////////////////
+
+		prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
+		// register preference change listener
+		prefs.registerOnSharedPreferenceChangeListener(this);
+		initializeSipFromPreferences();
 
 	}
 
@@ -76,7 +75,8 @@ public class MainActivity extends ActionBarActivity implements OnClickListener,
 		// as you specify a parent activity in AndroidManifest.xml.
 		int id = item.getItemId();
 		if (id == R.id.action_settings) {
-			return true;
+			Intent i = new Intent(this, SettingsActivity.class);
+			startActivity(i);
 		}
 		return super.onOptionsItemSelected(item);
 	}
@@ -85,92 +85,51 @@ public class MainActivity extends ActionBarActivity implements OnClickListener,
 	public void onClick(View v) {
 		switch (v.getId()) {
 		case (R.id.btnSubmit):
-			new SipStackAndroid().execute(editTextUser.getText().toString(),
-					editTextPassword.getText().toString(), editTextDomain
-							.getText().toString());
-			SipStackAndroid.getInstance().addSipListener(this);
-			new SipRegister().execute(editTextUser.getText().toString(),
-					editTextPassword.getText().toString(), editTextDomain
-							.getText().toString());
+			DeviceImpl.GetInstance().Register();
 			break;
 		case (R.id.btnCall):
 		
-
-			StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder()
-					.permitAll().build();
-			StrictMode.setThreadPolicy(policy);
-			try {
-				audio = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
-				audio.setMode(AudioManager.MODE_IN_COMMUNICATION);
-				audioGroup = new AudioGroup();
-				audioGroup.setMode(AudioGroup.MODE_ECHO_SUPPRESSION);
-				audioStream = new AudioStream(
-						InetAddress.getByAddress(getLocalIPAddress()));
-				audioStream.setCodec(AudioCodec.PCMU);
-				audioStream.setMode(RtpStream.MODE_NORMAL);
-				audioStream.associate(
-						InetAddress.getByName(SipStackAndroid.getRemoteIp()),
-						7078);
-				audioStream.join(audioGroup);
-
-				// Stream is setup now we initiate a call and specify our
-				// listening RTP port
-				new SipCall().execute(editTextTo.getText().toString(),
-						editTextMessage.getText().toString(),
-						String.valueOf(audioStream.getLocalPort()));
-
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
+			DeviceImpl.GetInstance().Call(editTextTo.getText().toString());
+		
 			break;
 		case (R.id.btnSend):
-			this.chatText += editTextUser.getText().toString() + ":"
-					+ editTextMessage.getText().toString() + "\r\n";
-			textViewChat.setText(this.chatText);
-			new SipSendMessage().execute(editTextTo.getText().toString(),editTextMessage.getText().toString());
+			
+			DeviceImpl.GetInstance().SendMessage(editTextTo.getText().toString(), editTextMessage.getText().toString() );
+			
 			break;
 		}
 	}
 
-	public static byte[] getLocalIPAddress() {
-		byte ip[] = null;
-		try {
-			for (Enumeration en = NetworkInterface.getNetworkInterfaces(); en
-					.hasMoreElements();) {
-				NetworkInterface intf = (NetworkInterface) en.nextElement();
-				for (Enumeration enumIpAddr = intf.getInetAddresses(); enumIpAddr
-						.hasMoreElements();) {
-					InetAddress inetAddress = (InetAddress) enumIpAddr
-							.nextElement();
-					if (!inetAddress.isLoopbackAddress()) {
-						ip = inetAddress.getAddress();
-					}
-				}
-			}
-		} catch (SocketException ex) {
+
+
+
+
+	@Override
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+			String key) {
+		if (key.equals("pref_proxy_ip")) {
+			sipProfile.setRemoteIp((prefs.getString("pref_proxy_ip", "")));
+		} else if (key.equals("pref_proxy_port")) {
+			sipProfile.setRemotePort(Integer.parseInt(prefs.getString(
+					"pref_proxy_port", "5060")));
+		}  else if (key.equals("pref_sip_user")) {
+			sipProfile.setSipUserName(prefs.getString("pref_sip_user",
+					"alice"));
+		} else if (key.equals("pref_sip_password")) {
+			sipProfile.setSipPassword(prefs.getString("pref_sip_password",
+					"1234"));
 		}
-		return ip;
 
 	}
 
-	@Override
-	public void onSipMessage(SipEvent sipEventObject) {
-		System.out.println("Sip Event fired");
-		if (sipEventObject.type == SipEventType.MESSAGE) {
-			chatText += sipEventObject.from + ":" + sipEventObject.content
-					+ "\r\n";
-			this.runOnUiThread(new Runnable() {
-				public void run() {
-					textViewChat.append(chatText);
-
-				}
-			});
-		} else if (sipEventObject.type == SipEventType.BYE) {
-			audio.setMode(AudioManager.RINGER_MODE_NORMAL);
-			audioStream.release();
-			audioGroup.clear();
-		}
+	@SuppressWarnings("static-access")
+	private void initializeSipFromPreferences() {
+		sipProfile.setRemoteIp((prefs.getString("pref_proxy_ip", "")));
+		sipProfile.setRemotePort(Integer.parseInt(prefs.getString(
+				"pref_proxy_port", "5060")));
+		sipProfile.setSipUserName(prefs.getString("pref_sip_user", "alice"));
+		sipProfile.setSipPassword(prefs
+				.getString("pref_sip_password", "1234"));
 
 	}
 

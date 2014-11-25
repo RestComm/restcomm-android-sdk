@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="src" path="gen"/>
 	<classpathentry kind="con" path="com.android.ide.eclipse.adt.ANDROID_FRAMEWORK"/>
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.DEPENDENCIES"/>
@@ -9,6 +7,8 @@
 	<classpathentry kind="lib" path="libs/junit-3.8.1.jar"/>
 	<classpathentry kind="lib" path="libs/concurrent.jar"/>
 	<classpathentry kind="lib" path="libs/android-logging-log4j-1.0.3.jar"/>
-	<classpathentry kind="lib" path="C:/Users/Arslan/workspace/SipMessageTest/libs/android-jain-sip-ri-1.2.224.jar"/>
+	<classpathentry kind="lib" path="libs/android-jain-sip-ri-1.2.228.jar" sourcepath="D:/jain-sip/src"/>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry kind="src" path="gen"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>
