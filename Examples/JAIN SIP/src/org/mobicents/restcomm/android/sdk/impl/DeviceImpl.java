@@ -56,7 +56,7 @@ public class DeviceImpl implements IDevice,Serializable {
 		this.context = context;
 		this.sipProfile = sipProfile;
 		sipManager = new SipManager(sipProfile);
-		soundManager = new SoundManager(context);
+		soundManager = new SoundManager(context,sipProfile.getLocalIp());
 		sipManager.addSipListener(this);
 	}
 	
@@ -74,7 +74,9 @@ public class DeviceImpl implements IDevice,Serializable {
 			});*/
 		} else if (sipEventObject.type == SipEventType.BYE) {
 			this.soundManager.releaseAudioResources();
-		} else if (sipEventObject.type == SipEventType.BUSY_HERE) {
+		} else if (sipEventObject.type == SipEventType.DECLINED) {
+			this.soundManager.releaseAudioResources();
+		}else if (sipEventObject.type == SipEventType.BUSY_HERE) {
 			this.soundManager.releaseAudioResources();
 		} else if (sipEventObject.type == SipEventType.SERVICE_UNAVAILABLE) {
 			this.soundManager.releaseAudioResources();

@@ -16,28 +16,41 @@ public class SoundManager {
 	AudioManager audio;
 	AudioStream audioStream;
 	AudioGroup audioGroup;
-	public SoundManager(Context appContext){
+	public SoundManager(Context appContext, String ip){
 		this.appContext = appContext;
-	}
-	public void releaseAudioResources() {
-		audio.setMode(AudioManager.MODE_NORMAL);
-		audioStream.release();
-		audioGroup.clear();
-	}
-	public int setupAudioStream(String localIp) {
 		audio = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
-		audio.setMode(AudioManager.MODE_IN_COMMUNICATION);
-		audioGroup = new AudioGroup();
-		audioGroup.setMode(AudioGroup.MODE_ECHO_SUPPRESSION);
 		try {
-			audioStream = new AudioStream(InetAddress.getByName(localIp));
+			audioStream = new AudioStream(InetAddress.getByName(ip));
 			audioStream.setCodec(AudioCodec.PCMU);
 			audioStream.setMode(RtpStream.MODE_NORMAL);
+			audioGroup = new AudioGroup();
+			audioGroup.setMode(AudioGroup.MODE_ECHO_SUPPRESSION);
+		
+				
+				
 		} catch (SocketException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} catch (UnknownHostException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+
+	}
+	public void releaseAudioResources() {
+		
+		audioStream.join(null);
+		//audioStream.release();
+		
+		audioGroup.clear();
+		audio.setMode(AudioManager.MODE_NORMAL);
+		
+			
+	}
+	public int setupAudioStream(String localIp) {
+		audio.setMode(AudioManager.MODE_IN_COMMUNICATION);
+	
+	
 		return audioStream.getLocalPort();
 	}
 	public void setupAudio(int remoteRtpPort, String remoteIp) {

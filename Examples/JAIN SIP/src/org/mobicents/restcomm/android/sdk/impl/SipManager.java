@@ -13,6 +13,7 @@ import org.apache.http.conn.util.InetAddressUtils;
 import org.mobicents.restcomm.android.sdk.ISipEventListener;
 import org.mobicents.restcomm.android.sdk.ISipManager;
 import org.mobicents.restcomm.android.sdk.NotInitializedException;
+import org.mobicents.restcomm.android.sdk.SipManagerState;
 import org.mobicents.restcomm.android.sdk.impl.SipEvent.SipEventType;
 import org.mobicents.restcomm.android.sdk.impl.sipmessages.Invite;
 import org.mobicents.restcomm.android.sdk.impl.sipmessages.Message;
@@ -76,6 +77,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	private ArrayList<ISipEventListener> sipEventListenerList = new ArrayList<ISipEventListener>();
 	private boolean initialized;
+	private SipManagerState sipManagerState;
 
 	public SipProfile getSipProfile() {
 
@@ -119,6 +121,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	private void initialize() {
+		sipManagerState = SipManagerState.REGISTERING;
 		this.sipProfile.setLocalIp(getIPAddress(true));
 
 		sipFactory = SipFactory.getInstance();
@@ -155,6 +158,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			sipProvider = sipStack.createSipProvider(udpListeningPoint);
 			sipProvider.addSipListener(this);
 			initialized = true;
+			sipManagerState = SipManagerState.READY;
 		} catch (PeerUnavailableException e) {
 			e.printStackTrace();
 			System.err.println(e.getMessage());
@@ -181,6 +185,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				e.printStackTrace();
 			}
 		} else if (request.getMethod().equals(Request.BYE)) {
+			sipManagerState = SipManagerState.IDLE;
 			processBye(request, serverTransactionId);
 			dispatchSipEvent(new SipEvent(this, SipEventType.BYE, "", sp
 					.getFrom().getAddress().toString()));
@@ -363,6 +368,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			}
 		} else if (response.getStatusCode() == Response.DECLINE) {
 			System.out.println("CALL DECLINED");
+			dispatchSipEvent(new SipEvent(this, SipEventType.DECLINED, "", ""));
+
 		} else if (response.getStatusCode() == Response.NOT_FOUND) {
 			System.out.println("NOT FOUND");
 		} else if (response.getStatusCode() == Response.ACCEPTED) {
@@ -465,7 +472,10 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	private void processInvite(RequestEvent requestEvent,
 			ServerTransaction serverTransaction) {
-		// SipProvider sipProvider = (SipProvider) requestEvent.getSource();
+		if (sipManagerState != SipManagerState.IDLE
+				&& sipManagerState != SipManagerState.READY)
+			sendBYE(requestEvent.getRequest());// Already in a call
+		sipManagerState = SipManagerState.INCOMING;
 		Request request = requestEvent.getRequest();
 		SIPMessage sm = (SIPMessage) request;
 
@@ -476,39 +486,32 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				st = sipProvider.getNewServerTransaction(request);
 
 			}
+			if (st == null)
+				return;
 			currentCallTransaction = st;
+
 			System.out.println("INVITE: with Authorization, sending Trying");
-			// System.out.println("shootme: " + request);
 			Response response = messageFactory.createResponse(Response.TRYING,
 					request);
 			st.sendResponse(response);
 			System.out.println("INVITE:Trying Sent");
 			// Verify AUTHORIZATION !!!!!!!!!!!!!!!!
-			dsam = new DigestServerAuthenticationHelper();
-
-			if (!dsam.doAuthenticatePlainTextPassword(request,
-					sipProfile.getSipPassword())) {
-				Response challengeResponse = messageFactory.createResponse(
-						Response.PROXY_AUTHENTICATION_REQUIRED, request);
-				dsam.generateChallenge(headerFactory, challengeResponse,
-						"nist.gov");
-				st.sendResponse(challengeResponse);
-				System.out.println("INVITE:Authorization challenge sent");
-				return;
-
-			}
-			System.out
-					.println("INVITE:Incoming Authorization challenge Accepted");
-
 			/*
-			 * System.out
-			 * .println("shootme: got an Invite with Authorization, sending Trying"
-			 * ); // System.out.println("shootme: " + request);
+			 * dsam = new DigestServerAuthenticationHelper();
 			 * 
-			 * dialog = st.getDialog();
+			 * if (!dsam.doAuthenticatePlainTextPassword(request,
+			 * sipProfile.getSipPassword())) { Response challengeResponse =
+			 * messageFactory.createResponse(
+			 * Response.PROXY_AUTHENTICATION_REQUIRED, request);
+			 * dsam.generateChallenge(headerFactory, challengeResponse,
+			 * "nist.gov"); st.sendResponse(challengeResponse);
+			 * System.out.println("INVITE:Authorization challenge sent");
+			 * return;
 			 * 
-			 * st.sendResponse(response);
+			 * } System.out
+			 * .println("INVITE:Incoming Authorization challenge Accepted");
 			 */
+
 			byte[] rawContent = sm.getRawContent();
 			String sdpContent = new String(rawContent, "UTF-8");
 			SDPAnnounceParser parser = new SDPAnnounceParser(sdpContent);
@@ -542,7 +545,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	public void AcceptCall(final int port) {
-		// sendOk(currentCallEvent);
+		if (currentCallTransaction == null)
+			return;
 		Thread thread = new Thread() {
 			public void run() {
 				try {
@@ -616,7 +620,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					dispatchSipEvent(new SipEvent(this,
 							SipEventType.CALL_CONNECTED, "", sm.getFrom()
 									.getAddress().toString(), remoteRtpPort));
-
+					sipManagerState = SipManagerState.ESTABLISHED;
 				} catch (ParseException e) {
 					e.printStackTrace();
 				} catch (SipException e) {
@@ -627,10 +631,12 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			}
 		};
 		thread.start();
+		sipManagerState = SipManagerState.ESTABLISHED;
 	}
 
 	public void RejectCall() {
 		sendBYE(currentCallTransaction.getRequest());
+		sipManagerState = SipManagerState.IDLE;
 
 	}
 
@@ -669,6 +675,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			throws NotInitializedException {
 		if (!initialized)
 			throw new NotInitializedException("Sip Stack not initialized");
+		this.sipManagerState = SipManagerState.CALLING;
 		Invite inviteRequest = new Invite();
 		Request r = inviteRequest.MakeRequest(this, to, localRtpPort);
 		try {
@@ -724,6 +731,10 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	public void SendDTMF(String digit) throws NotInitializedException {
 		if (!initialized)
 			throw new NotInitializedException("Sip Stack not initialized");
+	}
+
+	public SipManagerState getSipManagerState() {
+		return sipManagerState;
 	}
 
 }
