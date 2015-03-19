@@ -60,7 +60,6 @@ public class SoundManager {
 					InetAddress.getByName(remoteIp),
 					remoteRtpPort);
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		audioStream.join(audioGroup);

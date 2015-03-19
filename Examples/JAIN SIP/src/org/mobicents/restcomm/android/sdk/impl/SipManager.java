@@ -120,7 +120,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		return initialized;
 	}
 
-	private void initialize() {
+	private boolean initialize() {
 		sipManagerState = SipManagerState.REGISTERING;
 		this.sipProfile.setLocalIp(getIPAddress(true));
 
@@ -144,9 +144,9 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			sipStack = sipFactory.createSipStack(properties);
 			System.out.println("createSipStack " + sipStack);
 		} catch (PeerUnavailableException e) {
-			e.printStackTrace();
+			return false;
 		} catch (ObjectInUseException e) {
-			e.printStackTrace();
+			return false;
 		}
 		try {
 			headerFactory = sipFactory.createHeaderFactory();
@@ -160,12 +160,11 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			initialized = true;
 			sipManagerState = SipManagerState.READY;
 		} catch (PeerUnavailableException e) {
-			e.printStackTrace();
-			System.err.println(e.getMessage());
+			return false;
 		} catch (Exception e) {
-			System.out.println(e.getMessage());
-			e.printStackTrace();
+			return false;
 		}
+		return true;
 	}
 
 	@Override
@@ -473,8 +472,12 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	private void processInvite(RequestEvent requestEvent,
 			ServerTransaction serverTransaction) {
 		if (sipManagerState != SipManagerState.IDLE
-				&& sipManagerState != SipManagerState.READY)
-			sendBYE(requestEvent.getRequest());// Already in a call
+				&& sipManagerState != SipManagerState.READY
+				&& sipManagerState != SipManagerState.INCOMING
+				) {
+			// sendBYE(requestEvent.getRequest());// Already in a call
+			return;
+		}
 		sipManagerState = SipManagerState.INCOMING;
 		Request request = requestEvent.getRequest();
 		SIPMessage sm = (SIPMessage) request;
@@ -496,21 +499,22 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			st.sendResponse(response);
 			System.out.println("INVITE:Trying Sent");
 			// Verify AUTHORIZATION !!!!!!!!!!!!!!!!
-			/*
-			 * dsam = new DigestServerAuthenticationHelper();
-			 * 
-			 * if (!dsam.doAuthenticatePlainTextPassword(request,
-			 * sipProfile.getSipPassword())) { Response challengeResponse =
-			 * messageFactory.createResponse(
-			 * Response.PROXY_AUTHENTICATION_REQUIRED, request);
-			 * dsam.generateChallenge(headerFactory, challengeResponse,
-			 * "nist.gov"); st.sendResponse(challengeResponse);
-			 * System.out.println("INVITE:Authorization challenge sent");
-			 * return;
-			 * 
-			 * } System.out
-			 * .println("INVITE:Incoming Authorization challenge Accepted");
-			 */
+
+			dsam = new DigestServerAuthenticationHelper();
+
+			if (!dsam.doAuthenticatePlainTextPassword(request,
+					sipProfile.getSipPassword())) {
+				Response challengeResponse = messageFactory.createResponse(
+						Response.PROXY_AUTHENTICATION_REQUIRED, request);
+				dsam.generateChallenge(headerFactory, challengeResponse,
+						"nist.gov");
+				st.sendResponse(challengeResponse);
+				System.out.println("INVITE:Authorization challenge sent");
+				return;
+
+			}
+			System.out
+					.println("INVITE:Incoming Authorization challenge Accepted");
 
 			byte[] rawContent = sm.getRawContent();
 			String sdpContent = new String(rawContent, "UTF-8");
@@ -642,7 +646,9 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	@Override
 	public void Register() {
-		initialize();
+		if(!initialize())
+			return;//If initialization failed, dont proceeds
+		
 		org.mobicents.restcomm.android.sdk.impl.sipmessages.Register registerRequest = new org.mobicents.restcomm.android.sdk.impl.sipmessages.Register();
 		try {
 			Request r = registerRequest.MakeRequest(this);

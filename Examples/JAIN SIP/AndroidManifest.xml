@@ -5,7 +5,7 @@
     android:versionName="1.0" >
 
     <uses-sdk
-        android:minSdkVersion="12"
+        android:minSdkVersion="16"
         android:targetSdkVersion="19" />
 
     <uses-permission android:name="android.permission.USE_SIP" />
@@ -51,6 +51,10 @@
             android:name="org.mobicents.restcomm.android.sdk.ui.IncomingCall"
             android:label="@string/title_activity_incoming_call"
             android:theme="@style/Theme.Base.AppCompat.Dialog.FixedSize" >
+        </activity>
+        <activity
+            android:name="org.mobicents.restcomm.android.sdk.ui.NotifyMessage"
+            android:label="@string/title_activity_notify_message" >
         </activity>
     </application>
 
