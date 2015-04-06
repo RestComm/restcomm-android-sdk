@@ -7,6 +7,7 @@ import java.net.NetworkInterface;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 import org.apache.http.conn.util.InetAddressUtils;
@@ -78,6 +79,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	private ArrayList<ISipEventListener> sipEventListenerList = new ArrayList<ISipEventListener>();
 	private boolean initialized;
 	private SipManagerState sipManagerState;
+    private HashMap<String,String> customHeaders;
 
 	public SipProfile getSipProfile() {
 
@@ -743,4 +745,12 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		return sipManagerState;
 	}
 
+    public HashMap<String, String> getCustomHeaders() {
+        return customHeaders;
+    }
+
+
+    public void setCustomHeaders(HashMap<String, String> customHeaders) {
+        this.customHeaders = customHeaders;
+    }
 }

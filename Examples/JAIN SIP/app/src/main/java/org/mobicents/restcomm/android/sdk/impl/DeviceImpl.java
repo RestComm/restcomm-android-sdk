@@ -10,6 +10,7 @@ import java.io.Serializable;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.HashMap;
 
 import org.mobicents.restcomm.android.sdk.IDevice;
 import org.mobicents.restcomm.android.sdk.ISipEventListener;
@@ -63,6 +64,10 @@ public class DeviceImpl implements IDevice,Serializable {
 		}
 		return device;
 	}
+    public void Initialize(Context context, SipProfile sipProfile, HashMap<String,String> customHeaders){
+        this.Initialize(context,sipProfile);
+        sipManager.setCustomHeaders(customHeaders);
+    }
 	public void Initialize(Context context, SipProfile sipProfile){
 		this.context = context;
 		this.sipProfile = sipProfile;

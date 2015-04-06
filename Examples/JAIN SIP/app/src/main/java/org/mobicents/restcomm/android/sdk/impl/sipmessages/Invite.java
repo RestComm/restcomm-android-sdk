@@ -1,6 +1,11 @@
 package org.mobicents.restcomm.android.sdk.impl.sipmessages;
 
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 import org.mobicents.restcomm.android.sdk.impl.SipManager;
 
@@ -29,8 +34,7 @@ public class Invite  {
 			Address fromNameAddress = sipManager.addressFactory.createAddress(from);
 			//fromNameAddress.setDisplayName(sipUsername);
 			FromHeader fromHeader = sipManager.headerFactory.createFromHeader(fromNameAddress,
-					"Tzt0ZEP92");
-
+                    "Tzt0ZEP92");
 			URI toAddress = sipManager.addressFactory.createURI(to);
 			Address toNameAddress = sipManager.addressFactory.createAddress(toAddress);
 			// toNameAddress.setDisplayName(username);
@@ -55,6 +59,7 @@ public class Invite  {
 			SupportedHeader supportedHeader = sipManager.headerFactory
 					.createSupportedHeader("replaces, outbound");
 			callRequest.addHeader(supportedHeader);
+            addCustomHeaders(callRequest,sipManager);
 
 			SipURI routeUri = sipManager.addressFactory.createSipURI(null, sipManager.getSipProfile().getRemoteIp());
 			routeUri.setTransportParam(sipManager.getSipProfile().getTransport());
@@ -127,10 +132,26 @@ public class Invite  {
 		}
 		return null;
 	}
-	
-	
+
+    private void addCustomHeaders(Request callRequest, SipManager sipManager) {
+
+        // Get a set of the entries
+        Set set = sipManager.getCustomHeaders().entrySet();
+        // Get an iterator
+        Iterator i = set.iterator();
+        // Display elements
+        while(i.hasNext()) {
+            Map.Entry me = (Map.Entry) i.next();
+            try {
+                Header customHeader = sipManager.headerFactory.createHeader(me.getKey().toString(),me.getValue().toString());
+                callRequest.addHeader(customHeader);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
 
 
+        }
+    }
 
 
 }

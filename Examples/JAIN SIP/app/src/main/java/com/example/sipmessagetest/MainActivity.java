@@ -19,6 +19,8 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import java.util.HashMap;
+
 public class MainActivity extends ActionBarActivity implements OnClickListener,
 		 OnSharedPreferenceChangeListener {
 	SharedPreferences prefs;
@@ -37,7 +39,11 @@ public class MainActivity extends ActionBarActivity implements OnClickListener,
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 		sipProfile = new SipProfile();
-		DeviceImpl.GetInstance().Initialize(getApplicationContext(), sipProfile);
+        HashMap<String, String> customHeaders = new HashMap<>();
+        customHeaders.put("customHeader1","customValue1");
+        customHeaders.put("customHeader2","customValue2");
+
+        DeviceImpl.GetInstance().Initialize(getApplicationContext(), sipProfile,customHeaders);
 		
 		Button btnRegister = (Button) findViewById(R.id.btnSubmit);
 		btnRegister.setOnClickListener(this);
