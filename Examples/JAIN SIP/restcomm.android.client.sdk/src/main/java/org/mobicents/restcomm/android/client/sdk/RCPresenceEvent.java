@@ -20,24 +20,25 @@
  *
  */
 
-package org.mobicents.restcomm.android.sdk;
+package org.mobicents.restcomm.android.client.sdk;
 
-import org.mobicents.restcomm.android.sdk.impl.SipManager;
-import org.mobicents.restcomm.android.sdk.impl.SoundManager;
+public class RCPresenceEvent {
+    String name;
+    boolean available;
 
-import android.media.AudioManager;
-
-public interface IDevice  extends ISipEventListener{
-
-	void Register();
-
-	void Call(String to);
-
-	void SendMessage(String to, String message);
-
-	void SendDTMF(String digit);
-	
-	SipManager GetSipManager();
-	SoundManager getSoundManager();
-
+    public RCPresenceEvent(String name, boolean available)
+    {
+    }
+    public String getName()
+    {
+        return this.name;
+    }
+    public boolean isAvailable()
+    {
+        return available;
+    }
+    public String toString()
+    {
+        return "";
+    }
 }

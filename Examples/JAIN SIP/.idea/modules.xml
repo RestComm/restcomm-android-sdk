@@ -4,7 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/JAIN SIP.iml" filepath="$PROJECT_DIR$/JAIN SIP.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/restcomm.android.client.sdk/restcomm.android.client.sdk.iml" filepath="$PROJECT_DIR$/restcomm.android.client.sdk/restcomm.android.client.sdk.iml" />
     </modules>
   </component>
 </project>
-

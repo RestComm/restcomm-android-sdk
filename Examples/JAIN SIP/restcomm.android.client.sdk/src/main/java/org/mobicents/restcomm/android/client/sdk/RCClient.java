@@ -20,24 +20,50 @@
  *
  */
 
-package org.mobicents.restcomm.android.sdk;
+package org.mobicents.restcomm.android.client.sdk;
 
-import org.mobicents.restcomm.android.sdk.impl.SipManager;
-import org.mobicents.restcomm.android.sdk.impl.SoundManager;
+import java.util.ArrayList;
+import java.util.List;
+import android.content.Context;
+import org.mobicents.restcomm.android.client.sdk.RCInitListener;
 
-import android.media.AudioManager;
+public class RCClient {
+    public static void initialize(Context context, RCInitListener listener)
+    {
+    }
 
-public interface IDevice  extends ISipEventListener{
+    public static void shutdown()
+    {
 
-	void Register();
+    }
 
-	void Call(String to);
+    public static boolean isInitialized()
+    {
+        return true;
+    }
 
-	void SendMessage(String to, String message);
+    public static RCDevice createDevice(String capabilityToken, RCDeviceListener deviceListener)
+    {
+        RCDevice device = new RCDevice();
+        return device;
+    }
 
-	void SendDTMF(String digit);
-	
-	SipManager GetSipManager();
-	SoundManager getSoundManager();
+    public List<RCDevice> listDevices()
+    {
+        ArrayList<RCDevice> list = new ArrayList<RCDevice>();
+        return list;
+    }
+
+    /*
+    public static void setLogLevel(int level)
+    {
+
+    }
+
+    public static String getVersion()
+    {
+        return "";
+    }
+    */
 
 }

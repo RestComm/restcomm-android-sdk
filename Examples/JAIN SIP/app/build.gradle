@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "com.example.sipmessagetest"
-        minSdkVersion 16
+        minSdkVersion 8
         targetSdkVersion 19
     }
 

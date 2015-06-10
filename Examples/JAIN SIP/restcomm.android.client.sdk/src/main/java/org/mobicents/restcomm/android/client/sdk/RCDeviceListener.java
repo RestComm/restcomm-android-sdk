@@ -20,24 +20,14 @@
  *
  */
 
-package org.mobicents.restcomm.android.sdk;
+package org.mobicents.restcomm.android.client.sdk;
 
-import org.mobicents.restcomm.android.sdk.impl.SipManager;
-import org.mobicents.restcomm.android.sdk.impl.SoundManager;
+import org.mobicents.restcomm.android.client.sdk.RCDevice;
 
-import android.media.AudioManager;
-
-public interface IDevice  extends ISipEventListener{
-
-	void Register();
-
-	void Call(String to);
-
-	void SendMessage(String to, String message);
-
-	void SendDTMF(String digit);
-	
-	SipManager GetSipManager();
-	SoundManager getSoundManager();
-
+public interface RCDeviceListener {
+    public abstract void onStartListening(RCDevice device);
+    public abstract void onStopListening(RCDevice device);
+    //public abstract void onStopListening(RCDevice, int, String);
+    public abstract boolean receivePresenceEvents(RCDevice device);
+    public abstract void onPresenceChanged(RCDevice device, RCPresenceEvent presenceEvent);
 }
