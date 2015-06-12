@@ -18,93 +18,128 @@
   <component name="ChangeListManager">
     <list default="true" id="9a463ca9-f1fa-4f73-a9f0-133e94f66f49" name="Default" comment="">
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/gradle/wrapper/gradle-wrapper.jar" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/gradle/wrapper/gradle-wrapper.jar" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/app/src/main/res/mipmap-hdpi/ic_launcher.png" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/app/src/main/res/mipmap-mdpi/ic_launcher.png" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/app/src/main/res/mipmap-xhdpi/ic_launcher.png" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/app/src/main/res/mipmap-xxhdpi/ic_launcher.png" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/.gitignore" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/app/.gitignore" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../restcomm.android.client.sdk/.gitignore" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/.gitignore" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/.idea/.name" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/.idea/.name" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/impl/AccountManagerImpl.java" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/app/src/main/AndroidManifest.xml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/src/main/AndroidManifest.xml" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/app/src/androidTest/java/com/telestax/restcomm_helloworld/ApplicationTest.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/src/androidTest/java/org/mobicents/restcomm/android/sipua/ApplicationTest.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/impl/DeviceImpl.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/ISipEventListener.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/ISipManager.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/impl/sipmessages/Invite.java" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/app/src/main/java/com/telestax/restcomm_helloworld/MainActivity.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/impl/sipmessages/Message.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/NotInitializedException.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/impl/sipmessages/Register.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/impl/SipEvent.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/impl/SipManager.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/SipManagerState.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/SipProfile.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/impl/SoundManager.java" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/impl/UserCredentialsImpl.java" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/app/src/main/res/layout/activity_main.xml" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/app/app.iml" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/build.gradle" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/app/build.gradle" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/build.gradle" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/.idea/compiler.xml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/.idea/compiler.xml" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/app/src/main/res/values/dimens.xml" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/app/src/main/res/values-w820dp/dimens.xml" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/gradle/wrapper/gradle-wrapper.properties" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/gradle/wrapper/gradle-wrapper.properties" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/gradle.properties" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/.idea/gradle.xml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/.idea/gradle.xml" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/gradlew.bat" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/gradlew.bat" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/gradlew" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/gradlew" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/local.properties" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/app/src/main/res/menu/menu_main.xml" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/.idea/misc.xml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/.idea/misc.xml" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/.idea/modules.xml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/.idea/modules.xml" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/.idea/copyright/profiles_settings.xml" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/app/proguard-rules.pro" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/.idea/copyright/profiles_settings.xml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../restcomm.android.client.sdk/proguard-rules.pro" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/proguard-rules.pro" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/restcomm-helloworld.iml" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/settings.gradle" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/sipua/sipua.iml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/sipua.iml" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/app/src/main/res/values/strings.xml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/src/main/res/values/strings.xml" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/app/src/main/res/values/styles.xml" />
       <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../restcomm-helloworld/.idea/vcs.xml" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/libraries/android_jain_sip_ri_1_2_228.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/libraries/android_logging_log4j_1_0_3.xml" afterPath="" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/.idea/vcs.xml" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/.idea/workspace.xml" />
       <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/libraries/appcompat_v7_21_0_3.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/libraries/appcompat_v7_22_2_0.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/libraries/concurrent.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/libraries/jakarta_regexp_1_3.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/libraries/junit_3_8_1.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/libraries/log4j_1_2_15.xml" afterPath="" />
       <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/libraries/support_annotations_21_0_3.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/libraries/support_annotations_22_2_0.xml" afterPath="" />
       <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/libraries/support_v4_21_0_3.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/.idea/libraries/support_v4_22_2_0.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/libs/android-jain-sip-ri-1.2.228.jar" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/libs/android-logging-log4j-1.0.3.jar" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/libs/concurrent.jar" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/libs/jakarta-regexp-1.3.jar" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/libs/junit-3.8.1.jar" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/libs/log4j-1.2.15.jar" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/IDevice.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/ISipEventListener.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/ISipManager.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/NotInitializedException.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/SipManagerState.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/SipProfile.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/impl/AccountManagerImpl.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/impl/DeviceImpl.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/impl/SipEvent.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/impl/SipManager.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/impl/SoundManager.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/impl/UserCredentialsImpl.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/impl/sipmessages/Invite.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/impl/sipmessages/Message.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/impl/sipmessages/Register.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/ui/IncomingCall.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/ui/NotifyMessage.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/.gitignore" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/build.gradle" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/proguard-rules.pro" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/restcomm.android.client.sdk.iml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/src/androidTest/java/org/mobicents/restcomm/android/client/sdk/ApplicationTest.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/src/main/AndroidManifest.xml" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCClient.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCConnection.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCConnectionListener.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCDevice.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCDeviceListener.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCInitListener.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCPresenceEvent.java" afterPath="" />
-      <change type="DELETED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/src/main/res/values/strings.xml" afterPath="" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/app/libs/android-jain-sip-ri-1.2.228.jar" afterPath="$PROJECT_DIR$/../../sipua/libs/android-jain-sip-ri-1.2.228.jar" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/app/libs/android-logging-log4j-1.0.3.jar" afterPath="$PROJECT_DIR$/../../sipua/libs/android-logging-log4j-1.0.3.jar" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/app/libs/concurrent.jar" afterPath="$PROJECT_DIR$/../../sipua/libs/concurrent.jar" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/app/libs/jakarta-regexp-1.3.jar" afterPath="$PROJECT_DIR$/../../sipua/libs/jakarta-regexp-1.3.jar" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/app/libs/junit-3.8.1.jar" afterPath="$PROJECT_DIR$/../../sipua/libs/junit-3.8.1.jar" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/app/libs/log4j-1.2.15.jar" afterPath="$PROJECT_DIR$/../../sipua/libs/log4j-1.2.15.jar" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/IDevice.java" afterPath="$PROJECT_DIR$/../../org/mobicents/restcomm/android/sdk/IDevice.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/ISipEventListener.java" afterPath="$PROJECT_DIR$/../../org/mobicents/restcomm/android/sdk/ISipEventListener.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/ISipManager.java" afterPath="$PROJECT_DIR$/../../org/mobicents/restcomm/android/sdk/ISipManager.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/NotInitializedException.java" afterPath="$PROJECT_DIR$/../../org/mobicents/restcomm/android/sdk/NotInitializedException.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/SipManagerState.java" afterPath="$PROJECT_DIR$/../../org/mobicents/restcomm/android/sdk/SipManagerState.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/SipProfile.java" afterPath="$PROJECT_DIR$/../../org/mobicents/restcomm/android/sdk/SipProfile.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/impl/AccountManagerImpl.java" afterPath="$PROJECT_DIR$/../../org/mobicents/restcomm/android/sdk/impl/AccountManagerImpl.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/impl/DeviceImpl.java" afterPath="$PROJECT_DIR$/../../org/mobicents/restcomm/android/sdk/impl/DeviceImpl.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/impl/SipEvent.java" afterPath="$PROJECT_DIR$/../../org/mobicents/restcomm/android/sdk/impl/SipEvent.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/impl/SipManager.java" afterPath="$PROJECT_DIR$/../../org/mobicents/restcomm/android/sdk/impl/SipManager.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/impl/SoundManager.java" afterPath="$PROJECT_DIR$/../../org/mobicents/restcomm/android/sdk/impl/SoundManager.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/impl/UserCredentialsImpl.java" afterPath="$PROJECT_DIR$/../../org/mobicents/restcomm/android/sdk/impl/UserCredentialsImpl.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/impl/sipmessages/Invite.java" afterPath="$PROJECT_DIR$/../../org/mobicents/restcomm/android/sdk/impl/sipmessages/Invite.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/impl/sipmessages/Message.java" afterPath="$PROJECT_DIR$/../../org/mobicents/restcomm/android/sdk/impl/sipmessages/Message.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/impl/sipmessages/Register.java" afterPath="$PROJECT_DIR$/../../org/mobicents/restcomm/android/sdk/impl/sipmessages/Register.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/ui/IncomingCall.java" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/sipmessagetest/IncomingCall.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/app/src/main/java/org/mobicents/restcomm/android/sdk/ui/NotifyMessage.java" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/sipmessagetest/NotifyMessage.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/.gitignore" afterPath="$PROJECT_DIR$/../restcomm-helloworld/app/.gitignore" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/build.gradle" afterPath="$PROJECT_DIR$/../../restcomm.android.client.sdk/build.gradle" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/proguard-rules.pro" afterPath="$PROJECT_DIR$/../restcomm-helloworld/app/proguard-rules.pro" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/restcomm.android.client.sdk.iml" afterPath="$PROJECT_DIR$/../../restcomm.android.client.sdk/restcomm.android.client.sdk.iml" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/src/androidTest/java/org/mobicents/restcomm/android/client/sdk/ApplicationTest.java" afterPath="$PROJECT_DIR$/../../restcomm.android.client.sdk/src/androidTest/java/org/mobicents/restcomm/android/client/sdk/ApplicationTest.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/src/main/AndroidManifest.xml" afterPath="$PROJECT_DIR$/../../restcomm.android.client.sdk/src/main/AndroidManifest.xml" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCClient.java" afterPath="$PROJECT_DIR$/../../restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCClient.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCConnection.java" afterPath="$PROJECT_DIR$/../../restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCConnection.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCConnectionListener.java" afterPath="$PROJECT_DIR$/../../restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCConnectionListener.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCDevice.java" afterPath="$PROJECT_DIR$/../../restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCDevice.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCDeviceListener.java" afterPath="$PROJECT_DIR$/../../restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCDeviceListener.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCInitListener.java" afterPath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/IDevice.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCPresenceEvent.java" afterPath="$PROJECT_DIR$/../../restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCPresenceEvent.java" />
+      <change type="MOVED" beforePath="$PROJECT_DIR$/restcomm.android.client.sdk/src/main/res/values/strings.xml" afterPath="$PROJECT_DIR$/../../restcomm.android.client.sdk/src/main/res/values/strings.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" afterPath="$PROJECT_DIR$/app/src/main/AndroidManifest.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/src/main/java/com/example/sipmessagetest/MainActivity.java" afterPath="$PROJECT_DIR$/app/src/main/java/com/example/sipmessagetest/MainActivity.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/libraries/android_jain_sip_ri_1_2_228.xml" afterPath="$PROJECT_DIR$/.idea/libraries/android_jain_sip_ri_1_2_228.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/libraries/android_logging_log4j_1_0_3.xml" afterPath="$PROJECT_DIR$/.idea/libraries/android_logging_log4j_1_0_3.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/app.iml" afterPath="$PROJECT_DIR$/app/app.iml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/libraries/appcompat_v7_22_2_0.xml" afterPath="$PROJECT_DIR$/.idea/libraries/appcompat_v7_22_2_0.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/app/build.gradle" afterPath="$PROJECT_DIR$/app/build.gradle" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/libraries/concurrent.xml" afterPath="$PROJECT_DIR$/.idea/libraries/concurrent.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/gradle.xml" afterPath="$PROJECT_DIR$/.idea/gradle.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/libraries/jakarta_regexp_1_3.xml" afterPath="$PROJECT_DIR$/.idea/libraries/jakarta_regexp_1_3.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/libraries/junit_3_8_1.xml" afterPath="$PROJECT_DIR$/.idea/libraries/junit_3_8_1.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/libraries/log4j_1_2_15.xml" afterPath="$PROJECT_DIR$/.idea/libraries/log4j_1_2_15.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/modules.xml" afterPath="$PROJECT_DIR$/.idea/modules.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/settings.gradle" afterPath="$PROJECT_DIR$/settings.gradle" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/libraries/support_v4_22_2_0.xml" afterPath="$PROJECT_DIR$/.idea/libraries/support_v4_22_2_0.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="JAIN SIP.iws" />
@@ -2517,7 +2552,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="1353" y="23" width="1527" height="1023" extended-state="6" />
-    <editor active="true" />
+    <editor active="false" />
     <layout>
       <window_info id="Palette&#9;" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Designer" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" weight="0.33" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
