@@ -1,9 +1,9 @@
 package com.example.sipmessagetest;
 
-import org.mobicents.restcomm.android.sdk.IDevice;
-import org.mobicents.restcomm.android.sdk.NotInitializedException;
-import org.mobicents.restcomm.android.sdk.SipProfile;
-import org.mobicents.restcomm.android.sdk.impl.DeviceImpl;
+import org.mobicents.restcomm.android.sipua.IDevice;
+import org.mobicents.restcomm.android.sipua.NotInitializedException;
+import org.mobicents.restcomm.android.sipua.SipProfile;
+import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
 import android.support.v7.app.ActionBarActivity;
 import android.text.method.ScrollingMovementMethod;
 import android.content.Intent;

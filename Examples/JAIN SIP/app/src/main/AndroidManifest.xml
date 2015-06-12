@@ -48,11 +48,6 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="org.mobicents.restcomm.android.sdk.ui.IncomingCall"
-            android:label="@string/title_activity_incoming_call"
-            android:theme="@style/Theme.AppCompat.Dialog" >
-        </activity>
-        <activity
             android:name="org.mobicents.restcomm.android.sdk.ui.NotifyMessage"
             android:label="@string/title_activity_notify_message" >
         </activity>

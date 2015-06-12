@@ -1,7 +1,7 @@
 <component name="libraryTable">
   <library name="android-jain-sip-ri-1.2.228">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/app/libs/android-jain-sip-ri-1.2.228.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../sipua/libs/android-jain-sip-ri-1.2.228.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />

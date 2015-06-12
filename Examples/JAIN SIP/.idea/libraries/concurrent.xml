@@ -1,7 +1,7 @@
 <component name="libraryTable">
   <library name="concurrent">
     <CLASSES>
-      <root url="jar://$PROJECT_DIR$/app/libs/concurrent.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../sipua/libs/concurrent.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES />
