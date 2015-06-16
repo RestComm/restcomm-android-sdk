@@ -6,4 +6,5 @@ public interface ISipManager {
 	public void SendDTMF(String digit) throws NotInitializedException;
 	public void Register();
 	public void Call(String to, int localRtpPort) throws NotInitializedException;
+	public void Hangup() throws NotInitializedException;;
 }

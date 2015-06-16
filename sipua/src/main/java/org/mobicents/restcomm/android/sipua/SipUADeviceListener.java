@@ -22,24 +22,9 @@
 
 package org.mobicents.restcomm.android.sipua;
 
-import org.mobicents.restcomm.android.sipua.impl.SipManager;
-import org.mobicents.restcomm.android.sipua.impl.SoundManager;
+import org.mobicents.restcomm.android.sipua.impl.SipEvent;
 
-import android.media.AudioManager;
-
-public interface IDevice  extends ISipEventListener{
-
-	void Register();
-
-	void Call(String to);
-
-	void Hangup();
-
-	void SendMessage(String to, String message);
-
-	void SendDTMF(String digit);
-	
-	SipManager GetSipManager();
-	SoundManager getSoundManager();
-
+public interface SipUADeviceListener {
+    public abstract void onSipUAConnectionArrived(SipEvent event);
+    public abstract void onSipUAMessageArrived(SipEvent event);
 }

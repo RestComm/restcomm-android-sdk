@@ -40,6 +40,7 @@ import android.javax.sip.PeerUnavailableException;
 import android.javax.sip.RequestEvent;
 import android.javax.sip.ResponseEvent;
 import android.javax.sip.ServerTransaction;
+import android.javax.sip.Transaction;
 import android.javax.sip.SipException;
 import android.javax.sip.SipFactory;
 import android.javax.sip.SipListener;
@@ -80,6 +81,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	private boolean initialized;
 	private SipManagerState sipManagerState;
     private HashMap<String,String> customHeaders;
+	private ClientTransaction currentClientTransaction = null;
 
 	public SipProfile getSipProfile() {
 
@@ -366,7 +368,10 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 				}
 
+			} else if (cseq.getMethod().equals(Request.BYE)) {
+				System.out.println("--- Got 200 OK in UAC outgoing BYE");
 			}
+
 		} else if (response.getStatusCode() == Response.DECLINE) {
 			System.out.println("CALL DECLINED");
 			dispatchSipEvent(new SipEvent(this, SipEventType.DECLINED, "", ""));
@@ -388,7 +393,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	private void processBye(Request request,
 			ServerTransaction serverTransactionId) {
 		try {
-			System.out.println("BYE recieved");
+			System.out.println("BYE received");
 			if (serverTransactionId == null) {
 				System.out.println("shootist:  null TID.");
 				return;
@@ -643,7 +648,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	public void RejectCall() {
 		sendBYE(currentCallTransaction.getRequest());
 		sipManagerState = SipManagerState.IDLE;
-
 	}
 
 	@Override
@@ -689,6 +693,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		try {
 			final ClientTransaction transaction = this.sipProvider
 					.getNewClientTransaction(r);
+			currentClientTransaction = transaction;
 			Thread thread = new Thread() {
 				public void run() {
 					try {
@@ -733,6 +738,53 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			e1.printStackTrace();
 		}
 
+	}
+
+	private void sendBYEHangup(ClientTransaction transaction) {
+		final Dialog dialog = transaction.getDialog();
+		Request byeRequest = null;
+		try {
+			byeRequest = dialog.createRequest(Request.BYE);
+		} catch (SipException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		/**/
+		ClientTransaction newTransaction = null;
+		try {
+			newTransaction = sipProvider.getNewClientTransaction(byeRequest);
+		} catch (TransactionUnavailableException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		final ClientTransaction ct = newTransaction;
+		/**/
+		Thread thread = new Thread() {
+			public void run() {
+				try {
+					dialog.sendRequest(ct);
+				} catch (TransactionDoesNotExistException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (SipException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		};
+		thread.start();
+	}
+
+	@Override
+	public void Hangup() throws NotInitializedException
+	{
+		if (!initialized)
+			throw new NotInitializedException("Sip Stack not initialized");
+
+		if (currentClientTransaction != null) {
+			sendBYEHangup(currentClientTransaction);
+			sipManagerState = SipManagerState.IDLE;
+		}
 	}
 
 	@Override

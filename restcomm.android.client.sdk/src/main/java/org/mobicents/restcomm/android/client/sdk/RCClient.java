@@ -25,10 +25,40 @@ package org.mobicents.restcomm.android.client.sdk;
 import java.util.ArrayList;
 import java.util.List;
 import android.content.Context;
+import android.util.Log;
+//import org.mobicents.restcomm.android.client.sdk.RCClient;
 
 public class RCClient {
+    private static RCClient instance = null;
+    static ArrayList<RCDevice> list = new ArrayList<RCDevice>();
+    Context context;
+    private static final String TAG = "RCClient";
+
+
+    protected RCClient() {
+        // Exists only to defeat instantiation.
+    }
+
+    public static RCClient getInstance()
+    {
+        if (instance == null) {
+            instance = new RCClient();
+        }
+        return instance;
+    }
+
     public static void initialize(Context context, RCInitListener listener)
     {
+        if (context == null) {
+            throw new IllegalArgumentException("Error: Context cannot be null");
+        } else if (listener == null) {
+            throw new IllegalArgumentException("Error: Listener cannot be null");
+        } else {
+            RCClient client = RCClient.getInstance();
+            client.context = context;
+            // notify that we are initialized
+            listener.onInitialized();
+        }
     }
 
     public static void shutdown()
@@ -43,13 +73,21 @@ public class RCClient {
 
     public static RCDevice createDevice(String capabilityToken, RCDeviceListener deviceListener)
     {
-        RCDevice device = new RCDevice();
+        RCDevice device = new RCDevice(RCClient.getInstance(), capabilityToken, deviceListener);
+        if (list.size() == 0) {
+            list.add(device);
+        }
+        else {
+            Log.e(TAG, "Error: device already exists -multiple devices not implemented");
+            return null;
+        }
+
         return device;
     }
 
     public List<RCDevice> listDevices()
     {
-        ArrayList<RCDevice> list = new ArrayList<RCDevice>();
+        //ArrayList<RCDevice> list = new ArrayList<RCDevice>();
         return list;
     }
 

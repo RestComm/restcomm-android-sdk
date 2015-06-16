@@ -12,6 +12,8 @@ import java.util.HashMap;
 import org.mobicents.restcomm.android.sipua.IDevice;
 import org.mobicents.restcomm.android.sipua.NotInitializedException;
 import org.mobicents.restcomm.android.sipua.SipProfile;
+import org.mobicents.restcomm.android.sipua.SipUAConnectionListener;
+import org.mobicents.restcomm.android.sipua.SipUADeviceListener;
 import org.mobicents.restcomm.android.sipua.impl.SipEvent.SipEventType;
 // ISSUE#17: commented those, as we need to decouple the UI details
 //import org.mobicents.restcomm.android.sdk.ui.IncomingCall;
@@ -27,6 +29,9 @@ public class DeviceImpl implements IDevice,Serializable {
 	SipProfile sipProfile;
 	SoundManager soundManager;
 	boolean isInitialized;
+	public SipUADeviceListener deviceListener = null;
+	public SipUAConnectionListener connectionListener = null;
+
 	private DeviceImpl(){
 		
 	}
@@ -52,6 +57,9 @@ public class DeviceImpl implements IDevice,Serializable {
 	public void onSipMessage(final SipEvent sipEventObject) {
 		System.out.println("Sip Event fired");
 		if (sipEventObject.type == SipEventType.MESSAGE) {
+			if (this.deviceListener != null)
+				this.deviceListener.onSipUAMessageArrived(new SipEvent(this, SipEvent.SipEventType.MESSAGE, sipEventObject.content, sipEventObject.from));
+
 			/*chatText += sipEventObject.from + ":" + sipEventObject.content
 					+ "\r\n";
 			this.runOnUiThread(new Runnable() {
@@ -71,9 +79,14 @@ public class DeviceImpl implements IDevice,Serializable {
 
 		} else if (sipEventObject.type == SipEventType.CALL_CONNECTED) {
 			this.soundManager.setupAudio(sipEventObject.remoteRtpPort, this.sipProfile.getRemoteIp());
-			// ISSUE#17: commented those, as we need to decouple the UI details
-			//createNotif();
+			if (this.connectionListener != null) {
+				// notify our listener that we are connected
+				this.connectionListener.onSipUAConnected(null);
+			}
 		} else if (sipEventObject.type == SipEventType.LOCAL_RINGING) {
+			if (this.deviceListener != null) {
+				this.deviceListener.onSipUAConnectionArrived(null);
+			}
 			// ISSUE#17: commented those, as we need to decouple the UI details
 			/*
 			Intent i = new Intent(context, IncomingCall.class);
@@ -171,6 +184,16 @@ public class DeviceImpl implements IDevice,Serializable {
 			e.printStackTrace();
 		}
 	}
+
+	@Override
+	public void Hangup() {
+		try {
+			this.sipManager.Hangup();
+		} catch (NotInitializedException e) {
+			e.printStackTrace();
+		}
+	}
+
 	@Override
 	public void SendMessage(String to, String message) {
 		try {
@@ -192,10 +215,6 @@ public class DeviceImpl implements IDevice,Serializable {
 	public void Register() {
 		this.sipManager.Register();
 	}
-
-
-
-
 
 	@Override
 	public SipManager GetSipManager() {

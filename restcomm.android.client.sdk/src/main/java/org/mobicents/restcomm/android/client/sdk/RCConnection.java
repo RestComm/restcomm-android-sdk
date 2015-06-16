@@ -24,8 +24,11 @@ package org.mobicents.restcomm.android.client.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.mobicents.restcomm.android.sipua.SipUAConnectionListener;
+import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
+import org.mobicents.restcomm.android.sipua.impl.SipEvent;
 
-public class RCConnection {
+public class RCConnection implements SipUAConnectionListener {
     public enum ConnectionState {
         PENDING,
         CONNECTING,
@@ -57,7 +60,7 @@ public class RCConnection {
     HashMap<String, String> parameters;
 
     /**
-     *  @abstract Delegate that will be receiving RCConnection events described at RCConnectionDelegate
+     *  @abstract Listener that will be called on RCConnection events described at RCConnectionListener
      */
     RCConnectionListener listener;
 
@@ -65,6 +68,11 @@ public class RCConnection {
      *  @abstract Is connection currently muted? If a connection is muted the remote party cannot hear the local party
      */
     boolean muted;
+
+    public RCConnection(RCConnectionListener connectionListener)
+    {
+        this.listener = connectionListener;
+    }
 
     public ConnectionState getState()
     {
@@ -100,7 +108,7 @@ public class RCConnection {
 
     public void disconnect()
     {
-
+        DeviceImpl.GetInstance().Hangup();
     }
 
     public void setMuted(boolean muted)
@@ -122,4 +130,24 @@ public class RCConnection {
     {
 
     }
+
+    // SipUA Connection Listeners
+    public void onSipUAConnecting(SipEvent event)
+    {
+        this.state = ConnectionState.CONNECTING;
+        this.listener.onConnecting(this);
+    }
+
+    public void onSipUAConnected(SipEvent event)
+    {
+        this.state = ConnectionState.CONNECTED;
+        this.listener.onConnected(this);
+    }
+
+    public void onSipUADisconnected(SipEvent event)
+    {
+        this.state = ConnectionState.DISCONNECTED;
+        this.listener.onDisconnected(this);
+    }
+
 }

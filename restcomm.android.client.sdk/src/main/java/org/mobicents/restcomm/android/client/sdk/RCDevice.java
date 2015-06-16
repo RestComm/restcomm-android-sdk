@@ -26,8 +26,13 @@ import java.util.HashMap;
 import java.util.Map;
 import android.app.PendingIntent;
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
+import org.mobicents.restcomm.android.sipua.SipProfile;
+import org.mobicents.restcomm.android.sipua.SipUADeviceListener;
+import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
+import org.mobicents.restcomm.android.sipua.impl.SipEvent;
+//import java.util.iterator;
 
-public class RCDevice {
+public class RCDevice implements SipUADeviceListener {
     /**
      *  @abstract Device state (**Not Implemented yet**)
      */
@@ -53,6 +58,10 @@ public class RCDevice {
      */
     boolean disconnectSoundEnabled;
 
+    private SipProfile sipProfile;
+    RCDeviceListener deviceListener;
+    RCClient client;
+
     public enum DeviceState {
         OFFLINE,
         READY,
@@ -73,12 +82,24 @@ public class RCDevice {
      *  Initialize a new RCDevice object
      *
      *  @param capabilityToken Capability Token
-     *  @param delegate        Delegate of RCDevice
+     *  @param deviceListener  Delegate of RCDevice
      *
      *  @return Newly initialized object
      */
-    protected RCDevice()
+    protected RCDevice(RCClient client, String capabilityToken, RCDeviceListener deviceListener)
     {
+        this.client = client;
+        this.updateCapabilityToken(capabilityToken);
+        this.deviceListener = deviceListener;
+
+        sipProfile = new SipProfile();
+        // TODO: check if those headers are needed
+        HashMap<String, String> customHeaders = new HashMap<>();
+        customHeaders.put("customHeader1","customValue1");
+        customHeaders.put("customHeader2", "customValue2");
+
+        DeviceImpl deviceImpl = DeviceImpl.GetInstance();
+        deviceImpl.Initialize(client.context, sipProfile, customHeaders);
 
     }
     public void release()
@@ -108,7 +129,14 @@ public class RCDevice {
 
     public RCConnection connect(Map<String, String> parameters, RCConnectionListener listener)
     {
-        RCConnection connection = new RCConnection();
+        RCConnection connection = new RCConnection(listener);
+        connection.incoming = false;
+        connection.state = RCConnection.ConnectionState.PENDING;
+        DeviceImpl.GetInstance().deviceListener = this;
+        DeviceImpl.GetInstance().connectionListener = connection;
+
+        DeviceImpl.GetInstance().Call(parameters.get("username"));
+
         return connection;
     }
 
@@ -168,10 +196,28 @@ public class RCDevice {
 
     public void updateParams(HashMap<String, String> params)
     {
+        for (String key : params.keySet()) {
+            if (key.equals("pref_proxy_ip")) {
+                sipProfile.setRemoteIp(params.get(key));
+            } else if (key.equals("pref_proxy_port")) {
+                sipProfile.setRemotePort(Integer.parseInt(params.get(key)));
+            }  else if (key.equals("pref_sip_user")) {
+                sipProfile.setSipUserName(params.get(key));
+            } else if (key.equals("pref_sip_password")) {
+                sipProfile.setSipPassword(params.get(key));
+            }
+        }
+        DeviceImpl.GetInstance().Register();
+    }
+
+    // SipUA listeners
+    public void onSipUAConnectionArrived(SipEvent event)
+    {
+
+    }
+
+    public void onSipUAMessageArrived(SipEvent event)
+    {
 
     }
 }
-
-
-
-

@@ -1,11 +1,15 @@
 package com.telestax.restcomm_helloworld;
 
-import android.support.v7.app.ActionBarActivity;
+//import android.support.v7.app.ActionBarActivity;
+import android.app.Activity;
+import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.util.Log;
+import android.widget.Button;
+import android.view.View.OnClickListener;
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
@@ -15,32 +19,47 @@ import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
 import org.mobicents.restcomm.android.client.sdk.RCPresenceEvent;
 
 import java.util.HashMap;
-import java.util.Map;
+//import java.util.Map;
 
 
-
-public class MainActivity extends ActionBarActivity implements RCDeviceListener, RCConnectionListener {
+public class MainActivity extends Activity implements RCDeviceListener, RCConnectionListener, OnClickListener {
 
     private RCDevice device;
     private RCConnection connection;
     private HashMap<String, String> params;
     private static final String TAG = "MainActivity";
 
+    // UI elements
+    Button btnRegister;
+    Button btnDial;
+    Button btnHangup;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        // initialize UI
+        btnRegister = (Button)findViewById(R.id.button_register);
+        btnRegister.setOnClickListener(this);
+        btnDial = (Button)findViewById(R.id.button_dial);
+        btnDial.setOnClickListener(this);
+        btnHangup = (Button)findViewById(R.id.button_hangup);
+        btnHangup.setOnClickListener(this);
+
+
         RCClient.initialize(getApplicationContext(), new RCClient.RCInitListener()
         {
             public void onInitialized()
             {
+                Log.i(TAG, "RCClient initialized");
 
             }
 
             public void onError(Exception exception)
             {
-
+                Log.e(TAG, "RCClient initialization error");
             }
 
         });
@@ -50,9 +69,18 @@ public class MainActivity extends ActionBarActivity implements RCDeviceListener,
         connection = null;
         params = new HashMap<String, String>();
 
-        // set AOR and register
+        /*
+        // set AOR and registrar
         params.put("aor", "sip:bob@telestax.com");
         params.put("registrar", "192.168.2.32");
+        */
+
+        params.put("pref_proxy_ip", "192.168.2.32");
+        params.put("pref_proxy_port", "5080");
+        params.put("pref_sip_user", "bob");
+        params.put("pref_sip_password", "1234");
+
+        // register on startup
         device.updateParams(params);
     }
 
@@ -87,26 +115,12 @@ public class MainActivity extends ActionBarActivity implements RCDeviceListener,
                 return;
             }
             HashMap<String, String> connectParams = new HashMap<String, String>();
+            connectParams.put("username", "sip:1235@192.168.2.32:5080");
             connection = device.connect(connectParams, this);
             if (connection == null) {
                 Log.e(TAG, "Error: error connecting");
                 return;
             }
-            /*
-            if (!phone.isConnected()) {
-                Map<String, String> params = new HashMap<String, String>();
-                if (outgoingTextBox.getText().length() > 0) {
-                    String number = outgoingTextBox.getText().toString();
-                    if (inputSelect.getCheckedRadioButtonId() == R.id.input_text) {
-                        number = "client:" + number;
-                    }
-                    params.put("To", number);
-                }
-                phone.connect(params);
-            }
-            else
-                phone.disconnect();
-                */
         }
         else if (view.getId() == R.id.button_hangup) {
             if (connection == null) {
@@ -114,12 +128,9 @@ public class MainActivity extends ActionBarActivity implements RCDeviceListener,
                 return;
             }
             connection.disconnect();
-            /*
-            phone.disconnect();
-            phone.login(clientNameTextBox.getText().toString(),
-                    outgoingCheckBox.isChecked(),
-                    incomingCheckBox.isChecked());
-                    */
+        }
+        else if (view.getId() == R.id.button_register) {
+            device.updateParams(params);
         }
     }
 
@@ -148,17 +159,17 @@ public class MainActivity extends ActionBarActivity implements RCDeviceListener,
     // RCConnection Listeners
     public void onConnecting(RCConnection connection)
     {
-
+        Log.i(TAG, "RCConnection connecting");
     }
 
     public void onConnected(RCConnection connection)
     {
-
+        Log.i(TAG, "RCConnection connected");
     }
 
     public void onDisconnected(RCConnection connection)
     {
-
+        Log.i(TAG, "RCConnection disconnected");
     }
 
 
