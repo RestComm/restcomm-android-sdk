@@ -93,7 +93,8 @@ public class RCConnection implements SipUAConnectionListener {
 
     public void accept()
     {
-
+        DeviceImpl.GetInstance().Accept();
+        this.state = state.CONNECTED;
     }
 
     public void ignore()
@@ -103,12 +104,14 @@ public class RCConnection implements SipUAConnectionListener {
 
     public void reject()
     {
-
+        DeviceImpl.GetInstance().Reject();
+        this.state = state.DISCONNECTED;
     }
 
     public void disconnect()
     {
         DeviceImpl.GetInstance().Hangup();
+        this.state = state.DISCONNECTED;
     }
 
     public void setMuted(boolean muted)

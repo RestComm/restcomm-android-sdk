@@ -12,23 +12,20 @@
       </layout>
     </layouts>
   </component>
+  <component name="AndroidLogFilters">
+    <option name="TOOL_WINDOW_CONFIGURED_FILTER" value="Show only selected application" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="9a463ca9-f1fa-4f73-a9f0-133e94f66f49" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/SipUAConnectionListener.java" />
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/SipUADeviceListener.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../sipua/src/main/AndroidManifest.xml" afterPath="$PROJECT_DIR$/../../sipua/src/main/AndroidManifest.xml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/impl/DeviceImpl.java" afterPath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/impl/DeviceImpl.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/IDevice.java" afterPath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/IDevice.java" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/ISipManager.java" afterPath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/ISipManager.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../restcomm-helloworld/app/src/main/java/com/telestax/restcomm_helloworld/MainActivity.java" afterPath="$PROJECT_DIR$/../restcomm-helloworld/app/src/main/java/com/telestax/restcomm_helloworld/MainActivity.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCClient.java" afterPath="$PROJECT_DIR$/../../restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCClient.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCConnection.java" afterPath="$PROJECT_DIR$/../../restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCConnection.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCDevice.java" afterPath="$PROJECT_DIR$/../../restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCDevice.java" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCDeviceListener.java" afterPath="$PROJECT_DIR$/../../restcomm.android.client.sdk/src/main/java/org/mobicents/restcomm/android/client/sdk/RCDeviceListener.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/impl/SipManager.java" afterPath="$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/impl/SipManager.java" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../restcomm-helloworld/app/src/main/res/layout/activity_main.xml" afterPath="$PROJECT_DIR$/../restcomm-helloworld/app/src/main/res/layout/activity_main.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../restcomm.android.client.sdk/build.gradle" afterPath="$PROJECT_DIR$/../../restcomm.android.client.sdk/build.gradle" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/../../restcomm.android.client.sdk/restcomm.android.client.sdk.iml" afterPath="$PROJECT_DIR$/../../restcomm.android.client.sdk/restcomm.android.client.sdk.iml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
     </list>
     <ignored path="JAIN SIP.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -62,7 +59,7 @@
         <entry file="file://$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/IDevice.java">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="43" column="0" selection-start-line="43" selection-start-column="0" selection-end-line="43" selection-end-column="0" />
+              <caret line="47" column="0" selection-start-line="47" selection-start-column="0" selection-end-line="47" selection-end-column="0" />
               <folding />
             </state>
           </provider>
@@ -72,7 +69,7 @@
         <entry file="file://$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/impl/DeviceImpl.java">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.0">
-              <caret line="190" column="37" selection-start-line="190" selection-start-column="37" selection-end-line="190" selection-end-column="37" />
+              <caret line="201" column="37" selection-start-line="201" selection-start-column="37" selection-end-line="201" selection-end-column="37" />
               <folding>
                 <element signature="imports" expanded="true" />
               </folding>
@@ -84,7 +81,7 @@
         <entry file="file://$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/impl/SipManager.java">
           <provider selected="true" editor-type-id="text-editor">
             <state vertical-scroll-proportion="0.5">
-              <caret line="757" column="32" selection-start-line="757" selection-start-column="32" selection-end-line="757" selection-end-column="32" />
+              <caret line="760" column="32" selection-start-line="760" selection-start-column="32" selection-end-line="760" selection-end-column="32" />
               <folding>
                 <element signature="imports" expanded="true" />
                 <element signature="e#3746#3747#0" expanded="true" />
@@ -92,16 +89,16 @@
                 <element signature="e#3953#3983#0" expanded="true" />
                 <element signature="e#4551#4552#0" expanded="true" />
                 <element signature="e#4576#4577#0" expanded="true" />
-                <element signature="e#23537#23696#0" expanded="true" />
-                <element signature="e#23695#23696#0" expanded="true" />
-                <element signature="e#24205#24364#0" expanded="true" />
-                <element signature="e#24363#24364#0" expanded="true" />
-                <element signature="e#25196#25501#0" expanded="true" />
-                <element signature="e#25500#25501#0" expanded="true" />
-                <element signature="e#26033#26034#0" expanded="true" />
-                <element signature="e#26062#26063#0" expanded="true" />
-                <element signature="e#26119#26120#0" expanded="true" />
-                <element signature="e#26155#26156#0" expanded="true" />
+                <element signature="e#23600#23759#0" expanded="true" />
+                <element signature="e#23758#23759#0" expanded="true" />
+                <element signature="e#24268#24427#0" expanded="true" />
+                <element signature="e#24426#24427#0" expanded="true" />
+                <element signature="e#25259#25564#0" expanded="true" />
+                <element signature="e#25563#25564#0" expanded="true" />
+                <element signature="e#26096#26097#0" expanded="true" />
+                <element signature="e#26125#26126#0" expanded="true" />
+                <element signature="e#26182#26183#0" expanded="true" />
+                <element signature="e#26218#26219#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -2679,7 +2676,7 @@
         <state vertical-scroll-proportion="0.0">
           <caret line="101" column="12" selection-start-line="101" selection-start-column="12" selection-end-line="101" selection-end-column="12" />
           <folding>
-            <element signature="imports" expanded="true" />
+            <element signature="imports" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -2689,7 +2686,7 @@
         <state vertical-scroll-proportion="0.0">
           <caret line="0" column="0" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
           <folding>
-            <element signature="imports" expanded="true" />
+            <element signature="imports" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -2827,6 +2824,7 @@
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
           <caret line="48" column="54" selection-start-line="48" selection-start-column="45" selection-end-line="48" selection-end-column="54" />
+          <folding />
         </state>
       </provider>
     </entry>
@@ -2873,7 +2871,7 @@
         <state vertical-scroll-proportion="0.0">
           <caret line="89" column="13" selection-start-line="89" selection-start-column="13" selection-end-line="89" selection-end-column="13" />
           <folding>
-            <element signature="imports" expanded="true" />
+            <element signature="imports" expanded="false" />
           </folding>
         </state>
       </provider>
@@ -2967,7 +2965,7 @@
     <entry file="file://$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/IDevice.java">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="43" column="0" selection-start-line="43" selection-start-column="0" selection-end-line="43" selection-end-column="0" />
+          <caret line="47" column="0" selection-start-line="47" selection-start-column="0" selection-end-line="47" selection-end-column="0" />
           <folding />
         </state>
       </provider>
@@ -2991,7 +2989,7 @@
     <entry file="file://$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/impl/DeviceImpl.java">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.0">
-          <caret line="190" column="37" selection-start-line="190" selection-start-column="37" selection-end-line="190" selection-end-column="37" />
+          <caret line="201" column="37" selection-start-line="201" selection-start-column="37" selection-end-line="201" selection-end-column="37" />
           <folding>
             <element signature="imports" expanded="true" />
           </folding>
@@ -3041,7 +3039,7 @@
     <entry file="file://$PROJECT_DIR$/../../sipua/src/main/java/org/mobicents/restcomm/android/sipua/impl/SipManager.java">
       <provider selected="true" editor-type-id="text-editor">
         <state vertical-scroll-proportion="0.5">
-          <caret line="757" column="32" selection-start-line="757" selection-start-column="32" selection-end-line="757" selection-end-column="32" />
+          <caret line="760" column="32" selection-start-line="760" selection-start-column="32" selection-end-line="760" selection-end-column="32" />
           <folding>
             <element signature="imports" expanded="true" />
             <element signature="e#3746#3747#0" expanded="true" />
@@ -3049,16 +3047,16 @@
             <element signature="e#3953#3983#0" expanded="true" />
             <element signature="e#4551#4552#0" expanded="true" />
             <element signature="e#4576#4577#0" expanded="true" />
-            <element signature="e#23537#23696#0" expanded="true" />
-            <element signature="e#23695#23696#0" expanded="true" />
-            <element signature="e#24205#24364#0" expanded="true" />
-            <element signature="e#24363#24364#0" expanded="true" />
-            <element signature="e#25196#25501#0" expanded="true" />
-            <element signature="e#25500#25501#0" expanded="true" />
-            <element signature="e#26033#26034#0" expanded="true" />
-            <element signature="e#26062#26063#0" expanded="true" />
-            <element signature="e#26119#26120#0" expanded="true" />
-            <element signature="e#26155#26156#0" expanded="true" />
+            <element signature="e#23600#23759#0" expanded="true" />
+            <element signature="e#23758#23759#0" expanded="true" />
+            <element signature="e#24268#24427#0" expanded="true" />
+            <element signature="e#24426#24427#0" expanded="true" />
+            <element signature="e#25259#25564#0" expanded="true" />
+            <element signature="e#25563#25564#0" expanded="true" />
+            <element signature="e#26096#26097#0" expanded="true" />
+            <element signature="e#26125#26126#0" expanded="true" />
+            <element signature="e#26182#26183#0" expanded="true" />
+            <element signature="e#26218#26219#0" expanded="true" />
           </folding>
         </state>
       </provider>

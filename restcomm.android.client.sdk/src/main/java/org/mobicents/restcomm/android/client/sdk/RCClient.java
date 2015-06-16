@@ -26,6 +26,8 @@ import java.util.ArrayList;
 import java.util.List;
 import android.content.Context;
 import android.util.Log;
+
+import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
 //import org.mobicents.restcomm.android.client.sdk.RCClient;
 
 public class RCClient {
@@ -81,6 +83,8 @@ public class RCClient {
             Log.e(TAG, "Error: device already exists -multiple devices not implemented");
             return null;
         }
+
+        DeviceImpl.GetInstance().deviceListener = device;
 
         return device;
     }

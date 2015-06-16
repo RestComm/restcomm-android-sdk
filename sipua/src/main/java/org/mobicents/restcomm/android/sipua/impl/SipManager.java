@@ -500,13 +500,15 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				return;
 			currentCallTransaction = st;
 
-			System.out.println("INVITE: with Authorization, sending Trying");
+			//System.out.println("INVITE: with Authorization, sending Trying");
+			System.out.println("INVITE: sending Trying");
 			Response response = messageFactory.createResponse(Response.TRYING,
 					request);
 			st.sendResponse(response);
 			System.out.println("INVITE:Trying Sent");
-			// Verify AUTHORIZATION !!!!!!!!!!!!!!!!
 
+			// Verify AUTHORIZATION !!!!!!!!!!!!!!!!
+			/*
 			dsam = new DigestServerAuthenticationHelper();
 
 			if (!dsam.doAuthenticatePlainTextPassword(request,
@@ -523,6 +525,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			System.out
 					.println("INVITE:Incoming Authorization challenge Accepted");
 
+			*/
 			byte[] rawContent = sm.getRawContent();
 			String sdpContent = new String(rawContent, "UTF-8");
 			SDPAnnounceParser parser = new SDPAnnounceParser(sdpContent);

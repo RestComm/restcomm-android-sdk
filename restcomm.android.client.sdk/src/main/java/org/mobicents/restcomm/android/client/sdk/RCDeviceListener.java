@@ -29,5 +29,8 @@ public interface RCDeviceListener {
     public abstract void onStopListening(RCDevice device);
     //public abstract void onStopListening(RCDevice, int, String);
     public abstract boolean receivePresenceEvents(RCDevice device);
+    // TODO: this should be removed and handled via Android Intents, but to make some tests let's leave it as-is for now
+    public abstract void onIncomingConnection(RCDevice device, RCConnection connection);
+    public abstract void onIncomingMessage(RCDevice device, String message);
     public abstract void onPresenceChanged(RCDevice device, RCPresenceEvent presenceEvent);
 }

@@ -8,6 +8,7 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.HashMap;
+import android.javax.sdp.SdpException;
 
 import org.mobicents.restcomm.android.sipua.IDevice;
 import org.mobicents.restcomm.android.sipua.NotInitializedException;
@@ -183,6 +184,16 @@ public class DeviceImpl implements IDevice,Serializable {
 		} catch (NotInitializedException e) {
 			e.printStackTrace();
 		}
+	}
+
+	@Override
+	public void Accept() {
+		sipManager.AcceptCall(soundManager.setupAudioStream(sipProfile.getLocalIp()));
+	}
+
+	@Override
+	public void Reject() {
+		sipManager.RejectCall();
 	}
 
 	@Override

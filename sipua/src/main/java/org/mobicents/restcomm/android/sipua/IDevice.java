@@ -33,6 +33,10 @@ public interface IDevice  extends ISipEventListener{
 
 	void Call(String to);
 
+	void Accept();
+
+	void Reject();
+
 	void Hangup();
 
 	void SendMessage(String to, String message);

@@ -25,7 +25,7 @@ import java.util.HashMap;
 public class MainActivity extends Activity implements RCDeviceListener, RCConnectionListener, OnClickListener {
 
     private RCDevice device;
-    private RCConnection connection;
+    private RCConnection connection, pendingConnection;
     private HashMap<String, String> params;
     private static final String TAG = "MainActivity";
 
@@ -132,6 +132,13 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         else if (view.getId() == R.id.button_register) {
             device.updateParams(params);
         }
+        else if (view.getId() == R.id.button_answer) {
+            this.pendingConnection.accept();
+        }
+        else if (view.getId() == R.id.button_decline) {
+            this.pendingConnection.reject();
+        }
+
     }
 
     // RCDevice Listeners
@@ -154,6 +161,18 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
     {
 
     }
+
+    public void onIncomingConnection(RCDevice device, RCConnection connection)
+    {
+        Log.i(TAG, "Connection arrived");
+        this.pendingConnection = connection;
+    }
+
+    public void onIncomingMessage(RCDevice device, String message)
+    {
+        Log.i(TAG, "Message arrived: message");
+    }
+
 
 
     // RCConnection Listeners

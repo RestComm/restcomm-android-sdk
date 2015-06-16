@@ -132,7 +132,7 @@ public class RCDevice implements SipUADeviceListener {
         RCConnection connection = new RCConnection(listener);
         connection.incoming = false;
         connection.state = RCConnection.ConnectionState.PENDING;
-        DeviceImpl.GetInstance().deviceListener = this;
+        //DeviceImpl.GetInstance().deviceListener = this;
         DeviceImpl.GetInstance().connectionListener = connection;
 
         DeviceImpl.GetInstance().Call(parameters.get("username"));
@@ -213,11 +213,20 @@ public class RCDevice implements SipUADeviceListener {
     // SipUA listeners
     public void onSipUAConnectionArrived(SipEvent event)
     {
+        RCConnectionListener connectionListener = (RCConnectionListener)this.listener;
+        RCConnection connection = new RCConnection(connectionListener);
+        connection.incoming = true;
+        connection.state = RCConnection.ConnectionState.CONNECTING;
+        //DeviceImpl.GetInstance().deviceListener = this;
+        DeviceImpl.GetInstance().connectionListener = connection;
 
+        //DeviceImpl.GetInstance().Call(parameters.get("username"));
+        //return connection;
+        this.listener.onIncomingConnection(this,connection);
     }
 
     public void onSipUAMessageArrived(SipEvent event)
     {
-
+        this.listener.onIncomingMessage(this, event.content);
     }
 }
