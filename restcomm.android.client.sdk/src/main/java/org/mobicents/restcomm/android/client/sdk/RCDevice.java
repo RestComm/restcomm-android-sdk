@@ -59,7 +59,7 @@ public class RCDevice implements SipUADeviceListener {
     boolean disconnectSoundEnabled;
 
     private SipProfile sipProfile;
-    RCDeviceListener deviceListener;
+    //RCDeviceListener deviceListener;
     RCClient client;
 
     public enum DeviceState {
@@ -90,7 +90,7 @@ public class RCDevice implements SipUADeviceListener {
     {
         this.client = client;
         this.updateCapabilityToken(capabilityToken);
-        this.deviceListener = deviceListener;
+        this.listener = deviceListener;
 
         sipProfile = new SipProfile();
         // TODO: check if those headers are needed
@@ -132,7 +132,7 @@ public class RCDevice implements SipUADeviceListener {
         RCConnection connection = new RCConnection(listener);
         connection.incoming = false;
         connection.state = RCConnection.ConnectionState.PENDING;
-        //DeviceImpl.GetInstance().deviceListener = this;
+        //DeviceImpl.GetInstance().listener = this;
         DeviceImpl.GetInstance().connectionListener = connection;
 
         DeviceImpl.GetInstance().Call(parameters.get("username"));

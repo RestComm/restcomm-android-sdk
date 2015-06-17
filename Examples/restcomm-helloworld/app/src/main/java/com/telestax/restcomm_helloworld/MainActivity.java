@@ -33,7 +33,8 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
     Button btnRegister;
     Button btnDial;
     Button btnHangup;
-
+    Button btnAnswer;
+    Button btnDecline;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,6 +48,10 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         btnDial.setOnClickListener(this);
         btnHangup = (Button)findViewById(R.id.button_hangup);
         btnHangup.setOnClickListener(this);
+        btnAnswer = (Button)findViewById(R.id.button_answer);
+        btnAnswer.setOnClickListener(this);
+        btnDecline = (Button)findViewById(R.id.button_decline);
+        btnDecline.setOnClickListener(this);
 
 
         RCClient.initialize(getApplicationContext(), new RCClient.RCInitListener()
@@ -134,9 +139,11 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         }
         else if (view.getId() == R.id.button_answer) {
             this.pendingConnection.accept();
+            this.connection = this.pendingConnection;
         }
         else if (view.getId() == R.id.button_decline) {
             this.pendingConnection.reject();
+            this.pendingConnection = null;
         }
 
     }

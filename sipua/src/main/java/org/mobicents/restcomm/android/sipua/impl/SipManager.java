@@ -63,6 +63,12 @@ import android.javax.sip.message.Request;
 import android.javax.sip.message.Response;
 
 public class SipManager implements SipListener, ISipManager, Serializable {
+	enum CallDirection {
+		NONE,
+		INCOMING,
+		OUTGOING,
+	};
+
 	private static SipStack sipStack;
 	public SipProvider sipProvider;
 	public HeaderFactory headerFactory;
@@ -82,47 +88,13 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	private SipManagerState sipManagerState;
     private HashMap<String,String> customHeaders;
 	private ClientTransaction currentClientTransaction = null;
-
-	public SipProfile getSipProfile() {
-
-		return sipProfile;
-	}
-
-	public void setSipProfile(SipProfile sipProfile) {
-		this.sipProfile = sipProfile;
-	}
-
-	public synchronized void addSipListener(ISipEventListener listener) {
-		if (!sipEventListenerList.contains(listener)) {
-			sipEventListenerList.add(listener);
-		}
-	}
-
-	@SuppressWarnings("unchecked")
-	private void dispatchSipEvent(SipEvent sipEvent) {
-		System.out.println("Dispatching event:" + sipEvent.type);
-		ArrayList<ISipEventListener> tmpSipListenerList;
-
-		synchronized (this) {
-			if (sipEventListenerList.size() == 0)
-				return;
-			tmpSipListenerList = (ArrayList<ISipEventListener>) sipEventListenerList
-					.clone();
-		}
-
-		for (ISipEventListener listener : tmpSipListenerList) {
-			listener.onSipMessage(sipEvent);
-		}
-	}
-
-	public SipManager(SipProfile sipProfile) {
-		this.sipProfile = sipProfile;
-		initialize();
-	}
-
-	public boolean isInitialized() {
-		return initialized;
-	}
+	private ServerTransaction currentServerTransaction;
+	public int ackCount = 0;
+	DigestServerAuthenticationHelper dsam;
+	// Is it an outgoing call or incoming call. We're using this so that when we hit
+	// hangup we know which transaction to use, the client or the server (maybe we
+	// could also use dialog.isServer() flag but have found mixed opinions about it)
+	CallDirection direction = CallDirection.NONE;
 
 	private boolean initialize() {
 		sipManagerState = SipManagerState.REGISTERING;
@@ -171,6 +143,48 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		return true;
 	}
 
+	public boolean isInitialized() {
+		return initialized;
+	}
+
+	public SipProfile getSipProfile() {
+
+		return sipProfile;
+	}
+
+	public void setSipProfile(SipProfile sipProfile) {
+		this.sipProfile = sipProfile;
+	}
+
+	public synchronized void addSipListener(ISipEventListener listener) {
+		if (!sipEventListenerList.contains(listener)) {
+			sipEventListenerList.add(listener);
+		}
+	}
+
+	@SuppressWarnings("unchecked")
+	private void dispatchSipEvent(SipEvent sipEvent) {
+		System.out.println("Dispatching event:" + sipEvent.type);
+		ArrayList<ISipEventListener> tmpSipListenerList;
+
+		synchronized (this) {
+			if (sipEventListenerList.size() == 0)
+				return;
+			tmpSipListenerList = (ArrayList<ISipEventListener>) sipEventListenerList
+					.clone();
+		}
+
+		for (ISipEventListener listener : tmpSipListenerList) {
+			listener.onSipMessage(sipEvent);
+		}
+	}
+
+	public SipManager(SipProfile sipProfile) {
+		this.sipProfile = sipProfile;
+		initialize();
+	}
+
+	// Incoming request from JAIN SIP
 	@Override
 	public void processRequest(RequestEvent arg0) {
 		Request request = (Request) arg0.getRequest();
@@ -195,11 +209,12 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 		}
 		if (request.getMethod().equals("INVITE")) {
+			direction = CallDirection.INCOMING;
 			processInvite(arg0, serverTransactionId);
 		}
 	}
 
-	private void sendBYE(Request request) {
+	private void sendDecline(Request request) {
 		Thread thread = new Thread() {
 			public void run() {
 
@@ -207,8 +222,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				try {
 					responseBye = messageFactory.createResponse(
 							Response.DECLINE,
-							currentCallTransaction.getRequest());
-					currentCallTransaction.sendResponse(responseBye);
+							currentServerTransaction.getRequest());
+					currentServerTransaction.sendResponse(responseBye);
 
 				} catch (ParseException e) {
 					// TODO Auto-generated catch block
@@ -223,8 +238,37 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			}
 		};
 		thread.start();
-
+		direction = CallDirection.NONE;
 	}
+
+	/*
+	private void sendByeServer(Request request) {
+		Thread thread = new Thread() {
+			public void run() {
+
+				Response responseBye;
+				try {
+					responseBye = messageFactory.createResponse(
+							Response.,
+							currentServerTransaction.getRequest());
+					currentServerTransaction.sendResponse(responseBye);
+
+				} catch (ParseException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (SipException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (InvalidArgumentException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		};
+		thread.start();
+		direction = CallDirection.NONE;
+	}
+	*/
 
 	private void sendOk(RequestEvent requestEvt) {
 		Response response;
@@ -255,7 +299,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		System.out.println("IOException happened for "
 				+ exceptionEvent.getHost() + " port = "
 				+ exceptionEvent.getPort());
-
 	}
 
 	public void processTransactionTerminated(
@@ -274,6 +317,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		System.out.println("Transaction Time out");
 	}
 
+	// Incoming request from JAIN SIP
 	@Override
 	public void processResponse(ResponseEvent arg0) {
 
@@ -459,10 +503,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		return viaHeaders;
 	}
 
-	public int ackCount = 0;
-	DigestServerAuthenticationHelper dsam;
-	private ServerTransaction currentCallTransaction;
-
 	public Address createContactAddress() {
 		try {
 			return this.addressFactory.createAddress("sip:"
@@ -482,7 +522,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				&& sipManagerState != SipManagerState.READY
 				&& sipManagerState != SipManagerState.INCOMING
 				) {
-			// sendBYE(requestEvent.getRequest());// Already in a call
+			// sendDecline(requestEvent.getRequest());// Already in a call
 			return;
 		}
 		sipManagerState = SipManagerState.INCOMING;
@@ -498,7 +538,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			}
 			if (st == null)
 				return;
-			currentCallTransaction = st;
+			currentServerTransaction = st;
 
 			//System.out.println("INVITE: with Authorization, sending Trying");
 			System.out.println("INVITE: sending Trying");
@@ -558,16 +598,17 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		}
 	}
 
+	// Accept incoming call
 	public void AcceptCall(final int port) {
-		if (currentCallTransaction == null)
+		if (currentServerTransaction == null)
 			return;
 		Thread thread = new Thread() {
 			public void run() {
 				try {
-					SIPMessage sm = (SIPMessage) currentCallTransaction
+					SIPMessage sm = (SIPMessage) currentServerTransaction
 							.getRequest();
 					Response responseOK = messageFactory.createResponse(
-							Response.OK, currentCallTransaction.getRequest());
+							Response.OK, currentServerTransaction.getRequest());
 					Address address = createContactAddress();
 					ContactHeader contactHeader = headerFactory
 							.createContactHeader(address);
@@ -630,7 +671,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 							.createContentTypeHeader("application", "sdp");
 					responseOK.setContent(contents, contentTypeHeader);
 
-					currentCallTransaction.sendResponse(responseOK);
+					currentServerTransaction.sendResponse(responseOK);
 					dispatchSipEvent(new SipEvent(this,
 							SipEventType.CALL_CONNECTED, "", sm.getFrom()
 									.getAddress().toString(), remoteRtpPort));
@@ -649,7 +690,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	public void RejectCall() {
-		sendBYE(currentCallTransaction.getRequest());
+		sendDecline(currentServerTransaction.getRequest());
 		sipManagerState = SipManagerState.IDLE;
 	}
 
@@ -710,6 +751,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		} catch (TransactionUnavailableException e) {
 			e.printStackTrace();
 		}
+		direction = CallDirection.OUTGOING;
 	}
 
 	@Override
@@ -743,7 +785,9 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	}
 
-	private void sendBYEHangup(ClientTransaction transaction) {
+	// introduced separate sendByeClient method because the client initiated BYE
+	// is different -at some point we should merge those methods
+	private void sendByeClient(Transaction transaction) {
 		final Dialog dialog = transaction.getDialog();
 		Request byeRequest = null;
 		try {
@@ -776,6 +820,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			}
 		};
 		thread.start();
+		direction = CallDirection.NONE;
 	}
 
 	@Override
@@ -784,9 +829,17 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		if (!initialized)
 			throw new NotInitializedException("Sip Stack not initialized");
 
-		if (currentClientTransaction != null) {
-			sendBYEHangup(currentClientTransaction);
-			sipManagerState = SipManagerState.IDLE;
+		if (direction == CallDirection.OUTGOING) {
+			if (currentClientTransaction != null) {
+				sendByeClient(currentClientTransaction);
+				sipManagerState = SipManagerState.IDLE;
+			}
+		}
+		else if (direction == CallDirection.INCOMING) {
+			if (currentServerTransaction != null) {
+				sendByeClient(currentServerTransaction);
+				sipManagerState = SipManagerState.IDLE;
+			}
 		}
 	}
 
