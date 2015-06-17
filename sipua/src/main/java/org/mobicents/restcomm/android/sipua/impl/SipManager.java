@@ -95,6 +95,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	// hangup we know which transaction to use, the client or the server (maybe we
 	// could also use dialog.isServer() flag but have found mixed opinions about it)
 	CallDirection direction = CallDirection.NONE;
+	private int remoteRtpPort;
 
 	private boolean initialize() {
 		sipManagerState = SipManagerState.REGISTERING;
@@ -206,7 +207,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			processBye(request, serverTransactionId);
 			dispatchSipEvent(new SipEvent(this, SipEventType.BYE, "", sp
 					.getFrom().getAddress().toString()));
-
 		}
 		if (request.getMethod().equals("INVITE")) {
 			direction = CallDirection.INCOMING;
@@ -414,6 +414,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 			} else if (cseq.getMethod().equals(Request.BYE)) {
 				System.out.println("--- Got 200 OK in UAC outgoing BYE");
+				dispatchSipEvent(new SipEvent(this, SipEventType.BYE, "", ""));
 			}
 
 		} else if (response.getStatusCode() == Response.DECLINE) {
@@ -513,8 +514,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			return null;
 		}
 	}
-
-	private int remoteRtpPort;
 
 	private void processInvite(RequestEvent requestEvent,
 			ServerTransaction serverTransaction) {
