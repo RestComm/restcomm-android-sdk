@@ -1,7 +1,8 @@
-package com.telestax.restcomm_helloworld;
+package com.telestax.restcomm_messenger;
 
 //import android.support.v7.app.ActionBarActivity;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.view.Menu;
@@ -12,6 +13,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.view.View.OnClickListener;
 import android.widget.TextView;
+import android.net.wifi.WifiManager;
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
@@ -36,6 +38,13 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
     Button btnRegister;
     Button btnDial;
     Button btnHangup;
+    Button btnAnswer;
+    Button btnDecline;
+    Button btnCancel;
+    Button btnSend;
+    EditText txtUri;
+    EditText txtMessage;
+    EditText txtWall;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -43,12 +52,23 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         setContentView(R.layout.activity_main);
 
         // initialize UI
-        //btnRegister = (Button)findViewById(R.id.button_register);
-        //btnRegister.setOnClickListener(this);
+        btnRegister = (Button)findViewById(R.id.button_register);
+        btnRegister.setOnClickListener(this);
         btnDial = (Button)findViewById(R.id.button_dial);
         btnDial.setOnClickListener(this);
         btnHangup = (Button)findViewById(R.id.button_hangup);
         btnHangup.setOnClickListener(this);
+        btnAnswer = (Button)findViewById(R.id.button_answer);
+        btnAnswer.setOnClickListener(this);
+        btnDecline = (Button)findViewById(R.id.button_decline);
+        btnDecline.setOnClickListener(this);
+        btnCancel = (Button)findViewById(R.id.button_cancel);
+        btnCancel.setOnClickListener(this);
+        btnSend = (Button)findViewById(R.id.button_send);
+        btnSend.setOnClickListener(this);
+        txtUri = (EditText)findViewById(R.id.text_uri);
+        txtMessage = (EditText)findViewById(R.id.text_message);
+        txtWall = (EditText)findViewById(R.id.text_wall);
 
         RCClient.initialize(getApplicationContext(), new RCClient.RCInitListener()
         {
@@ -70,18 +90,32 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         connection = null;
         params = new HashMap<String, String>();
 
-        /*
         // set AOR and registrar
-        params.put("aor", "sip:bob@telestax.com");
-        params.put("registrar", "192.168.2.32");
-        */
-
         params.put("pref_proxy_ip", "192.168.2.32");
         params.put("pref_proxy_port", "5080");
         params.put("pref_sip_user", "bob");
         params.put("pref_sip_password", "1234");
-        // register on startup
-        device.updateParams(params);
+
+        WifiManager wifi = (WifiManager)getSystemService(getApplicationContext().WIFI_SERVICE);
+        if (wifi.isWifiEnabled()) {
+            // register on startup
+            device.updateParams(params);
+        }
+        else {
+            AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+            alertDialog.setTitle("No Connectivity");
+            alertDialog.setMessage("Please turn on Network Connectivity");
+            alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    });
+            alertDialog.show();
+        }
+
+        txtUri.setText("sip:1234@192.168.2.32:5080");
+        txtMessage.setText("Hello there!");
     }
 
     @Override
@@ -114,7 +148,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
                 return;
             }
             HashMap<String, String> connectParams = new HashMap<String, String>();
-            connectParams.put("username", "sip:1235@192.168.2.32:5080");
+            connectParams.put("username", txtUri.getText().toString());
             connection = device.connect(connectParams, this);
             if (connection == null) {
                 Log.e(TAG, "Error: error connecting");
@@ -126,6 +160,29 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
                 return;
             }
             connection.disconnect();
+        } else if (view.getId() == R.id.button_register) {
+            device.updateParams(params);
+        } else if (view.getId() == R.id.button_answer) {
+            pendingConnection.accept();
+            connection = this.pendingConnection;
+        } else if (view.getId() == R.id.button_decline) {
+            pendingConnection.reject();
+            pendingConnection = null;
+        } else if (view.getId() == R.id.button_cancel) {
+            if (connection == null) {
+                Log.e(TAG, "Error: not connected");
+                return;
+            }
+            connection.disconnect();
+        } else if (view.getId() == R.id.button_send) {
+            HashMap<String, String> sendParams = new HashMap<String, String>();
+            sendParams.put("username", txtUri.getText().toString());
+            device.sendMessage(txtMessage.getText().toString(), sendParams);
+
+            // also output the message in the wall
+            String text = txtWall.getText().toString();
+            String newText = "Me: " + txtMessage.getText().toString() + "\n" + text;
+            txtWall.setText(newText, TextView.BufferType.EDITABLE);
         }
     }
 
@@ -165,8 +222,10 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                String newText = finalParameters.get("username") + ": " + finalMessage + "\n";
-                Log.i(TAG, "Message arrived: " + newText);
+                String text = txtWall.getText().toString();
+                String newText = finalParameters.get("username") + ": " + finalMessage + "\n" + text;
+                txtWall.setText(newText, TextView.BufferType.EDITABLE);
+                Log.i(TAG, "Message arrived: message");
             }
         });
     }

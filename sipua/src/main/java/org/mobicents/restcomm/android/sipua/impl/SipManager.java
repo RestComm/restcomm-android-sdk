@@ -317,7 +317,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		System.out.println("Transaction Time out");
 	}
 
-	// Incoming request from JAIN SIP
+	// Incoming response from JAIN SIP
 	@Override
 	public void processResponse(ResponseEvent arg0) {
 
@@ -428,6 +428,9 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		} else if (response.getStatusCode() == Response.BUSY_HERE) {
 			System.out.println("BUSY");
 			dispatchSipEvent(new SipEvent(this, SipEventType.BUSY_HERE, "", ""));
+		} else if (response.getStatusCode() == Response.RINGING) {
+			System.out.println("RINGING");
+			dispatchSipEvent(new SipEvent(this, SipEventType.REMOTE_RINGING, "", ""));
 		} else if (response.getStatusCode() == Response.SERVICE_UNAVAILABLE) {
 			System.out.println("BUSY");
 			dispatchSipEvent(new SipEvent(this,
@@ -597,6 +600,90 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		}
 	}
 
+	// introduced separate sendByeClient method because the client initiated BYE
+	// is different -at some point we should merge those methods
+	private void sendByeClient(Transaction transaction) {
+		final Dialog dialog = transaction.getDialog();
+		Request byeRequest = null;
+		try {
+			byeRequest = dialog.createRequest(Request.BYE);
+		} catch (SipException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		/**/
+		ClientTransaction newTransaction = null;
+		try {
+			newTransaction = sipProvider.getNewClientTransaction(byeRequest);
+		} catch (TransactionUnavailableException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		final ClientTransaction ct = newTransaction;
+		/**/
+		Thread thread = new Thread() {
+			public void run() {
+				try {
+					dialog.sendRequest(ct);
+				} catch (TransactionDoesNotExistException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (SipException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		};
+		thread.start();
+		direction = CallDirection.NONE;
+	}
+
+	private void sendCancel(ClientTransaction transaction) {
+		try {
+			Request request = transaction.createCancel();
+			ClientTransaction cancelTransaction = sipProvider.getNewClientTransaction(request);
+			cancelTransaction.sendRequest();
+		} catch (SipException e) {
+			e.printStackTrace();
+		}
+		/*
+		final Dialog dialog = transaction.getDialog();
+		Request byeRequest = null;
+		try {
+			byeRequest = dialog.createRequest(Request.BYE);
+		} catch (SipException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		ClientTransaction newTransaction = null;
+		try {
+			newTransaction = sipProvider.getNewClientTransaction(byeRequest);
+		} catch (TransactionUnavailableException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		final ClientTransaction ct = newTransaction;
+
+		Thread thread = new Thread() {
+			public void run() {
+				try {
+					dialog.sendRequest(ct);
+				} catch (TransactionDoesNotExistException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				} catch (SipException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+			}
+		};
+		thread.start();
+		direction = CallDirection.NONE;
+		*/
+	}
+
+	// Client API (used by DeviceImpl
 	// Accept incoming call
 	public void AcceptCall(final int port) {
 		if (currentServerTransaction == null)
@@ -784,44 +871,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	}
 
-	// introduced separate sendByeClient method because the client initiated BYE
-	// is different -at some point we should merge those methods
-	private void sendByeClient(Transaction transaction) {
-		final Dialog dialog = transaction.getDialog();
-		Request byeRequest = null;
-		try {
-			byeRequest = dialog.createRequest(Request.BYE);
-		} catch (SipException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		/**/
-		ClientTransaction newTransaction = null;
-		try {
-			newTransaction = sipProvider.getNewClientTransaction(byeRequest);
-		} catch (TransactionUnavailableException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		final ClientTransaction ct = newTransaction;
-		/**/
-		Thread thread = new Thread() {
-			public void run() {
-				try {
-					dialog.sendRequest(ct);
-				} catch (TransactionDoesNotExistException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (SipException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-			}
-		};
-		thread.start();
-		direction = CallDirection.NONE;
-	}
-
 	@Override
 	public void Hangup() throws NotInitializedException
 	{
@@ -837,6 +886,19 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		else if (direction == CallDirection.INCOMING) {
 			if (currentServerTransaction != null) {
 				sendByeClient(currentServerTransaction);
+				sipManagerState = SipManagerState.IDLE;
+			}
+		}
+	}
+
+	public void Cancel() throws NotInitializedException
+	{
+		if (!initialized)
+			throw new NotInitializedException("Sip Stack not initialized");
+
+		if (direction == CallDirection.OUTGOING) {
+			if (currentClientTransaction != null) {
+				sendCancel(currentClientTransaction);
 				sipManagerState = SipManagerState.IDLE;
 			}
 		}

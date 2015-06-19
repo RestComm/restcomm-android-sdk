@@ -24,6 +24,8 @@ package org.mobicents.restcomm.android.client.sdk;
 
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
 
+import java.util.HashMap;
+
 public interface RCDeviceListener {
     public abstract void onStartListening(RCDevice device);
     public abstract void onStopListening(RCDevice device);
@@ -31,6 +33,6 @@ public interface RCDeviceListener {
     public abstract boolean receivePresenceEvents(RCDevice device);
     // TODO: this should be removed and handled via Android Intents, but to make some tests let's leave it as-is for now
     public abstract void onIncomingConnection(RCDevice device, RCConnection connection);
-    public abstract void onIncomingMessage(RCDevice device, String message);
+    public abstract void onIncomingMessage(RCDevice device, String message, HashMap<String, String> parameters);
     public abstract void onPresenceChanged(RCDevice device, RCPresenceEvent presenceEvent);
 }

@@ -23,32 +23,4 @@
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true" />
 
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Register"
-        android:id="@+id/button_register"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Answer"
-        android:id="@+id/button_answer"
-        android:layout_above="@+id/button_dial"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_marginBottom="34dp" />
-
-    <Button
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Decline"
-        android:id="@+id/button_decline"
-        android:layout_alignTop="@+id/button_answer"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
-
 </RelativeLayout>

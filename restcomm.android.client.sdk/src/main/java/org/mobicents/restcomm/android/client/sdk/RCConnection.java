@@ -110,7 +110,12 @@ public class RCConnection implements SipUAConnectionListener {
 
     public void disconnect()
     {
-        DeviceImpl.GetInstance().Hangup();
+        if (state == ConnectionState.CONNECTING) {
+            DeviceImpl.GetInstance().Cancel();
+        }
+        else if (state == ConnectionState.CONNECTED) {
+            DeviceImpl.GetInstance().Hangup();
+        }
         this.state = state.DISCONNECTED;
     }
 

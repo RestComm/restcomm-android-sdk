@@ -84,6 +84,11 @@ public class DeviceImpl implements IDevice,Serializable {
 				// notify our listener that we are connected
 				this.connectionListener.onSipUAConnected(null);
 			}
+		} else if (sipEventObject.type == SipEventType.REMOTE_RINGING) {
+			if (this.connectionListener != null) {
+				// notify our listener that we are connected
+				this.connectionListener.onSipUAConnecting(null);
+			}
 		} else if (sipEventObject.type == SipEventType.LOCAL_RINGING) {
 			if (this.deviceListener != null) {
 				this.deviceListener.onSipUAConnectionArrived(null);
@@ -194,6 +199,15 @@ public class DeviceImpl implements IDevice,Serializable {
 	@Override
 	public void Reject() {
 		sipManager.RejectCall();
+	}
+
+	@Override
+	public void Cancel() {
+		try {
+			sipManager.Cancel();
+		} catch (NotInitializedException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override

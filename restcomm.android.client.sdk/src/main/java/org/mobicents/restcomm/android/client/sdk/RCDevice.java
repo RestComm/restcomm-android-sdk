@@ -140,6 +140,11 @@ public class RCDevice implements SipUADeviceListener {
         return connection;
     }
 
+    public void sendMessage(String message, Map<String, String> parameters)
+    {
+        DeviceImpl.GetInstance().SendMessage(parameters.get("username"), message);
+    }
+
     public void disconnectAll()
     {
 
@@ -227,6 +232,9 @@ public class RCDevice implements SipUADeviceListener {
 
     public void onSipUAMessageArrived(SipEvent event)
     {
-        this.listener.onIncomingMessage(this, event.content);
+        HashMap<String, String> parameters = new HashMap<String, String>();
+        parameters.put("username", event.from);
+
+        this.listener.onIncomingMessage(this, event.content, parameters);
     }
 }
