@@ -25,6 +25,9 @@ package org.mobicents.restcomm.android.client.sdk;
 import java.util.HashMap;
 import java.util.Map;
 import android.app.PendingIntent;
+import android.content.Context;
+import android.net.wifi.WifiManager;
+
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.sipua.SipProfile;
 import org.mobicents.restcomm.android.sipua.SipUADeviceListener;
@@ -60,6 +63,7 @@ public class RCDevice implements SipUADeviceListener {
 
     private SipProfile sipProfile;
     //RCDeviceListener deviceListener;
+    //Context androidContext;
     RCClient client;
 
     public enum DeviceState {
@@ -95,8 +99,8 @@ public class RCDevice implements SipUADeviceListener {
         sipProfile = new SipProfile();
         // TODO: check if those headers are needed
         HashMap<String, String> customHeaders = new HashMap<>();
-        customHeaders.put("customHeader1","customValue1");
-        customHeaders.put("customHeader2", "customValue2");
+        //customHeaders.put("customHeader1","customValue1");
+        //customHeaders.put("customHeader2", "customValue2");
 
         DeviceImpl deviceImpl = DeviceImpl.GetInstance();
         deviceImpl.Initialize(client.context, sipProfile, customHeaders);
@@ -129,25 +133,38 @@ public class RCDevice implements SipUADeviceListener {
 
     public RCConnection connect(Map<String, String> parameters, RCConnectionListener listener)
     {
-        RCConnection connection = new RCConnection(listener);
-        connection.incoming = false;
-        connection.state = RCConnection.ConnectionState.PENDING;
-        //DeviceImpl.GetInstance().listener = this;
-        DeviceImpl.GetInstance().connectionListener = connection;
+        if (haveConnectivity()) {
+            RCConnection connection = new RCConnection(listener);
+            connection.incoming = false;
+            connection.state = RCConnection.ConnectionState.PENDING;
+            //DeviceImpl.GetInstance().listener = this;
+            DeviceImpl.GetInstance().connectionListener = connection;
 
-        DeviceImpl.GetInstance().Call(parameters.get("username"));
+            DeviceImpl.GetInstance().Call(parameters.get("username"));
 
-        return connection;
+            return connection;
+        }
+        else {
+            return null;
+        }
     }
 
-    public void sendMessage(String message, Map<String, String> parameters)
+    public boolean sendMessage(String message, Map<String, String> parameters)
     {
-        DeviceImpl.GetInstance().SendMessage(parameters.get("username"), message);
+        if (haveConnectivity()) {
+            DeviceImpl.GetInstance().SendMessage(parameters.get("username"), message);
+            return true;
+        }
+        else {
+            return false;
+        }
     }
 
     public void disconnectAll()
     {
-
+        if (haveConnectivity()) {
+            // TODO: disconnect open connections
+        }
     }
 
     public Map<DeviceCapability, Object> getCapabilities()
@@ -201,18 +218,20 @@ public class RCDevice implements SipUADeviceListener {
 
     public void updateParams(HashMap<String, String> params)
     {
-        for (String key : params.keySet()) {
-            if (key.equals("pref_proxy_ip")) {
-                sipProfile.setRemoteIp(params.get(key));
-            } else if (key.equals("pref_proxy_port")) {
-                sipProfile.setRemotePort(Integer.parseInt(params.get(key)));
-            }  else if (key.equals("pref_sip_user")) {
-                sipProfile.setSipUserName(params.get(key));
-            } else if (key.equals("pref_sip_password")) {
-                sipProfile.setSipPassword(params.get(key));
+        if (haveConnectivity()) {
+            for (String key : params.keySet()) {
+                if (key.equals("pref_proxy_ip")) {
+                    sipProfile.setRemoteIp(params.get(key));
+                } else if (key.equals("pref_proxy_port")) {
+                    sipProfile.setRemotePort(Integer.parseInt(params.get(key)));
+                } else if (key.equals("pref_sip_user")) {
+                    sipProfile.setSipUserName(params.get(key));
+                } else if (key.equals("pref_sip_password")) {
+                    sipProfile.setSipPassword(params.get(key));
+                }
             }
+            DeviceImpl.GetInstance().Register();
         }
-        DeviceImpl.GetInstance().Register();
     }
 
     // SipUA listeners
@@ -222,11 +241,8 @@ public class RCDevice implements SipUADeviceListener {
         RCConnection connection = new RCConnection(connectionListener);
         connection.incoming = true;
         connection.state = RCConnection.ConnectionState.CONNECTING;
-        //DeviceImpl.GetInstance().deviceListener = this;
         DeviceImpl.GetInstance().connectionListener = connection;
 
-        //DeviceImpl.GetInstance().Call(parameters.get("username"));
-        //return connection;
         this.listener.onIncomingConnection(this,connection);
     }
 
@@ -237,4 +253,21 @@ public class RCDevice implements SipUADeviceListener {
 
         this.listener.onIncomingMessage(this, event.content, parameters);
     }
+
+    // Helpers
+    private boolean haveConnectivity()
+    {
+        RCClient client = RCClient.getInstance();
+        WifiManager wifi = (WifiManager)client.context.getSystemService(client.context.WIFI_SERVICE);
+        if (wifi.isWifiEnabled()) {
+            return true;
+        }
+        else {
+            if (this.listener != null) {
+                this.listener.onStopListening(this, RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal(), RCClient.errorText(RCClient.ErrorCodes.NO_CONNECTIVITY));
+            }
+            return false;
+        }
+    }
+
 }

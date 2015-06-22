@@ -29,6 +29,6 @@ public interface RCConnectionListener {
     public abstract void onConnecting(RCConnection connection);
     public abstract void onConnected(RCConnection connection);
     public abstract void onDisconnected(RCConnection connection);
-    //public abstract void onDisconnected(RCConnection, int, String);
+    public abstract void onDisconnected(RCConnection connection, int errorCode, String errorText);
 }
 

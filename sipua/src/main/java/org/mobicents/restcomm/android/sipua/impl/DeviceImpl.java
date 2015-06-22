@@ -193,29 +193,38 @@ public class DeviceImpl implements IDevice,Serializable {
 
 	@Override
 	public void Accept() {
-		sipManager.AcceptCall(soundManager.setupAudioStream(sipProfile.getLocalIp()));
+		//if (this.sipManager.direction == this.sipManager.direction.INCOMING) {
+			sipManager.AcceptCall(soundManager.setupAudioStream(sipProfile.getLocalIp()));
+		//}
 	}
 
 	@Override
 	public void Reject() {
-		sipManager.RejectCall();
+		//if (this.sipManager.direction == this.sipManager.direction.INCOMING) {
+			sipManager.RejectCall();
+		//}
 	}
 
 	@Override
 	public void Cancel() {
-		try {
-			sipManager.Cancel();
-		} catch (NotInitializedException e) {
-			e.printStackTrace();
-		}
+		//if (this.sipManager.direction == this.sipManager.direction.OUTGOING) {
+			try {
+				sipManager.Cancel();
+			} catch (NotInitializedException e) {
+				e.printStackTrace();
+			}
+		//}
 	}
 
 	@Override
 	public void Hangup() {
-		try {
-			this.sipManager.Hangup();
-		} catch (NotInitializedException e) {
-			e.printStackTrace();
+		if (this.sipManager.direction == this.sipManager.direction.OUTGOING ||
+				this.sipManager.direction == this.sipManager.direction.INCOMING) {
+			try {
+				this.sipManager.Hangup();
+			} catch (NotInitializedException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 
@@ -246,10 +255,6 @@ public class DeviceImpl implements IDevice,Serializable {
 		// TODO Auto-generated method stub
 		return sipManager;
 	}
-
-
-
-
 
 	@Override
 	public SoundManager getSoundManager() {

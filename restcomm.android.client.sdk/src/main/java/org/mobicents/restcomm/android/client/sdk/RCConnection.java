@@ -22,6 +22,8 @@
 
 package org.mobicents.restcomm.android.client.sdk;
 
+import android.net.wifi.WifiManager;
+
 import java.util.HashMap;
 import java.util.Map;
 import org.mobicents.restcomm.android.sipua.SipUAConnectionListener;
@@ -93,8 +95,10 @@ public class RCConnection implements SipUAConnectionListener {
 
     public void accept()
     {
-        DeviceImpl.GetInstance().Accept();
-        this.state = state.CONNECTED;
+        if (haveConnectivity()) {
+            DeviceImpl.GetInstance().Accept();
+            this.state = state.CONNECTED;
+        }
     }
 
     public void ignore()
@@ -104,19 +108,22 @@ public class RCConnection implements SipUAConnectionListener {
 
     public void reject()
     {
-        DeviceImpl.GetInstance().Reject();
-        this.state = state.DISCONNECTED;
+        if (haveConnectivity()) {
+            DeviceImpl.GetInstance().Reject();
+            this.state = state.DISCONNECTED;
+        }
     }
 
     public void disconnect()
     {
-        if (state == ConnectionState.CONNECTING) {
-            DeviceImpl.GetInstance().Cancel();
+        if (haveConnectivity()) {
+            if (state == ConnectionState.CONNECTING) {
+                DeviceImpl.GetInstance().Cancel();
+            } else if (state == ConnectionState.CONNECTED) {
+                DeviceImpl.GetInstance().Hangup();
+            }
+            this.state = state.DISCONNECTED;
         }
-        else if (state == ConnectionState.CONNECTED) {
-            DeviceImpl.GetInstance().Hangup();
-        }
-        this.state = state.DISCONNECTED;
     }
 
     public void setMuted(boolean muted)
@@ -156,6 +163,22 @@ public class RCConnection implements SipUAConnectionListener {
     {
         this.state = ConnectionState.DISCONNECTED;
         this.listener.onDisconnected(this);
+    }
+
+    // Helpers
+    private boolean haveConnectivity()
+    {
+        RCClient client = RCClient.getInstance();
+        WifiManager wifi = (WifiManager)client.context.getSystemService(client.context.WIFI_SERVICE);
+        if (wifi.isWifiEnabled()) {
+            return true;
+        }
+        else {
+            if (this.listener != null) {
+                this.listener.onDisconnected(this, RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal(), RCClient.errorText(RCClient.ErrorCodes.NO_CONNECTIVITY));
+            }
+            return false;
+        }
     }
 
 }

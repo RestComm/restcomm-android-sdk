@@ -32,6 +32,26 @@ import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
 
 public class RCClient {
     private static RCClient instance = null;
+    public enum ErrorCodes {
+        GENERIC_ERROR,
+        CONNECTION_DECLINED,
+        CONNECTION_TIMEOUT,
+        NO_CONNECTIVITY,
+    }
+    public static String errorText(ErrorCodes errorCode) {
+
+        if (errorCode == ErrorCodes.CONNECTION_DECLINED) {
+            return "Connection declined";
+        }
+        else if (errorCode == ErrorCodes.CONNECTION_TIMEOUT) {
+            return "Connection timed out";
+        }
+        else if (errorCode == ErrorCodes.NO_CONNECTIVITY) {
+            return "No network connectivity";
+        }
+        return "Generic Restcomm Client error";
+    }
+
     static ArrayList<RCDevice> list = new ArrayList<RCDevice>();
     Context context;
     private static final String TAG = "RCClient";

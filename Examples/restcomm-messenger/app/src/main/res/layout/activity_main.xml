@@ -22,15 +22,20 @@
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:layout_marginBottom="61dp" />
+        android:layout_marginBottom="61dp"
+        android:minWidth="100dp" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Register"
         android:id="@+id/button_register"
-        android:layout_alignTop="@+id/button_cancel"
-        android:layout_centerHorizontal="true" />
+        android:layout_below="@+id/text_wall"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignRight="@+id/text_wall"
+        android:layout_alignEnd="@+id/text_wall"
+        android:layout_marginTop="30dp" />
 
     <Button
         android:layout_width="wrap_content"
@@ -39,7 +44,8 @@
         android:id="@+id/button_answer"
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
+        android:layout_alignParentEnd="true"
+        android:minWidth="100dp" />
 
     <Button
         android:layout_width="wrap_content"
@@ -48,7 +54,8 @@
         android:id="@+id/button_decline"
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
+        android:layout_alignParentStart="true"
+        android:minWidth="100dp" />
 
     <Button
         android:layout_width="wrap_content"
@@ -57,7 +64,8 @@
         android:id="@+id/button_cancel"
         android:layout_alignTop="@+id/button_hangup"
         android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
+        android:layout_alignParentEnd="true"
+        android:minWidth="100dp" />
 
     <Button
         android:layout_width="wrap_content"
@@ -75,8 +83,8 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:layout_alignRight="@+id/button_register"
-        android:layout_alignEnd="@+id/button_register" />
+        android:layout_alignRight="@+id/text_message"
+        android:layout_alignEnd="@+id/text_message" />
 
     <EditText
         android:layout_width="wrap_content"
