@@ -641,46 +641,24 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	private void sendCancel(ClientTransaction transaction) {
 		try {
 			Request request = transaction.createCancel();
-			ClientTransaction cancelTransaction = sipProvider.getNewClientTransaction(request);
-			cancelTransaction.sendRequest();
-		} catch (SipException e) {
-			e.printStackTrace();
-		}
-		/*
-		final Dialog dialog = transaction.getDialog();
-		Request byeRequest = null;
-		try {
-			byeRequest = dialog.createRequest(Request.BYE);
-		} catch (SipException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-
-		ClientTransaction newTransaction = null;
-		try {
-			newTransaction = sipProvider.getNewClientTransaction(byeRequest);
-		} catch (TransactionUnavailableException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		final ClientTransaction ct = newTransaction;
-
-		Thread thread = new Thread() {
-			public void run() {
-				try {
-					dialog.sendRequest(ct);
-				} catch (TransactionDoesNotExistException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (SipException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
+			final ClientTransaction cancelTransaction = sipProvider.getNewClientTransaction(request);
+			Thread thread = new Thread() {
+				public void run() {
+					try {
+						cancelTransaction.sendRequest();
+					} catch (TransactionDoesNotExistException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (SipException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 				}
-			}
-		};
-		thread.start();
-		direction = CallDirection.NONE;
-		*/
+			};
+			thread.start();
+		} catch (SipException e) {
+			e.printStackTrace();
+		}
 	}
 
 	// Client API (used by DeviceImpl
