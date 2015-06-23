@@ -24,13 +24,14 @@ package org.mobicents.restcomm.android.client.sdk;
 
 import android.net.wifi.WifiManager;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import org.mobicents.restcomm.android.sipua.SipUAConnectionListener;
 import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
 import org.mobicents.restcomm.android.sipua.impl.SipEvent;
 
-public class RCConnection implements SipUAConnectionListener {
+public class RCConnection implements SipUAConnectionListener, Serializable {
     public enum ConnectionState {
         PENDING,
         CONNECTING,

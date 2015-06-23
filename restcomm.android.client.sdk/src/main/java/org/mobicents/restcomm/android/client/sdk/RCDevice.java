@@ -22,11 +22,14 @@
 
 package org.mobicents.restcomm.android.client.sdk;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.net.wifi.WifiManager;
+import android.os.Parcelable;
 
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.sipua.SipProfile;
@@ -35,7 +38,7 @@ import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
 import org.mobicents.restcomm.android.sipua.impl.SipEvent;
 //import java.util.iterator;
 
-public class RCDevice implements SipUADeviceListener {
+public class RCDevice implements SipUADeviceListener, Serializable {
     /**
      *  @abstract Device state (**Not Implemented yet**)
      */
@@ -81,6 +84,9 @@ public class RCDevice implements SipUADeviceListener {
         APPLICATION_PARAMETERS,
         CLIENT_NAME,
     }
+
+    public static String EXTRA_DEVICE = "com.telestax.restcomm.android.client.sdk.extra-device";
+    public static String EXTRA_CONNECTION = "com.telestax.restcomm.android.client.sdk.extra-connection";
 
     /**
      *  Initialize a new RCDevice object
@@ -183,9 +189,13 @@ public class RCDevice implements SipUADeviceListener {
     {
 
     }
-    public void setIncomingIntent(PendingIntent intent)
+    public void setIncomingIntent(Intent intent)
     {
-
+        /*
+        intent.putExtra(EXTRA_DEVICE, this);
+        intent.putExtra(EXTRA_CONNECTION, this);
+        PendingIntent pendingIntent = PendingIntent.getActivity(client.context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        */
     }
 
     public void setIncomingSoundEnabled(boolean incomingSound)

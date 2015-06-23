@@ -3,6 +3,7 @@ package com.telestax.restcomm_messenger;
 //import android.support.v7.app.ActionBarActivity;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -18,6 +19,7 @@ import android.view.View.OnClickListener;
 import android.widget.TextView;
 import android.net.wifi.WifiManager;
 
+import org.apache.log4j.chainsaw.Main;
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.client.sdk.RCConnectionListener;
@@ -91,6 +93,11 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
 
         // TODO: we don't support capability tokens yet so let's use an empty string
         device = RCClient.createDevice("", this);
+        //Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+        //PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        //device.setIncomingIntent(pendingIntent);
+        //device.setIncomingIntent(intent);
+
         connection = null;
         params = new HashMap<String, String>();
 
@@ -101,6 +108,39 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
 
         txtUri.setText("sip:1234@192.168.2.32:5080");
         txtMessage.setText("Hello there!");
+    }
+
+    @Override
+    public void onResume()
+    {
+        super.onResume();
+
+        /*
+        Intent intent = getIntent();
+        RCDevice inDevice = (RCDevice)intent.getSerializableExtra(RCDevice.EXTRA_DEVICE);
+        RCConnection inConnection = (RCConnection)intent.getSerializableExtra(RCDevice.EXTRA_CONNECTION);
+        if (inDevice == null) {
+            return;
+        }
+
+        intent.removeExtra(RCDevice.EXTRA_DEVICE);
+        intent.removeExtra(RCDevice.EXTRA_CONNECTION);
+
+        if (pendingConnection != null) {
+            Log.i(TAG, "A pending connection already exists");
+            pendingConnection.ignore();
+            return;
+        }
+
+        pendingConnection = inConnection;
+        pendingConnection.setConnectionListener(this);
+
+        //showIncomingAlert();
+        //addStatusMessage(R.string.got_incoming);
+        //syncMainButton();
+
+        return;
+        */
     }
 
     // UI Events

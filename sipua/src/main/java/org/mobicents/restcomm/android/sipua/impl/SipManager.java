@@ -342,6 +342,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			try {
 				ClientTransaction inviteTid = authenticationHelper
 						.handleChallenge(response, tid, sipProvider, 5, true);
+				currentClientTransaction = inviteTid;
 				inviteTid.sendRequest();
 			} catch (NullPointerException e) {
 				e.printStackTrace();
