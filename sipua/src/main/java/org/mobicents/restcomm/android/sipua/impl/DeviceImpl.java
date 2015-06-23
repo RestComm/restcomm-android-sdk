@@ -294,7 +294,7 @@ public class DeviceImpl implements IDevice,Serializable {
 	            Object object = in.readObject();    
 	            in.close();  
 	            return object;  
-	        } catch(ClassNotFoundException cnfe) {   
+	        } catch(ClassNotFoundException cnfe) {
 	            //Log.e("deserializeObject", "class not found error", cnfe);   
 	            return null;  
 	        } catch(IOException ioe) {  

@@ -279,30 +279,39 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         Log.i(TAG, "RCConnection connecting");
     }
 
-    public void onConnected(RCConnection connection)
-    {
+    public void onConnected(RCConnection connection) {
         Log.i(TAG, "RCConnection connected");
-        cbMuted.setEnabled(true);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+
+                cbMuted.setEnabled(true);
+            }
+        });
     }
 
-    public void onDisconnected(RCConnection connection)
-    {
+    public void onDisconnected(RCConnection connection) {
         Log.i(TAG, "RCConnection disconnected");
-        cbMuted.setEnabled(false);
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                cbMuted.setEnabled(false);
+            }
+        });
+        this.connection = null;
+        pendingConnection = null;
     }
 
-    public void onDisconnected(RCConnection connection, int errorCode, String errorText)
-    {
+    public void onDisconnected(RCConnection connection, int errorCode, String errorText) {
         if (errorCode == RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal()) {
             showOkAlert("No Connectivity", errorText);
-        }
-        else if (errorCode == RCClient.ErrorCodes.GENERIC_ERROR.ordinal()) {
+        } else if (errorCode == RCClient.ErrorCodes.GENERIC_ERROR.ordinal()) {
             showOkAlert("Generic Error", errorText);
-        }
-        else {
+        } else {
             showOkAlert("Unknown Error", "Unknown Restcomm Client error");
         }
     }
+
     // menu stuff
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -335,7 +344,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         } else if (key.equals("pref_proxy_port")) {
             params.put("pref_proxy_port", prefs.getString("pref_proxy_port", "5060"));
             updated = true;
-        }  else if (key.equals("pref_sip_user")) {
+        } else if (key.equals("pref_sip_user")) {
             params.put("pref_sip_user", prefs.getString("pref_sip_user", "bob"));
             updated = true;
         } else if (key.equals("pref_sip_password")) {
@@ -357,8 +366,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
     }
 
     // Helpers
-    private void showOkAlert(final String title, final String detail)
-    {
+    private void showOkAlert(final String title, final String detail) {
         AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
         alertDialog.setTitle(title);
         alertDialog.setMessage(detail);
