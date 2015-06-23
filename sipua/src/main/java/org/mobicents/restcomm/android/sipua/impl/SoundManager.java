@@ -65,4 +65,17 @@ public class SoundManager {
 		audioStream.join(audioGroup);
 
 	}
+	public void muteAudio(boolean muted)
+	{
+		if (muted) {
+			if (audioGroup.getMode() != audioGroup.MODE_MUTED) {
+				audioGroup.setMode(audioGroup.MODE_MUTED);
+			}
+		}
+		else {
+			if (audioGroup.getMode() == audioGroup.MODE_MUTED) {
+				audioGroup.setMode(audioGroup.MODE_NORMAL);
+			}
+		}
+	}
 }

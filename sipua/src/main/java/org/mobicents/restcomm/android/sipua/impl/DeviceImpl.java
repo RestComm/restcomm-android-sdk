@@ -71,6 +71,10 @@ public class DeviceImpl implements IDevice,Serializable {
 			});*/
 		} else if (sipEventObject.type == SipEventType.BYE) {
 			this.soundManager.releaseAudioResources();
+			if (this.connectionListener != null) {
+				// notify our listener that we are connected
+				this.connectionListener.onSipUADisconnected(null);
+			}
 		} else if (sipEventObject.type == SipEventType.DECLINED) {
 			this.soundManager.releaseAudioResources();
 		}else if (sipEventObject.type == SipEventType.BUSY_HERE) {
@@ -254,6 +258,12 @@ public class DeviceImpl implements IDevice,Serializable {
 	public SipManager GetSipManager() {
 		// TODO Auto-generated method stub
 		return sipManager;
+	}
+
+	@Override
+	public void Mute(boolean muted)
+	{
+		soundManager.muteAudio(muted);
 	}
 
 	@Override

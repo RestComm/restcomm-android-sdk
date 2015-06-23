@@ -14,6 +14,9 @@ import android.view.MenuItem;
 import android.view.View;
 import android.util.Log;
 import android.widget.Button;
+import android.widget.CheckBox;
+import android.widget.CompoundButton;
+import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.view.View.OnClickListener;
 import android.widget.TextView;
@@ -32,7 +35,8 @@ import java.util.Map;
 //import java.util.Map;
 
 
-public class MainActivity extends Activity implements RCDeviceListener, RCConnectionListener, OnClickListener, SharedPreferences.OnSharedPreferenceChangeListener {
+public class MainActivity extends Activity implements RCDeviceListener, RCConnectionListener,
+        OnClickListener, SharedPreferences.OnSharedPreferenceChangeListener, OnCheckedChangeListener {
 
     SharedPreferences prefs;
     private RCDevice device;
@@ -51,6 +55,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
     EditText txtUri;
     EditText txtMessage;
     EditText txtWall;
+    CheckBox cbMuted;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,6 +80,8 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         txtUri = (EditText)findViewById(R.id.text_uri);
         txtMessage = (EditText)findViewById(R.id.text_message);
         txtWall = (EditText)findViewById(R.id.text_wall);
+        cbMuted = (CheckBox)findViewById(R.id.checkbox_muted);
+        cbMuted.setOnCheckedChangeListener(this);
 
         RCClient.initialize(getApplicationContext(), new RCClient.RCInitListener()
         {
@@ -107,6 +114,8 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
 
         txtUri.setText("sip:1234@192.168.2.32:5080");
         txtMessage.setText("Hello there!");
+
+        cbMuted.setEnabled(false);
     }
 
     @Override
@@ -199,6 +208,14 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         }
     }
 
+    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
+    {
+        if (buttonView.getId() == R.id.checkbox_muted) {
+            if (connection != null) {
+                connection.setMuted(isChecked);
+            }
+        }
+    }
 
     // RCDevice Listeners
     public void onStartListening(RCDevice device)
@@ -265,11 +282,13 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
     public void onConnected(RCConnection connection)
     {
         Log.i(TAG, "RCConnection connected");
+        cbMuted.setEnabled(true);
     }
 
     public void onDisconnected(RCConnection connection)
     {
         Log.i(TAG, "RCConnection disconnected");
+        cbMuted.setEnabled(false);
     }
 
     public void onDisconnected(RCConnection connection, int errorCode, String errorText)

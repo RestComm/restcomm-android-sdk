@@ -129,7 +129,7 @@ public class RCConnection implements SipUAConnectionListener, Serializable {
 
     public void setMuted(boolean muted)
     {
-
+        DeviceImpl.GetInstance().Mute(muted);
     }
 
     public boolean isMuted()
@@ -162,6 +162,8 @@ public class RCConnection implements SipUAConnectionListener, Serializable {
 
     public void onSipUADisconnected(SipEvent event)
     {
+        // always remove mute when disconnecting; don't want it to be remembered in the next call
+        //DeviceImpl.GetInstance().Mute(false);
         this.state = ConnectionState.DISCONNECTED;
         this.listener.onDisconnected(this);
     }

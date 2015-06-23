@@ -44,6 +44,8 @@ public interface IDevice  extends ISipEventListener{
 	void SendMessage(String to, String message);
 
 	void SendDTMF(String digit);
+
+	void Mute(boolean muted);
 	
 	SipManager GetSipManager();
 	SoundManager getSoundManager();
