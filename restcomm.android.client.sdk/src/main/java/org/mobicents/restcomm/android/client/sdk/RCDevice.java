@@ -87,6 +87,7 @@ public class RCDevice implements SipUADeviceListener, Serializable {
 
     public static String EXTRA_DEVICE = "com.telestax.restcomm.android.client.sdk.extra-device";
     public static String EXTRA_CONNECTION = "com.telestax.restcomm.android.client.sdk.extra-connection";
+    PendingIntent pendingIntent;
 
     /**
      *  Initialize a new RCDevice object
@@ -191,11 +192,9 @@ public class RCDevice implements SipUADeviceListener, Serializable {
     }
     public void setIncomingIntent(Intent intent)
     {
-        /*
-        intent.putExtra(EXTRA_DEVICE, this);
-        intent.putExtra(EXTRA_CONNECTION, this);
-        PendingIntent pendingIntent = PendingIntent.getActivity(client.context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        */
+        //intent.putExtra(EXTRA_DEVICE, this);
+        //intent.putExtra(EXTRA_CONNECTION, this);
+        pendingIntent = PendingIntent.getActivity(client.context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
     public void setIncomingSoundEnabled(boolean incomingSound)
@@ -254,12 +253,23 @@ public class RCDevice implements SipUADeviceListener, Serializable {
         DeviceImpl.GetInstance().connectionListener = connection;
 
         this.listener.onIncomingConnection(this,connection);
+
+        /*
+        try {
+            pendingIntent.send();
+        }
+        catch (PendingIntent.CanceledException e) {
+            e.printStackTrace();
+        }
+        */
     }
 
     public void onSipUAMessageArrived(SipEvent event)
     {
         HashMap<String, String> parameters = new HashMap<String, String>();
-        parameters.put("username", event.from);
+        // filter out SIP URI stuff and leave just the name
+        String from = event.from.replaceAll("^<sip:", "").replaceAll("@.*$", "");
+        parameters.put("username", from);
 
         this.listener.onIncomingMessage(this, event.content, parameters);
     }

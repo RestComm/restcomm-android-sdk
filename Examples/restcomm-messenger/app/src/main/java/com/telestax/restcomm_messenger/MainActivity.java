@@ -88,14 +88,13 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
             {
                 Log.e(TAG, "RCClient initialization error");
             }
-
         });
 
         // TODO: we don't support capability tokens yet so let's use an empty string
         device = RCClient.createDevice("", this);
         //Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-        //PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        //device.setIncomingIntent(pendingIntent);
+        ////PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        ////device.setIncomingIntent(pendingIntent);
         //device.setIncomingIntent(intent);
 
         connection = null;
@@ -115,8 +114,9 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
     {
         super.onResume();
 
-        /*
         Intent intent = getIntent();
+
+        /*
         RCDevice inDevice = (RCDevice)intent.getSerializableExtra(RCDevice.EXTRA_DEVICE);
         RCConnection inConnection = (RCConnection)intent.getSerializableExtra(RCDevice.EXTRA_CONNECTION);
         if (inDevice == null) {
