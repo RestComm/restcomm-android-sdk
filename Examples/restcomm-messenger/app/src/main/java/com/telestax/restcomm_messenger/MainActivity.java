@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.Menu;
@@ -44,6 +45,9 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
     private RCConnection connection, pendingConnection;
     private HashMap<String, String> params;
     private static final String TAG = "MainActivity";
+    MediaPlayer ringingPlayer;
+    MediaPlayer callingPlayer;
+    MediaPlayer messagePlayer;
 
     // UI elements
     Button btnRegister;
@@ -117,6 +121,13 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         txtMessage.setText("Hello there!");
 
         cbMuted.setEnabled(false);
+
+        // Setup Media
+        ringingPlayer = MediaPlayer.create(getApplicationContext(), R.raw.ringing);
+        ringingPlayer.setLooping(true);
+        callingPlayer = MediaPlayer.create(getApplicationContext(), R.raw.calling);
+        callingPlayer.setLooping(true);
+        messagePlayer = MediaPlayer.create(getApplicationContext(), R.raw.message);
     }
 
     @Override
@@ -183,11 +194,13 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
             if (pendingConnection != null) {
                 pendingConnection.accept();
                 connection = this.pendingConnection;
+                ringingPlayer.stop();
             }
         } else if (view.getId() == R.id.button_decline) {
             if (pendingConnection != null) {
                 pendingConnection.reject();
                 pendingConnection = null;
+                ringingPlayer.stop();
             }
         } else if (view.getId() == R.id.button_cancel) {
             if (connection == null) {
@@ -206,6 +219,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
                 String text = txtWall.getText().toString();
                 String newText = "Me: " + txtMessage.getText().toString() + "\n" + text;
                 txtWall.setText(newText, TextView.BufferType.EDITABLE);
+                messagePlayer.start();
             }
         }
     }
@@ -256,7 +270,14 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
     public void onIncomingConnection(RCDevice device, RCConnection connection)
     {
         Log.i(TAG, "Connection arrived");
-        this.pendingConnection = connection;
+        final RCConnection finalConnection = connection;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                ringingPlayer.start();
+                pendingConnection = finalConnection;
+            }
+        });
     }
 
     public void onIncomingMessage(RCDevice device, String message, HashMap<String, String> parameters)
@@ -270,6 +291,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
                 String text = txtWall.getText().toString();
                 String newText = finalParameters.get("username") + ": " + finalMessage + "\n" + text;
                 txtWall.setText(newText, TextView.BufferType.EDITABLE);
+                messagePlayer.start();
                 Log.i(TAG, "Message arrived: message");
             }
         });
@@ -279,6 +301,12 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
     public void onConnecting(RCConnection connection)
     {
         Log.i(TAG, "RCConnection connecting");
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                callingPlayer.start();
+            }
+        });
     }
 
     public void onConnected(RCConnection connection) {
@@ -286,18 +314,24 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-
                 cbMuted.setEnabled(true);
+                callingPlayer.stop();
             }
         });
     }
 
     public void onDisconnected(RCConnection connection) {
         Log.i(TAG, "RCConnection disconnected");
+        final RCConnection.ConnectionState finalState = connection.getState();
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                cbMuted.setEnabled(false);
+                if (finalState == RCConnection.ConnectionState.CONNECTED) {
+                    cbMuted.setEnabled(false);
+                }
+                else if (finalState == RCConnection.ConnectionState.CONNECTING) {
+                    ringingPlayer.stop();
+                }
             }
         });
         this.connection = null;

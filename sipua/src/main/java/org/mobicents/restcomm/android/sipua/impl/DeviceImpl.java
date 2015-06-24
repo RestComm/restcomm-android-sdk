@@ -75,6 +75,12 @@ public class DeviceImpl implements IDevice,Serializable {
 				// notify our listener that we are connected
 				this.connectionListener.onSipUADisconnected(null);
 			}
+		} else if (sipEventObject.type == SipEventType.REMOTE_CANCEL) {
+			//this.soundManager.releaseAudioResources();
+			if (this.connectionListener != null) {
+				// notify our listener that we are connected
+				this.connectionListener.onSipUACancelled(null);
+			}
 		} else if (sipEventObject.type == SipEventType.DECLINED) {
 			this.soundManager.releaseAudioResources();
 		}else if (sipEventObject.type == SipEventType.BUSY_HERE) {

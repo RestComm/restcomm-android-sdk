@@ -212,6 +212,11 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			direction = CallDirection.INCOMING;
 			processInvite(arg0, serverTransactionId);
 		}
+		if (request.getMethod().equals("CANCEL")) {
+			direction = CallDirection.INCOMING;
+			dispatchSipEvent(new SipEvent(this, SipEventType.REMOTE_CANCEL, "", sp
+					.getFrom().getAddress().toString()));
+		}
 	}
 
 	private void sendDecline(Request request) {

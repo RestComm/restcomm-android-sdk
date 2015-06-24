@@ -229,10 +229,17 @@ public class RCConnection implements SipUAConnectionListener, Parcelable {
 
     public void onSipUADisconnected(SipEvent event)
     {
-        // always remove mute when disconnecting; don't want it to be remembered in the next call
-        //DeviceImpl.GetInstance().Mute(false);
-        this.state = ConnectionState.DISCONNECTED;
+        // we 're first notifying listener and then setting new state because we want the listener to be able to
+        // differentiate between disconnect and remote cancel events with the same listener method: onDisconnected.
+        // In the first case listener will see stat CONNECTED and in the second CONNECTING
         this.listener.onDisconnected(this);
+        this.state = ConnectionState.DISCONNECTED;
+    }
+
+    public void onSipUACancelled(SipEvent event)
+    {
+        this.listener.onDisconnected(this);
+        this.state = ConnectionState.DISCONNECTED;
     }
 
     // Helpers
