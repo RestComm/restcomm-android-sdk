@@ -194,13 +194,13 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
             if (pendingConnection != null) {
                 pendingConnection.accept();
                 connection = this.pendingConnection;
-                ringingPlayer.stop();
+                ringingPlayer.pause();
             }
         } else if (view.getId() == R.id.button_decline) {
             if (pendingConnection != null) {
                 pendingConnection.reject();
                 pendingConnection = null;
-                ringingPlayer.stop();
+                ringingPlayer.pause();
             }
         } else if (view.getId() == R.id.button_cancel) {
             if (connection == null) {
@@ -210,6 +210,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
                 connection.disconnect();
                 connection = null;
                 pendingConnection = null;
+                callingPlayer.pause();
             }
         } else if (view.getId() == R.id.button_send) {
             HashMap<String, String> sendParams = new HashMap<String, String>();
@@ -315,7 +316,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
             @Override
             public void run() {
                 cbMuted.setEnabled(true);
-                callingPlayer.stop();
+                callingPlayer.pause();
             }
         });
     }
@@ -330,7 +331,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
                     cbMuted.setEnabled(false);
                 }
                 else if (finalState == RCConnection.ConnectionState.CONNECTING) {
-                    ringingPlayer.stop();
+                    ringingPlayer.pause();
                 }
             }
         });
