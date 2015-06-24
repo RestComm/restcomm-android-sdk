@@ -26,9 +26,30 @@ import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
 
 public interface RCConnectionListener {
+    /**
+     * New connection is trying to connect
+     * @param connection Connection
+     */
     public abstract void onConnecting(RCConnection connection);
+
+    /**
+     * Connected just connected
+     * @param connection Connection
+     */
     public abstract void onConnected(RCConnection connection);
+
+    /**
+     * Connection just disconnected
+     * @param connection Connection
+     */
     public abstract void onDisconnected(RCConnection connection);
+
+    /**
+     * Connection just disconnected with an error
+     * @param connection Connection
+     * @param errorCode Error Code
+     * @param errorText Error Text
+     */
     public abstract void onDisconnected(RCConnection connection, int errorCode, String errorText);
 }
 

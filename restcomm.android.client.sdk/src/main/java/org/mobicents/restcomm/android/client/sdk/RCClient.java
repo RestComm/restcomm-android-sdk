@@ -28,8 +28,15 @@ import android.content.Context;
 import android.util.Log;
 
 import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
-//import org.mobicents.restcomm.android.client.sdk.RCClient;
 
+/**
+ * Top level singleton to initialize and shut down the Restcomm Client SDK. RCClient is also responsible
+ * for creating the RCDevice object that represents a virtual device that can create connections and
+ * send text messages.
+ *
+ * @see RCDevice
+ * @see RCConnection
+ */
 public class RCClient {
     private static RCClient instance = null;
     public enum ErrorCodes {
@@ -38,6 +45,7 @@ public class RCClient {
         CONNECTION_TIMEOUT,
         NO_CONNECTIVITY,
     }
+
     public static String errorText(ErrorCodes errorCode) {
 
         if (errorCode == ErrorCodes.CONNECTION_DECLINED) {
@@ -69,6 +77,11 @@ public class RCClient {
         return instance;
     }
 
+    /**
+     * Initialize the Restcomm Client SDK
+     * @param context  The Android Activity context
+     * @param listener  The listener for upcoming events from Restcomm Client
+     */
     public static void initialize(Context context, RCInitListener listener)
     {
         if (context == null) {
@@ -83,19 +96,33 @@ public class RCClient {
         }
     }
 
+    /**
+     * Shut down the Restcomm Client (<b>Not implemented yet</b>
+     */
     public static void shutdown()
     {
 
     }
 
+    /**
+     * Retrieve whether Restcomm Client is initialized (<b>Not implemented yet</b>)
+     * @return
+     */
     public static boolean isInitialized()
     {
         return true;
     }
 
+    /**
+     * Create an initialize a new Device object
+     * @param capabilityToken  The capability token to use
+     * @param deviceListener  The listener for upcoming RCDevice events
+     * @return The newly created RCDevice
+     * @see RCDevice
+     */
     public static RCDevice createDevice(String capabilityToken, RCDeviceListener deviceListener)
     {
-        RCDevice device = new RCDevice(RCClient.getInstance(), capabilityToken, deviceListener);
+        RCDevice device = new RCDevice(capabilityToken, deviceListener);
         if (list.size() == 0) {
             list.add(device);
         }
@@ -109,6 +136,10 @@ public class RCClient {
         return device;
     }
 
+    /**
+     * Retrieve a list of active Devices
+     * @return  List of Devices
+     */
     public List<RCDevice> listDevices()
     {
         //ArrayList<RCDevice> list = new ArrayList<RCDevice>();
@@ -127,8 +158,17 @@ public class RCClient {
     }
     */
 
+    /**
+     * Interface defining callbacks for RCClient, such as when it is fully initialized and in case of error
+     */
     public interface RCInitListener {
+        /**
+         * Callback that is called when RCClient is fully initialized
+         */
         void onInitialized();
+        /**
+         * Callback that is called if there's an error
+         */
         void onError(Exception exception);
     }
 }

@@ -26,13 +26,61 @@ import org.mobicents.restcomm.android.client.sdk.RCDevice;
 
 import java.util.HashMap;
 
+/**
+ *  RCDevice notifies its listener for RCDevice related events defined in this interface
+ */
 public interface RCDeviceListener {
+    /**
+     *  RCDevice started listening for incoming connections (<b>Not Implemented yet</b>)
+     *
+     *  @param device Device of interest
+     */
     public abstract void onStartListening(RCDevice device);
+
+    /**
+     *  RCDevice stopped listening for incoming connections (<b>Not Implemented yet</b>)
+     *
+     *  @param device Device of interest
+     */
     public abstract void onStopListening(RCDevice device);
+
+    /**
+     *  RCDevice stopped listening for incoming connections due to error(<b>Not Implemented yet</b>)
+     *
+     *  @param device Device of interest
+     *  @param errorCode  Error code
+     *  @param errorText  Error text
+     */
     public abstract void onStopListening(RCDevice device, int errorCode, String errorText);
-    public abstract boolean receivePresenceEvents(RCDevice device);
+
     // TODO: this should be removed and handled via Android Intents, but to make some tests let's leave it as-is for now
+    /**
+     *  RCDevice received incoming connection
+     *
+     *  @param device     Device of interest
+     *  @param connection Newly established connection
+     */
     public abstract void onIncomingConnection(RCDevice device, RCConnection connection);
+
+    /**
+     * Text message received
+     * @param device  Device of interest
+     * @param message  Tex message
+     * @param parameters  Parameters, such as 'username' designating the username who sent the message
+     */
     public abstract void onIncomingMessage(RCDevice device, String message, HashMap<String, String> parameters);
+
+    /**
+     *  Called to query whether the application wants to retrieve presence events. Return false to indicate that the application isn't interested (<b>Not implemented yet</b>)
+     *
+     *  @param device  Device of interest
+     */
+    public abstract boolean receivePresenceEvents(RCDevice device);
+
+    /**
+     * Called when the presence status has changed (<b>Not implemented yet</b>)
+     * @param device  Device of interest
+     * @param presenceEvent  Presence Event
+     */
     public abstract void onPresenceChanged(RCDevice device, RCPresenceEvent presenceEvent);
 }

@@ -22,29 +22,40 @@
 
 package org.mobicents.restcomm.android.client.sdk;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import android.app.PendingIntent;
-import android.content.Context;
 import android.content.Intent;
 import android.net.wifi.WifiManager;
+import android.os.Parcel;
 import android.os.Parcelable;
 
-import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.sipua.SipProfile;
 import org.mobicents.restcomm.android.sipua.SipUADeviceListener;
 import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
 import org.mobicents.restcomm.android.sipua.impl.SipEvent;
-//import java.util.iterator;
 
-public class RCDevice implements SipUADeviceListener, Serializable {
+/**
+ *  RCDevice Represents an abstraction of a communications device able to make and receive calls, send and receive messages etc. Remember that
+ *  in order to be notified of RestComm Client events you need to set a listener to RCDevice and implement the applicable methods.
+ *  If you want to initiate a media connection towards another party you use RCDevice.connect() which returns an RCConnection object representing
+ *  the new outgoing connection. From then on you can act on the new connection by applying RCConnection methods on the handle you got from RCDevice.connect().
+ *  If there’s an incoming connection you will be notified by RCDeviceListener.onIncomingConnection() listener method. At that point you can use RCConnection methods to
+ *  accept or reject the connection.
+ *
+ *  As far as instant messages are concerned you can send a message using RCDevice.sendMessage() and you will be notified of an incoming message
+ *  via RCDeviceListener.onIncomingMessage() listener method.
+ *
+ *  @see RCConnection
+ */
+
+public class RCDevice implements SipUADeviceListener, Parcelable {
     /**
-     *  @abstract Device state (**Not Implemented yet**)
+     *  @abstract Device state (<b>Not Implemented yet</b>: device is always READY)
      */
     DeviceState state;
     /**
-     *  @abstract Device capabilities (**Not Implemented yet**)
+     *  @abstract Device capabilities (<b>Not Implemented yet</b>)
      */
     HashMap<DeviceCapability, Object> capabilities;
     /**
@@ -52,29 +63,32 @@ public class RCDevice implements SipUADeviceListener, Serializable {
      */
     RCDeviceListener listener;
     /**
-     *  @abstract Is sound for incoming connections enabled (**Not Implemented yet**)
+     *  @abstract Is sound for incoming connections enabled (<b>Not Implemented yet</b>)
      */
     boolean incomingSoundEnabled;
     /**
-     *  @abstract Is sound for outgoing connections enabled (**Not Implemented yet**)
+     *  @abstract Is sound for outgoing connections enabled (<b>Not Implemented yet</b>)
      */
     boolean outgoingSoundEnabled;
     /**
-     *  @abstract Is sound for disconnect enabled (**Not Implemented yet**)
+     *  @abstract Is sound for disconnect enabled (<b>Not Implemented yet</b>)
      */
     boolean disconnectSoundEnabled;
 
     private SipProfile sipProfile;
-    //RCDeviceListener deviceListener;
-    //Context androidContext;
-    RCClient client;
 
+    /**
+     *  Device state (<b>Not Implemented yet</b>)
+     */
     public enum DeviceState {
-        OFFLINE,
-        READY,
-        BUSY,
+        OFFLINE,  /** Device is offline */
+        READY,  /** Device is ready to make and receive connections */
+        BUSY,  /** Device is busy */
     }
 
+    /**
+     *  Device capability (<b>Not Implemented yet</b>)
+     */
     public enum DeviceCapability {
         INCOMING,
         OUTGOING,
@@ -93,13 +107,12 @@ public class RCDevice implements SipUADeviceListener, Serializable {
      *  Initialize a new RCDevice object
      *
      *  @param capabilityToken Capability Token
-     *  @param deviceListener  Delegate of RCDevice
+     *  @param deviceListener  Listener of RCDevice
      *
-     *  @return Newly initialized object
      */
-    protected RCDevice(RCClient client, String capabilityToken, RCDeviceListener deviceListener)
+    protected RCDevice(String capabilityToken, RCDeviceListener deviceListener)
     {
-        this.client = client;
+        //this.client = client;
         this.updateCapabilityToken(capabilityToken);
         this.listener = deviceListener;
 
@@ -110,35 +123,59 @@ public class RCDevice implements SipUADeviceListener, Serializable {
         //customHeaders.put("customHeader2", "customValue2");
 
         DeviceImpl deviceImpl = DeviceImpl.GetInstance();
-        deviceImpl.Initialize(client.context, sipProfile, customHeaders);
+        deviceImpl.Initialize(RCClient.getInstance().context, sipProfile, customHeaders);
 
     }
+
+    /**
+     * Shuts down and release the Device (<b>Not Implemented yet</b>)
+     */
     public void release()
     {
 
     }
 
+    /**
+     * Start listening for incoming connections (<b>Not Implemented yet</b>: for now once the RCDevice is created we are always listening for incoming connections)
+     */
     public void listen()
     {
 
     }
 
+    /**
+     * Stop listeninig for incoming connections (Not Implemented yet)
+     */
     public void unlisten()
     {
 
     }
 
+    /**
+     * Retrieves the capability token passed to RCClient.createDevice
+     * @return  Capability token
+     */
     public String getCapabilityToken()
     {
         return "";
     }
 
+    /**
+     * Updates the capability token (<b>Not implemented yet</b>
+     */
     public void updateCapabilityToken(String token)
     {
 
     }
 
-    public RCConnection connect(Map<String, String> parameters, RCConnectionListener listener)
+    /**
+     *  Create an outgoing connection to an endpoint
+     *
+     *  @param parameters Connections such as the endpoint we want to connect to
+     *  @param listener   The listener object that will receive events when the connection state changes
+     *
+     *  @return An RCConnection object representing the new connection
+     */    public RCConnection connect(Map<String, String> parameters, RCConnectionListener listener)
     {
         if (haveConnectivity()) {
             RCConnection connection = new RCConnection(listener);
@@ -156,6 +193,12 @@ public class RCDevice implements SipUADeviceListener, Serializable {
         }
     }
 
+    /**
+     *  Send an instant message to a an endpoint
+     *
+     *  @param message  Message text
+     *  @param parameters Parameters used for the message, such as 'username' that holds the recepient for the message
+     */
     public boolean sendMessage(String message, Map<String, String> parameters)
     {
         if (haveConnectivity()) {
@@ -167,6 +210,9 @@ public class RCDevice implements SipUADeviceListener, Serializable {
         }
     }
 
+    /**
+     *  Disconnect all connections (<b>Not implemented yet</b>)
+     */
     public void disconnectAll()
     {
         if (haveConnectivity()) {
@@ -174,18 +220,30 @@ public class RCDevice implements SipUADeviceListener, Serializable {
         }
     }
 
+    /**
+     *  Retrieve the capabilities
+     *  @return  Capabilities
+     */
     public Map<DeviceCapability, Object> getCapabilities()
     {
         HashMap<DeviceCapability, Object> map = new HashMap<DeviceCapability, Object>();
         return map;
     }
 
+    /**
+     * Retrieve the Device state
+     * @return State
+     */
     public DeviceState getState()
     {
         DeviceState state = DeviceState.READY;
         return state;
     }
 
+    /**
+     * Update the Device listener
+     * @param listener  Updated device listener
+     */
     public void setDeviceListener(RCDeviceListener listener)
     {
 
@@ -194,37 +252,65 @@ public class RCDevice implements SipUADeviceListener, Serializable {
     {
         //intent.putExtra(EXTRA_DEVICE, this);
         //intent.putExtra(EXTRA_CONNECTION, this);
-        pendingIntent = PendingIntent.getActivity(client.context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        pendingIntent = PendingIntent.getActivity(RCClient.getInstance().context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
+    /**
+     * Should a ringing sound be played in a incoming connection or message
+     * @param incomingSound  Whether or not the sound should be played
+     */
     public void setIncomingSoundEnabled(boolean incomingSound)
     {
 
     }
 
+    /**
+     * Retrieve the incoming sound setting
+     * @return  Whether the sound will be played
+     */
     public boolean isIncomingSoundEnabled()
     {
         return true;
     }
+    /**
+     * Should a ringing sound be played in an outgoing connection or message
+     * @param outgoingSound  Whether or not the sound should be played
+     */
     public void setOutgoingSoundEnabled(boolean outgoingSound)
     {
 
     }
+    /**
+     * Retrieve the outgoint sound setting
+     * @return  Whether the sound will be played
+     */
     public boolean isOutgoingSoundEnabled()
     {
         return true;
     }
 
+    /**
+     * Should a disconnect sound be played when disconnecting a connection
+     * @param disconnectSound  Whether or not the sound should be played
+     */
     public void setDisconnectSoundEnabled(boolean disconnectSound)
     {
 
     }
 
+    /**
+     * Retrieve the disconnect sound setting
+     * @return  Whether the sound will be played
+     */
     public boolean isDisconnectSoundEnabled()
     {
         return true;
     }
 
+    /**
+     * Update prefernce parameters such as username/password
+     * @param params  The params to be updated
+     */
     public void updateParams(HashMap<String, String> params)
     {
         if (haveConnectivity()) {
@@ -256,7 +342,11 @@ public class RCDevice implements SipUADeviceListener, Serializable {
 
         /*
         try {
-            pendingIntent.send();
+            //pendingIntent.send();
+            Intent dataIntent = new Intent();
+            dataIntent.putExtra(EXTRA_DEVICE, this);
+            dataIntent.putExtra(EXTRA_CONNECTION, connection);
+            pendingIntent.send(RCClient.getInstance().context, 0, dataIntent);
         }
         catch (PendingIntent.CanceledException e) {
             e.printStackTrace();
@@ -288,6 +378,37 @@ public class RCDevice implements SipUADeviceListener, Serializable {
             }
             return false;
         }
+    }
+
+    // Parcelable stuff:
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    // Parceable stuff
+    public void writeToParcel(Parcel out, int flags) {
+        //out.writeInt(state.ordinal());
+        boolean one[] = new boolean[1];
+        one[0] = incomingSoundEnabled;
+        out.writeBooleanArray(one);
+    }
+
+    public static final Parcelable.Creator<RCDevice> CREATOR = new Parcelable.Creator<RCDevice>() {
+        public RCDevice createFromParcel(Parcel in) {
+            return new RCDevice(in);
+        }
+
+        public RCDevice[] newArray(int size) {
+            return new RCDevice[size];
+        }
+    };
+
+    private RCDevice(Parcel in) {
+        //state = in.readInt();
+        boolean one[] = new boolean[1];
+        in.readBooleanArray(one);
+        incomingSoundEnabled = one[0];
     }
 
 }

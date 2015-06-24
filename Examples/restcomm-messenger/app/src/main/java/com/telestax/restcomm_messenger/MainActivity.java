@@ -30,6 +30,7 @@ import org.mobicents.restcomm.android.client.sdk.RCDevice;
 import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
 import org.mobicents.restcomm.android.client.sdk.RCPresenceEvent;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 //import java.util.Map;
@@ -99,10 +100,10 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
 
         // TODO: we don't support capability tokens yet so let's use an empty string
         device = RCClient.createDevice("", this);
-        //Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
         ////PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
         ////device.setIncomingIntent(pendingIntent);
-        //device.setIncomingIntent(intent);
+        device.setIncomingIntent(intent);
 
         connection = null;
         params = new HashMap<String, String>();
@@ -125,12 +126,13 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
 
         Intent intent = getIntent();
 
-        /*
         RCDevice inDevice = (RCDevice)intent.getSerializableExtra(RCDevice.EXTRA_DEVICE);
         RCConnection inConnection = (RCConnection)intent.getSerializableExtra(RCDevice.EXTRA_CONNECTION);
-        if (inDevice == null) {
+
+        if (inDevice == null && inConnection == null)
             return;
-        }
+
+        /**/
 
         intent.removeExtra(RCDevice.EXTRA_DEVICE);
         intent.removeExtra(RCDevice.EXTRA_CONNECTION);
@@ -149,7 +151,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         //syncMainButton();
 
         return;
-        */
+        /**/
     }
 
     // UI Events
@@ -370,8 +372,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
         alertDialog.setTitle(title);
         alertDialog.setMessage(detail);
-        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
-                new DialogInterface.OnClickListener() {
+        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
                     public void onClick(DialogInterface dialog, int which) {
                         dialog.dismiss();
                     }

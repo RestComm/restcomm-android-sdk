@@ -23,20 +23,41 @@
 package org.mobicents.restcomm.android.client.sdk;
 
 import android.net.wifi.WifiManager;
+import android.os.Parcel;
+import android.os.Parcelable;
 
-import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import org.mobicents.restcomm.android.sipua.SipUAConnectionListener;
 import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
 import org.mobicents.restcomm.android.sipua.impl.SipEvent;
 
-public class RCConnection implements SipUAConnectionListener, Serializable {
+/**
+ *  RCConnection represents a call. An RCConnection can be either incoming or outgoing. RCConnections are not created by themselves but
+ *  as a result on an action on RCDevice. For example to initiate an outgoing connection you call RCDevice.connect() which instantiates
+ *  and returns a new RCConnection. On the other hand when an incoming connection arrives the RCDevice delegate is notified with
+ *  RCDeviceListener.onIncomingConnection() and passes the new RCConnection object that is used by the delegate to
+ *  control the connection.
+ *
+ *  When an incoming connection arrives through RCDeviceListener.onIncomingConnection() it is considered RCConnectionStateConnecting until it is either
+ *  accepted with RCConnection.accept() or rejected with RCConnection.reject(). Once the connection is accepted the RCConnection transitions to RCConnectionStateConnected
+ *  state.
+ *
+ *  When an outgoing connection is created with RCDevice.connect() it starts with state RCConnectionStatePending. Once it starts ringing on the remote party it
+ *  transitions to RCConnectionStateConnecting. When the remote party answers it, the RCConnection state transitions to RCConnectionStateConnected.
+ *
+ *  Once an RCConnection (either incoming or outgoing) is established (i.e. RCConnectionStateConnected) media can start flowing over it. DTMF digits can be sent over to
+ *  the remote party using RCConnection.sendDigits() (<b>Not implemented yet</b>). When done with the RCConnection you can disconnect it with RCConnection.disconnect().
+ */
+public class RCConnection implements SipUAConnectionListener, Parcelable {
+    /**
+     * Connection State
+     */
     public enum ConnectionState {
-        PENDING,
-        CONNECTING,
-        CONNECTED,
-        DISCONNECTED,
+        PENDING,  /** Connection is in state pending */
+        CONNECTING,  /** Connection is in state connecting */
+        CONNECTED,  /** Connection is in state connected */
+        DISCONNECTED,  /** Connection is in state disconnected */
     };
 
     String IncomingParameterFromKey = "RCConnectionIncomingParameterFromKey";
@@ -72,16 +93,30 @@ public class RCConnection implements SipUAConnectionListener, Serializable {
      */
     boolean muted;
 
+    /**
+     *  Initialize a new RCConnection object. <b>Important</b>: this is used internally by RCDevice and is not meant for application use
+     *
+     *  @param connectionListener RCConnection listener that will be receiving RCConnection events (@see RCConnectionListener)
+     *
+     *  @return Newly initialized object
+     */
     public RCConnection(RCConnectionListener connectionListener)
     {
         this.listener = connectionListener;
     }
 
+    /**
+     * Retrieves the current state of the connection
+     */
     public ConnectionState getState()
     {
-        return ConnectionState.DISCONNECTED;
+        return this.state;
     }
 
+    /**
+     * Retrieves the set of application parameters associated with this connection <b>Not Implemented yet</b>
+     * @return Connection parameters
+     */
     public Map<String, String> getParameters()
     {
         HashMap<String, String> map = new HashMap<String, String>();
@@ -89,11 +124,18 @@ public class RCConnection implements SipUAConnectionListener, Serializable {
         return map;
     }
 
+    /**
+     * Returns whether the connection is incoming or outgoing
+     * @return True if incoming, false otherwise
+     */
     public boolean isIncoming()
     {
-        return true;
+        return this.incoming;
     }
 
+    /**
+     * Accept the incoming connection
+     */
     public void accept()
     {
         if (haveConnectivity()) {
@@ -102,11 +144,17 @@ public class RCConnection implements SipUAConnectionListener, Serializable {
         }
     }
 
+    /**
+     * Ignore incoming connection
+     */
     public void ignore()
     {
 
     }
 
+    /**
+     * Reject incoming connection
+     */
     public void reject()
     {
         if (haveConnectivity()) {
@@ -115,6 +163,9 @@ public class RCConnection implements SipUAConnectionListener, Serializable {
         }
     }
 
+    /**
+     * Disconnect the established connection
+     */
     public void disconnect()
     {
         if (haveConnectivity()) {
@@ -127,24 +178,40 @@ public class RCConnection implements SipUAConnectionListener, Serializable {
         }
     }
 
+    /**
+     * Mute connection so that the other party cannot local audio
+     * @param muted True to mute and false in order to unmute
+     */
     public void setMuted(boolean muted)
     {
         DeviceImpl.GetInstance().Mute(muted);
     }
 
+    /**
+     * Retrieve whether connection is muted or not
+     * @return True connection is muted and false otherwise
+     */
     public boolean isMuted()
     {
         return false;
     }
 
+    /**
+     * Send DTMF digits over the connection (<b>Not Implemented yet</b>)
+     * @param digits A string of DTMF digits to be sent
+     */
     public void sendDigits(String digits)
     {
 
     }
 
+    /**
+     * Update connection listener to be receiving Connection related events
+     * @param listener  New connection listener
+     */
     public void setConnectionListener(RCConnectionListener listener)
     {
-
+        this.listener = listener;
     }
 
     // SipUA Connection Listeners
@@ -184,4 +251,33 @@ public class RCConnection implements SipUAConnectionListener, Serializable {
         }
     }
 
+    @Override
+    public int describeContents() {
+        return 0;
+    }
+
+    // Parceable stuff
+    public void writeToParcel(Parcel out, int flags) {
+        //out.writeInt(state.ordinal());
+        boolean one[] = new boolean[1];
+        one[0] = incoming;
+        out.writeBooleanArray(one);
+    }
+
+    public static final Parcelable.Creator<RCConnection> CREATOR = new Parcelable.Creator<RCConnection>() {
+        public RCConnection createFromParcel(Parcel in) {
+            return new RCConnection(in);
+        }
+
+        public RCConnection[] newArray(int size) {
+            return new RCConnection[size];
+        }
+    };
+
+    private RCConnection(Parcel in) {
+        //state = in.readInt();
+        boolean one[] = new boolean[1];
+        in.readBooleanArray(one);
+        incoming = one[0];
+    }
 }
