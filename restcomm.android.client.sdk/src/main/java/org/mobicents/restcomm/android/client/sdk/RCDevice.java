@@ -266,7 +266,7 @@ public class RCDevice implements SipUADeviceListener, Parcelable {
     }
     public void setIncomingIntent(Intent intent)
     {
-        //intent.putExtra(EXTRA_DEVICE, this);
+        intent.putExtra(EXTRA_DEVICE, this);
         //intent.putExtra(EXTRA_CONNECTION, this);
         pendingIntent = PendingIntent.getActivity(RCClient.getInstance().context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
@@ -354,6 +354,7 @@ public class RCDevice implements SipUADeviceListener, Parcelable {
         connection.state = RCConnection.ConnectionState.CONNECTING;
         DeviceImpl.GetInstance().sipuaConnectionListener = connection;
 
+        /**/
         final RCConnection finalConnection = new RCConnection(connection);
         final RCDevice finalDevice = new RCDevice(this);
 
@@ -362,14 +363,20 @@ public class RCDevice implements SipUADeviceListener, Parcelable {
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
+                // bring the App to front
+                try {
+                    pendingIntent.send();
+                } catch (PendingIntent.CanceledException e) {
+                    e.printStackTrace();
+                }
+
                 listener.onIncomingConnection(finalDevice, finalConnection);
             }
         };
         mainHandler.post(myRunnable);
-
+        /**/
         /*
         try {
-            //pendingIntent.send();
             Intent dataIntent = new Intent();
             dataIntent.putExtra(EXTRA_DEVICE, this);
             dataIntent.putExtra(EXTRA_CONNECTION, connection);
@@ -397,6 +404,13 @@ public class RCDevice implements SipUADeviceListener, Parcelable {
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
+                // bring the App to front
+                try {
+                    pendingIntent.send();
+                } catch (PendingIntent.CanceledException e) {
+                    e.printStackTrace();
+                }
+
                 listener.onIncomingMessage(finalDevice, finalContent, finalParameters);
             }
         };

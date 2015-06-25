@@ -51,7 +51,7 @@ public interface RCConnectionListener {
     public abstract void onCancelled(RCConnection connection);
 
     /**
-     * Incoming connection was just cancelled by remote party
+     * Incoming connection was just declined by remote party
      * @param connection Connection
      */
     public abstract void onDeclined(RCConnection connection);

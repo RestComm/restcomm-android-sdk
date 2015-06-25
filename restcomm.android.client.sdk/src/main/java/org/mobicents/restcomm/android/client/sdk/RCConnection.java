@@ -223,6 +223,7 @@ public class RCConnection implements SipUAConnectionListener, Parcelable {
     public void setConnectionListener(RCConnectionListener listener)
     {
         this.listener = listener;
+        DeviceImpl.GetInstance().sipuaConnectionListener = this;
     }
 
     // SipUA Connection Listeners

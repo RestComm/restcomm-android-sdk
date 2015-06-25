@@ -145,6 +145,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         Log.i(TAG, "Media Player prepared");
     }
 
+    /*
     @Override
     public void onResume()
     {
@@ -152,13 +153,11 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
 
         Intent intent = getIntent();
 
-        RCDevice inDevice = (RCDevice)intent.getSerializableExtra(RCDevice.EXTRA_DEVICE);
-        RCConnection inConnection = (RCConnection)intent.getSerializableExtra(RCDevice.EXTRA_CONNECTION);
+        RCDevice inDevice = intent.getParcelableExtra(RCDevice.EXTRA_DEVICE);
+        RCConnection inConnection = intent.getParcelableExtra(RCDevice.EXTRA_CONNECTION);
 
         if (inDevice == null && inConnection == null)
             return;
-
-        /**/
 
         intent.removeExtra(RCDevice.EXTRA_DEVICE);
         intent.removeExtra(RCDevice.EXTRA_CONNECTION);
@@ -172,13 +171,9 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         pendingConnection = inConnection;
         pendingConnection.setConnectionListener(this);
 
-        //showIncomingAlert();
-        //addStatusMessage(R.string.got_incoming);
-        //syncMainButton();
-
         return;
-        /**/
     }
+    */
 
     // UI Events
     public void onClick(View view) {
@@ -324,7 +319,12 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
 
     public void onCancelled(RCConnection connection) {
         Log.i(TAG, "RCConnection cancelled");
-        callingPlayer.pause();
+        if (connection.isIncoming() == true) {
+            ringingPlayer.pause();
+        }
+        else {
+            callingPlayer.pause();
+        }
 
         this.connection = null;
         pendingConnection = null;
