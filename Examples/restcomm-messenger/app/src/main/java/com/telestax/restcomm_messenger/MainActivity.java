@@ -316,16 +316,28 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
 
     public void onDisconnected(RCConnection connection) {
         Log.i(TAG, "RCConnection disconnected");
-        if (connection.getState() == RCConnection.ConnectionState.CONNECTED) {
-            cbMuted.setEnabled(false);
-        }
-        else if (connection.getState() == RCConnection.ConnectionState.CONNECTING) {
-            ringingPlayer.pause();
-        }
+        cbMuted.setEnabled(false);
 
         this.connection = null;
         pendingConnection = null;
     }
+
+    public void onCancelled(RCConnection connection) {
+        Log.i(TAG, "RCConnection cancelled");
+        callingPlayer.pause();
+
+        this.connection = null;
+        pendingConnection = null;
+    }
+
+    public void onDeclined(RCConnection connection) {
+        Log.i(TAG, "RCConnection declined");
+        callingPlayer.pause();
+
+        this.connection = null;
+        pendingConnection = null;
+    }
+
 
     public void onDisconnected(RCConnection connection, int errorCode, String errorText) {
         if (errorCode == RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal()) {

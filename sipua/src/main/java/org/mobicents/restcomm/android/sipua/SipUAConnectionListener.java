@@ -29,4 +29,5 @@ public interface SipUAConnectionListener {
     public abstract void onSipUAConnected(SipEvent event);
     public abstract void onSipUADisconnected(SipEvent event);
     public abstract void onSipUACancelled(SipEvent event);
+    public abstract void onSipUADeclined(SipEvent event);
 }

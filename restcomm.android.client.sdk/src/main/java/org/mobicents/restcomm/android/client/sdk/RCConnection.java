@@ -185,7 +185,7 @@ public class RCConnection implements SipUAConnectionListener, Parcelable {
             } else if (state == ConnectionState.CONNECTED) {
                 DeviceImpl.GetInstance().Hangup();
             }
-            this.state = state.DISCONNECTED;
+            //this.state = state.DISCONNECTED;
         }
     }
 
@@ -287,7 +287,24 @@ public class RCConnection implements SipUAConnectionListener, Parcelable {
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
-                listener.onDisconnected(finalConnection);
+                listener.onCancelled(finalConnection);
+            }
+        };
+        mainHandler.post(myRunnable);
+
+        this.state = ConnectionState.DISCONNECTED;
+    }
+
+    public void onSipUADeclined(SipEvent event)
+    {
+        final RCConnection finalConnection = new RCConnection(this);
+
+        // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                listener.onDeclined(finalConnection);
             }
         };
         mainHandler.post(myRunnable);

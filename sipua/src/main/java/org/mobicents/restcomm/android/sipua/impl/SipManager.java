@@ -380,13 +380,13 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		if (direction == CallDirection.OUTGOING) {
 			if (currentClientTransaction != null) {
 				sendByeClient(currentClientTransaction);
-				sipManagerState = SipManagerState.IDLE;
+				//sipManagerState = SipManagerState.IDLE;
 			}
 		}
 		else if (direction == CallDirection.INCOMING) {
 			if (currentServerTransaction != null) {
 				sendByeClient(currentServerTransaction);
-				sipManagerState = SipManagerState.IDLE;
+				//
 			}
 		}
 	}
@@ -544,14 +544,14 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				}
 
 			} else if (cseq.getMethod().equals(Request.BYE)) {
+				sipManagerState = SipManagerState.IDLE;
 				System.out.println("--- Got 200 OK in UAC outgoing BYE");
 				dispatchSipEvent(new SipEvent(this, SipEventType.BYE, "", ""));
 			}
 
-		} else if (response.getStatusCode() == Response.DECLINE) {
+		} else if (response.getStatusCode() == Response.DECLINE || response.getStatusCode() == Response.TEMPORARILY_UNAVAILABLE) {
 			System.out.println("CALL DECLINED");
 			dispatchSipEvent(new SipEvent(this, SipEventType.DECLINED, "", ""));
-
 		} else if (response.getStatusCode() == Response.NOT_FOUND) {
 			System.out.println("NOT FOUND");
 		} else if (response.getStatusCode() == Response.ACCEPTED) {
@@ -618,7 +618,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		try {
 			System.out.println("BYE received");
 			if (serverTransactionId == null) {
-				System.out.println("shootist:  null TID.");
 				System.out.println("shootist:  null TID.");
 				return;
 			}

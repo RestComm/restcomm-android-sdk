@@ -30,8 +30,8 @@ public class DeviceImpl implements IDevice,Serializable {
 	SipProfile sipProfile;
 	SoundManager soundManager;
 	boolean isInitialized;
-	public SipUADeviceListener deviceListener = null;
-	public SipUAConnectionListener connectionListener = null;
+	public SipUADeviceListener sipuaDeviceListener = null;
+	public SipUAConnectionListener sipuaConnectionListener = null;
 
 	private DeviceImpl(){
 		
@@ -58,31 +58,27 @@ public class DeviceImpl implements IDevice,Serializable {
 	public void onSipMessage(final SipEvent sipEventObject) {
 		System.out.println("Sip Event fired");
 		if (sipEventObject.type == SipEventType.MESSAGE) {
-			if (this.deviceListener != null)
-				this.deviceListener.onSipUAMessageArrived(new SipEvent(this, SipEvent.SipEventType.MESSAGE, sipEventObject.content, sipEventObject.from));
-
-			/*chatText += sipEventObject.from + ":" + sipEventObject.content
-					+ "\r\n";
-			this.runOnUiThread(new Runnable() {
-				public void run() {
-					textViewChat.append(chatText);
-
-				}
-			});*/
+			if (this.sipuaDeviceListener != null) {
+				this.sipuaDeviceListener.onSipUAMessageArrived(new SipEvent(this, SipEvent.SipEventType.MESSAGE, sipEventObject.content, sipEventObject.from));
+			}
 		} else if (sipEventObject.type == SipEventType.BYE) {
 			this.soundManager.releaseAudioResources();
-			if (this.connectionListener != null) {
+			if (this.sipuaConnectionListener != null) {
 				// notify our listener that we are connected
-				this.connectionListener.onSipUADisconnected(null);
+				this.sipuaConnectionListener.onSipUADisconnected(null);
 			}
 		} else if (sipEventObject.type == SipEventType.REMOTE_CANCEL) {
 			//this.soundManager.releaseAudioResources();
-			if (this.connectionListener != null) {
+			if (this.sipuaConnectionListener != null) {
 				// notify our listener that we are connected
-				this.connectionListener.onSipUACancelled(null);
+				this.sipuaConnectionListener.onSipUACancelled(null);
 			}
 		} else if (sipEventObject.type == SipEventType.DECLINED) {
-			this.soundManager.releaseAudioResources();
+			//this.soundManager.releaseAudioResources();
+			if (this.sipuaConnectionListener != null) {
+				// notify our listener that we are connected
+				this.sipuaConnectionListener.onSipUADeclined(null);
+			}
 		}else if (sipEventObject.type == SipEventType.BUSY_HERE) {
 			this.soundManager.releaseAudioResources();
 		} else if (sipEventObject.type == SipEventType.SERVICE_UNAVAILABLE) {
@@ -90,108 +86,22 @@ public class DeviceImpl implements IDevice,Serializable {
 
 		} else if (sipEventObject.type == SipEventType.CALL_CONNECTED) {
 			this.soundManager.setupAudio(sipEventObject.remoteRtpPort, this.sipProfile.getRemoteIp());
-			if (this.connectionListener != null) {
+			if (this.sipuaConnectionListener != null) {
 				// notify our listener that we are connected
-				this.connectionListener.onSipUAConnected(null);
+				this.sipuaConnectionListener.onSipUAConnected(null);
 			}
 		} else if (sipEventObject.type == SipEventType.REMOTE_RINGING) {
-			if (this.connectionListener != null) {
-				// notify our listener that we are connected
-				this.connectionListener.onSipUAConnecting(null);
+			if (this.sipuaConnectionListener != null) {
+				// notify our listener that we are connecting
+				this.sipuaConnectionListener.onSipUAConnecting(null);
 			}
 		} else if (sipEventObject.type == SipEventType.LOCAL_RINGING) {
-			if (this.deviceListener != null) {
-				this.deviceListener.onSipUAConnectionArrived(null);
+			if (this.sipuaDeviceListener != null) {
+				this.sipuaDeviceListener.onSipUAConnectionArrived(null);
 			}
-			// ISSUE#17: commented those, as we need to decouple the UI details
-			/*
-			Intent i = new Intent(context, IncomingCall.class);
-			i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-			
-			context.startActivity(i);
-			*/
-			// TODO: notify that local side is ringing
-
-			/*Handler handler = new Handler(context.getMainLooper());
-			handler.post(new Runnable() {
-				public void run() {
-					AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
-							((Activity)context));
-
-					// set title
-					alertDialogBuilder.setTitle("Incoming call from:" + sipEventObject.from);
-
-					// set dialog message
-					alertDialogBuilder
-							.setCancelable(false)
-							.setPositiveButton("Accept",
-									new DialogInterface.OnClickListener() {
-										public void onClick(
-												DialogInterface dialog, int id) {
-											try {
-
-												sipManager
-														.AcceptCall(
-																soundManager.setupAudioStream(sipProfile.getLocalIp()));
-											} catch (SdpException e) {
-												e.printStackTrace();
-											}
-										}
-									})
-							.setNegativeButton("Reject",
-									new DialogInterface.OnClickListener() {
-										public void onClick(
-												DialogInterface dialog, int id) {
-											sipManager
-													.RejectCall();
-											dialog.cancel();
-										}
-									});
-
-				
-					AlertDialog alertDialog = alertDialogBuilder.create();
-
-				
-					alertDialog.show();
-
-				}
-			});*/
 		}
 	}
-	// ISSUE#17: commented those, as we need to decouple the UI details
-	/*
-	private void createNotif() {
-		NotificationCompat.Builder mBuilder =
-		        new NotificationCompat.Builder(context)
-		        .setSmallIcon(R.drawable.dial)
-		        .setContentTitle("My notification")
-		        .setContentText("Hello World!")
-		        .setPriority(Notification.PRIORITY_MAX)
-		        .setDefaults(Notification.DEFAULT_VIBRATE);
-		// Creates an explicit intent for an Activity in your app
-		Intent resultIntent = new Intent(context, NotifyMessage.class);
 
-		// The stack builder object will contain an artificial back stack for the
-		// started Activity.
-		// This ensures that navigating backward from the Activity leads out of
-		// your application to the Home screen.
-		TaskStackBuilder stackBuilder = TaskStackBuilder.create(context);
-		// Adds the back stack for the Intent (but not the Intent itself)
-		stackBuilder.addParentStack(NotifyMessage.class);
-		// Adds the Intent that starts the Activity to the top of the stack
-		stackBuilder.addNextIntent(resultIntent);
-		PendingIntent resultPendingIntent =
-		        stackBuilder.getPendingIntent(
-		            0,
-		            PendingIntent.FLAG_UPDATE_CURRENT
-		        );
-		mBuilder.setContentIntent(resultPendingIntent);
-		NotificationManager mNotificationManager =
-		    (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-		// mId allows you to update the notification later on.
-		mNotificationManager.notify(1, mBuilder.build());	
-		}
-		*/
 	@Override
 	public void Call(String to) {
 		try {
@@ -203,27 +113,21 @@ public class DeviceImpl implements IDevice,Serializable {
 
 	@Override
 	public void Accept() {
-		//if (this.sipManager.direction == this.sipManager.direction.INCOMING) {
-			sipManager.AcceptCall(soundManager.setupAudioStream(sipProfile.getLocalIp()));
-		//}
+		sipManager.AcceptCall(soundManager.setupAudioStream(sipProfile.getLocalIp()));
 	}
 
 	@Override
 	public void Reject() {
-		//if (this.sipManager.direction == this.sipManager.direction.INCOMING) {
-			sipManager.RejectCall();
-		//}
+		sipManager.RejectCall();
 	}
 
 	@Override
 	public void Cancel() {
-		//if (this.sipManager.direction == this.sipManager.direction.OUTGOING) {
-			try {
-				sipManager.Cancel();
-			} catch (NotInitializedException e) {
-				e.printStackTrace();
-			}
-		//}
+		try {
+			sipManager.Cancel();
+		} catch (NotInitializedException e) {
+			e.printStackTrace();
+		}
 	}
 
 	@Override

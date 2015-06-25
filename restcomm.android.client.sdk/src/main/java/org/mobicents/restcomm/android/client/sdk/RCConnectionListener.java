@@ -27,22 +27,34 @@ import org.mobicents.restcomm.android.client.sdk.RCConnection;
 
 public interface RCConnectionListener {
     /**
-     * New connection is trying to connect
+     * New outgoing connection is trying to connect
      * @param connection Connection
      */
     public abstract void onConnecting(RCConnection connection);
 
     /**
-     * Connected just connected
+     * Connection just connected. This can be either an incoming or outgoing connection
      * @param connection Connection
      */
     public abstract void onConnected(RCConnection connection);
 
     /**
-     * Connection just disconnected
+     * Established connection just got disconnected. Can be either incoming or outgoing connection
      * @param connection Connection
      */
     public abstract void onDisconnected(RCConnection connection);
+
+    /**
+     * Incoming connection was just cancelled by remote party
+     * @param connection Connection
+     */
+    public abstract void onCancelled(RCConnection connection);
+
+    /**
+     * Incoming connection was just cancelled by remote party
+     * @param connection Connection
+     */
+    public abstract void onDeclined(RCConnection connection);
 
     /**
      * Connection just disconnected with an error

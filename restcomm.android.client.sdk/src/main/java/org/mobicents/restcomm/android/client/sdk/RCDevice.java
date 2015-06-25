@@ -127,7 +127,7 @@ public class RCDevice implements SipUADeviceListener, Parcelable {
 
         DeviceImpl deviceImpl = DeviceImpl.GetInstance();
         deviceImpl.Initialize(RCClient.getInstance().context, sipProfile, customHeaders);
-
+        DeviceImpl.GetInstance().sipuaDeviceListener = this;
     }
 
     // 'Copy' constructor
@@ -198,7 +198,7 @@ public class RCDevice implements SipUADeviceListener, Parcelable {
             connection.incoming = false;
             connection.state = RCConnection.ConnectionState.PENDING;
             //DeviceImpl.GetInstance().listener = this;
-            DeviceImpl.GetInstance().connectionListener = connection;
+            DeviceImpl.GetInstance().sipuaConnectionListener = connection;
 
             DeviceImpl.GetInstance().Call(parameters.get("username"));
 
@@ -352,7 +352,7 @@ public class RCDevice implements SipUADeviceListener, Parcelable {
         RCConnection connection = new RCConnection(connectionListener);
         connection.incoming = true;
         connection.state = RCConnection.ConnectionState.CONNECTING;
-        DeviceImpl.GetInstance().connectionListener = connection;
+        DeviceImpl.GetInstance().sipuaConnectionListener = connection;
 
         final RCConnection finalConnection = new RCConnection(connection);
         final RCDevice finalDevice = new RCDevice(this);

@@ -27,7 +27,6 @@ import java.util.List;
 import android.content.Context;
 import android.util.Log;
 
-import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
 
 /**
  * Top level singleton to initialize and shut down the Restcomm Client SDK. RCClient is also responsible
@@ -130,8 +129,6 @@ public class RCClient {
             Log.e(TAG, "Error: device already exists -multiple devices not implemented");
             return null;
         }
-
-        DeviceImpl.GetInstance().deviceListener = device;
 
         return device;
     }
