@@ -23,6 +23,7 @@
 package org.mobicents.restcomm.android.client.sdk;
 
 import android.net.wifi.WifiManager;
+import android.os.Handler;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -105,6 +106,18 @@ public class RCConnection implements SipUAConnectionListener, Parcelable {
         this.listener = connectionListener;
     }
 
+    // 'Copy' constructor
+    public RCConnection(RCConnection connection)
+    {
+        this.incoming = connection.incoming;
+        this.muted = connection.muted;
+
+        this.state = connection.state;
+        // not used yet
+        this.parameters = null;  //new HashMap<String, String>(connection.parameters);
+        this.listener = connection.listener;
+    }
+
     /**
      * Retrieves the current state of the connection
      */
@@ -119,9 +132,7 @@ public class RCConnection implements SipUAConnectionListener, Parcelable {
      */
     public Map<String, String> getParameters()
     {
-        HashMap<String, String> map = new HashMap<String, String>();
-
-        return map;
+        return parameters;
     }
 
     /**
@@ -218,13 +229,33 @@ public class RCConnection implements SipUAConnectionListener, Parcelable {
     public void onSipUAConnecting(SipEvent event)
     {
         this.state = ConnectionState.CONNECTING;
-        this.listener.onConnecting(this);
+        final RCConnection finalConnection = new RCConnection(this);
+
+        // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                listener.onConnecting(finalConnection);
+            }
+        };
+        mainHandler.post(myRunnable);
     }
 
     public void onSipUAConnected(SipEvent event)
     {
         this.state = ConnectionState.CONNECTED;
-        this.listener.onConnected(this);
+        final RCConnection finalConnection = new RCConnection(this);
+
+        // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                listener.onConnected(finalConnection);
+            }
+        };
+        mainHandler.post(myRunnable);
     }
 
     public void onSipUADisconnected(SipEvent event)
@@ -232,13 +263,35 @@ public class RCConnection implements SipUAConnectionListener, Parcelable {
         // we 're first notifying listener and then setting new state because we want the listener to be able to
         // differentiate between disconnect and remote cancel events with the same listener method: onDisconnected.
         // In the first case listener will see stat CONNECTED and in the second CONNECTING
-        this.listener.onDisconnected(this);
+        final RCConnection finalConnection = new RCConnection(this);
+
+        // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                listener.onDisconnected(finalConnection);
+            }
+        };
+        mainHandler.post(myRunnable);
+
         this.state = ConnectionState.DISCONNECTED;
     }
 
     public void onSipUACancelled(SipEvent event)
     {
-        this.listener.onDisconnected(this);
+        final RCConnection finalConnection = new RCConnection(this);
+
+        // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                listener.onDisconnected(finalConnection);
+            }
+        };
+        mainHandler.post(myRunnable);
+
         this.state = ConnectionState.DISCONNECTED;
     }
 

@@ -24,9 +24,12 @@ package org.mobicents.restcomm.android.client.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.net.wifi.WifiManager;
+import android.os.Handler;
 import android.os.Parcel;
 import android.os.Parcelable;
 
@@ -125,6 +128,19 @@ public class RCDevice implements SipUADeviceListener, Parcelable {
         DeviceImpl deviceImpl = DeviceImpl.GetInstance();
         deviceImpl.Initialize(RCClient.getInstance().context, sipProfile, customHeaders);
 
+    }
+
+    // 'Copy' constructor
+    public RCDevice(RCDevice device)
+    {
+        this.state = device.state;
+        this.incomingSoundEnabled = device.incomingSoundEnabled;
+        this.outgoingSoundEnabled = device.outgoingSoundEnabled;
+        this.disconnectSoundEnabled = device.disconnectSoundEnabled;
+        this.listener = device.listener;
+
+        // Not used yet
+        this.capabilities = null;
     }
 
     /**
@@ -338,7 +354,18 @@ public class RCDevice implements SipUADeviceListener, Parcelable {
         connection.state = RCConnection.ConnectionState.CONNECTING;
         DeviceImpl.GetInstance().connectionListener = connection;
 
-        this.listener.onIncomingConnection(this,connection);
+        final RCConnection finalConnection = new RCConnection(connection);
+        final RCDevice finalDevice = new RCDevice(this);
+
+        // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                listener.onIncomingConnection(finalDevice, finalConnection);
+            }
+        };
+        mainHandler.post(myRunnable);
 
         /*
         try {
@@ -361,7 +388,19 @@ public class RCDevice implements SipUADeviceListener, Parcelable {
         String from = event.from.replaceAll("^<sip:", "").replaceAll("@.*$", "");
         parameters.put("username", from);
 
-        this.listener.onIncomingMessage(this, event.content, parameters);
+        final String finalContent = new String(event.content);
+        final HashMap<String, String> finalParameters = new HashMap<String, String>(parameters);
+        final RCDevice finalDevice = new RCDevice(this);
+
+        // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                listener.onIncomingMessage(finalDevice, finalContent, finalParameters);
+            }
+        };
+        mainHandler.post(myRunnable);
     }
 
     // Helpers

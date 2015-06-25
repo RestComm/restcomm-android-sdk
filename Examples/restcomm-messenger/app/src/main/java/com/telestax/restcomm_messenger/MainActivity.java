@@ -38,7 +38,8 @@ import java.util.Map;
 
 
 public class MainActivity extends Activity implements RCDeviceListener, RCConnectionListener,
-        OnClickListener, SharedPreferences.OnSharedPreferenceChangeListener, OnCheckedChangeListener {
+        OnClickListener, SharedPreferences.OnSharedPreferenceChangeListener, OnCheckedChangeListener,
+        MediaPlayer.OnPreparedListener {
 
     SharedPreferences prefs;
     private RCDevice device;
@@ -122,12 +123,26 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
 
         cbMuted.setEnabled(false);
 
-        // Setup Media
+        // Setup Media (notice that I'm not preparing the media as create does that implicitly plus
+        // I'm not ever stopping a player -instead I'm pausing so no additional preparation is needed
+        // there either. We might need to revisit this at some point though
         ringingPlayer = MediaPlayer.create(getApplicationContext(), R.raw.ringing);
+        //ringingPlayer.setOnPreparedListener(this);
+        //ringingPlayer.prepareAsync();
         ringingPlayer.setLooping(true);
         callingPlayer = MediaPlayer.create(getApplicationContext(), R.raw.calling);
+        //callingPlayer.setOnPreparedListener(this);
+        //callingPlayer.prepareAsync();
         callingPlayer.setLooping(true);
         messagePlayer = MediaPlayer.create(getApplicationContext(), R.raw.message);
+        //messagePlayer.setOnPreparedListener(this);
+        //messagePlayer.prepareAsync();
+    }
+
+    @Override
+    public void onPrepared(MediaPlayer mp)
+    {
+        Log.i(TAG, "Media Player prepared");
     }
 
     @Override
@@ -271,70 +286,43 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
     public void onIncomingConnection(RCDevice device, RCConnection connection)
     {
         Log.i(TAG, "Connection arrived");
-        final RCConnection finalConnection = connection;
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                ringingPlayer.start();
-                pendingConnection = finalConnection;
-            }
-        });
+        ringingPlayer.start();
+        pendingConnection = connection;
     }
 
     public void onIncomingMessage(RCDevice device, String message, HashMap<String, String> parameters)
     {
-        final HashMap<String, String> finalParameters = parameters;
-        final String finalMessage = message;
-
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                String text = txtWall.getText().toString();
-                String newText = finalParameters.get("username") + ": " + finalMessage + "\n" + text;
-                txtWall.setText(newText, TextView.BufferType.EDITABLE);
-                messagePlayer.start();
-                Log.i(TAG, "Message arrived: message");
-            }
-        });
+        Log.i(TAG, "Message arrived: message");
+        String text = txtWall.getText().toString();
+        String newText = parameters.get("username") + ": " + message + "\n" + text;
+        txtWall.setText(newText, TextView.BufferType.EDITABLE);
+        messagePlayer.start();
     }
 
     // RCConnection Listeners
     public void onConnecting(RCConnection connection)
     {
         Log.i(TAG, "RCConnection connecting");
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                callingPlayer.start();
-            }
-        });
+        callingPlayer.start();
     }
 
     public void onConnected(RCConnection connection) {
         Log.i(TAG, "RCConnection connected");
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                cbMuted.setEnabled(true);
-                callingPlayer.pause();
-            }
-        });
+        cbMuted.setEnabled(true);
+        if (!connection.isIncoming()) {
+            callingPlayer.pause();
+        }
     }
 
     public void onDisconnected(RCConnection connection) {
         Log.i(TAG, "RCConnection disconnected");
-        final RCConnection.ConnectionState finalState = connection.getState();
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (finalState == RCConnection.ConnectionState.CONNECTED) {
-                    cbMuted.setEnabled(false);
-                }
-                else if (finalState == RCConnection.ConnectionState.CONNECTING) {
-                    ringingPlayer.pause();
-                }
-            }
-        });
+        if (connection.getState() == RCConnection.ConnectionState.CONNECTED) {
+            cbMuted.setEnabled(false);
+        }
+        else if (connection.getState() == RCConnection.ConnectionState.CONNECTING) {
+            ringingPlayer.pause();
+        }
+
         this.connection = null;
         pendingConnection = null;
     }

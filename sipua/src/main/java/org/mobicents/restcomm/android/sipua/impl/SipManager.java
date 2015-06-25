@@ -619,6 +619,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			System.out.println("BYE received");
 			if (serverTransactionId == null) {
 				System.out.println("shootist:  null TID.");
+				System.out.println("shootist:  null TID.");
 				return;
 			}
 			Dialog dialog = serverTransactionId.getDialog();
