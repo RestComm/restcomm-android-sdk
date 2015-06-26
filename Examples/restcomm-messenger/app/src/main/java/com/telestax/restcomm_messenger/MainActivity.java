@@ -3,7 +3,6 @@ package com.telestax.restcomm_messenger;
 //import android.support.v7.app.ActionBarActivity;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.PendingIntent;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -21,9 +20,7 @@ import android.widget.CompoundButton.OnCheckedChangeListener;
 import android.widget.EditText;
 import android.view.View.OnClickListener;
 import android.widget.TextView;
-import android.net.wifi.WifiManager;
 
-import org.apache.log4j.chainsaw.Main;
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.client.sdk.RCConnectionListener;
@@ -31,10 +28,7 @@ import org.mobicents.restcomm.android.client.sdk.RCDevice;
 import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
 import org.mobicents.restcomm.android.client.sdk.RCPresenceEvent;
 
-import java.io.Serializable;
 import java.util.HashMap;
-import java.util.Map;
-//import java.util.Map;
 
 
 public class MainActivity extends Activity implements RCDeviceListener, RCConnectionListener,
@@ -106,8 +100,6 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         // TODO: we don't support capability tokens yet so let's use an empty string
         device = RCClient.createDevice("", this);
         Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-        ////PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        ////device.setIncomingIntent(pendingIntent);
         device.setIncomingIntent(intent);
 
         connection = null;
@@ -127,16 +119,10 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         // I'm not ever stopping a player -instead I'm pausing so no additional preparation is needed
         // there either. We might need to revisit this at some point though
         ringingPlayer = MediaPlayer.create(getApplicationContext(), R.raw.ringing);
-        //ringingPlayer.setOnPreparedListener(this);
-        //ringingPlayer.prepareAsync();
         ringingPlayer.setLooping(true);
         callingPlayer = MediaPlayer.create(getApplicationContext(), R.raw.calling);
-        //callingPlayer.setOnPreparedListener(this);
-        //callingPlayer.prepareAsync();
         callingPlayer.setLooping(true);
         messagePlayer = MediaPlayer.create(getApplicationContext(), R.raw.message);
-        //messagePlayer.setOnPreparedListener(this);
-        //messagePlayer.prepareAsync();
     }
 
     @Override
@@ -145,35 +131,6 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         Log.i(TAG, "Media Player prepared");
     }
 
-    /*
-    @Override
-    public void onResume()
-    {
-        super.onResume();
-
-        Intent intent = getIntent();
-
-        RCDevice inDevice = intent.getParcelableExtra(RCDevice.EXTRA_DEVICE);
-        RCConnection inConnection = intent.getParcelableExtra(RCDevice.EXTRA_CONNECTION);
-
-        if (inDevice == null && inConnection == null)
-            return;
-
-        intent.removeExtra(RCDevice.EXTRA_DEVICE);
-        intent.removeExtra(RCDevice.EXTRA_CONNECTION);
-
-        if (pendingConnection != null) {
-            Log.i(TAG, "A pending connection already exists");
-            pendingConnection.ignore();
-            return;
-        }
-
-        pendingConnection = inConnection;
-        pendingConnection.setConnectionListener(this);
-
-        return;
-    }
-    */
 
     // UI Events
     public void onClick(View view) {
@@ -338,7 +295,6 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         pendingConnection = null;
     }
 
-
     public void onDisconnected(RCConnection connection, int errorCode, String errorText) {
         if (errorCode == RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal()) {
             showOkAlert("No Connectivity", errorText);
@@ -347,6 +303,8 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         } else {
             showOkAlert("Unknown Error", "Unknown Restcomm Client error");
         }
+        this.connection = null;
+        pendingConnection = null;
     }
 
     // menu stuff

@@ -3,6 +3,7 @@ package com.telestax.restcomm_helloworld;
 //import android.support.v7.app.ActionBarActivity;
 import android.app.Activity;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -43,8 +44,6 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         setContentView(R.layout.activity_main);
 
         // initialize UI
-        //btnRegister = (Button)findViewById(R.id.button_register);
-        //btnRegister.setOnClickListener(this);
         btnDial = (Button)findViewById(R.id.button_dial);
         btnDial.setOnClickListener(this);
         btnHangup = (Button)findViewById(R.id.button_hangup);
@@ -62,20 +61,16 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
             {
                 Log.e(TAG, "RCClient initialization error");
             }
-
         });
 
         // TODO: we don't support capability tokens yet so let's use an empty string
         device = RCClient.createDevice("", this);
+        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+        device.setIncomingIntent(intent);
+
         connection = null;
+
         params = new HashMap<String, String>();
-
-        /*
-        // set AOR and registrar
-        params.put("aor", "sip:bob@telestax.com");
-        params.put("registrar", "192.168.2.32");
-        */
-
         params.put("pref_proxy_ip", "192.168.2.32");
         params.put("pref_proxy_port", "5080");
         params.put("pref_sip_user", "bob");
@@ -120,12 +115,16 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
                 Log.e(TAG, "Error: error connecting");
                 return;
             }
+            //device.updateParams(params);
         } else if (view.getId() == R.id.button_hangup) {
             if (connection == null) {
                 Log.e(TAG, "Error: not connected");
-                return;
             }
-            connection.disconnect();
+            else {
+                connection.disconnect();
+                connection = null;
+                pendingConnection = null;
+            }
         }
     }
 
@@ -139,6 +138,11 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
     public void onStopListening(RCDevice device)
     {
 
+    }
+
+    public void onStopListening(RCDevice device, int errorCode, String errorText)
+    {
+        Log.i(TAG, errorText);
     }
 
     public boolean receivePresenceEvents(RCDevice device)
@@ -185,6 +189,25 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
     public void onDisconnected(RCConnection connection)
     {
         Log.i(TAG, "RCConnection disconnected");
+    }
+
+    public void onDisconnected(RCConnection connection, int errorCode, String errorText) {
+
+        Log.i(TAG, errorText);
+        this.connection = null;
+        pendingConnection = null;
+    }
+
+    public void onCancelled(RCConnection connection) {
+        Log.i(TAG, "RCConnection cancelled");
+        this.connection = null;
+        pendingConnection = null;
+    }
+
+    public void onDeclined(RCConnection connection) {
+        Log.i(TAG, "RCConnection declined");
+        this.connection = null;
+        pendingConnection = null;
     }
 
 
