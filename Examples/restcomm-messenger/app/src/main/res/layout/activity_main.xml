@@ -12,7 +12,8 @@
         android:id="@+id/button_dial"
         android:layout_alignTop="@+id/text_uri"
         android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
+        android:layout_alignParentEnd="true"
+        android:layout_marginLeft="20dp" />
 
     <Button
         android:layout_width="wrap_content"
@@ -74,7 +75,8 @@
         android:id="@+id/button_send"
         android:layout_alignBottom="@+id/text_message"
         android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
+        android:layout_alignParentEnd="true"
+        android:layout_marginLeft="20dp" />
 
     <EditText
         android:layout_width="wrap_content"
@@ -83,8 +85,8 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:layout_alignRight="@+id/text_message"
-        android:layout_alignEnd="@+id/text_message" />
+        android:layout_toStartOf="@+id/button_dial"
+        android:layout_toLeftOf="@+id/button_dial" />
 
     <EditText
         android:layout_width="wrap_content"
@@ -95,7 +97,9 @@
         android:layout_below="@+id/text_uri"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:layout_marginTop="35dp" />
+        android:layout_marginTop="35dp"
+        android:layout_alignRight="@+id/text_uri"
+        android:layout_alignEnd="@+id/text_uri" />
 
     <EditText
         android:layout_width="wrap_content"

@@ -2,7 +2,6 @@ package com.telestax.restcomm_helloworld;
 
 //import android.support.v7.app.ActionBarActivity;
 import android.app.Activity;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
@@ -10,9 +9,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.util.Log;
 import android.widget.Button;
-import android.widget.EditText;
 import android.view.View.OnClickListener;
-import android.widget.TextView;
+import java.util.HashMap;
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
@@ -20,11 +18,6 @@ import org.mobicents.restcomm.android.client.sdk.RCConnectionListener;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
 import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
 import org.mobicents.restcomm.android.client.sdk.RCPresenceEvent;
-
-import java.util.HashMap;
-import java.util.Map;
-//import java.util.Map;
-
 
 public class MainActivity extends Activity implements RCDeviceListener, RCConnectionListener, OnClickListener {
 
@@ -34,7 +27,6 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
     private static final String TAG = "MainActivity";
 
     // UI elements
-    Button btnRegister;
     Button btnDial;
     Button btnHangup;
 
@@ -71,7 +63,8 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         connection = null;
 
         params = new HashMap<String, String>();
-        params.put("pref_proxy_ip", "192.168.2.32");
+        // CHANGEME: update the IP address to your Restcomm instance
+        params.put("pref_proxy_ip", "54.225.212.193");
         params.put("pref_proxy_port", "5080");
         params.put("pref_sip_user", "bob");
         params.put("pref_sip_password", "1234");
@@ -109,7 +102,9 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
                 return;
             }
             HashMap<String, String> connectParams = new HashMap<String, String>();
-            connectParams.put("username", "sip:1235@192.168.2.32:5080");
+            // CHANGEME: update the IP address to your Restcomm instance. Also, you can update the number
+            // from '1235' to any Restcomm application you wish to reach
+            connectParams.put("username", "sip:1235@54.225.212.193:5080");
             connection = device.connect(connectParams, this);
             if (connection == null) {
                 Log.e(TAG, "Error: error connecting");
