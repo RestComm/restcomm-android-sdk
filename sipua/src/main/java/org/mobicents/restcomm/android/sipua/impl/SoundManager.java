@@ -25,9 +25,7 @@ public class SoundManager {
 			audioStream.setMode(RtpStream.MODE_NORMAL);
 			audioGroup = new AudioGroup();
 			audioGroup.setMode(AudioGroup.MODE_ECHO_SUPPRESSION);
-		
-				
-				
+
 		} catch (SocketException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -38,31 +36,54 @@ public class SoundManager {
 
 	}
 	public void releaseAudioResources() {
+		System.out.println("@@@@ Releasing Audio: ");
+		try {
+			audioStream.join(null);
+		} catch (IllegalStateException e) {
+			e.printStackTrace();
+		}
+
+			//audioStream.release();
 		
-		audioStream.join(null);
-		//audioStream.release();
-		
-		audioGroup.clear();
+		//audioGroup.clear();
 		audio.setMode(AudioManager.MODE_NORMAL);
 		
 			
 	}
 	public int setupAudioStream(String localIp) {
+		int localPort = audioStream.getLocalPort();
+		System.out.println("@@@@ Updating audioManager Mode, localport: " + localPort);
+
 		audio.setMode(AudioManager.MODE_IN_COMMUNICATION);
 	
 	
+		return localPort;
+	}
+
+	public int getLocalPort() {
 		return audioStream.getLocalPort();
 	}
 	public void setupAudio(int remoteRtpPort, String remoteIp) {
 
+		System.out.println("@@@@ Setting up Audio: " + remoteIp + "/" + remoteRtpPort);
 		try {
 			audioStream.associate(
 					InetAddress.getByName(remoteIp),
 					remoteRtpPort);
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
+		}  catch (IllegalStateException e) {
+			e.printStackTrace();
 		}
-		audioStream.join(audioGroup);
+
+		try {
+			audioStream.join(audioGroup);
+		}
+		catch (IllegalStateException e) {
+			e.printStackTrace();
+		}
 
 	}
 	public void muteAudio(boolean muted)

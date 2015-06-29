@@ -266,7 +266,7 @@ public class RCDevice implements SipUADeviceListener, Parcelable {
     }
     public void setIncomingIntent(Intent intent)
     {
-        intent.putExtra(EXTRA_DEVICE, this);
+        //intent.putExtra(EXTRA_DEVICE, this);
         //intent.putExtra(EXTRA_CONNECTION, this);
         pendingIntent = PendingIntent.getActivity(RCClient.getInstance().context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }

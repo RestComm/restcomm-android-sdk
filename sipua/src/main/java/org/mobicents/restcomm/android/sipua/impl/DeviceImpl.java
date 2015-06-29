@@ -68,13 +68,13 @@ public class DeviceImpl implements IDevice,Serializable {
 				this.sipuaConnectionListener.onSipUADisconnected(null);
 			}
 		} else if (sipEventObject.type == SipEventType.REMOTE_CANCEL) {
-			//this.soundManager.releaseAudioResources();
+			this.soundManager.releaseAudioResources();
 			if (this.sipuaConnectionListener != null) {
 				// notify our listener that we are connected
 				this.sipuaConnectionListener.onSipUACancelled(null);
 			}
 		} else if (sipEventObject.type == SipEventType.DECLINED) {
-			//this.soundManager.releaseAudioResources();
+			this.soundManager.releaseAudioResources();
 			if (this.sipuaConnectionListener != null) {
 				// notify our listener that we are connected
 				this.sipuaConnectionListener.onSipUADeclined(null);
@@ -83,8 +83,8 @@ public class DeviceImpl implements IDevice,Serializable {
 			this.soundManager.releaseAudioResources();
 		} else if (sipEventObject.type == SipEventType.SERVICE_UNAVAILABLE) {
 			this.soundManager.releaseAudioResources();
-
 		} else if (sipEventObject.type == SipEventType.CALL_CONNECTED) {
+			soundManager.setupAudioStream(sipProfile.getLocalIp());
 			this.soundManager.setupAudio(sipEventObject.remoteRtpPort, this.sipProfile.getRemoteIp());
 			if (this.sipuaConnectionListener != null) {
 				// notify our listener that we are connected
@@ -105,7 +105,8 @@ public class DeviceImpl implements IDevice,Serializable {
 	@Override
 	public void Call(String to) {
 		try {
-			this.sipManager.Call(to,this.soundManager.setupAudioStream(sipProfile.getLocalIp()));
+			//this.sipManager.Call(to, this.soundManager.setupAudioStream(sipProfile.getLocalIp()));
+			this.sipManager.Call(to, this.soundManager.getLocalPort());
 		} catch (NotInitializedException e) {
 			e.printStackTrace();
 		}
@@ -113,7 +114,8 @@ public class DeviceImpl implements IDevice,Serializable {
 
 	@Override
 	public void Accept() {
-		sipManager.AcceptCall(soundManager.setupAudioStream(sipProfile.getLocalIp()));
+		//sipManager.AcceptCall(soundManager.setupAudioStream(sipProfile.getLocalIp()));
+		sipManager.AcceptCall(soundManager.getLocalPort());
 	}
 
 	@Override
@@ -157,7 +159,6 @@ public class DeviceImpl implements IDevice,Serializable {
 		} catch (NotInitializedException e) {
 			e.printStackTrace();
 		}
-
 	}
 	@Override
 	public void Register() {
@@ -196,7 +197,6 @@ public class DeviceImpl implements IDevice,Serializable {
 	    }  
 
 	}
-
 
 	public static Object deserialize(byte[] b) {  
 	        try {    
