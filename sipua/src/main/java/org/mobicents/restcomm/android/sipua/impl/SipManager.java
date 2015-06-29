@@ -165,12 +165,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		this.sipProfile = sipProfile;
 	}
 
-	public synchronized void addSipListener(ISipEventListener listener) {
-		if (!sipEventListenerList.contains(listener)) {
-			sipEventListenerList.add(listener);
-		}
-	}
-
 	public SipManagerState getSipManagerState() {
 		return sipManagerState;
 	}
@@ -917,4 +911,11 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			return null;
 		}
 	}
+
+	public synchronized void addSipListener(ISipEventListener listener) {
+		if (!sipEventListenerList.contains(listener)) {
+			sipEventListenerList.add(listener);
+		}
+	}
+
 }

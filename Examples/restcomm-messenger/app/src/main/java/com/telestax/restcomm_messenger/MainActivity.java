@@ -131,7 +131,6 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         Log.i(TAG, "Media Player prepared");
     }
 
-
     // UI Events
     public void onClick(View view) {
         if (view.getId() == R.id.button_dial) {
