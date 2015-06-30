@@ -333,7 +333,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
                                           String key) {
         boolean updated = false;
         if (key.equals("pref_proxy_ip")) {
-            params.put("pref_proxy_ip", prefs.getString("pref_proxy_ip", ""));
+            params.put("pref_proxy_ip", prefs.getString("pref_proxy_ip", "192.168.2.32"));
             updated = true;
         } else if (key.equals("pref_proxy_port")) {
             params.put("pref_proxy_port", prefs.getString("pref_proxy_port", "5060"));
@@ -352,7 +352,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
 
     @SuppressWarnings("static-access")
     private void initializeSipFromPreferences() {
-        params.put("pref_proxy_ip", prefs.getString("pref_proxy_ip", ""));
+        params.put("pref_proxy_ip", prefs.getString("pref_proxy_ip", "192.168.2.32"));
         params.put("pref_proxy_port", prefs.getString("pref_proxy_port", "5080"));
         params.put("pref_sip_user", prefs.getString("pref_sip_user", "bob"));
         params.put("pref_sip_password", prefs.getString("pref_sip_password", "1234"));
