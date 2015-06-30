@@ -88,6 +88,7 @@ public class SoundManager {
 	}
 	public void muteAudio(boolean muted)
 	{
+		System.out.println("#### Muting audio: " + muted);
 		if (muted) {
 			if (audioGroup.getMode() != audioGroup.MODE_MUTED) {
 				audioGroup.setMode(audioGroup.MODE_MUTED);
