@@ -363,12 +363,14 @@ public class RCDevice implements SipUADeviceListener, Parcelable {
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
+                /*
                 // bring the App to front
                 try {
                     pendingIntent.send();
                 } catch (PendingIntent.CanceledException e) {
                     e.printStackTrace();
                 }
+                */
 
                 listener.onIncomingConnection(finalDevice, finalConnection);
             }
@@ -404,12 +406,14 @@ public class RCDevice implements SipUADeviceListener, Parcelable {
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
+                /*
                 // bring the App to front
                 try {
                     pendingIntent.send();
                 } catch (PendingIntent.CanceledException e) {
                     e.printStackTrace();
                 }
+                */
 
                 listener.onIncomingMessage(finalDevice, finalContent, finalParameters);
             }

@@ -6,6 +6,7 @@ import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Configuration;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -88,7 +89,6 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
             public void onInitialized()
             {
                 Log.i(TAG, "RCClient initialized");
-
             }
 
             public void onError(Exception exception)
@@ -123,6 +123,13 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         callingPlayer = MediaPlayer.create(getApplicationContext(), R.raw.calling);
         callingPlayer.setLooping(true);
         messagePlayer = MediaPlayer.create(getApplicationContext(), R.raw.message);
+    }
+
+    @Override
+    public void onNewIntent(Intent intent)
+    {
+        super.onNewIntent(intent);
+        setIntent(intent);
     }
 
     @Override
@@ -306,6 +313,20 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         pendingConnection = null;
     }
 
+    @Override
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+
+        /*
+        // Checks the orientation of the screen
+        if (newConfig.orientation == Configuration.ORIENTATION_LANDSCAPE) {
+            Toast.makeText(this, "landscape", Toast.LENGTH_SHORT).show();
+        } else if (newConfig.orientation == Configuration.ORIENTATION_PORTRAIT){
+            Toast.makeText(this, "portrait", Toast.LENGTH_SHORT).show();
+        }
+        */
+    }
+
     // menu stuff
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -372,5 +393,35 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         alertDialog.show();
     }
 
-
+    // Activity lifetime
+    @Override
+    protected void onStart() {
+        super.onStart();
+        // The activity is about to become visible.
+        Log.i(TAG, "%% onStart");
+    }
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // The activity has become visible (it is now "resumed").
+        Log.i(TAG, "%% onResume");
+    }
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Another activity is taking focus (this activity is about to be "paused").
+        Log.i(TAG, "%% onPause");
+    }
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // The activity is no longer visible (it is now "stopped")
+        Log.i(TAG, "%% onStop");
+    }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // The activity is about to be destroyed.
+        Log.i(TAG, "%% onDestroy");
+    }
 }

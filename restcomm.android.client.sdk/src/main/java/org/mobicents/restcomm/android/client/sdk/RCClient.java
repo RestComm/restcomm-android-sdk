@@ -126,8 +126,8 @@ public class RCClient {
             list.add(device);
         }
         else {
-            Log.e(TAG, "Error: device already exists -multiple devices not implemented");
-            return null;
+            Log.i(TAG, "Device already exists, so we 're returning this one -multiple devices not implemented");
+            return list.get(0);
         }
 
         return device;

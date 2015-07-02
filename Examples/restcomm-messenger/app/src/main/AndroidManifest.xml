@@ -10,7 +10,9 @@
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
-            android:launchMode= "singleTop" >
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:screenOrientation="portrait"
+            android:launchMode= "singleInstance" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
