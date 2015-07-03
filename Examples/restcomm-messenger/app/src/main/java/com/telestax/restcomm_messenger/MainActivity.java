@@ -190,9 +190,13 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
             sendParams.put("username", txtUri.getText().toString());
             if (device.sendMessage(txtMessage.getText().toString(), sendParams)) {
                 // also output the message in the wall
+                /*
                 String text = txtWall.getText().toString();
                 String newText = "Me: " + txtMessage.getText().toString() + "\n" + text;
                 txtWall.setText(newText, TextView.BufferType.EDITABLE);
+                */
+                txtWall.append("Me: " + txtMessage.getText().toString() + "\n");
+
                 messagePlayer.start();
             }
         }
@@ -250,10 +254,15 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
 
     public void onIncomingMessage(RCDevice device, String message, HashMap<String, String> parameters)
     {
-        Log.i(TAG, "Message arrived: message");
+        Log.i(TAG, "Message arrived: " + message);
+        /* put new text on top
         String text = txtWall.getText().toString();
         String newText = parameters.get("username") + ": " + message + "\n" + text;
         txtWall.setText(newText, TextView.BufferType.EDITABLE);
+        */
+        // put new text on the bottom
+        txtWall.append(parameters.get("username") + ": " + message + "\n");
+
         messagePlayer.start();
     }
 

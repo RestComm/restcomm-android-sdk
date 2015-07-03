@@ -27,6 +27,7 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 			localAddress = InetAddress.getByName(ip);
 			audioGroup = new AudioGroup();
 			audioGroup.setMode(AudioGroup.MODE_ECHO_SUPPRESSION);
+			//audioGroup.setMode(AudioGroup.MODE_NORMAL);
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
@@ -71,6 +72,7 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 			Log.i(TAG, "Using None ??");
 			//audio.setSpeakerphoneOn(true);
 		}
+		//audio.setSpeakerphoneOn(false);
 
 		Log.i(TAG, "Vol/max: " + audio.getStreamVolume(audio.STREAM_VOICE_CALL) + "/" + audio.getStreamMaxVolume(audio.STREAM_VOICE_CALL));
 
@@ -101,6 +103,13 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 	}
 
 	public void stopStreaming() {
+		AudioStream streams[] = audioGroup.getStreams();
+		for (int i = 0; i < streams.length; i++) {
+			Log.i(TAG, "-------- Stream: " + i);
+			AudioCodec codec = streams[i].getCodec();
+			Log.i(TAG, "fmtp: " + codec.fmtp + ", rtpmap: " + codec.rtpmap + ", type: " + codec.type);
+		}
+
 		System.out.println("Releasing Audio: ");
 		try {
 			audioStream.join(null);

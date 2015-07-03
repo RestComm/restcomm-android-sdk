@@ -10,10 +10,9 @@
         android:layout_height="wrap_content"
         android:text="Dial"
         android:id="@+id/button_dial"
-        android:layout_alignTop="@+id/text_uri"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginLeft="20dp" />
+        android:layout_alignBottom="@+id/text_uri"
+        android:layout_alignRight="@+id/button_cancel"
+        android:layout_alignEnd="@+id/button_cancel" />
 
     <Button
         android:layout_width="wrap_content"
@@ -31,12 +30,12 @@
         android:layout_height="wrap_content"
         android:text="Register"
         android:id="@+id/button_register"
-        android:layout_below="@+id/text_wall"
+        android:layout_below="@+id/text_message"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:layout_alignRight="@+id/text_wall"
-        android:layout_alignEnd="@+id/text_wall"
-        android:layout_marginTop="30dp" />
+        android:layout_marginTop="30dp"
+        android:layout_alignRight="@+id/button_send"
+        android:layout_alignEnd="@+id/button_send" />
 
     <Button
         android:layout_width="wrap_content"
@@ -75,8 +74,7 @@
         android:id="@+id/button_send"
         android:layout_alignBottom="@+id/text_message"
         android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginLeft="20dp" />
+        android:layout_alignParentEnd="true" />
 
     <EditText
         android:layout_width="wrap_content"
@@ -85,8 +83,9 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:layout_toStartOf="@+id/button_dial"
-        android:layout_toLeftOf="@+id/button_dial" />
+        android:layout_toStartOf="@+id/button_cancel"
+        android:layout_marginTop="10dp"
+        android:layout_toLeftOf="@+id/button_cancel" />
 
     <EditText
         android:layout_width="wrap_content"
@@ -94,12 +93,12 @@
         android:inputType="textMultiLine"
         android:ems="10"
         android:id="@+id/text_message"
-        android:layout_below="@+id/text_uri"
+        android:layout_below="@+id/text_wall"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:layout_marginTop="35dp"
-        android:layout_alignRight="@+id/text_uri"
-        android:layout_alignEnd="@+id/text_uri" />
+        android:layout_marginTop="25dp"
+        android:layout_toStartOf="@+id/button_cancel"
+        android:layout_toLeftOf="@+id/button_cancel" />
 
     <EditText
         android:layout_width="wrap_content"
@@ -109,10 +108,11 @@
         android:id="@+id/text_wall"
         android:maxLines="4"
         android:lines="4"
-        android:layout_below="@+id/text_message"
+        android:focusable="false"
+        android:layout_below="@+id/button_dial"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:layout_marginTop="35dp"
+        android:layout_marginTop="20dp"
         android:layout_alignRight="@+id/button_send"
         android:layout_alignEnd="@+id/button_send" />
 
