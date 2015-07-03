@@ -61,6 +61,7 @@ import android.javax.sip.header.ViaHeader;
 import android.javax.sip.message.MessageFactory;
 import android.javax.sip.message.Request;
 import android.javax.sip.message.Response;
+import android.util.Log;
 
 public class SipManager implements SipListener, ISipManager, Serializable {
 	enum CallDirection {
@@ -75,6 +76,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	public AddressFactory addressFactory;
 	public MessageFactory messageFactory;
 	public SipFactory sipFactory;
+	private static final String TAG = "SipManager";
 
 	private ListeningPoint udpListeningPoint;
 	private SipProfile sipProfile;
@@ -796,37 +798,43 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	// is different -at some point we should merge those methods
 	private void sendByeClient(Transaction transaction) {
 		final Dialog dialog = transaction.getDialog();
-		Request byeRequest = null;
-		try {
-			byeRequest = dialog.createRequest(Request.BYE);
-		} catch (SipException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		if (dialog == null) {
+			Log.i(TAG, "Hmm, weird: dialog is already terminated -avoiding BYE");
 		}
-		/**/
-		ClientTransaction newTransaction = null;
-		try {
-			newTransaction = sipProvider.getNewClientTransaction(byeRequest);
-		} catch (TransactionUnavailableException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		final ClientTransaction ct = newTransaction;
-		/**/
-		Thread thread = new Thread() {
-			public void run() {
-				try {
-					dialog.sendRequest(ct);
-				} catch (TransactionDoesNotExistException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (SipException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
+		else {
+			Request byeRequest = null;
+			try {
+				byeRequest = dialog.createRequest(Request.BYE);
+			} catch (SipException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
-		};
-		thread.start();
+
+			ClientTransaction newTransaction = null;
+			try {
+				newTransaction = sipProvider.getNewClientTransaction(byeRequest);
+			} catch (TransactionUnavailableException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			final ClientTransaction ct = newTransaction;
+
+			Thread thread = new Thread() {
+				public void run() {
+					try {
+						dialog.sendRequest(ct);
+					} catch (TransactionDoesNotExistException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (SipException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			};
+			thread.start();
+		}
+
 		direction = CallDirection.NONE;
 	}
 

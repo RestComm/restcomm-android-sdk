@@ -84,7 +84,6 @@ public class DeviceImpl implements IDevice,Serializable {
 		} else if (sipEventObject.type == SipEventType.SERVICE_UNAVAILABLE) {
 			this.soundManager.stopStreaming();
 		} else if (sipEventObject.type == SipEventType.CALL_CONNECTED) {
-			//soundManager.setupAudioStream(sipProfile.getLocalIp());
 			this.soundManager.startStreaming(sipEventObject.remoteRtpPort, this.sipProfile.getRemoteIp());
 			if (this.sipuaConnectionListener != null) {
 				// notify our listener that we are connected
@@ -105,7 +104,6 @@ public class DeviceImpl implements IDevice,Serializable {
 	@Override
 	public void Call(String to) {
 		try {
-			//this.sipManager.Call(to, this.soundManager.setupAudioStream(sipProfile.getLocalIp()));
 			this.sipManager.Call(to, this.soundManager.setupAudioStream());
 		} catch (NotInitializedException e) {
 			e.printStackTrace();
@@ -114,7 +112,6 @@ public class DeviceImpl implements IDevice,Serializable {
 
 	@Override
 	public void Accept() {
-		//sipManager.AcceptCall(soundManager.setupAudioStream(sipProfile.getLocalIp()));
 		sipManager.AcceptCall(soundManager.setupAudioStream());
 	}
 
@@ -192,8 +189,7 @@ public class DeviceImpl implements IDevice,Serializable {
 	        byte[] buf = bos.toByteArray();   
 	        return buf;    
 	    } catch(IOException ioe) { 
-	        //Log.e("serializeObject", "error", ioe);           //"ioe" says java.io.NotSerializableException exception
-	        return null; 
+	        return null;
 	    }  
 
 	}
@@ -205,11 +201,9 @@ public class DeviceImpl implements IDevice,Serializable {
 	            in.close();  
 	            return object;  
 	        } catch(ClassNotFoundException cnfe) {
-	            //Log.e("deserializeObject", "class not found error", cnfe);   
-	            return null;  
+	            return null;
 	        } catch(IOException ioe) {  
-	            //Log.e("deserializeObject", "io error", ioe);    
-	            return null; 
+	            return null;
 	        } 
 	    } 
 	

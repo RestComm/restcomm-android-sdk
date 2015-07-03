@@ -25,45 +25,15 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 		audio = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
 		try {
 			localAddress = InetAddress.getByName(ip);
-			//audioStream = new AudioStream(localAddress);
-			//audioStream.setCodec(AudioCodec.PCMU);
-			//audioStream.setMode(RtpStream.MODE_NORMAL);
 			audioGroup = new AudioGroup();
 			audioGroup.setMode(AudioGroup.MODE_ECHO_SUPPRESSION);
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
-		/*
-		} catch (SocketException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		*/
-
 	}
-
-	/*
-	public int setupAudioStream(String localIp) {
-		int localPort = audioStream.getLocalPort();
-		System.out.println("@@@@ Updating audioManager Mode, localport: " + localPort);
-
-		audio.setMode(AudioManager.MODE_IN_COMMUNICATION);
-
-		return localPort;
-	}
-	*/
-
-	/*
-	public int getLocalPort() {
-		return audioStream.getLocalPort();
-	}
-	*/
 
 	public int setupAudioStream() {
-		Log.i(TAG, "@@@@ Setting up Audio Stream");
+		Log.i(TAG, "Setting up Audio Stream");
 		try {
 			audioStream = new AudioStream(localAddress);
 			audioStream.setCodec(AudioCodec.PCMU);
@@ -79,7 +49,7 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 	// Start sending/receiving media
 	public void startStreaming(int remoteRtpPort, String remoteIp) {
 
-		System.out.println("@@@@ Starting streaming: " + remoteIp + "/" + remoteRtpPort);
+		Log.i(TAG, "Starting streaming: " + remoteIp + "/" + remoteRtpPort);
 
 		audio.setMode(AudioManager.MODE_IN_COMMUNICATION);
 
@@ -89,20 +59,20 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 		//////// DEBUG
 		if (audio.isBluetoothA2dpOn()) {
 			// Adjust output for Bluetooth.
-			Log.i(TAG, "@@@@ Bluetooth");
+			Log.i(TAG, "Using Bluetooth");
 		} else if (audio.isSpeakerphoneOn()) {
 			// Adjust output for Speakerphone.
-			Log.i(TAG, "@@@@ Speaker");
+			Log.i(TAG, "Using Speaker");
 		} else if (audio.isMicrophoneMute()) {
 			// Adjust output for headsets
-			Log.i(TAG, "@@@@ Microphone is mute");
+			Log.i(TAG, "Using Microphone is mute");
 		} else {
 			// If audio plays and noone can hear it, is it still playing?
-			Log.i(TAG, "@@@@ None ??");
+			Log.i(TAG, "Using None ??");
 			//audio.setSpeakerphoneOn(true);
 		}
 
-		Log.i(TAG, "@@@@: vol/max: " + audio.getStreamVolume(audio.STREAM_VOICE_CALL) + "/" + audio.getStreamMaxVolume(audio.STREAM_VOICE_CALL));
+		Log.i(TAG, "Vol/max: " + audio.getStreamVolume(audio.STREAM_VOICE_CALL) + "/" + audio.getStreamMaxVolume(audio.STREAM_VOICE_CALL));
 
 		if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
 			try {
@@ -131,7 +101,7 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 	}
 
 	public void stopStreaming() {
-		System.out.println("@@@@ Releasing Audio: ");
+		System.out.println("Releasing Audio: ");
 		try {
 			audioStream.join(null);
 		} catch (IllegalStateException e) {
@@ -140,7 +110,7 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 
 		audioGroup.clear();
 		if (audioStream.isBusy()) {
-			Log.i(TAG, "@@@@ AudioStream is busy");
+			Log.i(TAG, "AudioStream is busy");
 		}
 		//audioStream.release();
 		audioStream = null;
@@ -152,7 +122,7 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 
 	public void muteAudio(boolean muted)
 	{
-		System.out.println("#### Muting audio: " + muted);
+		System.out.println("Muting audio: " + muted);
 		if (muted) {
 			if (audioGroup.getMode() != audioGroup.MODE_MUTED) {
 				audioGroup.setMode(audioGroup.MODE_MUTED);
@@ -168,7 +138,7 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 	// Callbacks for auio focus change events
 	public void onAudioFocusChange(int focusChange)
 	{
-		Log.i(TAG, "@@@@ onAudioFocusChange: " + focusChange);
+		Log.i(TAG, "onAudioFocusChange: " + focusChange);
 		/*
 		if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
 			// Pause playback
