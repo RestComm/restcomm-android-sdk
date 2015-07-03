@@ -121,16 +121,15 @@ public class RCClient {
      */
     public static RCDevice createDevice(String capabilityToken, RCDeviceListener deviceListener)
     {
-        RCDevice device = new RCDevice(capabilityToken, deviceListener);
         if (list.size() == 0) {
+            RCDevice device = new RCDevice(capabilityToken, deviceListener);
             list.add(device);
         }
         else {
             Log.i(TAG, "Device already exists, so we 're returning this one -multiple devices not implemented");
-            return list.get(0);
         }
 
-        return device;
+        return list.get(0);
     }
 
     /**
