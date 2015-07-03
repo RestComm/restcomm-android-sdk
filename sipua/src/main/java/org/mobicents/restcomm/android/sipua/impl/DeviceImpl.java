@@ -62,30 +62,30 @@ public class DeviceImpl implements IDevice,Serializable {
 				this.sipuaDeviceListener.onSipUAMessageArrived(new SipEvent(this, SipEvent.SipEventType.MESSAGE, sipEventObject.content, sipEventObject.from));
 			}
 		} else if (sipEventObject.type == SipEventType.BYE) {
-			this.soundManager.releaseAudioResources();
+			this.soundManager.stopStreaming();
 			if (this.sipuaConnectionListener != null) {
 				// notify our listener that we are connected
 				this.sipuaConnectionListener.onSipUADisconnected(null);
 			}
 		} else if (sipEventObject.type == SipEventType.REMOTE_CANCEL) {
-			this.soundManager.releaseAudioResources();
+			this.soundManager.stopStreaming();
 			if (this.sipuaConnectionListener != null) {
 				// notify our listener that we are connected
 				this.sipuaConnectionListener.onSipUACancelled(null);
 			}
 		} else if (sipEventObject.type == SipEventType.DECLINED) {
-			this.soundManager.releaseAudioResources();
+			this.soundManager.stopStreaming();
 			if (this.sipuaConnectionListener != null) {
 				// notify our listener that we are connected
 				this.sipuaConnectionListener.onSipUADeclined(null);
 			}
 		}else if (sipEventObject.type == SipEventType.BUSY_HERE) {
-			this.soundManager.releaseAudioResources();
+			this.soundManager.stopStreaming();
 		} else if (sipEventObject.type == SipEventType.SERVICE_UNAVAILABLE) {
-			this.soundManager.releaseAudioResources();
+			this.soundManager.stopStreaming();
 		} else if (sipEventObject.type == SipEventType.CALL_CONNECTED) {
-			soundManager.setupAudioStream(sipProfile.getLocalIp());
-			this.soundManager.setupAudio(sipEventObject.remoteRtpPort, this.sipProfile.getRemoteIp());
+			//soundManager.setupAudioStream(sipProfile.getLocalIp());
+			this.soundManager.startStreaming(sipEventObject.remoteRtpPort, this.sipProfile.getRemoteIp());
 			if (this.sipuaConnectionListener != null) {
 				// notify our listener that we are connected
 				this.sipuaConnectionListener.onSipUAConnected(null);
@@ -106,7 +106,7 @@ public class DeviceImpl implements IDevice,Serializable {
 	public void Call(String to) {
 		try {
 			//this.sipManager.Call(to, this.soundManager.setupAudioStream(sipProfile.getLocalIp()));
-			this.sipManager.Call(to, this.soundManager.getLocalPort());
+			this.sipManager.Call(to, this.soundManager.setupAudioStream());
 		} catch (NotInitializedException e) {
 			e.printStackTrace();
 		}
@@ -115,7 +115,7 @@ public class DeviceImpl implements IDevice,Serializable {
 	@Override
 	public void Accept() {
 		//sipManager.AcceptCall(soundManager.setupAudioStream(sipProfile.getLocalIp()));
-		sipManager.AcceptCall(soundManager.getLocalPort());
+		sipManager.AcceptCall(soundManager.setupAudioStream());
 	}
 
 	@Override

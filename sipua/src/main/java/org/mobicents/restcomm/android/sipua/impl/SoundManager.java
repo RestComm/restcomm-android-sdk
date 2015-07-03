@@ -17,18 +17,23 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 	AudioManager audio;
 	AudioStream audioStream;
 	AudioGroup audioGroup;
+	InetAddress localAddress;
 	private static final String TAG = "SoundManager";
 
 	public SoundManager(Context appContext, String ip){
 		this.appContext = appContext;
 		audio = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
 		try {
-			audioStream = new AudioStream(InetAddress.getByName(ip));
-			audioStream.setCodec(AudioCodec.PCMU);
-			audioStream.setMode(RtpStream.MODE_NORMAL);
+			localAddress = InetAddress.getByName(ip);
+			//audioStream = new AudioStream(localAddress);
+			//audioStream.setCodec(AudioCodec.PCMU);
+			//audioStream.setMode(RtpStream.MODE_NORMAL);
 			audioGroup = new AudioGroup();
 			audioGroup.setMode(AudioGroup.MODE_ECHO_SUPPRESSION);
-
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		}
+		/*
 		} catch (SocketException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -36,24 +41,11 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		*/
 
 	}
-	public void releaseAudioResources() {
-		System.out.println("@@@@ Releasing Audio: ");
-		try {
-			audioStream.join(null);
-		} catch (IllegalStateException e) {
-			e.printStackTrace();
-		}
 
-		//audioStream.release();
-		//audioGroup.clear();
-		audio.setMode(AudioManager.MODE_NORMAL);
-
-		// Abandon audio focus when playback complete
-		audio.abandonAudioFocus(this);
-	}
-
+	/*
 	public int setupAudioStream(String localIp) {
 		int localPort = audioStream.getLocalPort();
 		System.out.println("@@@@ Updating audioManager Mode, localport: " + localPort);
@@ -62,15 +54,34 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 
 		return localPort;
 	}
+	*/
 
+	/*
 	public int getLocalPort() {
+		return audioStream.getLocalPort();
+	}
+	*/
+
+	public int setupAudioStream() {
+		Log.i(TAG, "@@@@ Setting up Audio Stream");
+		try {
+			audioStream = new AudioStream(localAddress);
+			audioStream.setCodec(AudioCodec.PCMU);
+			audioStream.setMode(RtpStream.MODE_NORMAL);
+		}
+		catch (SocketException e) {
+			e.printStackTrace();
+		}
+
 		return audioStream.getLocalPort();
 	}
 
 	// Start sending/receiving media
-	public void setupAudio(int remoteRtpPort, String remoteIp) {
+	public void startStreaming(int remoteRtpPort, String remoteIp) {
 
-		System.out.println("@@@@ Setting up Audio: " + remoteIp + "/" + remoteRtpPort);
+		System.out.println("@@@@ Starting streaming: " + remoteIp + "/" + remoteRtpPort);
+
+		audio.setMode(AudioManager.MODE_IN_COMMUNICATION);
 
 		// Request audio focus for playback
 		int result = audio.requestAudioFocus(this, AudioManager.STREAM_VOICE_CALL, AudioManager.AUDIOFOCUS_GAIN);
@@ -118,6 +129,27 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 		}
 
 	}
+
+	public void stopStreaming() {
+		System.out.println("@@@@ Releasing Audio: ");
+		try {
+			audioStream.join(null);
+		} catch (IllegalStateException e) {
+			e.printStackTrace();
+		}
+
+		audioGroup.clear();
+		if (audioStream.isBusy()) {
+			Log.i(TAG, "@@@@ AudioStream is busy");
+		}
+		//audioStream.release();
+		audioStream = null;
+		audio.setMode(AudioManager.MODE_NORMAL);
+
+		// Abandon audio focus when playback complete
+		audio.abandonAudioFocus(this);
+	}
+
 	public void muteAudio(boolean muted)
 	{
 		System.out.println("#### Muting audio: " + muted);
