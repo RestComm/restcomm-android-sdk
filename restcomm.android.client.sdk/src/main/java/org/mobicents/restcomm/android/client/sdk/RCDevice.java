@@ -52,7 +52,7 @@ import org.mobicents.restcomm.android.sipua.impl.SipEvent;
  *  @see RCConnection
  */
 
-public class RCDevice implements SipUADeviceListener, Parcelable {
+public class RCDevice implements SipUADeviceListener {
     /**
      *  @abstract Device state (<b>Not Implemented yet</b>: device is always READY)
      */
@@ -268,7 +268,18 @@ public class RCDevice implements SipUADeviceListener, Parcelable {
     {
         //intent.putExtra(EXTRA_DEVICE, this);
         //intent.putExtra(EXTRA_CONNECTION, this);
+        //intent.setAction("ACTION_INCOMING_CALL");
         pendingIntent = PendingIntent.getActivity(RCClient.getInstance().context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+    }
+
+    public RCConnection getPendingConnection()
+    {
+        return (RCConnection)DeviceImpl.GetInstance().sipuaConnectionListener;
+    }
+
+    public RCConnection getDevice()
+    {
+        return (RCConnection)DeviceImpl.GetInstance().sipuaConnectionListener;
     }
 
     /**
@@ -354,40 +365,24 @@ public class RCDevice implements SipUADeviceListener, Parcelable {
         connection.state = RCConnection.ConnectionState.CONNECTING;
         DeviceImpl.GetInstance().sipuaConnectionListener = connection;
 
-        /**/
-        final RCConnection finalConnection = new RCConnection(connection);
-        final RCDevice finalDevice = new RCDevice(this);
-
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
         Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
-                /*
                 // bring the App to front
                 try {
-                    pendingIntent.send();
+                    Intent dataIntent = new Intent();
+                    dataIntent.setAction("ACTION_INCOMING_CALL");
+                    pendingIntent.send(RCClient.getInstance().context, 0, dataIntent);
+
                 } catch (PendingIntent.CanceledException e) {
                     e.printStackTrace();
                 }
-                */
-
-                listener.onIncomingConnection(finalDevice, finalConnection);
+                //listener.onIncomingConnection(finalDevice, finalConnection);
             }
         };
         mainHandler.post(myRunnable);
-        /**/
-        /*
-        try {
-            Intent dataIntent = new Intent();
-            dataIntent.putExtra(EXTRA_DEVICE, this);
-            dataIntent.putExtra(EXTRA_CONNECTION, connection);
-            pendingIntent.send(RCClient.getInstance().context, 0, dataIntent);
-        }
-        catch (PendingIntent.CanceledException e) {
-            e.printStackTrace();
-        }
-        */
     }
 
     public void onSipUAMessageArrived(SipEvent event)
@@ -399,23 +394,22 @@ public class RCDevice implements SipUADeviceListener, Parcelable {
 
         final String finalContent = new String(event.content);
         final HashMap<String, String> finalParameters = new HashMap<String, String>(parameters);
-        final RCDevice finalDevice = new RCDevice(this);
-
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
         Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
-                /*
                 // bring the App to front
                 try {
-                    pendingIntent.send();
+                    Intent dataIntent = new Intent();
+                    dataIntent.setAction("ACTION_INCOMING_MESSAGE");
+                    dataIntent.putExtra("MESSAGE_PARMS", finalParameters);
+                    dataIntent.putExtra("MESSAGE", finalContent);
+                    pendingIntent.send(RCClient.getInstance().context, 0, dataIntent);
                 } catch (PendingIntent.CanceledException e) {
                     e.printStackTrace();
                 }
-                */
-
-                listener.onIncomingMessage(finalDevice, finalContent, finalParameters);
+                //listener.onIncomingMessage(finalDevice, finalContent, finalParameters);
             }
         };
         mainHandler.post(myRunnable);
@@ -437,7 +431,8 @@ public class RCDevice implements SipUADeviceListener, Parcelable {
         }
     }
 
-    // Parcelable stuff:
+    // Parcelable stuff (not needed for now -let's keep around in case we use it at some point):
+    /*
     @Override
     public int describeContents() {
         return 0;
@@ -467,5 +462,6 @@ public class RCDevice implements SipUADeviceListener, Parcelable {
         in.readBooleanArray(one);
         incomingSoundEnabled = one[0];
     }
+    */
 
 }

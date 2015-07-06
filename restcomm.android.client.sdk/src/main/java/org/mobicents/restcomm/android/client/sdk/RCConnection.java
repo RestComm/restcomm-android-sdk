@@ -50,7 +50,7 @@ import org.mobicents.restcomm.android.sipua.impl.SipEvent;
  *  Once an RCConnection (either incoming or outgoing) is established (i.e. RCConnectionStateConnected) media can start flowing over it. DTMF digits can be sent over to
  *  the remote party using RCConnection.sendDigits() (<b>Not implemented yet</b>). When done with the RCConnection you can disconnect it with RCConnection.disconnect().
  */
-public class RCConnection implements SipUAConnectionListener, Parcelable {
+public class RCConnection implements SipUAConnectionListener {
     /**
      * Connection State
      */
@@ -329,6 +329,8 @@ public class RCConnection implements SipUAConnectionListener, Parcelable {
         }
     }
 
+    // Parcelable stuff (not needed for now -let's keep around in case we use it at some point):
+    /*
     @Override
     public int describeContents() {
         return 0;
@@ -358,4 +360,5 @@ public class RCConnection implements SipUAConnectionListener, Parcelable {
         in.readBooleanArray(one);
         incoming = one[0];
     }
+    */
 }

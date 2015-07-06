@@ -3,6 +3,8 @@ package org.mobicents.restcomm.android.sipua.impl;
 import java.net.InetAddress;
 import java.net.SocketException;
 import java.net.UnknownHostException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import android.content.Context;
 import android.media.AudioManager;
@@ -10,6 +12,7 @@ import android.net.rtp.AudioCodec;
 import android.net.rtp.AudioGroup;
 import android.net.rtp.AudioStream;
 import android.net.rtp.RtpStream;
+import android.os.Handler;
 import android.util.Log;
 
 public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
@@ -18,6 +21,9 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 	AudioStream audioStream;
 	AudioGroup audioGroup;
 	InetAddress localAddress;
+	//Timer timer;
+	//TimerTask timerTask;
+
 	private static final String TAG = "SoundManager";
 
 	public SoundManager(Context appContext, String ip){
@@ -39,6 +45,9 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 			audioStream = new AudioStream(localAddress);
 			audioStream.setCodec(AudioCodec.PCMU);
 			audioStream.setMode(RtpStream.MODE_NORMAL);
+
+			//AudioCodec codecs[] = AudioCodec.getCodecs();
+			//Log.i(TAG, "Test");
 		}
 		catch (SocketException e) {
 			e.printStackTrace();
@@ -56,27 +65,28 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 
 		// Request audio focus for playback
 		int result = audio.requestAudioFocus(this, AudioManager.STREAM_VOICE_CALL, AudioManager.AUDIOFOCUS_GAIN);
-
-		//////// DEBUG
-		if (audio.isBluetoothA2dpOn()) {
-			// Adjust output for Bluetooth.
-			Log.i(TAG, "Using Bluetooth");
-		} else if (audio.isSpeakerphoneOn()) {
-			// Adjust output for Speakerphone.
-			Log.i(TAG, "Using Speaker");
-		} else if (audio.isMicrophoneMute()) {
-			// Adjust output for headsets
-			Log.i(TAG, "Using Microphone is mute");
-		} else {
-			// If audio plays and noone can hear it, is it still playing?
-			Log.i(TAG, "Using None ??");
-			//audio.setSpeakerphoneOn(true);
-		}
-		//audio.setSpeakerphoneOn(false);
-
-		Log.i(TAG, "Vol/max: " + audio.getStreamVolume(audio.STREAM_VOICE_CALL) + "/" + audio.getStreamMaxVolume(audio.STREAM_VOICE_CALL));
-
 		if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+			//////// DEBUG
+			if (audio.isBluetoothA2dpOn()) {
+				// Adjust output for Bluetooth.
+				Log.i(TAG, "Using Bluetooth");
+			} else if (audio.isSpeakerphoneOn()) {
+				// Adjust output for Speakerphone.
+				Log.i(TAG, "Using Speaker");
+			} else if (audio.isMicrophoneMute()) {
+				// Adjust output for headsets
+				Log.i(TAG, "Using Microphone is mute");
+			} else {
+				// If audio plays and noone can hear it, is it still playing?
+				Log.i(TAG, "Using None ??");
+				audio.setSpeakerphoneOn(true);
+				//audio.setStreamVolume(AudioManager.STREAM_VOICE_CALL, 1, 0);
+			}
+			//audio.setSpeakerphoneOn(false);
+
+			Log.i(TAG, "Vol/max: " + audio.getStreamVolume(audio.STREAM_VOICE_CALL) + "/" + audio.getStreamMaxVolume(audio.STREAM_VOICE_CALL));
+
+
 			try {
 				audioStream.associate(
 						InetAddress.getByName(remoteIp),
@@ -99,34 +109,36 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 			Log.e(TAG, "Cannot receive audio focus; media stream not setup");
 
 		}
-
 	}
 
 	public void stopStreaming() {
-		AudioStream streams[] = audioGroup.getStreams();
-		for (int i = 0; i < streams.length; i++) {
-			Log.i(TAG, "-------- Stream: " + i);
-			AudioCodec codec = streams[i].getCodec();
-			Log.i(TAG, "fmtp: " + codec.fmtp + ", rtpmap: " + codec.rtpmap + ", type: " + codec.type);
-		}
+		// workaround: android RTP facilities seem to induce around 500ms delay in the incoming media stream.
+		// Let's delay the media tear-down to avoid media truncation for now
+		final SoundManager finalSoundManager = this;
+		Handler mainHandler = new Handler(appContext.getMainLooper());
+		Runnable myRunnable = new Runnable() {
+			@Override
+			public void run() {
+				Log.i(TAG, "Releasing Audio: ");
+				try {
+					audioStream.join(null);
+				} catch (IllegalStateException e) {
+					e.printStackTrace();
+				}
 
-		System.out.println("Releasing Audio: ");
-		try {
-			audioStream.join(null);
-		} catch (IllegalStateException e) {
-			e.printStackTrace();
-		}
+				audioGroup.clear();
+				if (audioStream.isBusy()) {
+					Log.i(TAG, "AudioStream is busy");
+				}
+				//audioStream.release();
+				audioStream = null;
+				audio.setMode(AudioManager.MODE_NORMAL);
 
-		audioGroup.clear();
-		if (audioStream.isBusy()) {
-			Log.i(TAG, "AudioStream is busy");
-		}
-		//audioStream.release();
-		audioStream = null;
-		audio.setMode(AudioManager.MODE_NORMAL);
-
-		// Abandon audio focus when playback complete
-		audio.abandonAudioFocus(this);
+				// Abandon audio focus when playback complete
+				audio.abandonAudioFocus(finalSoundManager);
+			}
+		};
+		mainHandler.postDelayed(myRunnable, 500);
 	}
 
 	public void muteAudio(boolean muted)

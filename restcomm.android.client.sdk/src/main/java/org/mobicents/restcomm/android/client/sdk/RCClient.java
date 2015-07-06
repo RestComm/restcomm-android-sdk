@@ -136,7 +136,7 @@ public class RCClient {
      * Retrieve a list of active Devices
      * @return  List of Devices
      */
-    public List<RCDevice> listDevices()
+    public ArrayList<RCDevice> listDevices()
     {
         //ArrayList<RCDevice> list = new ArrayList<RCDevice>();
         return list;

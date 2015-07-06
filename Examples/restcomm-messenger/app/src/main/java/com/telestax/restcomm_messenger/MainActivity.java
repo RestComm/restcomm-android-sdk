@@ -3,10 +3,12 @@ package com.telestax.restcomm_messenger;
 //import android.support.v7.app.ActionBarActivity;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -29,12 +31,13 @@ import org.mobicents.restcomm.android.client.sdk.RCDevice;
 import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
 import org.mobicents.restcomm.android.client.sdk.RCPresenceEvent;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 
 public class MainActivity extends Activity implements RCDeviceListener, RCConnectionListener,
         OnClickListener, SharedPreferences.OnSharedPreferenceChangeListener, OnCheckedChangeListener,
-        MediaPlayer.OnPreparedListener {
+        MediaPlayer.OnPreparedListener, AudioManager.OnAudioFocusChangeListener {
 
     SharedPreferences prefs;
     private RCDevice device;
@@ -44,6 +47,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
     MediaPlayer ringingPlayer;
     MediaPlayer callingPlayer;
     MediaPlayer messagePlayer;
+    AudioManager audioManager;
 
     // UI elements
     Button btnRegister;
@@ -115,14 +119,21 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
 
         cbMuted.setEnabled(false);
 
+        // volume control should be by default 'music' which will control the ringing sounds and 'voice call' when within a call
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
         // Setup Media (notice that I'm not preparing the media as create does that implicitly plus
         // I'm not ever stopping a player -instead I'm pausing so no additional preparation is needed
         // there either. We might need to revisit this at some point though
         ringingPlayer = MediaPlayer.create(getApplicationContext(), R.raw.ringing);
+        ringingPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         ringingPlayer.setLooping(true);
         callingPlayer = MediaPlayer.create(getApplicationContext(), R.raw.calling);
+        callingPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         callingPlayer.setLooping(true);
         messagePlayer = MediaPlayer.create(getApplicationContext(), R.raw.message);
+        messagePlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+
+        audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
     }
 
     @Override
@@ -168,12 +179,16 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
                 pendingConnection.accept();
                 connection = this.pendingConnection;
                 ringingPlayer.pause();
+                // Abandon audio focus when playback complete
+                audioManager.abandonAudioFocus(this);
             }
         } else if (view.getId() == R.id.button_decline) {
             if (pendingConnection != null) {
                 pendingConnection.reject();
                 pendingConnection = null;
                 ringingPlayer.pause();
+                // Abandon audio focus when playback complete
+                audioManager.abandonAudioFocus(this);
             }
         } else if (view.getId() == R.id.button_cancel) {
             if (connection == null) {
@@ -184,6 +199,8 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
                 connection = null;
                 pendingConnection = null;
                 callingPlayer.pause();
+                // Abandon audio focus when playback complete
+                audioManager.abandonAudioFocus(this);
             }
         } else if (view.getId() == R.id.button_send) {
             HashMap<String, String> sendParams = new HashMap<String, String>();
@@ -197,7 +214,10 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
                 */
                 txtWall.append("Me: " + txtMessage.getText().toString() + "\n");
 
-                messagePlayer.start();
+                int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+                if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                    messagePlayer.start();
+                }
             }
         }
     }
@@ -248,13 +268,20 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
     public void onIncomingConnection(RCDevice device, RCConnection connection)
     {
         Log.i(TAG, "Connection arrived");
-        ringingPlayer.start();
+        int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            ringingPlayer.start();
+        }
         pendingConnection = connection;
     }
 
     public void onIncomingMessage(RCDevice device, String message, HashMap<String, String> parameters)
     {
         Log.i(TAG, "Message arrived: " + message);
+        int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            messagePlayer.start();
+        }
         /* put new text on top
         String text = txtWall.getText().toString();
         String newText = parameters.get("username") + ": " + message + "\n" + text;
@@ -262,15 +289,16 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         */
         // put new text on the bottom
         txtWall.append(parameters.get("username") + ": " + message + "\n");
-
-        messagePlayer.start();
     }
 
     // RCConnection Listeners
     public void onConnecting(RCConnection connection)
     {
         Log.i(TAG, "RCConnection connecting");
-        callingPlayer.start();
+        int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            callingPlayer.start();
+        }
     }
 
     public void onConnected(RCConnection connection) {
@@ -278,7 +306,10 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         cbMuted.setEnabled(true);
         if (!connection.isIncoming()) {
             callingPlayer.pause();
+            // Abandon audio focus when playback complete
+            audioManager.abandonAudioFocus(this);
         }
+        setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
     }
 
     public void onDisconnected(RCConnection connection) {
@@ -287,6 +318,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
 
         this.connection = null;
         pendingConnection = null;
+        setVolumeControlStream(AudioManager.STREAM_MUSIC);
     }
 
     public void onCancelled(RCConnection connection) {
@@ -297,6 +329,8 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         else {
             callingPlayer.pause();
         }
+        // Abandon audio focus when playback complete
+        audioManager.abandonAudioFocus(this);
 
         this.connection = null;
         pendingConnection = null;
@@ -305,6 +339,9 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
     public void onDeclined(RCConnection connection) {
         Log.i(TAG, "RCConnection declined");
         callingPlayer.pause();
+        // Abandon audio focus when playback complete
+        audioManager.abandonAudioFocus(this);
+
 
         this.connection = null;
         pendingConnection = null;
@@ -395,10 +432,10 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         alertDialog.setTitle(title);
         alertDialog.setMessage(detail);
         alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                });
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
         alertDialog.show();
     }
 
@@ -414,6 +451,26 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         super.onResume();
         // The activity has become visible (it is now "resumed").
         Log.i(TAG, "%% onResume");
+        Intent intent = getIntent();
+        // If reason for resume is that we got an intent designating either an incoming call or message
+        if (intent.getAction() == "ACTION_INCOMING_CALL") {
+            ArrayList<RCDevice> list = RCClient.getInstance().listDevices();
+            if (list.size() != 0) {
+                RCDevice device = list.get(0);
+                RCConnection pendingConnection = device.getPendingConnection();
+                onIncomingConnection(device, pendingConnection);
+            }
+        }
+        if (intent.getAction() == "ACTION_INCOMING_MESSAGE") {
+            ArrayList<RCDevice> list = RCClient.getInstance().listDevices();
+            if (list.size() != 0) {
+                RCDevice device = list.get(0);
+                RCConnection pendingConnection = device.getPendingConnection();
+                HashMap<String, String> parms = (HashMap)intent.getSerializableExtra("MESSAGE_PARMS");
+                String message = (String)intent.getSerializableExtra("MESSAGE");
+                onIncomingMessage(device, message, parms);
+            }
+        }
     }
     @Override
     protected void onPause() {
@@ -433,4 +490,27 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         // The activity is about to be destroyed.
         Log.i(TAG, "%% onDestroy");
     }
+
+    // Callbacks for auio focus change events
+    public void onAudioFocusChange(int focusChange)
+    {
+        Log.i(TAG, "onAudioFocusChange: " + focusChange);
+		/*
+		if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+			// Pause playback
+		}
+		else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
+			// Resume playback or raise it back to normal if we were ducked
+		}
+		else if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
+			//am.unregisterMediaButtonEventReceiver(RemoteControlReceiver);
+			audio.abandonAudioFocus(this);
+			// Stop playback
+		}
+		else if (focusChange == AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
+            // Lower the volume
+        }
+		*/
+    }
+
 }
