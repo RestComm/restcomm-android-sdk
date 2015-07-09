@@ -184,6 +184,8 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
     public void onDisconnected(RCConnection connection)
     {
         Log.i(TAG, "RCConnection disconnected");
+        this.connection = null;
+        pendingConnection = null;
     }
 
     public void onDisconnected(RCConnection connection, int errorCode, String errorText) {
