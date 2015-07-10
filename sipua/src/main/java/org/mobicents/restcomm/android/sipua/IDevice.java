@@ -27,11 +27,13 @@ import org.mobicents.restcomm.android.sipua.impl.SoundManager;
 
 import android.media.AudioManager;
 
+import java.util.HashMap;
+
 public interface IDevice  extends ISipEventListener{
 
 	void Register();
 
-	void Call(String to);
+	void Call(String to, HashMap<String, String> sipHeaders);
 
 	void Accept();
 

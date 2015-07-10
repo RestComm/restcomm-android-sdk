@@ -23,6 +23,7 @@
 package org.mobicents.restcomm.android.client.sdk;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import android.app.Activity;
@@ -191,7 +192,7 @@ public class RCDevice implements SipUADeviceListener {
      *  @param listener   The listener object that will receive events when the connection state changes
      *
      *  @return An RCConnection object representing the new connection
-     */    public RCConnection connect(Map<String, String> parameters, RCConnectionListener listener)
+     */    public RCConnection connect(Map<String, Object> parameters, RCConnectionListener listener)
     {
         if (haveConnectivity()) {
             RCConnection connection = new RCConnection(listener);
@@ -200,8 +201,19 @@ public class RCDevice implements SipUADeviceListener {
             //DeviceImpl.GetInstance().listener = this;
             DeviceImpl.GetInstance().sipuaConnectionListener = connection;
 
-            DeviceImpl.GetInstance().Call(parameters.get("username"));
-
+            // create a new hash map
+            HashMap<String, String> sipHeaders = null;
+            if (parameters.containsKey("sip-headers")) {
+                sipHeaders = (HashMap<String, String>)parameters.get("sip-headers");
+            }
+            DeviceImpl.GetInstance().Call((String)parameters.get("username"), sipHeaders);
+            /*
+            for (Map.Entry<String, String> entry : parameters.entrySet()) {
+                if (entry.getKey().startsWith("X")) {
+                    sipHeaders.put(entry.getKey(), entry.getValue());
+                }
+            }
+            */
             return connection;
         }
         else {

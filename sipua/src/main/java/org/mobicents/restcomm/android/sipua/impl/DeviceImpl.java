@@ -102,8 +102,11 @@ public class DeviceImpl implements IDevice,Serializable {
 	}
 
 	@Override
-	public void Call(String to) {
+	public void Call(String to, HashMap<String, String> sipHeaders) {
 		try {
+			if (sipHeaders != null) {
+				sipManager.setCustomHeaders(sipHeaders);
+			}
 			this.sipManager.Call(to, this.soundManager.setupAudioStream());
 		} catch (NotInitializedException e) {
 			e.printStackTrace();

@@ -89,9 +89,8 @@ public class Invite  {
 			// You can add extension headers of your own making
 			// to the outgoing SIP request.
 			// Add the extension header.
-			Header extensionHeader = sipManager.headerFactory.createHeader("My-Header",
-					"my header value");
-			callRequest.addHeader(extensionHeader);
+			//Header extensionHeader = sipManager.headerFactory.createHeader("My-Header", "my header value");
+			//callRequest.addHeader(extensionHeader);
 			
 			String sdpData= "v=0\r\n" +
 					"o=- 13760799956958020 13760799956958020" + " IN IP4 " + sipManager.getSipProfile().getLocalIp() +"\r\n" +
@@ -112,9 +111,8 @@ public class Invite  {
 			// You can add as many extension headers as you
 			// want.
 
-			extensionHeader = sipManager.headerFactory.createHeader("My-Other-Header",
-					"my new header value ");
-			callRequest.addHeader(extensionHeader);
+			//extensionHeader = sipManager.headerFactory.createHeader("My-Other-Header", "my new header value ");
+			//callRequest.addHeader(extensionHeader);
 
 			Header callInfoHeader = sipManager.headerFactory.createHeader("Call-Info",
 					"<http://www.antd.nist.gov>");

@@ -33,6 +33,8 @@ import org.mobicents.restcomm.android.client.sdk.RCPresenceEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Vector;
 
 
 public class MainActivity extends Activity implements RCDeviceListener, RCConnectionListener,
@@ -156,8 +158,14 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
                 Log.e(TAG, "Error: already connected");
                 return;
             }
-            HashMap<String, String> connectParams = new HashMap<String, String>();
+            HashMap<String, Object> connectParams = new HashMap<String, Object>();
             connectParams.put("username", txtUri.getText().toString());
+
+            // if you want to add custom SIP headers, please uncomment this
+            //HashMap<String, String> sipHeaders = new HashMap<>();
+            //sipHeaders.put("X-SIP-Header1", "Value1");
+            //connectParams.put("sip-headers", sipHeaders);
+
             connection = device.connect(connectParams, this);
             if (connection == null) {
                 Log.e(TAG, "Error: error connecting");
