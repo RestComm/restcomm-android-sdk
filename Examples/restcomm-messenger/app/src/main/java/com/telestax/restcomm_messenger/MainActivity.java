@@ -172,8 +172,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
             HashMap<String, String> connectParams = new HashMap<String, String>();
             connectParams.put("username", txtUri.getText().toString());
             //connection = device.connect(connectParams, this);
-            connection = device.connect(connectParams, videoView, this, prefs, R.layout.activity_main,
-                    R.id.call_fragment_container, R.id.hud_fragment_container);
+            connection = device.connect(connectParams, videoView, this, prefs, R.layout.activity_main);
 
             if (connection == null) {
                 Log.e(TAG, "Error: error connecting");

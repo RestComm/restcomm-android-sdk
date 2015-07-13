@@ -49,6 +49,7 @@ import org.mobicents.restcomm.android.client.sdk.PeerConnectionClient.PeerConnec
 import org.mobicents.restcomm.android.client.sdk.CallFragment;
 import org.mobicents.restcomm.android.client.sdk.HudFragment;
 import org.mobicents.restcomm.android.client.sdk.PeerConnectionClient.PeerConnectionEvents;
+import org.mobicents.restcomm.android.client.sdk.SignalingParameters;
 
 import org.mobicents.restcomm.android.client.sdk.util.LooperExecutor;
 import org.mobicents.restcomm.android.sipua.SipProfile;
@@ -170,7 +171,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
     private static final int REMOTE_HEIGHT = 100;
 
     private PeerConnectionClient peerConnectionClient = null;
-    private AppRTCClient appRtcClient;
+    //private AppRTCClient appRtcClient;
     private SignalingParameters signalingParameters;
     private AppRTCAudioManager audioManager = null;
     private VideoRenderer.Callbacks localRender;
@@ -180,7 +181,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
     private boolean commandLineRun;
     private int runTimeMs;
     private boolean activityRunning;
-    private RoomConnectionParameters roomConnectionParameters;
+    //private RoomConnectionParameters roomConnectionParameters;
     private PeerConnectionParameters peerConnectionParameters;
     private boolean iceConnected;
     private boolean isError;
@@ -306,18 +307,19 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
     }
 
     public RCConnection connect(Map<String, String> parameters, GLSurfaceView videoView, RCConnectionListener listener,
-                                SharedPreferences prefs, int viewId, int hudFragmentContainer, int callFragmentContainer)
+                                SharedPreferences prefs, int viewId)
     {
         Activity activity = (Activity)listener;
-        setupWebrtc(videoView, activity, prefs, viewId, hudFragmentContainer, callFragmentContainer);
+        setupWebrtc(videoView, activity, prefs, viewId);
         if (haveConnectivity()) {
             RCConnection connection = new RCConnection(listener);
             connection.incoming = false;
             connection.state = RCConnection.ConnectionState.PENDING;
             //DeviceImpl.GetInstance().listener = this;
             DeviceImpl.GetInstance().sipuaConnectionListener = connection;
-
-            DeviceImpl.GetInstance().Call(parameters.get("username"));
+            SignalingParameters signalingParameters = new SignalingParameters(true, parameters.get("username"));
+            startCall();
+            //DeviceImpl.GetInstance().Call(parameters.get("username"));
 
             return connection;
         }
@@ -548,8 +550,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
         }
     }
 
-    public void setupWebrtc(GLSurfaceView videoView, Activity activity, SharedPreferences prefs, int viewId,
-                            int hudFragmentContainer, int callFragmentContainer)
+    public void setupWebrtc(GLSurfaceView videoView, Activity activity, SharedPreferences prefs, int viewId)
     {
         Context context = RCClient.getInstance().context;
         //Thread.setDefaultUncaughtExceptionHandler(
@@ -597,7 +598,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
         videoView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                toggleCallControlFragmentVisibility();
+                //toggleCallControlFragmentVisibility();
             }
         });
 
@@ -718,8 +719,9 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
         //ft.add(callFragmentContainer, callFragment);
         //ft.add(hudFragmentContainer, hudFragment);
         //ft.commit();
-        startCall();
+        //startCall();
 
+        /*
         // For command line execution run connection for <runTimeMs> and exit.
         if (commandLineRun && runTimeMs > 0) {
             videoView.postDelayed(new Runnable() {
@@ -728,10 +730,81 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
                 }
             }, runTimeMs);
         }
+        */
     }
+
+    ////////////// Helpers
+    private void startCall() {
+        /*
+        if (appRtcClient == null) {
+            Log.e(TAG, "AppRTC client is not allocated for a call.");
+            return;
+        }
+        */
+        callStartedTimeMs = System.currentTimeMillis();
+
+        // Start room connection.
+        logAndToast("Preparing call");
+
+        // don't call using JAIN SIP just yet; we need sdp first
+        //appRtcClient.connectToRoom(roomConnectionParameters);
+
+        // Create and audio manager that will take care of audio routing,
+        // audio modes, audio device enumeration etc.
+        audioManager = AppRTCAudioManager.create(RCClient.getInstance().context, new Runnable() {
+                    // This method will be called each time the audio state (number and
+                    // type of devices) has been changed.
+                    @Override
+                    public void run() {
+                        onAudioManagerChangedState();
+                    }
+                }
+        );
+        // Store existing audio settings and change audio mode to
+        // MODE_IN_COMMUNICATION for best possible VoIP performance.
+        Log.d(TAG, "Initializing the audio manager...");
+        audioManager.init();
+
+        // we don't have room functionality to notify us when ready; instead, we start connecting right now
+        this.onConnectedToRoom(signalingParameters);
+    }
+
+    // Disconnect from remote resources, dispose of local resources, and exit.
+    public void disconnect() {
+        activityRunning = false;
+        /* Signaling is already disconnected
+        if (appRtcClient != null) {
+            appRtcClient.disconnectFromRoom();
+            appRtcClient = null;
+        }
+        */
+        if (peerConnectionClient != null) {
+            peerConnectionClient.close();
+            peerConnectionClient = null;
+        }
+        if (audioManager != null) {
+            audioManager.close();
+            audioManager = null;
+        }
+        /*
+        if (iceConnected && !isError) {
+            setResult(RESULT_OK);
+        } else {
+            setResult(RESULT_CANCELED);
+        }
+        finish();
+        */
+    }
+
+    private void onAudioManagerChangedState() {
+        // TODO(henrika): disable video if AppRTCAudioManager.AudioDevice.EARPIECE
+        // is active.
+    }
+
 
     // Create peer connection factory when EGL context is ready.
     private void createPeerConnectionFactory() {
+        final RCDevice device = this;
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
         Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
         Runnable myRunnable = new Runnable() {
@@ -743,7 +816,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
                     peerConnectionClient = PeerConnectionClient.getInstance();
                     peerConnectionClient.createPeerConnectionFactory(RCClient.getInstance().context,
                             VideoRendererGui.getEGLContext(), peerConnectionParameters,
-                            CallActivity.this);
+                            device);
                 }
                 if (signalingParameters != null) {
                     Log.w(TAG, "EGL context is ready after room connection.");
@@ -815,12 +888,13 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
-                if (appRtcClient != null) {
+                if (signalingParameters != null && !signalingParameters.sipUri.isEmpty()) {
                     logAndToast("Sending " + sdp.type + ", delay=" + delta + "ms");
                     if (signalingParameters.initiator) {
-                        appRtcClient.sendOfferSdp(sdp);
+                        //appRtcClient.sendOfferSdp(sdp);
+                        DeviceImpl.GetInstance().CallWebrtc(signalingParameters.sipUri, sdp.description);
                     } else {
-                        appRtcClient.sendAnswerSdp(sdp);
+                        //appRtcClient.sendAnswerSdp(sdp);
                     }
                 }
             }
@@ -892,30 +966,104 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
 
     @Override
     public void onPeerConnectionError(final String description) {
-        reportError(description);
+        //reportError(description);
+        Log.e(TAG, "PeerConnection error");
+        disconnect();
     }
 
-    // Disconnect from remote resources, dispose of local resources, and exit.
-    private void disconnect() {
-        activityRunning = false;
-        if (appRtcClient != null) {
-            appRtcClient.disconnectFromRoom();
-            appRtcClient = null;
+
+    // -----Implementation of AppRTCClient.AppRTCSignalingEvents ---------------
+    // All callbacks are invoked from websocket signaling looper thread and
+    // are routed to UI thread.
+    @Override
+    public void onConnectedToRoom(final SignalingParameters params) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                onConnectedToRoomInternal(params);
+            }
+        });
+    }
+
+    private void onConnectedToRoomInternal(final SignalingParameters params) {
+        final long delta = System.currentTimeMillis() - callStartedTimeMs;
+
+        signalingParameters = params;
+        if (peerConnectionClient == null) {
+            Log.w(TAG, "Room is connected, but EGL context is not ready yet.");
+            return;
         }
-        if (peerConnectionClient != null) {
-            peerConnectionClient.close();
-            peerConnectionClient = null;
-        }
-        if (audioManager != null) {
-            audioManager.close();
-            audioManager = null;
-        }
-        if (iceConnected && !isError) {
-            setResult(RESULT_OK);
+        logAndToast("Creating peer connection, delay=" + delta + "ms");
+        peerConnectionClient.createPeerConnection(
+                localRender, remoteRender, signalingParameters);
+
+        if (signalingParameters.initiator) {
+            logAndToast("Creating OFFER...");
+            // Create offer. Offer SDP will be sent to answering client in
+            // PeerConnectionEvents.onLocalDescription event.
+            peerConnectionClient.createOffer();
         } else {
-            setResult(RESULT_CANCELED);
+            if (params.offerSdp != null) {
+                peerConnectionClient.setRemoteDescription(params.offerSdp);
+                logAndToast("Creating ANSWER...");
+                // Create answer. Answer SDP will be sent to offering client in
+                // PeerConnectionEvents.onLocalDescription event.
+                peerConnectionClient.createAnswer();
+            }
+            if (params.iceCandidates != null) {
+                // Add remote ICE candidates from room.
+                for (IceCandidate iceCandidate : params.iceCandidates) {
+                    peerConnectionClient.addRemoteIceCandidate(iceCandidate);
+                }
+            }
         }
-        finish();
     }
 
+    @Override
+    public void onRemoteDescription(final SessionDescription sdp) {
+        final long delta = System.currentTimeMillis() - callStartedTimeMs;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (peerConnectionClient == null) {
+                    Log.e(TAG, "Received remote SDP for non-initilized peer connection.");
+                    return;
+                }
+                logAndToast("Received remote " + sdp.type + ", delay=" + delta + "ms");
+                peerConnectionClient.setRemoteDescription(sdp);
+                if (!signalingParameters.initiator) {
+                    logAndToast("Creating ANSWER...");
+                    // Create answer. Answer SDP will be sent to offering client in
+                    // PeerConnectionEvents.onLocalDescription event.
+                    peerConnectionClient.createAnswer();
+                }
+            }
+        });
+    }
+
+    @Override
+    public void onRemoteIceCandidate(final IceCandidate candidate) {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (peerConnectionClient == null) {
+                    Log.e(TAG,
+                            "Received ICE candidate for non-initilized peer connection.");
+                    return;
+                }
+                peerConnectionClient.addRemoteIceCandidate(candidate);
+            }
+        });
+    }
+
+    @Override
+    public void onChannelClose() {
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                logAndToast("Remote end hung up; dropping PeerConnection");
+                disconnect();
+            }
+        });
+    }
 }

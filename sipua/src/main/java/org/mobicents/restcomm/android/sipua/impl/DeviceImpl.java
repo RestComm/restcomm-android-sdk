@@ -110,6 +110,14 @@ public class DeviceImpl implements IDevice,Serializable {
 		}
 	}
 
+	public void CallWebrtc(String to, String sdp) {
+		try {
+			this.sipManager.CallWebrtc(to, sdp);
+		} catch (NotInitializedException e) {
+			e.printStackTrace();
+		}
+	}
+
 	@Override
 	public void Accept() {
 		sipManager.AcceptCall(soundManager.setupAudioStream());

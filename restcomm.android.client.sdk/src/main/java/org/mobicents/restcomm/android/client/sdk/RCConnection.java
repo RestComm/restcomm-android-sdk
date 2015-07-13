@@ -27,6 +27,7 @@ import android.os.Handler;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import org.mobicents.restcomm.android.sipua.SipUAConnectionListener;
@@ -186,6 +187,13 @@ public class RCConnection implements SipUAConnectionListener {
                 DeviceImpl.GetInstance().Hangup();
             }
             //this.state = state.DISCONNECTED;
+        }
+
+        // need to free webrtc resources as well; notify RCDevice that hosts webrtc facilities
+        ArrayList<RCDevice> deviceList = RCClient.getInstance().listDevices();
+        if (deviceList.size() > 0) {
+            RCDevice device = deviceList.get(0);
+            device.disconnect();
         }
     }
 

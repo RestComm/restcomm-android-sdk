@@ -336,6 +336,33 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		direction = CallDirection.OUTGOING;
 	}
 
+	public void CallWebrtc(String to, String sdp)
+			throws NotInitializedException {
+		if (!initialized)
+			throw new NotInitializedException("Sip Stack not initialized");
+		this.sipManagerState = SipManagerState.CALLING;
+		Invite inviteRequest = new Invite();
+		Request r = inviteRequest.MakeRequestWebrtc(this, to, sdp);
+		try {
+			final ClientTransaction transaction = this.sipProvider
+					.getNewClientTransaction(r);
+			currentClientTransaction = transaction;
+			Thread thread = new Thread() {
+				public void run() {
+					try {
+						transaction.sendRequest();
+					} catch (SipException e) {
+						e.printStackTrace();
+					}
+				}
+			};
+			thread.start();
+		} catch (TransactionUnavailableException e) {
+			e.printStackTrace();
+		}
+		direction = CallDirection.OUTGOING;
+	}
+
 	@Override
 	public void SendMessage(String to, String message)
 			throws NotInitializedException {
@@ -662,25 +689,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			st.sendResponse(response);
 			System.out.println("INVITE:Trying Sent");
 
-			// Verify AUTHORIZATION !!!!!!!!!!!!!!!!
-			/*
-			dsam = new DigestServerAuthenticationHelper();
-
-			if (!dsam.doAuthenticatePlainTextPassword(request,
-					sipProfile.getSipPassword())) {
-				Response challengeResponse = messageFactory.createResponse(
-						Response.PROXY_AUTHENTICATION_REQUIRED, request);
-				dsam.generateChallenge(headerFactory, challengeResponse,
-						"nist.gov");
-				st.sendResponse(challengeResponse);
-				System.out.println("INVITE:Authorization challenge sent");
-				return;
-
-			}
-			System.out
-					.println("INVITE:Incoming Authorization challenge Accepted");
-
-			*/
 			byte[] rawContent = sm.getRawContent();
 			String sdpContent = new String(rawContent, "UTF-8");
 			SDPAnnounceParser parser = new SDPAnnounceParser(sdpContent);
@@ -692,22 +700,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					+ remoteRtpPort);
 			dispatchSipEvent(new SipEvent(this, SipEventType.LOCAL_RINGING, "",
 					sm.getFrom().getAddress().toString()));
-			/*
-			 * this.okResponse = messageFactory.createResponse(Response.OK,
-			 * request); Address address =
-			 * addressFactory.createAddress("Shootme <sip:" + myAddress + ":" +
-			 * myPort + ">"); ContactHeader contactHeader =
-			 * headerFactory.createContactHeader(address);
-			 * response.addHeader(contactHeader); ToHeader toHeader = (ToHeader)
-			 * okResponse.getHeader(ToHeader.NAME); toHeader.setTag("4321"); //
-			 * Application is supposed to set.
-			 * okResponse.addHeader(contactHeader); this.inviteTid = st; //
-			 * Defer sending the OK to simulate the phone ringing. // Answered
-			 * in 1 second ( this guy is fast at taking calls)
-			 * this.inviteRequest = request;
-			 *
-			 * new Timer().schedule(new MyTimerTask(this), 1000);
-			 */
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
