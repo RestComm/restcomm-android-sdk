@@ -10,6 +10,8 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.net.Uri;
+import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.Menu;
@@ -24,6 +26,8 @@ import android.widget.EditText;
 import android.view.View.OnClickListener;
 import android.widget.TextView;
 
+import org.mobicents.restcomm.android.client.sdk.CallFragment;
+import org.mobicents.restcomm.android.client.sdk.HudFragment;
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.client.sdk.RCConnectionListener;
@@ -33,6 +37,7 @@ import org.mobicents.restcomm.android.client.sdk.RCPresenceEvent;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Random;
 
 
 public class MainActivity extends Activity implements RCDeviceListener, RCConnectionListener,
@@ -61,6 +66,11 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
     EditText txtMessage;
     EditText txtWall;
     CheckBox cbMuted;
+
+    // #webrtc
+    private GLSurfaceView videoView;
+    CallFragment callFragment;
+    HudFragment hudFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -134,6 +144,9 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         messagePlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
 
         audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+
+        // #webrtc
+        videoView = (GLSurfaceView) findViewById(R.id.glview_call);
     }
 
     @Override
@@ -158,7 +171,9 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
             }
             HashMap<String, String> connectParams = new HashMap<String, String>();
             connectParams.put("username", txtUri.getText().toString());
-            connection = device.connect(connectParams, this);
+            //connection = device.connect(connectParams, this);
+            connection = device.connect(connectParams, videoView, this, prefs);
+
             if (connection == null) {
                 Log.e(TAG, "Error: error connecting");
                 return;
@@ -511,6 +526,40 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
             // Lower the volume
         }
 		*/
+    }
+
+    // #webrtc
+    private void connectToRoom(boolean loopback, int runTimeMs) {
+/*
+
+        // Start AppRTCDemo activity.
+        //Log.d(TAG, "Connecting to room " + roomId + " at URL " + roomUrl);
+        if (validateUrl(roomUrl)) {
+            Uri uri = Uri.parse(roomUrl);
+            Intent intent = new Intent(this, CallActivity.class);
+            intent.setData(uri);
+            intent.putExtra(CallActivity.EXTRA_ROOMID, roomId);
+            intent.putExtra(CallActivity.EXTRA_LOOPBACK, loopback);
+            intent.putExtra(CallActivity.EXTRA_VIDEO_CALL, videoCallEnabled);
+            intent.putExtra(CallActivity.EXTRA_VIDEO_WIDTH, videoWidth);
+            intent.putExtra(CallActivity.EXTRA_VIDEO_HEIGHT, videoHeight);
+            intent.putExtra(CallActivity.EXTRA_VIDEO_FPS, cameraFps);
+            intent.putExtra(CallActivity.EXTRA_VIDEO_BITRATE, videoStartBitrate);
+            intent.putExtra(CallActivity.EXTRA_VIDEOCODEC, videoCodec);
+            intent.putExtra(CallActivity.EXTRA_HWCODEC_ENABLED, hwCodec);
+            intent.putExtra(CallActivity.EXTRA_NOAUDIOPROCESSING_ENABLED,
+                    noAudioProcessing);
+            intent.putExtra(CallActivity.EXTRA_AUDIO_BITRATE, audioStartBitrate);
+            intent.putExtra(CallActivity.EXTRA_AUDIOCODEC, audioCodec);
+            intent.putExtra(CallActivity.EXTRA_CPUOVERUSE_DETECTION,
+                    cpuOveruseDetection);
+            intent.putExtra(CallActivity.EXTRA_DISPLAY_HUD, displayHud);
+            intent.putExtra(CallActivity.EXTRA_CMDLINE, commandLineRun);
+            intent.putExtra(CallActivity.EXTRA_RUNTIME, runTimeMs);
+
+            startActivityForResult(intent, CONNECTION_REQUEST);
+        }
+        */
     }
 
 }

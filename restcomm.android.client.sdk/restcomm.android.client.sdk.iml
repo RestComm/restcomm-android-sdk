@@ -90,6 +90,8 @@
     <orderEntry type="library" exported="" name="support-v4-22.2.0" level="project" />
     <orderEntry type="library" exported="" name="support-annotations-22.2.0" level="project" />
     <orderEntry type="library" exported="" name="appcompat-v7-22.2.0" level="project" />
+    <orderEntry type="library" exported="" name="autobanh" level="project" />
+    <orderEntry type="library" exported="" name="libjingle_peerconnection_java" level="project" />
     <orderEntry type="module" module-name="sipua" exported="" />
   </component>
 </module>

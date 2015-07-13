@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "com.telestax.restcomm_messenger"
-        minSdkVersion 16
+        minSdkVersion 17
         targetSdkVersion 22
         versionCode 1
         versionName "1.1.1"

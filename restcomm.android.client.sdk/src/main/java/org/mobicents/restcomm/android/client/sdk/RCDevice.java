@@ -24,19 +24,45 @@ package org.mobicents.restcomm.android.client.sdk;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
 
 import android.app.Activity;
+import android.app.FragmentTransaction;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.net.wifi.WifiManager;
+import android.opengl.GLSurfaceView;
+import android.os.Bundle;
 import android.os.Handler;
-import android.os.Parcel;
-import android.os.Parcelable;
+import android.util.Log;
+import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
+import android.widget.Toast;
+//import com.telestax.restcomm_messenger;
+//import com.telestax.restcomm_messenger.MainActivity.R;
+//import android.content.Context;
 
+import org.mobicents.restcomm.android.client.sdk.PeerConnectionClient.PeerConnectionParameters;
+import org.mobicents.restcomm.android.client.sdk.PeerConnectionClient.PeerConnectionEvents;
+
+import org.mobicents.restcomm.android.client.sdk.util.LooperExecutor;
 import org.mobicents.restcomm.android.sipua.SipProfile;
 import org.mobicents.restcomm.android.sipua.SipUADeviceListener;
 import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
 import org.mobicents.restcomm.android.sipua.impl.SipEvent;
+
+// #webrtc
+import org.webrtc.IceCandidate;
+import org.webrtc.SessionDescription;
+import org.webrtc.StatsReport;
+import org.webrtc.VideoRenderer;
+import org.webrtc.VideoRendererGui;
+import org.webrtc.VideoRendererGui.ScalingType;
 
 /**
  *  RCDevice Represents an abstraction of a communications device able to make and receive calls, send and receive messages etc. Remember that
@@ -52,7 +78,7 @@ import org.mobicents.restcomm.android.sipua.impl.SipEvent;
  *  @see RCConnection
  */
 
-public class RCDevice implements SipUADeviceListener {
+public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerConnectionEvents {
     /**
      *  @abstract Device state (<b>Not Implemented yet</b>: device is always READY)
      */
@@ -105,6 +131,68 @@ public class RCDevice implements SipUADeviceListener {
     public static String EXTRA_DEVICE = "com.telestax.restcomm.android.client.sdk.extra-device";
     public static String EXTRA_CONNECTION = "com.telestax.restcomm.android.client.sdk.extra-connection";
     PendingIntent pendingIntent;
+    private static final String TAG = "RCDevice";
+
+    // #webrtc
+    private String keyprefVideoCallEnabled;
+    private String keyprefResolution;
+    private String keyprefFps;
+    private String keyprefVideoBitrateType;
+    private String keyprefVideoBitrateValue;
+    private String keyprefVideoCodec;
+    private String keyprefAudioBitrateType;
+    private String keyprefAudioBitrateValue;
+    private String keyprefAudioCodec;
+    private String keyprefHwCodecAcceleration;
+    private String keyprefNoAudioProcessingPipeline;
+    private String keyprefCpuUsageDetection;
+    private String keyprefDisplayHud;
+    private String keyprefRoomServerUrl;
+    private String keyprefRoom;
+    private String keyprefRoomList;
+
+    // Peer connection statistics callback period in ms.
+    private static final int STAT_CALLBACK_PERIOD = 1000;
+    // Local preview screen position before call is connected.
+    private static final int LOCAL_X_CONNECTING = 0;
+    private static final int LOCAL_Y_CONNECTING = 0;
+    private static final int LOCAL_WIDTH_CONNECTING = 100;
+    private static final int LOCAL_HEIGHT_CONNECTING = 100;
+    // Local preview screen position after call is connected.
+    private static final int LOCAL_X_CONNECTED = 72;
+    private static final int LOCAL_Y_CONNECTED = 72;
+    private static final int LOCAL_WIDTH_CONNECTED = 25;
+    private static final int LOCAL_HEIGHT_CONNECTED = 25;
+    // Remote video screen position
+    private static final int REMOTE_X = 0;
+    private static final int REMOTE_Y = 0;
+    private static final int REMOTE_WIDTH = 100;
+    private static final int REMOTE_HEIGHT = 100;
+
+    private PeerConnectionClient peerConnectionClient = null;
+    private AppRTCClient appRtcClient;
+    private SignalingParameters signalingParameters;
+    private AppRTCAudioManager audioManager = null;
+    private VideoRenderer.Callbacks localRender;
+    private VideoRenderer.Callbacks remoteRender;
+    private ScalingType scalingType;
+    private Toast logToast;
+    private boolean commandLineRun;
+    private int runTimeMs;
+    private boolean activityRunning;
+    private RoomConnectionParameters roomConnectionParameters;
+    private PeerConnectionParameters peerConnectionParameters;
+    private boolean iceConnected;
+    private boolean isError;
+    private boolean callControlFragmentVisible = true;
+    private long callStartedTimeMs = 0;
+
+    // List of mandatory application permissions.
+    private static final String[] MANDATORY_PERMISSIONS = {
+            "android.permission.MODIFY_AUDIO_SETTINGS",
+            "android.permission.RECORD_AUDIO",
+            "android.permission.INTERNET"
+    };
 
     /**
      *  Initialize a new RCDevice object
@@ -191,8 +279,33 @@ public class RCDevice implements SipUADeviceListener {
      *  @param listener   The listener object that will receive events when the connection state changes
      *
      *  @return An RCConnection object representing the new connection
-     */    public RCConnection connect(Map<String, String> parameters, RCConnectionListener listener)
+     */
+    public RCConnection connect(Map<String, String> parameters, RCConnectionListener listener)
     {
+        return connect(parameters, null, listener, null);
+        /*
+        if (haveConnectivity()) {
+            RCConnection connection = new RCConnection(listener);
+            connection.incoming = false;
+            connection.state = RCConnection.ConnectionState.PENDING;
+            //DeviceImpl.GetInstance().listener = this;
+            DeviceImpl.GetInstance().sipuaConnectionListener = connection;
+
+            DeviceImpl.GetInstance().Call(parameters.get("username"));
+
+            return connection;
+        }
+        else {
+            return null;
+        }
+        */
+    }
+
+    public RCConnection connect(Map<String, String> parameters, GLSurfaceView videoView, RCConnectionListener listener,
+                                SharedPreferences prefs)
+    {
+        Activity activity = (Activity)listener;
+        setupWebrtc(videoView, activity, prefs);
         if (haveConnectivity()) {
             RCConnection connection = new RCConnection(listener);
             connection.incoming = false;
@@ -431,37 +544,348 @@ public class RCDevice implements SipUADeviceListener {
         }
     }
 
-    // Parcelable stuff (not needed for now -let's keep around in case we use it at some point):
-    /*
+    public void setupWebrtc(GLSurfaceView videoView, Activity activity, SharedPreferences prefs)
+    {
+        Context context = RCClient.getInstance().context;
+        //Thread.setDefaultUncaughtExceptionHandler(
+        //        new UnhandledExceptionHandler(this));
+
+        // Set window styles for fullscreen-window size. Needs to be done before
+        // adding content.
+        activity.requestWindowFeature(Window.FEATURE_NO_TITLE);
+        activity.getWindow().addFlags(
+                WindowManager.LayoutParams.FLAG_FULLSCREEN
+                        | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                        | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+                        | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                        | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+        activity.getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+        activity.setContentView(R.layout.activity_call);
+
+        iceConnected = false;
+        signalingParameters = null;
+        scalingType = ScalingType.SCALE_ASPECT_FILL;
+
+        // Create UI controls.
+        //videoView = (GLSurfaceView) findViewById(R.id.glview_call);
+        //callFragment = new CallFragment();
+        //hudFragment = new HudFragment();
+
+        // Create video renderers.
+        VideoRendererGui.setView(videoView, new Runnable() {
+            @Override
+            public void run() {
+                createPeerConnectionFactory();
+            }
+        });
+        remoteRender = VideoRendererGui.create(
+                REMOTE_X, REMOTE_Y,
+                REMOTE_WIDTH, REMOTE_HEIGHT, scalingType, false);
+        localRender = VideoRendererGui.create(
+                LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING,
+                LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING, scalingType, true);
+
+        // Show/hide call control fragment on view click.
+        videoView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                toggleCallControlFragmentVisibility();
+            }
+        });
+
+        // Check for mandatory permissions.
+        for (String permission : MANDATORY_PERMISSIONS) {
+            if (context.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
+                logAndToast("Permission " + permission + " is not granted");
+                activity.setResult(activity.RESULT_CANCELED);
+                activity.finish();
+                return;
+            }
+        }
+
+        // Get video resolution from settings.
+        int videoWidth = 0;
+        int videoHeight = 0;
+        String resolution = prefs.getString(keyprefResolution, context.getString(R.string.pref_resolution_default));
+        String[] dimensions = resolution.split("[ x]+");
+        if (dimensions.length == 2) {
+            try {
+                videoWidth = Integer.parseInt(dimensions[0]);
+                videoHeight = Integer.parseInt(dimensions[1]);
+            } catch (NumberFormatException e) {
+                videoWidth = 0;
+                videoHeight = 0;
+                Log.e(TAG, "Wrong video resolution setting: " + resolution);
+            }
+        }
+
+        // Get camera fps from settings.
+        int cameraFps = 0;
+        String fps = prefs.getString(keyprefFps, context.getString(R.string.pref_fps_default));
+        String[] fpsValues = fps.split("[ x]+");
+        if (fpsValues.length == 2) {
+            try {
+                cameraFps = Integer.parseInt(fpsValues[0]);
+            } catch (NumberFormatException e) {
+                Log.e(TAG, "Wrong camera fps setting: " + fps);
+            }
+        }
+
+        // Get video and audio start bitrate.
+        int videoStartBitrate = 0;
+        String bitrateTypeDefault = context.getString(R.string.pref_startvideobitrate_default);
+        String bitrateType = prefs.getString(keyprefVideoBitrateType, bitrateTypeDefault);
+        if (!bitrateType.equals(bitrateTypeDefault)) {
+            String bitrateValue = prefs.getString(keyprefVideoBitrateValue, context.getString(R.string.pref_startvideobitratevalue_default));
+            videoStartBitrate = Integer.parseInt(bitrateValue);
+        }
+
+        int audioStartBitrate = 0;
+        bitrateTypeDefault = context.getString(R.string.pref_startaudiobitrate_default);
+        bitrateType = prefs.getString(
+                keyprefAudioBitrateType, bitrateTypeDefault);
+        if (!bitrateType.equals(bitrateTypeDefault)) {
+            String bitrateValue = prefs.getString(keyprefAudioBitrateValue, context.getString(R.string.pref_startaudiobitratevalue_default));
+            audioStartBitrate = Integer.parseInt(bitrateValue);
+        }
+
+        // TODO: could make that configurable
+        boolean loopback = false;  //intent.getBooleanExtra(EXTRA_LOOPBACK, false);
+        peerConnectionParameters = new PeerConnectionParameters(
+                prefs.getBoolean(keyprefVideoCallEnabled, Boolean.valueOf(context.getString(R.string.pref_videocall_default))),
+                loopback,
+                videoWidth,
+                videoHeight,
+                cameraFps,
+                videoStartBitrate,
+                prefs.getString(keyprefVideoCodec, context.getString(R.string.pref_videocodec_default)),
+                prefs.getBoolean(keyprefHwCodecAcceleration, Boolean.valueOf(context.getString(R.string.pref_hwcodec_default))),
+                audioStartBitrate,
+                prefs.getString(keyprefAudioCodec, context.getString(R.string.pref_audiocodec_default)),
+                prefs.getBoolean(keyprefNoAudioProcessingPipeline, Boolean.valueOf(context.getString(R.string.pref_noaudioprocessing_default))),
+                prefs.getBoolean(keyprefCpuUsageDetection, Boolean.valueOf(context.getString(R.string.pref_cpu_usage_detection_default))));
+
+        // not interested in command line run (at least not yet)
+        //commandLineRun = intent.getBooleanExtra(EXTRA_CMDLINE, false);
+        //runTimeMs = intent.getIntExtra(EXTRA_RUNTIME, 0);
+
+        //String roomUrl = prefs.getString(keyprefRoomServerUrl, getString(R.string.pref_room_server_url_default));
+
+        // Check statistics display option.
+        boolean displayHud = prefs.getBoolean(keyprefDisplayHud,
+                Boolean.valueOf(context.getString(R.string.pref_displayhud_default)));
+
+        /*
+        // Get Intent parameters.
+        final Intent intent = getIntent();
+        Uri roomUri = intent.getData();
+        if (roomUri == null) {
+            logAndToast(activity.getString(R.string.missing_url));
+            Log.e(TAG, "Didn't get any URL in intent!");
+            activity.setResult(activity.RESULT_CANCELED);
+            activity.finish();
+            return;
+        }
+        String roomId = intent.getStringExtra(EXTRA_ROOMID);
+        if (roomId == null || roomId.length() == 0) {
+            logAndToast(activity.getString(R.string.missing_url));
+            Log.e(TAG, "Incorrect room ID in intent!");
+            activity.setResult(activity.RESULT_CANCELED);
+            activity.finish();
+            return;
+        }
+        */
+
+        // Create connection client and connection parameters.
+        /*
+        appRtcClient = new WebSocketRTCClient(this, new LooperExecutor());
+        roomConnectionParameters = new RoomConnectionParameters(
+                roomUri.toString(), roomId, loopback);
+        */
+        // Send intent arguments to fragments.
+        callFragment.setArguments(intent.getExtras());
+        hudFragment.setArguments(intent.getExtras());
+        // Activate call and HUD fragments and start the call.
+        FragmentTransaction ft = getFragmentManager().beginTransaction();
+        ft.add(R.id.call_fragment_container, callFragment);
+        ft.add(R.id.hud_fragment_container, hudFragment);
+        ft.commit();
+        startCall();
+
+        // For command line execution run connection for <runTimeMs> and exit.
+        if (commandLineRun && runTimeMs > 0) {
+            videoView.postDelayed(new Runnable() {
+                public void run() {
+                    disconnect();
+                }
+            }, runTimeMs);
+        }
+    }
+
+    // Create peer connection factory when EGL context is ready.
+    private void createPeerConnectionFactory() {
+        // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (peerConnectionClient == null) {
+                    final long delta = System.currentTimeMillis() - callStartedTimeMs;
+                    Log.d(TAG, "Creating peer connection factory, delay=" + delta + "ms");
+                    peerConnectionClient = PeerConnectionClient.getInstance();
+                    peerConnectionClient.createPeerConnectionFactory(RCClient.getInstance().context,
+                            VideoRendererGui.getEGLContext(), peerConnectionParameters,
+                            CallActivity.this);
+                }
+                if (signalingParameters != null) {
+                    Log.w(TAG, "EGL context is ready after room connection.");
+                    onConnectedToRoomInternal(signalingParameters);
+                }
+            }
+        };
+        mainHandler.post(myRunnable);
+        /*
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                if (peerConnectionClient == null) {
+                    final long delta = System.currentTimeMillis() - callStartedTimeMs;
+                    Log.d(TAG, "Creating peer connection factory, delay=" + delta + "ms");
+                    peerConnectionClient = PeerConnectionClient.getInstance();
+                    peerConnectionClient.createPeerConnectionFactory(CallActivity.this,
+                            VideoRendererGui.getEGLContext(), peerConnectionParameters,
+                            CallActivity.this);
+                }
+                if (signalingParameters != null) {
+                    Log.w(TAG, "EGL context is ready after room connection.");
+                    onConnectedToRoomInternal(signalingParameters);
+                }
+            }
+        });
+        */
+    }
+
+    // Helper functions.
+    private void toggleCallControlFragmentVisibility() {
+        if (!iceConnected || !callFragment.isAdded()) {
+            return;
+        }
+        // Show/hide call control fragment
+        callControlFragmentVisible = !callControlFragmentVisible;
+        FragmentTransaction ft = getFragmentManager().beginTransaction();
+        if (callControlFragmentVisible) {
+            ft.show(callFragment);
+            ft.show(hudFragment);
+        } else {
+            ft.hide(callFragment);
+            ft.hide(hudFragment);
+        }
+        ft.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
+        ft.commit();
+    }
+
+    // Log |msg| and Toast about it.
+    private void logAndToast(String msg) {
+        Log.d(TAG, msg);
+        if (logToast != null) {
+            logToast.cancel();
+        }
+        logToast = Toast.makeText(this, msg, Toast.LENGTH_SHORT);
+        logToast.show();
+    }
+
+    // -----Implementation of PeerConnectionClient.PeerConnectionEvents.---------
+    // Send local peer connection SDP and ICE candidates to remote party.
+    // All callbacks are invoked from peer connection client looper thread and
+    // are routed to UI thread.
     @Override
-    public int describeContents() {
-        return 0;
+    public void onLocalDescription(final SessionDescription sdp) {
+        final long delta = System.currentTimeMillis() - callStartedTimeMs;
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (appRtcClient != null) {
+                    logAndToast("Sending " + sdp.type + ", delay=" + delta + "ms");
+                    if (signalingParameters.initiator) {
+                        appRtcClient.sendOfferSdp(sdp);
+                    } else {
+                        appRtcClient.sendAnswerSdp(sdp);
+                    }
+                }
+            }
+        };
+        mainHandler.post(myRunnable);
     }
 
-    // Parceable stuff
-    public void writeToParcel(Parcel out, int flags) {
-        //out.writeInt(state.ordinal());
-        boolean one[] = new boolean[1];
-        one[0] = incomingSoundEnabled;
-        out.writeBooleanArray(one);
+    @Override
+    public void onIceCandidate(final IceCandidate candidate) {
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (appRtcClient != null) {
+                    appRtcClient.sendLocalIceCandidate(candidate);
+                }
+            }
+        };
+        mainHandler.post(myRunnable);
     }
 
-    public static final Parcelable.Creator<RCDevice> CREATOR = new Parcelable.Creator<RCDevice>() {
-        public RCDevice createFromParcel(Parcel in) {
-            return new RCDevice(in);
-        }
+    @Override
+    public void onIceConnected() {
+        final long delta = System.currentTimeMillis() - callStartedTimeMs;
 
-        public RCDevice[] newArray(int size) {
-            return new RCDevice[size];
-        }
-    };
-
-    private RCDevice(Parcel in) {
-        //state = in.readInt();
-        boolean one[] = new boolean[1];
-        in.readBooleanArray(one);
-        incomingSoundEnabled = one[0];
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                logAndToast("ICE connected, delay=" + delta + "ms");
+                iceConnected = true;
+                callConnected();
+            }
+        };
+        mainHandler.post(myRunnable);
     }
-    */
+
+    @Override
+    public void onIceDisconnected() {
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                logAndToast("ICE disconnected");
+                iceConnected = false;
+                disconnect();
+            }
+        };
+        mainHandler.post(myRunnable);
+    }
+
+    @Override
+    public void onPeerConnectionClosed() {
+    }
+
+    @Override
+    public void onPeerConnectionStatsReady(final StatsReport[] reports) {
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (!isError && iceConnected) {
+                    hudFragment.updateEncoderStatistics(reports);
+                }
+            }
+        };
+        mainHandler.post(myRunnable);
+    }
+
+    @Override
+    public void onPeerConnectionError(final String description) {
+        reportError(description);
+    }
 
 }
