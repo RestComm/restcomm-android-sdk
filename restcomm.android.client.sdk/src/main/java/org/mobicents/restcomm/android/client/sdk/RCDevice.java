@@ -43,11 +43,11 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Toast;
-//import com.telestax.restcomm_messenger;
-//import com.telestax.restcomm_messenger.MainActivity.R;
-//import android.content.Context;
+import android.app.FragmentTransaction;
 
 import org.mobicents.restcomm.android.client.sdk.PeerConnectionClient.PeerConnectionParameters;
+import org.mobicents.restcomm.android.client.sdk.CallFragment;
+import org.mobicents.restcomm.android.client.sdk.HudFragment;
 import org.mobicents.restcomm.android.client.sdk.PeerConnectionClient.PeerConnectionEvents;
 
 import org.mobicents.restcomm.android.client.sdk.util.LooperExecutor;
@@ -187,6 +187,10 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
     private boolean callControlFragmentVisible = true;
     private long callStartedTimeMs = 0;
 
+    CallFragment callFragment;
+    HudFragment hudFragment;
+
+
     // List of mandatory application permissions.
     private static final String[] MANDATORY_PERMISSIONS = {
             "android.permission.MODIFY_AUDIO_SETTINGS",
@@ -282,7 +286,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
      */
     public RCConnection connect(Map<String, String> parameters, RCConnectionListener listener)
     {
-        return connect(parameters, null, listener, null);
+        return connect(parameters, null, listener, null, 0);
         /*
         if (haveConnectivity()) {
             RCConnection connection = new RCConnection(listener);
@@ -302,10 +306,10 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
     }
 
     public RCConnection connect(Map<String, String> parameters, GLSurfaceView videoView, RCConnectionListener listener,
-                                SharedPreferences prefs)
+                                SharedPreferences prefs, int viewId, int hudFragmentContainer, int callFragmentContainer)
     {
         Activity activity = (Activity)listener;
-        setupWebrtc(videoView, activity, prefs);
+        setupWebrtc(videoView, activity, prefs, viewId, hudFragmentContainer, callFragmentContainer);
         if (haveConnectivity()) {
             RCConnection connection = new RCConnection(listener);
             connection.incoming = false;
@@ -544,7 +548,8 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
         }
     }
 
-    public void setupWebrtc(GLSurfaceView videoView, Activity activity, SharedPreferences prefs)
+    public void setupWebrtc(GLSurfaceView videoView, Activity activity, SharedPreferences prefs, int viewId,
+                            int hudFragmentContainer, int callFragmentContainer)
     {
         Context context = RCClient.getInstance().context;
         //Thread.setDefaultUncaughtExceptionHandler(
@@ -563,7 +568,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
                 View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                         | View.SYSTEM_UI_FLAG_FULLSCREEN
                         | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
-        activity.setContentView(R.layout.activity_call);
+        activity.setContentView(viewId);
 
         iceConnected = false;
         signalingParameters = null;
@@ -571,8 +576,8 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
 
         // Create UI controls.
         //videoView = (GLSurfaceView) findViewById(R.id.glview_call);
-        //callFragment = new CallFragment();
-        //hudFragment = new HudFragment();
+        callFragment = new CallFragment();
+        hudFragment = new HudFragment();
 
         // Create video renderers.
         VideoRendererGui.setView(videoView, new Runnable() {
@@ -706,13 +711,13 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
                 roomUri.toString(), roomId, loopback);
         */
         // Send intent arguments to fragments.
-        callFragment.setArguments(intent.getExtras());
-        hudFragment.setArguments(intent.getExtras());
+        //callFragment.setArguments(intent.getExtras());
+        //hudFragment.setArguments(intent.getExtras());
         // Activate call and HUD fragments and start the call.
-        FragmentTransaction ft = getFragmentManager().beginTransaction();
-        ft.add(R.id.call_fragment_container, callFragment);
-        ft.add(R.id.hud_fragment_container, hudFragment);
-        ft.commit();
+        //FragmentTransaction ft = activity.getFragmentManager().beginTransaction();
+        //ft.add(callFragmentContainer, callFragment);
+        //ft.add(hudFragmentContainer, hudFragment);
+        //ft.commit();
         startCall();
 
         // For command line execution run connection for <runTimeMs> and exit.
@@ -769,6 +774,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
     }
 
     // Helper functions.
+    /*
     private void toggleCallControlFragmentVisibility() {
         if (!iceConnected || !callFragment.isAdded()) {
             return;
@@ -786,6 +792,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
         ft.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
         ft.commit();
     }
+    */
 
     // Log |msg| and Toast about it.
     private void logAndToast(String msg) {
@@ -793,7 +800,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
         if (logToast != null) {
             logToast.cancel();
         }
-        logToast = Toast.makeText(this, msg, Toast.LENGTH_SHORT);
+        logToast = Toast.makeText(RCClient.getInstance().context, msg, Toast.LENGTH_SHORT);
         logToast.show();
     }
 
@@ -886,6 +893,29 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
     @Override
     public void onPeerConnectionError(final String description) {
         reportError(description);
+    }
+
+    // Disconnect from remote resources, dispose of local resources, and exit.
+    private void disconnect() {
+        activityRunning = false;
+        if (appRtcClient != null) {
+            appRtcClient.disconnectFromRoom();
+            appRtcClient = null;
+        }
+        if (peerConnectionClient != null) {
+            peerConnectionClient.close();
+            peerConnectionClient = null;
+        }
+        if (audioManager != null) {
+            audioManager.close();
+            audioManager = null;
+        }
+        if (iceConnected && !isError) {
+            setResult(RESULT_OK);
+        } else {
+            setResult(RESULT_CANCELED);
+        }
+        finish();
     }
 
 }

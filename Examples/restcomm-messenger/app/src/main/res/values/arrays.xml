@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!--
     <string-array name="videoResolutions">
         <item>Default</item>
         <item>HD (1280 x 720)</item>
@@ -35,5 +36,6 @@
         <item>OPUS</item>
         <item>ISAC</item>
     </string-array>
+    -->
 
 </resources>
