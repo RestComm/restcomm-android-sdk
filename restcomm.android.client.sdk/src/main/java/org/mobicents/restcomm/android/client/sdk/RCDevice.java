@@ -39,6 +39,7 @@ import android.net.wifi.WifiManager;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.Handler;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.View;
 import android.view.Window;
@@ -222,8 +223,29 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
         deviceImpl.Initialize(RCClient.getInstance().context, sipProfile, customHeaders);
         DeviceImpl.GetInstance().sipuaDeviceListener = this;
 
+        // #webrtc
         Activity activity = (Activity)listener;
         setupWebrtc(videoView, activity, prefs, viewId);
+        // Get setting keys.
+        //PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+        //sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
+        Context context = RCClient.getInstance().context;
+        keyprefVideoCallEnabled = context.getString(R.string.pref_videocall_key);
+        keyprefResolution = context.getString(R.string.pref_resolution_key);
+        keyprefFps = context.getString(R.string.pref_fps_key);
+        keyprefVideoBitrateType = context.getString(R.string.pref_startvideobitrate_key);
+        keyprefVideoBitrateValue = context.getString(R.string.pref_startvideobitratevalue_key);
+        keyprefVideoCodec = context.getString(R.string.pref_videocodec_key);
+        keyprefHwCodecAcceleration = context.getString(R.string.pref_hwcodec_key);
+        keyprefAudioBitrateType = context.getString(R.string.pref_startaudiobitrate_key);
+        keyprefAudioBitrateValue = context.getString(R.string.pref_startaudiobitratevalue_key);
+        keyprefAudioCodec = context.getString(R.string.pref_audiocodec_key);
+        keyprefNoAudioProcessingPipeline = context.getString(R.string.pref_noaudioprocessing_key);
+        keyprefCpuUsageDetection = context.getString(R.string.pref_cpu_usage_detection_key);
+        keyprefDisplayHud = context.getString(R.string.pref_displayhud_key);
+        keyprefRoomServerUrl = context.getString(R.string.pref_room_server_url_key);
+        keyprefRoom = context.getString(R.string.pref_room_key);
+        keyprefRoomList = context.getString(R.string.pref_room_list_key);
     }
 
     // 'Copy' constructor
@@ -320,7 +342,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
             connection.state = RCConnection.ConnectionState.PENDING;
             //DeviceImpl.GetInstance().listener = this;
             DeviceImpl.GetInstance().sipuaConnectionListener = connection;
-            SignalingParameters signalingParameters = new SignalingParameters(true, parameters.get("username"));
+            this.signalingParameters = new SignalingParameters(true, parameters.get("username"));
             startCall();
             //DeviceImpl.GetInstance().Call(parameters.get("username"));
 
@@ -666,7 +688,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
         // TODO: could make that configurable
         boolean loopback = false;  //intent.getBooleanExtra(EXTRA_LOOPBACK, false);
         peerConnectionParameters = new PeerConnectionParameters(
-                prefs.getBoolean(keyprefVideoCallEnabled, Boolean.valueOf(context.getString(R.string.pref_videocall_default))),
+                false, //prefs.getBoolean(keyprefVideoCallEnabled, Boolean.valueOf(context.getString(R.string.pref_videocall_default))),
                 loopback,
                 videoWidth,
                 videoHeight,
@@ -875,11 +897,13 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
     // Log |msg| and Toast about it.
     private void logAndToast(String msg) {
         Log.d(TAG, msg);
+        /* TODO: uncomment this when we found why we are breaking
         if (logToast != null) {
             logToast.cancel();
         }
         logToast = Toast.makeText(RCClient.getInstance().context, msg, Toast.LENGTH_SHORT);
         logToast.show();
+        */
     }
 
     // -----Implementation of PeerConnectionClient.PeerConnectionEvents.---------

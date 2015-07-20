@@ -124,6 +124,9 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         cbMuted = (CheckBox)findViewById(R.id.checkbox_muted);
         cbMuted.setOnCheckedChangeListener(this);
 
+        prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+
         RCClient.initialize(getApplicationContext(), new RCClient.RCInitListener()
         {
             public void onInitialized()
@@ -146,7 +149,6 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         params = new HashMap<String, String>();
 
         // preferences
-        prefs = PreferenceManager.getDefaultSharedPreferences(this);
         prefs.registerOnSharedPreferenceChangeListener(this);
         initializeSipFromPreferences();
 

@@ -21,44 +21,43 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 	AudioStream audioStream;
 	AudioGroup audioGroup;
 	InetAddress localAddress;
-	//Timer timer;
-	//TimerTask timerTask;
 
 	private static final String TAG = "SoundManager";
 
 	public SoundManager(Context appContext, String ip){
 		this.appContext = appContext;
+		/*
 		audio = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
 		try {
 			localAddress = InetAddress.getByName(ip);
 			audioGroup = new AudioGroup();
 			audioGroup.setMode(AudioGroup.MODE_ECHO_SUPPRESSION);
-			//audioGroup.setMode(AudioGroup.MODE_NORMAL);
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
+		*/
 	}
 
 	public int setupAudioStream() {
+		/*
 		Log.i(TAG, "Setting up Audio Stream");
 		try {
 			audioStream = new AudioStream(localAddress);
 			audioStream.setCodec(AudioCodec.PCMU);
 			audioStream.setMode(RtpStream.MODE_NORMAL);
-
-			//AudioCodec codecs[] = AudioCodec.getCodecs();
-			//Log.i(TAG, "Test");
 		}
 		catch (SocketException e) {
 			e.printStackTrace();
 		}
 
 		return audioStream.getLocalPort();
+		*/
+		return 0;
 	}
 
 	// Start sending/receiving media
 	public void startStreaming(int remoteRtpPort, String remoteIp) {
-
+		/*
 		Log.i(TAG, "Starting streaming: " + remoteIp + "/" + remoteRtpPort);
 
 		audio.setMode(AudioManager.MODE_IN_COMMUNICATION);
@@ -109,9 +108,11 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 			Log.e(TAG, "Cannot receive audio focus; media stream not setup");
 
 		}
+		*/
 	}
 
 	public void stopStreaming() {
+		/*
 		// workaround: android RTP facilities seem to induce around 500ms delay in the incoming media stream.
 		// Let's delay the media tear-down to avoid media truncation for now
 		final SoundManager finalSoundManager = this;
@@ -139,10 +140,12 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 			}
 		};
 		mainHandler.postDelayed(myRunnable, 500);
+		*/
 	}
 
 	public void muteAudio(boolean muted)
 	{
+		/*
 		System.out.println("Muting audio: " + muted);
 		if (muted) {
 			if (audioGroup.getMode() != audioGroup.MODE_MUTED) {
@@ -154,6 +157,7 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 				audioGroup.setMode(audioGroup.MODE_NORMAL);
 			}
 		}
+		*/
 	}
 
 	// Callbacks for auio focus change events
