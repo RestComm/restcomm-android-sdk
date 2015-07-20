@@ -1,8 +1,13 @@
 package com.telestax.restcomm_messenger;
 
+import android.app.Activity;
+import android.content.Intent;
+import android.content.SharedPreferences;
+import android.media.AudioManager;
 import android.opengl.GLSurfaceView;
-import android.support.v7.app.ActionBarActivity;
+//import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -16,11 +21,21 @@ import org.mobicents.restcomm.android.client.sdk.RCDevice;
 import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
 import org.mobicents.restcomm.android.client.sdk.RCPresenceEvent;
 
+import java.util.HashMap;
 
-public class CallActivity extends ActionBarActivity {
 
+public class CallActivity extends Activity implements RCConnectionListener, View.OnClickListener {
+
+    public static final String EXTRA_DID = "com.telestax.restcomm_messenger.DID";
+
+    //private static final int CONNECTION_REQUEST = 1;
     // #webrtc
     private GLSurfaceView videoView;
+    private RCConnection connection;
+    SharedPreferences prefs;
+    private static final String TAG = "CallActivity";
+    private HashMap<String, String> connectParams = new HashMap<String, String>();
+    private RCDevice device;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -42,8 +57,25 @@ public class CallActivity extends ActionBarActivity {
         setContentView(R.layout.activity_call);
 
         videoView = (GLSurfaceView) findViewById(R.id.glview_call);
+        videoView.setOnClickListener(this);
         // finished with #webrtc
 
+        device = RCClient.getInstance().listDevices().get(0);
+        // Get Intent parameters.
+        final Intent intent = getIntent();
+        prefs = getSharedPreferences("preferences.xml", MODE_PRIVATE);
+
+        device.initializeWebrtc(videoView, prefs, R.layout.activity_call);
+
+        connectParams.put("username", intent.getStringExtra(EXTRA_DID));
+        //connection = device.connect(connectParams, this, videoView, prefs, R.layout.activity_main);
+    }
+
+    // UI Events
+    public void onClick(View view) {
+        if (view.getId() == R.id.glview_call) {
+            connection = device.connect(connectParams, this, videoView, prefs, R.layout.activity_main);
+        }
     }
 
     @Override
@@ -66,5 +98,37 @@ public class CallActivity extends ActionBarActivity {
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+        videoView.onResume();
+        /*
+        activityRunning = true;
+        if (peerConnectionClient != null) {
+            peerConnectionClient.startVideoSource();
+        }
+        */
+    }
+
+    // RCConnection Listeners
+    public void onConnecting(RCConnection connection)
+    {
+    }
+
+    public void onConnected(RCConnection connection) {
+    }
+
+    public void onDisconnected(RCConnection connection) {
+    }
+
+    public void onCancelled(RCConnection connection) {
+    }
+
+    public void onDeclined(RCConnection connection) {
+    }
+
+    public void onDisconnected(RCConnection connection, int errorCode, String errorText) {
     }
 }

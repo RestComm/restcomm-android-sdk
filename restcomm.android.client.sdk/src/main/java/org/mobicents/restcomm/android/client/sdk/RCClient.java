@@ -121,11 +121,10 @@ public class RCClient {
      * @return The newly created RCDevice
      * @see RCDevice
      */
-    public static RCDevice createDevice(String capabilityToken, RCDeviceListener deviceListener,
-                                        GLSurfaceView videoView, SharedPreferences prefs, int viewId)
+    public static RCDevice createDevice(String capabilityToken, RCDeviceListener deviceListener) //, GLSurfaceView videoView, SharedPreferences prefs, int viewId)
     {
         if (list.size() == 0) {
-            RCDevice device = new RCDevice(capabilityToken, deviceListener, videoView, prefs, viewId);
+            RCDevice device = new RCDevice(capabilityToken, deviceListener);  //, videoView, prefs, viewId);
             list.add(device);
         }
         else {

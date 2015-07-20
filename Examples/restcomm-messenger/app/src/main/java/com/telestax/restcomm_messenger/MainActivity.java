@@ -77,13 +77,15 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
     CheckBox cbMuted;
 
     // #webrtc
-    private GLSurfaceView videoView;
+    private static final int CONNECTION_REQUEST = 1;
+    //private GLSurfaceView videoView;
     //CallFragment callFragment;
     //HudFragment hudFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        /*
         // #webrtc
         // Set window styles for fullscreen-window size. Needs to be done before
         // adding content.
@@ -98,9 +100,10 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
                 View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
                         | View.SYSTEM_UI_FLAG_FULLSCREEN
                         | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
+                        */
         setContentView(R.layout.activity_main);
 
-        videoView = (GLSurfaceView) findViewById(R.id.glview_call);
+        //videoView = (GLSurfaceView) findViewById(R.id.glview_call);
         // finished with #webrtc
 
         // initialize UI
@@ -124,24 +127,22 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         cbMuted = (CheckBox)findViewById(R.id.checkbox_muted);
         cbMuted.setOnCheckedChangeListener(this);
 
-        prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+        prefs = getSharedPreferences("preferences.xml", MODE_PRIVATE); //PreferenceManager.getDefaultSharedPreferences(this);
+        //PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+        PreferenceManager.setDefaultValues(this, "preferences.xml", MODE_PRIVATE, R.xml.preferences, false);
 
-        RCClient.initialize(getApplicationContext(), new RCClient.RCInitListener()
-        {
-            public void onInitialized()
-            {
+        RCClient.initialize(getApplicationContext(), new RCClient.RCInitListener() {
+            public void onInitialized() {
                 Log.i(TAG, "RCClient initialized");
             }
 
-            public void onError(Exception exception)
-            {
+            public void onError(Exception exception) {
                 Log.e(TAG, "RCClient initialization error");
             }
         });
 
         // TODO: we don't support capability tokens yet so let's use an empty string
-        device = RCClient.createDevice("", this, videoView, prefs, R.layout.activity_main);
+        device = RCClient.createDevice("", this);  //, videoView, prefs, R.layout.activity_main);
         Intent intent = new Intent(getApplicationContext(), MainActivity.class);
         device.setIncomingIntent(intent);
 
@@ -194,10 +195,17 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
                 Log.e(TAG, "Error: already connected");
                 return;
             }
-            HashMap<String, String> connectParams = new HashMap<String, String>();
-            connectParams.put("username", txtUri.getText().toString());
+            //HashMap<String, String> connectParams = new HashMap<String, String>();
+            //connectParams.put("username", txtUri.getText().toString());
+
+            // #webrtc
+            Intent intent = new Intent(this, CallActivity.class);
+            //intent.setData(uri);
+            intent.putExtra(CallActivity.EXTRA_DID, txtUri.getText().toString());
+            startActivityForResult(intent, CONNECTION_REQUEST);
+
             //connection = device.connect(connectParams, this);
-            connection = device.connect(connectParams, this, videoView, prefs, R.layout.activity_main);
+            //connection = device.connect(connectParams, this, videoView, prefs, R.layout.activity_main);
 
             if (connection == null) {
                 Log.e(TAG, "Error: error connecting");

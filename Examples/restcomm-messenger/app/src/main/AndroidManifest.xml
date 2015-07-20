@@ -34,8 +34,11 @@
         </activity>
         <activity
             android:name=".CallActivity"
-            android:label="@string/title_activity_call" >
+            android:label="@string/title_activity_call"
+            android:screenOrientation="fullUser"
+            android:configChanges="orientation|screenSize" >
         </activity>
+
     </application>
 
 </manifest>

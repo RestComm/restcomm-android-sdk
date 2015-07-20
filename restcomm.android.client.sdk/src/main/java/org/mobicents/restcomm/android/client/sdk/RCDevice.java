@@ -208,8 +208,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
      *  @param deviceListener  Listener of RCDevice
      *
      */
-    protected RCDevice(String capabilityToken, RCDeviceListener deviceListener,
-                       GLSurfaceView videoView, SharedPreferences prefs, int viewId)
+    protected RCDevice(String capabilityToken, RCDeviceListener deviceListener)
     {
         //this.client = client;
         this.updateCapabilityToken(capabilityToken);
@@ -222,10 +221,13 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
         DeviceImpl deviceImpl = DeviceImpl.GetInstance();
         deviceImpl.Initialize(RCClient.getInstance().context, sipProfile, customHeaders);
         DeviceImpl.GetInstance().sipuaDeviceListener = this;
+    }
 
+    public void initializeWebrtc(GLSurfaceView videoView, SharedPreferences prefs, int viewId)
+    {
         // #webrtc
-        Activity activity = (Activity)listener;
-        setupWebrtc(videoView, activity, prefs, viewId);
+        //Activity activity = (Activity)listener;
+
         // Get setting keys.
         //PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
         //sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
@@ -246,6 +248,8 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
         keyprefRoomServerUrl = context.getString(R.string.pref_room_server_url_key);
         keyprefRoom = context.getString(R.string.pref_room_key);
         keyprefRoomList = context.getString(R.string.pref_room_list_key);
+
+        setupWebrtc(videoView, prefs, viewId);
     }
 
     // 'Copy' constructor
@@ -575,7 +579,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
         }
     }
 
-    public void setupWebrtc(GLSurfaceView videoView, Activity activity, SharedPreferences prefs, int viewId)
+    public void setupWebrtc(GLSurfaceView videoView, SharedPreferences prefs, int viewId)
     {
         Context context = RCClient.getInstance().context;
         //Thread.setDefaultUncaughtExceptionHandler(
@@ -622,19 +626,21 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
                 LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING, scalingType, true);
 
         // Show/hide call control fragment on view click.
+        /*
         videoView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 //toggleCallControlFragmentVisibility();
             }
         });
+        */
 
         // Check for mandatory permissions.
         for (String permission : MANDATORY_PERMISSIONS) {
             if (context.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
                 logAndToast("Permission " + permission + " is not granted");
-                activity.setResult(activity.RESULT_CANCELED);
-                activity.finish();
+                //activity.setResult(activity.RESULT_CANCELED);
+                //activity.finish();
                 return;
             }
         }
@@ -688,7 +694,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
         // TODO: could make that configurable
         boolean loopback = false;  //intent.getBooleanExtra(EXTRA_LOOPBACK, false);
         peerConnectionParameters = new PeerConnectionParameters(
-                false, //prefs.getBoolean(keyprefVideoCallEnabled, Boolean.valueOf(context.getString(R.string.pref_videocall_default))),
+                prefs.getBoolean(keyprefVideoCallEnabled, Boolean.valueOf(context.getString(R.string.pref_videocall_default))),
                 loopback,
                 videoWidth,
                 videoHeight,
@@ -844,6 +850,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
                     peerConnectionClient.createPeerConnectionFactory(RCClient.getInstance().context,
                             VideoRendererGui.getEGLContext(), peerConnectionParameters,
                             device);
+                    logAndToast("Created PeerConnectionFactory");
                 }
                 if (signalingParameters != null) {
                     Log.w(TAG, "EGL context is ready after room connection.");
@@ -897,13 +904,12 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
     // Log |msg| and Toast about it.
     private void logAndToast(String msg) {
         Log.d(TAG, msg);
-        /* TODO: uncomment this when we found why we are breaking
+        //* TODO: uncomment this when we found why we are breaking
         if (logToast != null) {
             logToast.cancel();
         }
         logToast = Toast.makeText(RCClient.getInstance().context, msg, Toast.LENGTH_SHORT);
         logToast.show();
-        */
     }
 
     // -----Implementation of PeerConnectionClient.PeerConnectionEvents.---------
@@ -1043,7 +1049,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
             logAndToast("Creating OFFER...");
             // Create offer. Offer SDP will be sent to answering client in
             // PeerConnectionEvents.onLocalDescription event.
-            peerConnectionClient.createOffer();
+            //peerConnectionClient.createOffer();
         } else {
             if (params.offerSdp != null) {
                 peerConnectionClient.setRemoteDescription(params.offerSdp);

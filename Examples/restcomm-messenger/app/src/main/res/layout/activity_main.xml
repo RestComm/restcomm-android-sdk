@@ -125,7 +125,7 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_marginTop="17dp" />
-
+<!--
     <android.opengl.GLSurfaceView
         android:id="@+id/glview_call"
         android:layout_width="match_parent"
@@ -133,5 +133,6 @@
         android:layout_alignTop="@+id/checkbox_muted"
         android:layout_toEndOf="@+id/text_message"
         android:layout_above="@+id/button_cancel" />
+        -->
 
 </RelativeLayout>
