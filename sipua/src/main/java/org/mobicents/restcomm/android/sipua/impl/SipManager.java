@@ -256,7 +256,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					currentServerTransaction.sendResponse(responseOK);
 					dispatchSipEvent(new SipEvent(this,
 							SipEventType.CALL_CONNECTED, "", sm.getFrom()
-							.getAddress().toString(), remoteRtpPort));
+							.getAddress().toString(), remoteRtpPort, ""));
 					sipManagerState = SipManagerState.ESTABLISHED;
 				} catch (ParseException e) {
 					e.printStackTrace();
@@ -519,8 +519,10 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 							.getMediaDescriptions(false).get(0);
 					int rtpPort = incomingMediaDescriptor.getMedia()
 							.getMediaPort();
+
+					// if its a webrtc call we need to send back the full SDP
 					dispatchSipEvent(new SipEvent(this,
-							SipEventType.CALL_CONNECTED, "", "", rtpPort));
+							SipEventType.CALL_CONNECTED, "", "", rtpPort, sdpContent));
 				} catch (InvalidArgumentException e) {
 					e.printStackTrace();
 				} catch (SipException e) {

@@ -256,6 +256,10 @@ public class RCConnection implements SipUAConnectionListener {
         this.state = ConnectionState.CONNECTED;
         final RCConnection finalConnection = new RCConnection(this);
 
+        // notify RCDevice (this is temporary)
+        RCDevice device = RCClient.getInstance().listDevices().get(0);
+        device.onRemoteDescription(event.sdp);
+
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
         Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
         Runnable myRunnable = new Runnable() {

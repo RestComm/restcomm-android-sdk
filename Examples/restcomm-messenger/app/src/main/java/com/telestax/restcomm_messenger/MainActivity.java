@@ -18,6 +18,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.util.Log;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
@@ -26,8 +28,15 @@ import android.widget.EditText;
 import android.view.View.OnClickListener;
 import android.widget.TextView;
 
-import org.mobicents.restcomm.android.client.sdk.CallFragment;
-import org.mobicents.restcomm.android.client.sdk.HudFragment;
+import org.webrtc.IceCandidate;
+import org.webrtc.SessionDescription;
+import org.webrtc.StatsReport;
+import org.webrtc.VideoRenderer;
+import org.webrtc.VideoRendererGui;
+import org.webrtc.VideoRendererGui.ScalingType;
+
+//import org.mobicents.restcomm.android.client.sdk.CallFragment;
+//import org.mobicents.restcomm.android.client.sdk.HudFragment;
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.client.sdk.RCConnectionListener;
@@ -69,13 +78,30 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
 
     // #webrtc
     private GLSurfaceView videoView;
-    CallFragment callFragment;
-    HudFragment hudFragment;
+    //CallFragment callFragment;
+    //HudFragment hudFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // #webrtc
+        // Set window styles for fullscreen-window size. Needs to be done before
+        // adding content.
+        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        getWindow().addFlags(
+                WindowManager.LayoutParams.FLAG_FULLSCREEN
+                        | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                        | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+                        | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                        | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         setContentView(R.layout.activity_main);
+
+        videoView = (GLSurfaceView) findViewById(R.id.glview_call);
+        // finished with #webrtc
 
         // initialize UI
         btnRegister = (Button)findViewById(R.id.button_register);
@@ -112,7 +138,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         });
 
         // TODO: we don't support capability tokens yet so let's use an empty string
-        device = RCClient.createDevice("", this);
+        device = RCClient.createDevice("", this, videoView, prefs, R.layout.activity_main);
         Intent intent = new Intent(getApplicationContext(), MainActivity.class);
         device.setIncomingIntent(intent);
 
@@ -144,9 +170,6 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         messagePlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
 
         audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
-
-        // #webrtc
-        videoView = (GLSurfaceView) findViewById(R.id.glview_call);
     }
 
     @Override
@@ -172,7 +195,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
             HashMap<String, String> connectParams = new HashMap<String, String>();
             connectParams.put("username", txtUri.getText().toString());
             //connection = device.connect(connectParams, this);
-            connection = device.connect(connectParams, videoView, this, prefs, R.layout.activity_main);
+            connection = device.connect(connectParams, this, videoView, prefs, R.layout.activity_main);
 
             if (connection == null) {
                 Log.e(TAG, "Error: error connecting");

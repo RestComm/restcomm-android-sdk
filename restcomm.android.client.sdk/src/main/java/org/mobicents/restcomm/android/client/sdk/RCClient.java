@@ -25,6 +25,8 @@ package org.mobicents.restcomm.android.client.sdk;
 import java.util.ArrayList;
 import java.util.List;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.opengl.GLSurfaceView;
 import android.util.Log;
 
 
@@ -119,10 +121,11 @@ public class RCClient {
      * @return The newly created RCDevice
      * @see RCDevice
      */
-    public static RCDevice createDevice(String capabilityToken, RCDeviceListener deviceListener)
+    public static RCDevice createDevice(String capabilityToken, RCDeviceListener deviceListener,
+                                        GLSurfaceView videoView, SharedPreferences prefs, int viewId)
     {
         if (list.size() == 0) {
-            RCDevice device = new RCDevice(capabilityToken, deviceListener);
+            RCDevice device = new RCDevice(capabilityToken, deviceListener, videoView, prefs, viewId);
             list.add(device);
         }
         else {

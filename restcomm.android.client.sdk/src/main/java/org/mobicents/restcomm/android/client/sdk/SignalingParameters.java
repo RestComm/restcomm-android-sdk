@@ -35,4 +35,9 @@ public class SignalingParameters {
         this.sipUri = sipUri;
     }
 
+    // combines offerSdp with iceCandidates and comes up with the full SDP
+    public String generateSipSDP() {
+        return "";
+    }
+
 }

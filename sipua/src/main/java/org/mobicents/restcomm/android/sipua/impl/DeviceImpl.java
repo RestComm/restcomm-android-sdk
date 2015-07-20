@@ -87,7 +87,7 @@ public class DeviceImpl implements IDevice,Serializable {
 			this.soundManager.startStreaming(sipEventObject.remoteRtpPort, this.sipProfile.getRemoteIp());
 			if (this.sipuaConnectionListener != null) {
 				// notify our listener that we are connected
-				this.sipuaConnectionListener.onSipUAConnected(null);
+				this.sipuaConnectionListener.onSipUAConnected(sipEventObject);
 			}
 		} else if (sipEventObject.type == SipEventType.REMOTE_RINGING) {
 			if (this.sipuaConnectionListener != null) {

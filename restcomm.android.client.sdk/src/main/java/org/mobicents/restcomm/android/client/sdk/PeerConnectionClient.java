@@ -52,9 +52,10 @@ import org.webrtc.VideoRenderer;
 import org.webrtc.VideoSource;
 import org.webrtc.VideoTrack;
 
-import org.appspot.apprtc.AppRTCClient.SignalingParameters;
-import org.mobicents.restcomm.android.client.sdk.util;
+//import org.appspot.apprtc.AppRTCClient.SignalingParameters;
+//import org.mobicents.restcomm.android.client.sdk.util;
 import org.mobicents.restcomm.android.client.sdk.util.LooperExecutor;
+import org.mobicents.restcomm.android.client.sdk.SignalingParameters;
 
 import java.util.EnumSet;
 import java.util.LinkedList;
