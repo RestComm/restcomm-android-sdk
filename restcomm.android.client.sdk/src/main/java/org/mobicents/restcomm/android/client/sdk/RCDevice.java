@@ -23,6 +23,7 @@
 package org.mobicents.restcomm.android.client.sdk;
 
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Random;
 
@@ -61,6 +62,7 @@ import org.mobicents.restcomm.android.sipua.impl.SipEvent;
 
 // #webrtc
 import org.webrtc.IceCandidate;
+import org.webrtc.PeerConnection;
 import org.webrtc.SessionDescription;
 import org.webrtc.StatsReport;
 import org.webrtc.VideoRenderer;
@@ -346,7 +348,10 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
             connection.state = RCConnection.ConnectionState.PENDING;
             //DeviceImpl.GetInstance().listener = this;
             DeviceImpl.GetInstance().sipuaConnectionListener = connection;
-            this.signalingParameters = new SignalingParameters(true, parameters.get("username"));
+
+            LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
+            iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
+            this.signalingParameters = new SignalingParameters(iceServers, true, "", parameters.get("username"), "", null, null);
             startCall();
             //DeviceImpl.GetInstance().Call(parameters.get("username"));
 
@@ -924,7 +929,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
-                if (signalingParameters != null && !signalingParameters.sipUri.isEmpty()) {
+                if (signalingParameters != null && !signalingParameters.sipUrl.isEmpty()) {
                     logAndToast("Sending " + sdp.type + ", delay=" + delta + "ms");
                     if (signalingParameters.initiator) {
                         // keep it around so that we combine it with candidates before sending it over
@@ -947,7 +952,8 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
-                device.signalingParameters.iceCandidates.add(candidate);
+                device.signalingParameters.addIceCandidate(candidate);  //iceCandidates.add(candidate);
+                Log.e(TAG, "@@@@onIceCandidate:");
                 /*
                 if (appRtcClient != null) {
                     appRtcClient.sendLocalIceCandidate(candidate);
@@ -958,10 +964,25 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
         mainHandler.post(myRunnable);
     }
 
+    public void onIceGatheringComplete()
+    {
+        final RCDevice device = this;
+
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                Log.e(TAG, "@@@@onIceGatheringComplete");
+                // we have gathered all candidates and SDP. Combine then in SIP SDP and send over to JAIN SIP
+                DeviceImpl.GetInstance().CallWebrtc(signalingParameters.sipUrl, device.signalingParameters.generateSipSDP());
+            }
+        };
+        mainHandler.post(myRunnable);
+    }
+
     @Override
     public void onIceConnected() {
         final long delta = System.currentTimeMillis() - callStartedTimeMs;
-        final RCDevice device = this;
 
         Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
         Runnable myRunnable = new Runnable() {
@@ -970,9 +991,6 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
                 logAndToast("ICE connected, delay=" + delta + "ms");
                 iceConnected = true;
                 //callConnected();
-
-                // we have gathered all candidates and SDP. Combine then in SIP SDP and send over to JAIN SIP
-                DeviceImpl.GetInstance().CallWebrtc(signalingParameters.sipUri, device.signalingParameters.generateSipSDP());
             }
         };
         mainHandler.post(myRunnable);
@@ -1049,7 +1067,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
             logAndToast("Creating OFFER...");
             // Create offer. Offer SDP will be sent to answering client in
             // PeerConnectionEvents.onLocalDescription event.
-            //peerConnectionClient.createOffer();
+            peerConnectionClient.createOffer();
         } else {
             if (params.offerSdp != null) {
                 peerConnectionClient.setRemoteDescription(params.offerSdp);

@@ -198,6 +198,11 @@ public class PeerConnectionClient {
         public void onIceConnected();
 
         /**
+         * Callback fired when Ice Gathering changes
+         */
+        public void onIceGatheringComplete();
+
+        /**
          * Callback fired once connection is closed (IceConnectionState is
          * DISCONNECTED).
          */
@@ -900,6 +905,9 @@ public class PeerConnectionClient {
         public void onIceGatheringChange(
                 PeerConnection.IceGatheringState newState) {
             Log.d(TAG, "IceGatheringState: " + newState);
+            if (newState == PeerConnection.IceGatheringState.COMPLETE) {
+                events.onIceGatheringComplete();
+            }
         }
 
         @Override
