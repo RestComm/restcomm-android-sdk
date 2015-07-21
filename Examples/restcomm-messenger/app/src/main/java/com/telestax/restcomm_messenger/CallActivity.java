@@ -28,8 +28,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
     public static final String EXTRA_DID = "com.telestax.restcomm_messenger.DID";
 
-    //private static final int CONNECTION_REQUEST = 1;
-    // #webrtc
     private GLSurfaceView videoView;
     private RCConnection connection;
     SharedPreferences prefs;
@@ -57,24 +55,21 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         setContentView(R.layout.activity_call);
 
         videoView = (GLSurfaceView) findViewById(R.id.glview_call);
-        videoView.setOnClickListener(this);
-        // finished with #webrtc
 
         device = RCClient.getInstance().listDevices().get(0);
+
         // Get Intent parameters.
         final Intent intent = getIntent();
         prefs = getSharedPreferences("preferences.xml", MODE_PRIVATE);
 
-        device.initializeWebrtc(videoView, prefs);
-
         connectParams.put("username", intent.getStringExtra(EXTRA_DID));
-        //connection = device.connect(connectParams, this, videoView, prefs);
+        connection = device.connect(connectParams, this, videoView, prefs);
     }
 
     // UI Events
     public void onClick(View view) {
         if (view.getId() == R.id.glview_call) {
-            connection = device.connect(connectParams, this, videoView, prefs);
+            //connection = device.connect(connectParams, this, videoView, prefs);
         }
     }
 
