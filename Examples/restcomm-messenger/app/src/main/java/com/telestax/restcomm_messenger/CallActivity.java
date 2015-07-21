@@ -65,16 +65,16 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         final Intent intent = getIntent();
         prefs = getSharedPreferences("preferences.xml", MODE_PRIVATE);
 
-        device.initializeWebrtc(videoView, prefs, R.layout.activity_call);
+        device.initializeWebrtc(videoView, prefs);
 
         connectParams.put("username", intent.getStringExtra(EXTRA_DID));
-        //connection = device.connect(connectParams, this, videoView, prefs, R.layout.activity_main);
+        //connection = device.connect(connectParams, this, videoView, prefs);
     }
 
     // UI Events
     public void onClick(View view) {
         if (view.getId() == R.id.glview_call) {
-            connection = device.connect(connectParams, this, videoView, prefs, R.layout.activity_main);
+            connection = device.connect(connectParams, this, videoView, prefs);
         }
     }
 

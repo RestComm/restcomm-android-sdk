@@ -175,7 +175,6 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
     private static final int REMOTE_HEIGHT = 100;
 
     private PeerConnectionClient peerConnectionClient = null;
-    //private AppRTCClient appRtcClient;
     private SignalingParameters signalingParameters;
     private AppRTCAudioManager audioManager = null;
     private VideoRenderer.Callbacks localRender;
@@ -185,16 +184,11 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
     private boolean commandLineRun;
     private int runTimeMs;
     private boolean activityRunning;
-    //private RoomConnectionParameters roomConnectionParameters;
     private PeerConnectionParameters peerConnectionParameters;
     private boolean iceConnected;
     private boolean isError;
     private boolean callControlFragmentVisible = true;
     private long callStartedTimeMs = 0;
-
-    //CallFragment callFragment;
-    //HudFragment hudFragment;
-
 
     // List of mandatory application permissions.
     private static final String[] MANDATORY_PERMISSIONS = {
@@ -212,7 +206,6 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
      */
     protected RCDevice(String capabilityToken, RCDeviceListener deviceListener)
     {
-        //this.client = client;
         this.updateCapabilityToken(capabilityToken);
         this.listener = deviceListener;
 
@@ -225,14 +218,8 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
         DeviceImpl.GetInstance().sipuaDeviceListener = this;
     }
 
-    public void initializeWebrtc(GLSurfaceView videoView, SharedPreferences prefs, int viewId)
+    public void initializeWebrtc(GLSurfaceView videoView, SharedPreferences prefs)
     {
-        // #webrtc
-        //Activity activity = (Activity)listener;
-
-        // Get setting keys.
-        //PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
-        //sharedPref = PreferenceManager.getDefaultSharedPreferences(this);
         Context context = RCClient.getInstance().context;
         keyprefVideoCallEnabled = context.getString(R.string.pref_videocall_key);
         keyprefResolution = context.getString(R.string.pref_resolution_key);
@@ -251,7 +238,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
         keyprefRoom = context.getString(R.string.pref_room_key);
         keyprefRoomList = context.getString(R.string.pref_room_list_key);
 
-        setupWebrtc(videoView, prefs, viewId);
+        setupWebrtc(videoView, prefs);
     }
 
     // 'Copy' constructor
@@ -318,7 +305,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
      */
     public RCConnection connect(Map<String, String> parameters, RCConnectionListener listener)
     {
-        return connect(parameters, listener, null, null, 0);
+        return connect(parameters, listener, null, null);
         /*
         if (haveConnectivity()) {
             RCConnection connection = new RCConnection(listener);
@@ -338,10 +325,10 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
     }
 
     public RCConnection connect(Map<String, String> parameters, RCConnectionListener listener, GLSurfaceView videoView,
-                                SharedPreferences prefs, int viewId)
+                                SharedPreferences prefs)
     {
         Activity activity = (Activity)listener;
-        //setupWebrtc(videoView, activity, prefs, viewId);
+        //setupWebrtc(videoView, activity, prefs);
         if (haveConnectivity()) {
             RCConnection connection = new RCConnection(listener);
             connection.incoming = false;
@@ -584,28 +571,11 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
         }
     }
 
-    public void setupWebrtc(GLSurfaceView videoView, SharedPreferences prefs, int viewId)
+    public void setupWebrtc(GLSurfaceView videoView, SharedPreferences prefs)
     {
         Context context = RCClient.getInstance().context;
         //Thread.setDefaultUncaughtExceptionHandler(
         //        new UnhandledExceptionHandler(this));
-
-        /*
-        // Set window styles for fullscreen-window size. Needs to be done before
-        // adding content.
-        activity.requestWindowFeature(Window.FEATURE_NO_TITLE);
-        activity.getWindow().addFlags(
-                WindowManager.LayoutParams.FLAG_FULLSCREEN
-                        | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-                        | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
-                        | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-                        | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
-        activity.getWindow().getDecorView().setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_FULLSCREEN
-                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
-        activity.setContentView(viewId);
-        */
 
         iceConnected = false;
         signalingParameters = null;
@@ -772,20 +742,12 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
     }
 
     ////////////// Helpers
-    private void startCall() {
-        /*
-        if (appRtcClient == null) {
-            Log.e(TAG, "AppRTC client is not allocated for a call.");
-            return;
-        }
-        */
+    private void startCall()
+    {
         callStartedTimeMs = System.currentTimeMillis();
 
         // Start room connection.
         logAndToast("Preparing call");
-
-        // don't call using JAIN SIP just yet; we need sdp first
-        //appRtcClient.connectToRoom(roomConnectionParameters);
 
         // Create and audio manager that will take care of audio routing,
         // audio modes, audio device enumeration etc.
@@ -798,6 +760,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
                     }
                 }
         );
+
         // Store existing audio settings and change audio mode to
         // MODE_IN_COMMUNICATION for best possible VoIP performance.
         Log.d(TAG, "Initializing the audio manager...");
@@ -864,52 +827,11 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
             }
         };
         mainHandler.post(myRunnable);
-        /*
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (peerConnectionClient == null) {
-                    final long delta = System.currentTimeMillis() - callStartedTimeMs;
-                    Log.d(TAG, "Creating peer connection factory, delay=" + delta + "ms");
-                    peerConnectionClient = PeerConnectionClient.getInstance();
-                    peerConnectionClient.createPeerConnectionFactory(CallActivity.this,
-                            VideoRendererGui.getEGLContext(), peerConnectionParameters,
-                            CallActivity.this);
-                }
-                if (signalingParameters != null) {
-                    Log.w(TAG, "EGL context is ready after room connection.");
-                    onConnectedToRoomInternal(signalingParameters);
-                }
-            }
-        });
-        */
     }
-
-    // Helper functions.
-    /*
-    private void toggleCallControlFragmentVisibility() {
-        if (!iceConnected || !callFragment.isAdded()) {
-            return;
-        }
-        // Show/hide call control fragment
-        callControlFragmentVisible = !callControlFragmentVisible;
-        FragmentTransaction ft = getFragmentManager().beginTransaction();
-        if (callControlFragmentVisible) {
-            ft.show(callFragment);
-            ft.show(hudFragment);
-        } else {
-            ft.hide(callFragment);
-            ft.hide(hudFragment);
-        }
-        ft.setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE);
-        ft.commit();
-    }
-    */
 
     // Log |msg| and Toast about it.
     private void logAndToast(String msg) {
         Log.d(TAG, msg);
-        //* TODO: uncomment this when we found why we are breaking
         if (logToast != null) {
             logToast.cancel();
         }
@@ -935,7 +857,6 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
                         // keep it around so that we combine it with candidates before sending it over
                         device.signalingParameters.offerSdp = sdp;
                         //appRtcClient.sendOfferSdp(sdp);
-
                     } else {
                         //appRtcClient.sendAnswerSdp(sdp);
                     }
@@ -952,8 +873,8 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
-                device.signalingParameters.addIceCandidate(candidate);  //iceCandidates.add(candidate);
-                Log.e(TAG, "@@@@onIceCandidate:");
+                Log.e(TAG, "onIceCandidate:");
+                device.signalingParameters.addIceCandidate(candidate);
                 /*
                 if (appRtcClient != null) {
                     appRtcClient.sendLocalIceCandidate(candidate);
@@ -972,7 +893,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
-                Log.e(TAG, "@@@@onIceGatheringComplete");
+                Log.e(TAG, "onIceGatheringComplete");
                 // we have gathered all candidates and SDP. Combine then in SIP SDP and send over to JAIN SIP
                 DeviceImpl.GetInstance().CallWebrtc(signalingParameters.sipUrl, device.signalingParameters.generateSipSDP());
             }

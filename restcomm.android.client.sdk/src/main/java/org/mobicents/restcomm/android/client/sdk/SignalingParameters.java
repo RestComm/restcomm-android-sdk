@@ -37,39 +37,19 @@ public class SignalingParameters {
 
     // combines offerSdp with iceCandidates and comes up with the full SDP
     public String generateSipSDP() {
-        // Candidates go after the 'a=rtcp' SDP attribute
-
-        // Split the SDP in 2 parts: firstPart is up to the end of the 'a=rtcp' line
-        // and the second part is from there to the end. Then insert the candidates
-        // in-between
-
-        // Since iOS doesn't support regex in NSStrings we need to find the place
-        // to split by first searching for 'a=rtcp' and from that point to look
-        // for the end of this line (i.e. \r\n)
-        String rtcpAttribute = "a=rtcp:";
-        String resultString = offerSdp.description;
-        //NSRange startRange = [self.sdp rangeOfString:rtcpAttribute];
-        //NSString *fromRtcpAttribute = [self.sdp substringFromIndex:startRange.location];
-        //NSRange endRange = [fromRtcpAttribute rangeOfString:@"\r\n"];
-
-        // Found the split point, break the sdp string in 2
-        //NSString *firstPart = [self.sdp substringToIndex:startRange.location + endRange.location + 2];
-        //NSString *lastPart = [self.sdp substringFromIndex:startRange.location + endRange.location + 2];
-
-        String candidates = "";  // = [[NSMutableString alloc] init];
+        // concatenate all candidates in one String
+        String candidates = "";
         for (IceCandidate candidate : iceCandidates) {
             candidates += "a=" + candidate.sdp + "\r\n";
         }
 
         Log.e(TAG, "@@@@ Before replace: " + offerSdp.description);
-        // (?s) turns on DOTALL to make '.' match even new line
-        resultString = offerSdp.description.replaceAll("(a=rtcp:.*?\\r\\n)", "$1" + candidates);
+        // place the candidates after the 'a=rtcp:' string; use replace all because
+        // we are supporting both audio and video so more than one replacements will be made
+        String resultString = offerSdp.description.replaceAll("(a=rtcp:.*?\\r\\n)", "$1" + candidates);
+
         Log.e(TAG, "@@@@ After replace: " + resultString);
-        //NSString *updatedSdp = [NSString stringWithFormat:@"%@%@%@", firstPart, candidates, lastPart];
-        // the complete message also has the sofia handle (so that sofia knows which active session to associate this with)
-        //NSString * completeMessage = [NSString stringWithFormat:@"%@ %@", self.sofia_handle, updatedSdp];
-        //NSLog(@"Complete Message: %@", completeMessage);
-        //return completeMessage;
+
         return resultString;
     }
 

@@ -78,33 +78,11 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
 
     // #webrtc
     private static final int CONNECTION_REQUEST = 1;
-    //private GLSurfaceView videoView;
-    //CallFragment callFragment;
-    //HudFragment hudFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        /*
-        // #webrtc
-        // Set window styles for fullscreen-window size. Needs to be done before
-        // adding content.
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
-        getWindow().addFlags(
-                WindowManager.LayoutParams.FLAG_FULLSCREEN
-                        | WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-                        | WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
-                        | WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-                        | WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON);
-        getWindow().getDecorView().setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_FULLSCREEN
-                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
-                        */
         setContentView(R.layout.activity_main);
-
-        //videoView = (GLSurfaceView) findViewById(R.id.glview_call);
-        // finished with #webrtc
 
         // initialize UI
         btnRegister = (Button)findViewById(R.id.button_register);
@@ -128,7 +106,6 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         cbMuted.setOnCheckedChangeListener(this);
 
         prefs = getSharedPreferences("preferences.xml", MODE_PRIVATE); //PreferenceManager.getDefaultSharedPreferences(this);
-        //PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
         PreferenceManager.setDefaultValues(this, "preferences.xml", MODE_PRIVATE, R.xml.preferences, false);
 
         RCClient.initialize(getApplicationContext(), new RCClient.RCInitListener() {
