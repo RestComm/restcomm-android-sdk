@@ -58,12 +58,12 @@ public class SignalingParameters {
 
         String candidates = "";  // = [[NSMutableString alloc] init];
         for (IceCandidate candidate : iceCandidates) {
-            candidates += "(a=" + candidate.sdp + "\r\n";
+            candidates += "a=" + candidate.sdp + "\r\n";
         }
 
-        Log.e(TAG, "@@@@ Before replace: " + resultString);
-        // (?s) turns on DOTALL to make . match even new line
-        resultString.replaceFirst("(?s)(.*?a=rtcp:.*?\\r\\n)(.*)", "TTEEESSTTT"); //"$1" + candidates + "$2");
+        Log.e(TAG, "@@@@ Before replace: " + offerSdp.description);
+        // (?s) turns on DOTALL to make '.' match even new line
+        resultString = offerSdp.description.replaceAll("(a=rtcp:.*?\\r\\n)", "$1" + candidates);
         Log.e(TAG, "@@@@ After replace: " + resultString);
         //NSString *updatedSdp = [NSString stringWithFormat:@"%@%@%@", firstPart, candidates, lastPart];
         // the complete message also has the sofia handle (so that sofia knows which active session to associate this with)

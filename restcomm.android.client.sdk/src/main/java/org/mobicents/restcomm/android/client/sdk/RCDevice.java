@@ -699,7 +699,7 @@ public class RCDevice implements SipUADeviceListener, PeerConnectionClient.PeerC
         // TODO: could make that configurable
         boolean loopback = false;  //intent.getBooleanExtra(EXTRA_LOOPBACK, false);
         peerConnectionParameters = new PeerConnectionParameters(
-                prefs.getBoolean(keyprefVideoCallEnabled, Boolean.valueOf(context.getString(R.string.pref_videocall_default))),
+                false,  //prefs.getBoolean(keyprefVideoCallEnabled, Boolean.valueOf(context.getString(R.string.pref_videocall_default))),
                 loopback,
                 videoWidth,
                 videoHeight,
