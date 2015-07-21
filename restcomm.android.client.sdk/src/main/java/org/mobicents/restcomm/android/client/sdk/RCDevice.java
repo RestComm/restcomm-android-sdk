@@ -23,51 +23,20 @@
 package org.mobicents.restcomm.android.client.sdk;
 
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
-import java.util.Random;
 
 import android.app.Activity;
-//import android.app.FragmentTransaction;
 import android.app.PendingIntent;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageInstaller;
-import android.content.pm.PackageManager;
-import android.net.Uri;
 import android.net.wifi.WifiManager;
 import android.opengl.GLSurfaceView;
-import android.os.Bundle;
 import android.os.Handler;
-import android.preference.PreferenceManager;
-import android.util.Log;
-import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
-import android.widget.Toast;
-//import android.app.FragmentTransaction;
 
-import org.mobicents.restcomm.android.client.sdk.PeerConnectionClient.PeerConnectionParameters;
-//import org.mobicents.restcomm.android.client.sdk.CallFragment;
-//import org.mobicents.restcomm.android.client.sdk.HudFragment;
-import org.mobicents.restcomm.android.client.sdk.PeerConnectionClient.PeerConnectionEvents;
-import org.mobicents.restcomm.android.client.sdk.SignalingParameters;
-
-import org.mobicents.restcomm.android.client.sdk.util.LooperExecutor;
 import org.mobicents.restcomm.android.sipua.SipProfile;
 import org.mobicents.restcomm.android.sipua.SipUADeviceListener;
 import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
 import org.mobicents.restcomm.android.sipua.impl.SipEvent;
-
-// #webrtc
-import org.webrtc.IceCandidate;
-import org.webrtc.PeerConnection;
-import org.webrtc.SessionDescription;
-import org.webrtc.StatsReport;
-import org.webrtc.VideoRenderer;
-import org.webrtc.VideoRendererGui;
-import org.webrtc.VideoRendererGui.ScalingType;
 
 /**
  *  RCDevice Represents an abstraction of a communications device able to make and receive calls, send and receive messages etc. Remember that
@@ -137,6 +106,10 @@ public class RCDevice implements SipUADeviceListener {
         CLIENT_NAME,
     }
 
+    public static String OUTGOING_CALL = "ACTION_OUTGOING_CALL";
+    public static String INCOMING_CALL = "ACTION_INCOMING_CALL";
+    public static String INCOMING_MESSAGE = "ACTION_INCOMING_MESSAGE";
+    public static String EXTRA_DID = "com.telestax.restcomm_messenger.DID";
     public static String EXTRA_DEVICE = "com.telestax.restcomm.android.client.sdk.extra-device";
     public static String EXTRA_CONNECTION = "com.telestax.restcomm.android.client.sdk.extra-connection";
     PendingIntent pendingIntent;
@@ -492,6 +465,7 @@ public class RCDevice implements SipUADeviceListener {
         DeviceImpl.GetInstance().sipuaConnectionListener = connection;
 
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
+        final String from = event.from;
         Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
@@ -499,7 +473,10 @@ public class RCDevice implements SipUADeviceListener {
                 // bring the App to front
                 try {
                     Intent dataIntent = new Intent();
-                    dataIntent.setAction("ACTION_INCOMING_CALL");
+                    dataIntent.setAction(INCOMING_CALL);
+
+                    dataIntent.putExtra(RCDevice.EXTRA_DID, from);
+
                     pendingIntent.send(RCClient.getInstance().context, 0, dataIntent);
 
                 } catch (PendingIntent.CanceledException e) {
@@ -527,7 +504,7 @@ public class RCDevice implements SipUADeviceListener {
                 // bring the App to front
                 try {
                     Intent dataIntent = new Intent();
-                    dataIntent.setAction("ACTION_INCOMING_MESSAGE");
+                    dataIntent.setAction(INCOMING_MESSAGE);
                     dataIntent.putExtra("MESSAGE_PARMS", finalParameters);
                     dataIntent.putExtra("MESSAGE", finalContent);
                     pendingIntent.send(RCClient.getInstance().context, 0, dataIntent);

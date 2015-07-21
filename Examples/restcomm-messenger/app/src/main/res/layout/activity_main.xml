@@ -11,9 +11,9 @@
         android:text="Dial"
         android:id="@+id/button_dial"
         android:layout_alignBottom="@+id/text_uri"
-        android:layout_alignRight="@+id/button_cancel"
-        android:layout_alignEnd="@+id/button_cancel" />
-
+        android:layout_alignRight="@+id/button_send"
+        android:layout_alignEnd="@+id/button_send" />
+<!--
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -24,7 +24,7 @@
         android:layout_alignParentStart="true"
         android:layout_marginBottom="61dp"
         android:minWidth="100dp" />
-
+-->
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -36,7 +36,7 @@
         android:layout_marginTop="30dp"
         android:layout_alignRight="@+id/button_send"
         android:layout_alignEnd="@+id/button_send" />
-
+<!--
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -66,6 +66,7 @@
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"
         android:minWidth="100dp" />
+        -->
 
     <Button
         android:layout_width="wrap_content"
@@ -83,9 +84,9 @@
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:layout_toStartOf="@+id/button_cancel"
+        android:layout_toStartOf="@+id/button_send"
         android:layout_marginTop="10dp"
-        android:layout_toLeftOf="@+id/button_cancel" />
+        android:layout_toLeftOf="@+id/button_send" />
 
     <EditText
         android:layout_width="wrap_content"
@@ -97,8 +98,8 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_marginTop="25dp"
-        android:layout_toStartOf="@+id/button_cancel"
-        android:layout_toLeftOf="@+id/button_cancel" />
+        android:layout_toStartOf="@+id/button_send"
+        android:layout_toLeftOf="@+id/button_send" />
 
     <EditText
         android:layout_width="wrap_content"
@@ -115,7 +116,7 @@
         android:layout_marginTop="20dp"
         android:layout_alignRight="@+id/button_send"
         android:layout_alignEnd="@+id/button_send" />
-
+<!--
     <CheckBox
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -125,6 +126,7 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_marginTop="17dp" />
+        -->
 <!--
     <android.opengl.GLSurfaceView
         android:id="@+id/glview_call"

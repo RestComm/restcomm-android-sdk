@@ -49,32 +49,36 @@ import java.util.HashMap;
 import java.util.Random;
 
 
-public class MainActivity extends Activity implements RCDeviceListener, RCConnectionListener,
-        OnClickListener, SharedPreferences.OnSharedPreferenceChangeListener, OnCheckedChangeListener,
+public class MainActivity extends Activity implements RCDeviceListener,
+        OnClickListener, SharedPreferences.OnSharedPreferenceChangeListener, /*OnCheckedChangeListener,*/
         MediaPlayer.OnPreparedListener, AudioManager.OnAudioFocusChangeListener {
 
     SharedPreferences prefs;
     private RCDevice device;
-    private RCConnection connection, pendingConnection;
+    //private RCConnection connection, pendingConnection;
     private HashMap<String, String> params;
     private static final String TAG = "MainActivity";
-    MediaPlayer ringingPlayer;
-    MediaPlayer callingPlayer;
+    //MediaPlayer ringingPlayer;
+    //MediaPlayer callingPlayer;
     MediaPlayer messagePlayer;
     AudioManager audioManager;
 
     // UI elements
     Button btnRegister;
     Button btnDial;
+
+    /*
     Button btnHangup;
     Button btnAnswer;
     Button btnDecline;
     Button btnCancel;
+    */
+
     Button btnSend;
     EditText txtUri;
     EditText txtMessage;
     EditText txtWall;
-    CheckBox cbMuted;
+    //CheckBox cbMuted;
 
     // #webrtc
     private static final int CONNECTION_REQUEST = 1;
@@ -89,6 +93,8 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         btnRegister.setOnClickListener(this);
         btnDial = (Button)findViewById(R.id.button_dial);
         btnDial.setOnClickListener(this);
+
+        /*
         btnHangup = (Button)findViewById(R.id.button_hangup);
         btnHangup.setOnClickListener(this);
         btnAnswer = (Button)findViewById(R.id.button_answer);
@@ -97,13 +103,15 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         btnDecline.setOnClickListener(this);
         btnCancel = (Button)findViewById(R.id.button_cancel);
         btnCancel.setOnClickListener(this);
+        */
+
         btnSend = (Button)findViewById(R.id.button_send);
         btnSend.setOnClickListener(this);
         txtUri = (EditText)findViewById(R.id.text_uri);
         txtMessage = (EditText)findViewById(R.id.text_message);
         txtWall = (EditText)findViewById(R.id.text_wall);
-        cbMuted = (CheckBox)findViewById(R.id.checkbox_muted);
-        cbMuted.setOnCheckedChangeListener(this);
+        //cbMuted = (CheckBox)findViewById(R.id.checkbox_muted);
+        //cbMuted.setOnCheckedChangeListener(this);
 
         prefs = getSharedPreferences("preferences.xml", MODE_PRIVATE); //PreferenceManager.getDefaultSharedPreferences(this);
         PreferenceManager.setDefaultValues(this, "preferences.xml", MODE_PRIVATE, R.xml.preferences, false);
@@ -120,10 +128,10 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
 
         // TODO: we don't support capability tokens yet so let's use an empty string
         device = RCClient.createDevice("", this);  //, videoView, prefs, R.layout.activity_main);
-        Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+        Intent intent = new Intent(getApplicationContext(), CallActivity.class);
         device.setIncomingIntent(intent);
 
-        connection = null;
+        //connection = null;
         params = new HashMap<String, String>();
 
         // preferences
@@ -133,19 +141,21 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         txtUri.setText("sip:1235@54.225.212.193:5080");
         txtMessage.setText("Hello there!");
 
-        cbMuted.setEnabled(false);
+        //cbMuted.setEnabled(false);
 
         // volume control should be by default 'music' which will control the ringing sounds and 'voice call' when within a call
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
         // Setup Media (notice that I'm not preparing the media as create does that implicitly plus
         // I'm not ever stopping a player -instead I'm pausing so no additional preparation is needed
         // there either. We might need to revisit this at some point though
+        /*
         ringingPlayer = MediaPlayer.create(getApplicationContext(), R.raw.ringing);
         ringingPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         ringingPlayer.setLooping(true);
         callingPlayer = MediaPlayer.create(getApplicationContext(), R.raw.calling);
         callingPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         callingPlayer.setLooping(true);
+        */
         messagePlayer = MediaPlayer.create(getApplicationContext(), R.raw.message);
         messagePlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
 
@@ -168,27 +178,29 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
     // UI Events
     public void onClick(View view) {
         if (view.getId() == R.id.button_dial) {
+            /*
             if (connection != null) {
                 Log.e(TAG, "Error: already connected");
                 return;
             }
-            //HashMap<String, String> connectParams = new HashMap<String, String>();
-            //connectParams.put("username", txtUri.getText().toString());
+            */
 
             // #webrtc
             Intent intent = new Intent(this, CallActivity.class);
-            //intent.setData(uri);
-            intent.putExtra(CallActivity.EXTRA_DID, txtUri.getText().toString());
+            intent.setAction(RCDevice.OUTGOING_CALL);
+            intent.putExtra(RCDevice.EXTRA_DID, txtUri.getText().toString());
             startActivityForResult(intent, CONNECTION_REQUEST);
 
-            //connection = device.connect(connectParams, this);
-            //connection = device.connect(connectParams, this, videoView, prefs, R.layout.activity_main);
-
+            /*
+            connection = device.connect(connectParams, this);
             if (connection == null) {
                 Log.e(TAG, "Error: error connecting");
                 return;
             }
-        } else if (view.getId() == R.id.button_hangup) {
+            */
+        }
+        /*
+        else if (view.getId() == R.id.button_hangup) {
             if (connection == null) {
                 Log.e(TAG, "Error: not connected");
             }
@@ -197,9 +209,13 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
                 connection = null;
                 pendingConnection = null;
             }
-        } else if (view.getId() == R.id.button_register) {
+        }
+         */
+        else if (view.getId() == R.id.button_register) {
             device.updateParams(params);
-        } else if (view.getId() == R.id.button_answer) {
+        }
+        /*
+        else if (view.getId() == R.id.button_answer) {
             if (pendingConnection != null) {
                 pendingConnection.accept();
                 connection = this.pendingConnection;
@@ -227,7 +243,9 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
                 // Abandon audio focus when playback complete
                 audioManager.abandonAudioFocus(this);
             }
-        } else if (view.getId() == R.id.button_send) {
+        }
+         */
+        else if (view.getId() == R.id.button_send) {
             HashMap<String, String> sendParams = new HashMap<String, String>();
             sendParams.put("username", txtUri.getText().toString());
             if (device.sendMessage(txtMessage.getText().toString(), sendParams)) {
@@ -247,6 +265,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         }
     }
 
+    /*
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
     {
         if (buttonView.getId() == R.id.checkbox_muted) {
@@ -255,6 +274,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
             }
         }
     }
+    */
 
     // RCDevice Listeners
     public void onStartListening(RCDevice device)
@@ -292,12 +312,13 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
 
     public void onIncomingConnection(RCDevice device, RCConnection connection)
     {
-        Log.i(TAG, "Connection arrived");
+        /*
         int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
         if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
             ringingPlayer.start();
         }
         pendingConnection = connection;
+        */
     }
 
     public void onIncomingMessage(RCDevice device, String message, HashMap<String, String> parameters)
@@ -317,6 +338,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
     }
 
     // RCConnection Listeners
+    /*
     public void onConnecting(RCConnection connection)
     {
         Log.i(TAG, "RCConnection connecting");
@@ -383,6 +405,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         this.connection = null;
         pendingConnection = null;
     }
+    */
 
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
@@ -478,7 +501,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         Log.i(TAG, "%% onResume");
         Intent intent = getIntent();
         // If reason for resume is that we got an intent designating either an incoming call or message
-        if (intent.getAction() == "ACTION_INCOMING_CALL") {
+        if (intent.getAction() == RCDevice.INCOMING_CALL) {
             ArrayList<RCDevice> list = RCClient.getInstance().listDevices();
             if (list.size() != 0) {
                 RCDevice device = list.get(0);
@@ -486,7 +509,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
                 onIncomingConnection(device, pendingConnection);
             }
         }
-        if (intent.getAction() == "ACTION_INCOMING_MESSAGE") {
+        if (intent.getAction() == RCDevice.INCOMING_MESSAGE) {
             ArrayList<RCDevice> list = RCClient.getInstance().listDevices();
             if (list.size() != 0) {
                 RCDevice device = list.get(0);
@@ -537,39 +560,4 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         }
 		*/
     }
-
-    // #webrtc
-    private void connectToRoom(boolean loopback, int runTimeMs) {
-/*
-
-        // Start AppRTCDemo activity.
-        //Log.d(TAG, "Connecting to room " + roomId + " at URL " + roomUrl);
-        if (validateUrl(roomUrl)) {
-            Uri uri = Uri.parse(roomUrl);
-            Intent intent = new Intent(this, CallActivity.class);
-            intent.setData(uri);
-            intent.putExtra(CallActivity.EXTRA_ROOMID, roomId);
-            intent.putExtra(CallActivity.EXTRA_LOOPBACK, loopback);
-            intent.putExtra(CallActivity.EXTRA_VIDEO_CALL, videoCallEnabled);
-            intent.putExtra(CallActivity.EXTRA_VIDEO_WIDTH, videoWidth);
-            intent.putExtra(CallActivity.EXTRA_VIDEO_HEIGHT, videoHeight);
-            intent.putExtra(CallActivity.EXTRA_VIDEO_FPS, cameraFps);
-            intent.putExtra(CallActivity.EXTRA_VIDEO_BITRATE, videoStartBitrate);
-            intent.putExtra(CallActivity.EXTRA_VIDEOCODEC, videoCodec);
-            intent.putExtra(CallActivity.EXTRA_HWCODEC_ENABLED, hwCodec);
-            intent.putExtra(CallActivity.EXTRA_NOAUDIOPROCESSING_ENABLED,
-                    noAudioProcessing);
-            intent.putExtra(CallActivity.EXTRA_AUDIO_BITRATE, audioStartBitrate);
-            intent.putExtra(CallActivity.EXTRA_AUDIOCODEC, audioCodec);
-            intent.putExtra(CallActivity.EXTRA_CPUOVERUSE_DETECTION,
-                    cpuOveruseDetection);
-            intent.putExtra(CallActivity.EXTRA_DISPLAY_HUD, displayHud);
-            intent.putExtra(CallActivity.EXTRA_CMDLINE, commandLineRun);
-            intent.putExtra(CallActivity.EXTRA_RUNTIME, runTimeMs);
-
-            startActivityForResult(intent, CONNECTION_REQUEST);
-        }
-        */
-    }
-
 }

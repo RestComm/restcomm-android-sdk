@@ -673,6 +673,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                 }
                 logAndToast("Received remote " + sdp.type + ", delay=" + delta + "ms");
                 peerConnectionClient.setRemoteDescription(sdp);
+
                 if (!signalingParameters.initiator) {
                     logAndToast("Creating ANSWER...");
                     // Create answer. Answer SDP will be sent to offering client in
@@ -882,6 +883,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
+                disconnectWebrtc();
                 listener.onDisconnected(finalConnection);
             }
         };
