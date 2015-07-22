@@ -106,14 +106,16 @@ public class RCDevice implements SipUADeviceListener {
         CLIENT_NAME,
     }
 
+    private static final String TAG = "RCDevice";
     public static String OUTGOING_CALL = "ACTION_OUTGOING_CALL";
     public static String INCOMING_CALL = "ACTION_INCOMING_CALL";
     public static String INCOMING_MESSAGE = "ACTION_INCOMING_MESSAGE";
     public static String EXTRA_DID = "com.telestax.restcomm_messenger.DID";
-    public static String EXTRA_DEVICE = "com.telestax.restcomm.android.client.sdk.extra-device";
-    public static String EXTRA_CONNECTION = "com.telestax.restcomm.android.client.sdk.extra-connection";
+    public static String EXTRA_SDP = "com.telestax.restcomm_messenger.SDP";
+    //public static String EXTRA_DEVICE = "com.telestax.restcomm.android.client.sdk.extra-device";
+    //public static String EXTRA_CONNECTION = "com.telestax.restcomm.android.client.sdk.extra-connection";
     PendingIntent pendingIntent;
-    private static final String TAG = "RCDevice";
+    public RCConnection incomingConnection;
 
     /*
     // #webrtc
@@ -458,14 +460,15 @@ public class RCDevice implements SipUADeviceListener {
 
     // SipUA listeners
     public void onSipUAConnectionArrived(SipEvent event) {
-        RCConnectionListener connectionListener = (RCConnectionListener) this.listener;
-        RCConnection connection = new RCConnection(connectionListener);
-        connection.incoming = true;
-        connection.state = RCConnection.ConnectionState.CONNECTING;
-        DeviceImpl.GetInstance().sipuaConnectionListener = connection;
+        //RCConnectionListener connectionListener = (RCConnectionListener) this.listener;
+        incomingConnection = new RCConnection();
+        incomingConnection.incoming = true;
+        incomingConnection.state = RCConnection.ConnectionState.CONNECTING;
+        DeviceImpl.GetInstance().sipuaConnectionListener = incomingConnection;
 
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
         final String from = event.from;
+        final String sdp = event.sdp;
         Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
@@ -474,9 +477,8 @@ public class RCDevice implements SipUADeviceListener {
                 try {
                     Intent dataIntent = new Intent();
                     dataIntent.setAction(INCOMING_CALL);
-
                     dataIntent.putExtra(RCDevice.EXTRA_DID, from);
-
+                    dataIntent.putExtra(RCDevice.EXTRA_SDP, sdp);
                     pendingIntent.send(RCClient.getInstance().context, 0, dataIntent);
 
                 } catch (PendingIntent.CanceledException e) {

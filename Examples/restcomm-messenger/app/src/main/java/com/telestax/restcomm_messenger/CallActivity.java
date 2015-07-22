@@ -51,6 +51,10 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     Button btnDecline;
     Button btnCancel;
 
+    // TODO: remove those when the API is structured properlu
+    String incomingCallDid = "";
+    String incomingCallSdp = "";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -96,14 +100,13 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         cbMuted.setEnabled(false);
 
         device = RCClient.getInstance().listDevices().get(0);
+
+        PreferenceManager.setDefaultValues(this, "preferences.xml", MODE_PRIVATE, R.xml.preferences, false);
+        prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
         // Get Intent parameters.
         final Intent intent = getIntent();
         if (intent.getAction() == RCDevice.OUTGOING_CALL) {
-            PreferenceManager.setDefaultValues(this, "preferences.xml", MODE_PRIVATE, R.xml.preferences, false);
-            prefs = PreferenceManager.getDefaultSharedPreferences(this);
-
-            //prefs = getSharedPreferences("preferences.xml", MODE_PRIVATE);
-
             connectParams.put("username", intent.getStringExtra(RCDevice.EXTRA_DID));
             connection = device.connect(connectParams, this, videoView, prefs);
 
@@ -111,6 +114,19 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 Log.e(TAG, "Error: error connecting");
                 return;
             }
+        }
+        if (intent.getAction() == RCDevice.INCOMING_CALL) {
+            int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+            if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                ringingPlayer.start();
+            }
+            pendingConnection = device.incomingConnection;
+            pendingConnection.updateListener(this);
+            pendingConnection.setupWebrtcForIncomingCall(videoView, prefs);
+
+            // TODO: remove those
+            incomingCallDid =  intent.getStringExtra(RCDevice.EXTRA_DID);
+            incomingCallSdp = intent.getStringExtra(RCDevice.EXTRA_SDP);
         }
     }
 
@@ -131,7 +147,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             }
         } else if (view.getId() == R.id.button_answer) {
             if (pendingConnection != null) {
-                pendingConnection.accept();
+                //pendingConnection.accept();
+                pendingConnection.answerCall(incomingCallDid, incomingCallSdp);
                 connection = this.pendingConnection;
                 ringingPlayer.pause();
                 // Abandon audio focus when playback complete

@@ -182,6 +182,17 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         this.listener = connectionListener;
     }
 
+    // could not use the previous constructor with connectionListener = null, hence created this:
+    public RCConnection()
+    {
+        this.listener = null;
+    }
+
+    public void updateListener(RCConnectionListener listener)
+    {
+        this.listener = listener;
+    }
+
     // 'Copy' constructor
     public RCConnection(RCConnection connection)
     {
@@ -202,12 +213,32 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
         this.signalingParameters = new SignalingParameters(iceServers, true, "", sipUri, "", null, null);
 
-        startCall();
+        startCall(this.signalingParameters);
+    }
+
+    public void setupWebrtcForIncomingCall(GLSurfaceView videoView, SharedPreferences prefs)
+    {
+        initializeWebrtc(videoView, prefs);
+    }
+
+    // TODO: remove this when ready
+    public void answerCall(String sipUri, String sdp)
+    {
+
+        LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
+        iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
+        this.signalingParameters = new SignalingParameters(iceServers, false, "", sipUri, "", null, null);
+        SignalingParameters params = SignalingParameters.extractCandidates(new SessionDescription(SessionDescription.Type.OFFER, sdp));
+        this.signalingParameters.offerSdp = params.offerSdp;
+        this.signalingParameters.iceCandidates = params.iceCandidates;
+
+        startCall(this.signalingParameters);
     }
 
     // initialize webrtc facilities for the call
     private void initializeWebrtc(GLSurfaceView videoView, SharedPreferences prefs)
     {
+        Log.e(TAG, "@@@@@ initializeWebrtc  ");
         Context context = RCClient.getInstance().context;
         keyprefVideoCallEnabled = context.getString(R.string.pref_videocall_key);
         keyprefResolution = context.getString(R.string.pref_resolution_key);
@@ -231,6 +262,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
     public void setupWebrtc(GLSurfaceView videoView, SharedPreferences prefs)
     {
+        Log.e(TAG, "@@@@@ setupWebrtc");
         Context context = RCClient.getInstance().context;
         //Thread.setDefaultUncaughtExceptionHandler(
         //        new UnhandledExceptionHandler(this));
@@ -393,8 +425,9 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         */
     }
 
-    private void startCall()
+    private void startCall(SignalingParameters signalingParameters)
     {
+        Log.e(TAG, "@@@@@ startCall");
         callStartedTimeMs = System.currentTimeMillis();
 
         // Start room connection.
@@ -423,6 +456,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
     // Disconnect from remote resources, dispose of local resources, and exit.
     public void disconnectWebrtc() {
+        Log.e(TAG, "@@@@@ disconnectWebrtc");
         activityRunning = false;
         /* Signaling is already disconnected
         if (appRtcClient != null) {
@@ -462,6 +496,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
+                Log.e(TAG, "@@@@@ createPeerConnectionFactory");
                 if (peerConnectionClient == null) {
                     final long delta = System.currentTimeMillis() - callStartedTimeMs;
                     Log.d(TAG, "Creating peer connection factory, delay=" + delta + "ms");
@@ -502,6 +537,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
+                Log.e(TAG, "@@@@@ onLocalDescription");
                 if (signalingParameters != null && !signalingParameters.sipUrl.isEmpty()) {
                     logAndToast("Sending " + sdp.type + ", delay=" + delta + "ms");
                     if (signalingParameters.initiator) {
@@ -510,6 +546,13 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                         //appRtcClient.sendOfferSdp(sdp);
                     } else {
                         //appRtcClient.sendAnswerSdp(sdp);
+                        connection.signalingParameters.answerSdp = sdp;
+                        // for an incoming call we have already stored the offer candidates there, now
+                        // we are done with those and need to come up with answer candidates
+                        // TODO: this might prove dangerous as the signalingParms struct used to be all const,
+                        // but I changed it since with JAIN sip signalling where various parts are picked up
+                        // at different points in time
+                        connection.signalingParameters.iceCandidates.clear();
                     }
                 }
             }
@@ -524,7 +567,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
-                Log.e(TAG, "onIceCandidate:");
+                Log.e(TAG, "@@@@@ onIceCandidate:");
                 connection.signalingParameters.addIceCandidate(candidate);
                 /*
                 if (appRtcClient != null) {
@@ -544,9 +587,17 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
-                Log.e(TAG, "onIceGatheringComplete");
-                // we have gathered all candidates and SDP. Combine then in SIP SDP and send over to JAIN SIP
-                DeviceImpl.GetInstance().CallWebrtc(signalingParameters.sipUrl, connection.signalingParameters.generateSipSdp());
+                Log.e(TAG, "@@@@@ onIceGatheringComplete");
+                if (signalingParameters.initiator) {
+                    // we have gathered all candidates and SDP. Combine then in SIP SDP and send over to JAIN SIP
+                    DeviceImpl.GetInstance().CallWebrtc(signalingParameters.sipUrl,
+                            connection.signalingParameters.generateSipSdp(connection.signalingParameters.offerSdp,
+                                connection.signalingParameters.iceCandidates));
+                }
+                else {
+                    DeviceImpl.GetInstance().AcceptWebrtc(connection.signalingParameters.generateSipSdp(connection.signalingParameters.answerSdp,
+                            connection.signalingParameters.iceCandidates));
+                }
             }
         };
         mainHandler.post(myRunnable);
@@ -560,6 +611,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
+                Log.e(TAG, "@@@@@ onIceConnected");
                 logAndToast("ICE connected, delay=" + delta + "ms");
                 iceConnected = true;
                 //callConnected();
@@ -574,6 +626,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
+                Log.e(TAG, "@@@@@ onIceDisconnected");
                 logAndToast("ICE disconnected");
                 iceConnected = false;
                 disconnect();
@@ -584,6 +637,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
     @Override
     public void onPeerConnectionClosed() {
+        Log.e(TAG, "@@@@@ onPeerConnectionClosed");
     }
 
     @Override
@@ -624,6 +678,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     }
 
     private void onConnectedToRoomInternal(final SignalingParameters params) {
+        Log.e(TAG, "@@@@@ onConnectedToRoomInternal");
         final long delta = System.currentTimeMillis() - callStartedTimeMs;
 
         signalingParameters = params;
@@ -668,6 +723,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
+                Log.e(TAG, "@@@@@ onRemoteDescription");
                 if (peerConnectionClient == null) {
                     Log.e(TAG, "Received remote SDP for non-initilized peer connection.");
                     return;
@@ -690,6 +746,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
     //@Override
     public void onRemoteIceCandidates(final List<IceCandidate> candidates) {
+        Log.e(TAG, "@@@@@ onRemoteIceCandidates");
         // no need to run it in UI thread it is already there due to onRemoteDescription
         if (peerConnectionClient == null) {
             Log.e(TAG,
@@ -766,6 +823,14 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     {
         if (haveConnectivity()) {
             DeviceImpl.GetInstance().Accept();
+            this.state = state.CONNECTED;
+        }
+    }
+
+    private void acceptWebrtc(final String sdp)
+    {
+        if (haveConnectivity()) {
+            DeviceImpl.GetInstance().AcceptWebrtc(sdp);
             this.state = state.CONNECTED;
         }
     }
@@ -873,9 +938,10 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         this.state = ConnectionState.CONNECTED;
         final RCConnection finalConnection = new RCConnection(this);
 
-        // notify RCDevice (this is temporary)
-        //RCDevice device = RCClient.getInstance().listDevices().get(0);
-        onRemoteDescription(event.sdp);
+        // we want to notify webrtc onRemoteDescription *only* on an outgoing call
+        if (!this.isIncoming()) {
+            onRemoteDescription(event.sdp);
+        }
 
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
         Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());

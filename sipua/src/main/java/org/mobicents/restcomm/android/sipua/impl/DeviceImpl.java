@@ -96,7 +96,7 @@ public class DeviceImpl implements IDevice,Serializable {
 			}
 		} else if (sipEventObject.type == SipEventType.LOCAL_RINGING) {
 			if (this.sipuaDeviceListener != null) {
-				this.sipuaDeviceListener.onSipUAConnectionArrived(null);
+				this.sipuaDeviceListener.onSipUAConnectionArrived(sipEventObject);
 			}
 		}
 	}
@@ -121,6 +121,10 @@ public class DeviceImpl implements IDevice,Serializable {
 	@Override
 	public void Accept() {
 		sipManager.AcceptCall(soundManager.setupAudioStream());
+	}
+
+	public void AcceptWebrtc(final String sdp) {
+		sipManager.AcceptCallWebrtc(sdp);
 	}
 
 	@Override

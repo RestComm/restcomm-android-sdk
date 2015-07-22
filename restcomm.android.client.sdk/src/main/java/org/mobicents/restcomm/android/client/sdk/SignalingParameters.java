@@ -22,7 +22,9 @@ public class SignalingParameters {
     public final String sipUrl;
     public final String wssPostUrl;
     public SessionDescription offerSdp;
+    public SessionDescription answerSdp;
     public List<IceCandidate> iceCandidates;
+    //public List<IceCandidate> answerIceCandidates;
 
     public SignalingParameters(
             List<PeerConnection.IceServer> iceServers,
@@ -35,7 +37,9 @@ public class SignalingParameters {
         this.sipUrl = sipUrl;
         this.wssPostUrl = wssPostUrl;
         this.offerSdp = offerSdp;
+        this.answerSdp = null;
         this.iceCandidates = iceCandidates;
+        //this.answerIceCandidates = null;
     }
     public SignalingParameters() {
         this.iceServers = null;
@@ -44,11 +48,13 @@ public class SignalingParameters {
         this.sipUrl = "";
         this.wssPostUrl = "";
         this.offerSdp = null;
+        this.answerSdp = null;
         this.iceCandidates = null;
+        //this.answerIceCandidates = null;
     }
 
     // combines offerSdp with iceCandidates and comes up with the full SDP
-    public String generateSipSdp() {
+    public String generateSipSdp(SessionDescription offerSdp, List<IceCandidate> iceCandidates) {
         // concatenate all candidates in one String
         String candidates = "";
         for (IceCandidate candidate : iceCandidates) {
@@ -81,7 +87,7 @@ public class SignalingParameters {
         }
 
         // remove candidates from SDP
-        params.offerSdp =  new SessionDescription(sdp.type, sdp.description.replaceAll("a=candidate.*?\\r\\n", ""));
+        params.offerSdp = new SessionDescription(sdp.type, sdp.description.replaceAll("a=candidate.*?\\r\\n", ""));
 
         return params;
     }

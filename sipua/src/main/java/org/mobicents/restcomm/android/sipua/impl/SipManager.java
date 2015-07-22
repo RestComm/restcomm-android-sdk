@@ -200,42 +200,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					toHeader.setTag("4321"); // Application is supposed to set.
 					responseOK.addHeader(contactHeader);
 
-					/*
-					 * SdpFactory sdpFactory = SdpFactory.getInstance();
-					 * SessionDescription sdp = null; long sessionID =
-					 * System.currentTimeMillis() & 0xffffff; long
-					 * sessionVersion = sessionID; String networkType =
-					 * Connection.IN; String addressType = Connection.IP4;
-					 *
-					 * sdp = sdpFactory.createSessionDescription();
-					 * sdp.setVersion(sdpFactory.createVersion(0));
-					 * sdp.setOrigin(sdpFactory.createOrigin(getUserName(),
-					 * sessionID, sessionVersion, networkType, addressType,
-					 * getLocalIp()));
-					 * sdp.setSessionName(sdpFactory.createSessionName
-					 * ("session"));
-					 * sdp.setConnection(sdpFactory.createConnection
-					 * (networkType, addressType, getLocalIp()));
-					 * Vector<Attribute> attributes = new
-					 * Vector<Attribute>();;// = testCase.getSDPAttributes();
-					 * Attribute a = sdpFactory.createAttribute("rtpmap",
-					 * "8 pcma/8000"); attributes.add(a);
-					 *
-					 * int[] audioMap = new int[attributes.size()]; for (int
-					 * index = 0; index < audioMap.length; index++) { String m =
-					 * attributes.get(index).getValue().split(" ")[0];
-					 * audioMap[index] = Integer.valueOf(m); } // generate media
-					 * descriptor MediaDescription md =
-					 * sdpFactory.createMediaDescription("audio",
-					 * SipStackAndroid.getLocalPort(), 1, "RTP/AVP", audioMap);
-					 *
-					 * // set attributes for formats
-					 *
-					 * md.setAttributes(attributes); Vector descriptions = new
-					 * Vector(); descriptions.add(md);
-					 *
-					 * sdp.setMediaDescriptions(descriptions);
-					 */
+
 					String sdpData = "v=0\r\n"
 							+ "o=4855 13760799956958020 13760799956958020"
 							+ " IN IP4 " + sipProfile.getLocalIp() + "\r\n"
@@ -248,6 +213,49 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 							+ "a=rtpmap:4 G723/8000\r\n"
 							+ "a=rtpmap:18 G729A/8000\r\n" + "a=ptime:20\r\n";
 					byte[] contents = sdpData.getBytes();
+
+					ContentTypeHeader contentTypeHeader = headerFactory
+							.createContentTypeHeader("application", "sdp");
+					responseOK.setContent(contents, contentTypeHeader);
+
+					currentServerTransaction.sendResponse(responseOK);
+					dispatchSipEvent(new SipEvent(this,
+							SipEventType.CALL_CONNECTED, "", sm.getFrom()
+							.getAddress().toString(), remoteRtpPort, ""));
+					sipManagerState = SipManagerState.ESTABLISHED;
+				} catch (ParseException e) {
+					e.printStackTrace();
+				} catch (SipException e) {
+					e.printStackTrace();
+				} catch (InvalidArgumentException e) {
+					e.printStackTrace();
+				}
+			}
+		};
+		thread.start();
+		sipManagerState = SipManagerState.ESTABLISHED;
+	}
+
+	public void AcceptCallWebrtc(final String sdp) {
+		if (currentServerTransaction == null)
+			return;
+		Thread thread = new Thread() {
+			public void run() {
+				try {
+					SIPMessage sm = (SIPMessage) currentServerTransaction
+							.getRequest();
+					Response responseOK = messageFactory.createResponse(
+							Response.OK, currentServerTransaction.getRequest());
+					Address address = createContactAddress();
+					ContactHeader contactHeader = headerFactory
+							.createContactHeader(address);
+					responseOK.addHeader(contactHeader);
+					ToHeader toHeader = (ToHeader) responseOK
+							.getHeader(ToHeader.NAME);
+					toHeader.setTag("4321"); // Application is supposed to set.
+					responseOK.addHeader(contactHeader);
+
+					byte[] contents = sdp.getBytes();
 
 					ContentTypeHeader contentTypeHeader = headerFactory
 							.createContentTypeHeader("application", "sdp");
@@ -701,7 +709,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			System.out.println("Remote RTP port from incoming SDP:"
 					+ remoteRtpPort);
 			dispatchSipEvent(new SipEvent(this, SipEventType.LOCAL_RINGING, "",
-					sm.getFrom().getAddress().toString()));
+					sm.getFrom().getAddress().toString(), 0, sdpContent));
 		} catch (Exception ex) {
 			ex.printStackTrace();
 		}
