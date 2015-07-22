@@ -51,9 +51,9 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     Button btnDecline;
     Button btnCancel;
 
-    // TODO: remove those when the API is structured properlu
     String incomingCallDid = "";
-    String incomingCallSdp = "";
+    // TODO: remove those when the API is structured properlu
+    // String incomingCallSdp = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -124,9 +124,9 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             pendingConnection.updateListener(this);
             pendingConnection.setupWebrtcForIncomingCall(videoView, prefs);
 
-            // TODO: remove those
+            // the number from which we got the call
             incomingCallDid =  intent.getStringExtra(RCDevice.EXTRA_DID);
-            incomingCallSdp = intent.getStringExtra(RCDevice.EXTRA_SDP);
+            //incomingCallSdp = intent.getStringExtra(RCDevice.EXTRA_SDP);
         }
     }
 
@@ -147,8 +147,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             }
         } else if (view.getId() == R.id.button_answer) {
             if (pendingConnection != null) {
-                //pendingConnection.accept();
-                pendingConnection.answerCall(incomingCallDid, incomingCallSdp);
+                pendingConnection.accept();
+                //pendingConnection.answerCall(incomingCallDid, incomingCallSdp);
                 connection = this.pendingConnection;
                 ringingPlayer.pause();
                 // Abandon audio focus when playback complete

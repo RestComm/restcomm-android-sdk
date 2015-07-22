@@ -146,6 +146,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     private static final int REMOTE_WIDTH = 100;
     private static final int REMOTE_HEIGHT = 100;
 
+    public String incomingCallSdp = "";
     private PeerConnectionClient peerConnectionClient = null;
     private SignalingParameters signalingParameters;
     private AppRTCAudioManager audioManager = null;
@@ -538,7 +539,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             @Override
             public void run() {
                 Log.e(TAG, "@@@@@ onLocalDescription");
-                if (signalingParameters != null && !signalingParameters.sipUrl.isEmpty()) {
+                if (signalingParameters != null) {  // && !signalingParameters.sipUrl.isEmpty()) {
                     logAndToast("Sending " + sdp.type + ", delay=" + delta + "ms");
                     if (signalingParameters.initiator) {
                         // keep it around so that we combine it with candidates before sending it over
@@ -597,6 +598,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                 else {
                     DeviceImpl.GetInstance().AcceptWebrtc(connection.signalingParameters.generateSipSdp(connection.signalingParameters.answerSdp,
                             connection.signalingParameters.iceCandidates));
+                    connection.state = state.CONNECTED;
                 }
             }
         };
@@ -822,8 +824,15 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     public void accept()
     {
         if (haveConnectivity()) {
-            DeviceImpl.GetInstance().Accept();
-            this.state = state.CONNECTED;
+          //  DeviceImpl.GetInstance().Accept(
+            LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
+            iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
+            this.signalingParameters = new SignalingParameters(iceServers, false, "", "", "", null, null);
+            SignalingParameters params = SignalingParameters.extractCandidates(new SessionDescription(SessionDescription.Type.OFFER, incomingCallSdp));
+            this.signalingParameters.offerSdp = params.offerSdp;
+            this.signalingParameters.iceCandidates = params.iceCandidates;
+
+            startCall(this.signalingParameters);
         }
     }
 

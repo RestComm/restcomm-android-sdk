@@ -464,11 +464,12 @@ public class RCDevice implements SipUADeviceListener {
         incomingConnection = new RCConnection();
         incomingConnection.incoming = true;
         incomingConnection.state = RCConnection.ConnectionState.CONNECTING;
+        incomingConnection.incomingCallSdp = event.sdp;
         DeviceImpl.GetInstance().sipuaConnectionListener = incomingConnection;
 
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
         final String from = event.from;
-        final String sdp = event.sdp;
+        //final String sdp = event.sdp;
         Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
@@ -478,7 +479,7 @@ public class RCDevice implements SipUADeviceListener {
                     Intent dataIntent = new Intent();
                     dataIntent.setAction(INCOMING_CALL);
                     dataIntent.putExtra(RCDevice.EXTRA_DID, from);
-                    dataIntent.putExtra(RCDevice.EXTRA_SDP, sdp);
+                    //dataIntent.putExtra(RCDevice.EXTRA_SDP, sdp);
                     pendingIntent.send(RCClient.getInstance().context, 0, dataIntent);
 
                 } catch (PendingIntent.CanceledException e) {
