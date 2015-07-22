@@ -8,6 +8,9 @@ import org.webrtc.SessionDescription;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Vector;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SignalingParameters {
     private static final String TAG = "SignalingParameters";
@@ -34,9 +37,18 @@ public class SignalingParameters {
         this.offerSdp = offerSdp;
         this.iceCandidates = iceCandidates;
     }
+    public SignalingParameters() {
+        this.iceServers = null;
+        this.initiator = false;
+        this.clientId = "";
+        this.sipUrl = "";
+        this.wssPostUrl = "";
+        this.offerSdp = null;
+        this.iceCandidates = null;
+    }
 
     // combines offerSdp with iceCandidates and comes up with the full SDP
-    public String generateSipSDP() {
+    public String generateSipSdp() {
         // concatenate all candidates in one String
         String candidates = "";
         for (IceCandidate candidate : iceCandidates) {
@@ -52,6 +64,28 @@ public class SignalingParameters {
 
         return resultString;
     }
+
+    // gets a full SDP and a. populates .iceCandidates with individual candidates, and
+    // b. removes the candidates from the SDP string and returns it as .offerSdp
+    public static SignalingParameters extractCandidates(SessionDescription sdp) {
+        SignalingParameters params = new SignalingParameters();
+        params.iceCandidates = new LinkedList<IceCandidate>();
+
+        // first parse the candidates
+        // TODO: for video to work properly we need to do some more work to split the full SDP and differentiate candidates
+        // based on media type (i.e. audio vs. video)
+        Matcher matcher = Pattern.compile("a=(candidate.*?)\\r\\n").matcher(sdp.description);
+        while (matcher.find()) {
+            IceCandidate iceCandidate = new IceCandidate("audio", 0, matcher.group(1));
+            params.iceCandidates.add(iceCandidate);
+        }
+
+        // remove candidates from SDP
+        params.offerSdp =  new SessionDescription(sdp.type, sdp.description.replaceAll("a=candidate.*?\\r\\n", ""));
+
+        return params;
+    }
+
 
     public void addIceCandidate(IceCandidate iceCandidate)
     {
@@ -70,40 +104,3 @@ public class SignalingParameters {
     }
 
 }
-
-/*
-public class SignalingParameters {
-    public List<PeerConnection.IceServer> iceServers;
-    public boolean initiator;
-    public String clientId;
-    public String sipUri;
-    //public final String wssUrl;
-    //public final String wssPostUrl;
-    public SessionDescription offerSdp;
-    public List<IceCandidate> iceCandidates;
-
-    public SignalingParameters(List<PeerConnection.IceServer> iceServers,
-            boolean initiator, String clientId,
-            String sipUri, SessionDescription offerSdp,
-            List<IceCandidate> iceCandidates) {
-        this.iceServers = iceServers;
-        this.initiator = initiator;
-        this.clientId = clientId;
-        //this.wssUrl = wssUrl;
-        this.sipUri = sipUri;
-        //this.wssPostUrl = wssPostUrl;
-        this.offerSdp = offerSdp;
-        this.iceCandidates = iceCandidates;
-    }
-
-    public SignalingParameters(boolean initiator, String sipUri) {
-        this.initiator = initiator;
-        this.sipUri = sipUri;
-    }
-
-    // combines offerSdp with iceCandidates and comes up with the full SDP
-    public String generateSipSDP() {
-        return "";
-    }
-}
-*/

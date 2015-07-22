@@ -36,6 +36,7 @@ import android.widget.Toast;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import org.mobicents.restcomm.android.sipua.SipUAConnectionListener;
 import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
@@ -326,7 +327,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         // TODO: could make that configurable
         boolean loopback = false;  //intent.getBooleanExtra(EXTRA_LOOPBACK, false);
         peerConnectionParameters = new PeerConnectionClient.PeerConnectionParameters(
-                prefs.getBoolean(keyprefVideoCallEnabled, Boolean.valueOf(context.getString(R.string.pref_videocall_default))),
+                false, //prefs.getBoolean(keyprefVideoCallEnabled, Boolean.valueOf(context.getString(R.string.pref_videocall_default))),
                 loopback,
                 videoWidth,
                 videoHeight,
@@ -545,7 +546,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             public void run() {
                 Log.e(TAG, "onIceGatheringComplete");
                 // we have gathered all candidates and SDP. Combine then in SIP SDP and send over to JAIN SIP
-                DeviceImpl.GetInstance().CallWebrtc(signalingParameters.sipUrl, connection.signalingParameters.generateSipSDP());
+                DeviceImpl.GetInstance().CallWebrtc(signalingParameters.sipUrl, connection.signalingParameters.generateSipSdp());
             }
         };
         mainHandler.post(myRunnable);
@@ -672,7 +673,9 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                     return;
                 }
                 logAndToast("Received remote " + sdp.type + ", delay=" + delta + "ms");
-                peerConnectionClient.setRemoteDescription(sdp);
+                SignalingParameters params = SignalingParameters.extractCandidates(sdp);
+                peerConnectionClient.setRemoteDescription(params.offerSdp);
+                onRemoteIceCandidates(params.iceCandidates);
 
                 if (!signalingParameters.initiator) {
                     logAndToast("Creating ANSWER...");
@@ -686,20 +689,34 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     }
 
     //@Override
-    public void onRemoteIceCandidate(final IceCandidate candidate) {
+    public void onRemoteIceCandidates(final List<IceCandidate> candidates) {
+        // no need to run it in UI thread it is already there due to onRemoteDescription
+        if (peerConnectionClient == null) {
+            Log.e(TAG,
+                    "Received ICE candidates for non-initilized peer connection.");
+            return;
+        }
+        for (IceCandidate candidate : candidates) {
+            peerConnectionClient.addRemoteIceCandidate(candidate);
+        }
+
+        /*
         Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
                 if (peerConnectionClient == null) {
                     Log.e(TAG,
-                            "Received ICE candidate for non-initilized peer connection.");
+                            "Received ICE candidates for non-initilized peer connection.");
                     return;
                 }
-                peerConnectionClient.addRemoteIceCandidate(candidate);
+                for (IceCandidate candidate : candidates) {
+                    peerConnectionClient.addRemoteIceCandidate(candidate);
+                }
             }
         };
         mainHandler.post(myRunnable);
+        */
     }
 
     //@Override

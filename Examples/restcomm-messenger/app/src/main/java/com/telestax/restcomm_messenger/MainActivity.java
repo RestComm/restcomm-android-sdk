@@ -113,8 +113,9 @@ public class MainActivity extends Activity implements RCDeviceListener,
         //cbMuted = (CheckBox)findViewById(R.id.checkbox_muted);
         //cbMuted.setOnCheckedChangeListener(this);
 
-        prefs = getSharedPreferences("preferences.xml", MODE_PRIVATE); //PreferenceManager.getDefaultSharedPreferences(this);
         PreferenceManager.setDefaultValues(this, "preferences.xml", MODE_PRIVATE, R.xml.preferences, false);
+        //prefs = getSharedPreferences("preferences.xml", MODE_PRIVATE); //PreferenceManager.getDefaultSharedPreferences(this);
+        prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
         RCClient.initialize(getApplicationContext(), new RCClient.RCInitListener() {
             public void onInitialized() {
@@ -138,7 +139,8 @@ public class MainActivity extends Activity implements RCDeviceListener,
         prefs.registerOnSharedPreferenceChangeListener(this);
         initializeSipFromPreferences();
 
-        txtUri.setText("sip:1235@54.225.212.193:5080");
+        //txtUri.setText("sip:1235@54.225.212.193:5080");
+        txtUri.setText("sip:alice@192.168.2.32:5080");
         txtMessage.setText("Hello there!");
 
         //cbMuted.setEnabled(false);

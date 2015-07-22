@@ -11,6 +11,7 @@ import android.media.MediaPlayer;
 import android.opengl.GLSurfaceView;
 //import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -98,7 +99,10 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         // Get Intent parameters.
         final Intent intent = getIntent();
         if (intent.getAction() == RCDevice.OUTGOING_CALL) {
-            prefs = getSharedPreferences("preferences.xml", MODE_PRIVATE);
+            PreferenceManager.setDefaultValues(this, "preferences.xml", MODE_PRIVATE, R.xml.preferences, false);
+            prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
+            //prefs = getSharedPreferences("preferences.xml", MODE_PRIVATE);
 
             connectParams.put("username", intent.getStringExtra(RCDevice.EXTRA_DID));
             connection = device.connect(connectParams, this, videoView, prefs);
