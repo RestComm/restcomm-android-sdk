@@ -582,17 +582,22 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				dispatchSipEvent(new SipEvent(this, SipEventType.BYE, "", ""));
 			}
 
-		} else if (response.getStatusCode() == Response.DECLINE || response.getStatusCode() == Response.TEMPORARILY_UNAVAILABLE) {
+		} else if (response.getStatusCode() == Response.DECLINE || response.getStatusCode() == Response.TEMPORARILY_UNAVAILABLE ||
+				(response.getStatusCode() == Response.BUSY_HERE)) {
 			System.out.println("CALL DECLINED");
 			dispatchSipEvent(new SipEvent(this, SipEventType.DECLINED, "", ""));
 		} else if (response.getStatusCode() == Response.NOT_FOUND) {
 			System.out.println("NOT FOUND");
 		} else if (response.getStatusCode() == Response.ACCEPTED) {
 			System.out.println("ACCEPTED");
-		} else if (response.getStatusCode() == Response.BUSY_HERE) {
+		}
+		/*
+		else if (response.getStatusCode() == Response.BUSY_HERE) {
 			System.out.println("BUSY");
 			dispatchSipEvent(new SipEvent(this, SipEventType.BUSY_HERE, "", ""));
-		} else if (response.getStatusCode() == Response.RINGING) {
+		}
+		*/
+		else if (response.getStatusCode() == Response.RINGING) {
 			System.out.println("RINGING");
 			dispatchSipEvent(new SipEvent(this, SipEventType.REMOTE_RINGING, "", ""));
 		} else if (response.getStatusCode() == Response.SERVICE_UNAVAILABLE) {
