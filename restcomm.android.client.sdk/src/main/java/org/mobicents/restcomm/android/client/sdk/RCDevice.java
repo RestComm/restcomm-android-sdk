@@ -118,66 +118,6 @@ public class RCDevice implements SipUADeviceListener {
     PendingIntent pendingIntent;
     public RCConnection incomingConnection;
 
-    /*
-    // #webrtc
-    private String keyprefVideoCallEnabled;
-    private String keyprefResolution;
-    private String keyprefFps;
-    private String keyprefVideoBitrateType;
-    private String keyprefVideoBitrateValue;
-    private String keyprefVideoCodec;
-    private String keyprefAudioBitrateType;
-    private String keyprefAudioBitrateValue;
-    private String keyprefAudioCodec;
-    private String keyprefHwCodecAcceleration;
-    private String keyprefNoAudioProcessingPipeline;
-    private String keyprefCpuUsageDetection;
-    private String keyprefDisplayHud;
-    private String keyprefRoomServerUrl;
-    private String keyprefRoom;
-    private String keyprefRoomList;
-
-    // Peer connection statistics callback period in ms.
-    private static final int STAT_CALLBACK_PERIOD = 1000;
-    // Local preview screen position before call is connected.
-    private static final int LOCAL_X_CONNECTING = 0;
-    private static final int LOCAL_Y_CONNECTING = 0;
-    private static final int LOCAL_WIDTH_CONNECTING = 100;
-    private static final int LOCAL_HEIGHT_CONNECTING = 100;
-    // Local preview screen position after call is connected.
-    private static final int LOCAL_X_CONNECTED = 72;
-    private static final int LOCAL_Y_CONNECTED = 72;
-    private static final int LOCAL_WIDTH_CONNECTED = 25;
-    private static final int LOCAL_HEIGHT_CONNECTED = 25;
-    // Remote video screen position
-    private static final int REMOTE_X = 0;
-    private static final int REMOTE_Y = 0;
-    private static final int REMOTE_WIDTH = 100;
-    private static final int REMOTE_HEIGHT = 100;
-
-    private PeerConnectionClient peerConnectionClient = null;
-    private SignalingParameters signalingParameters;
-    private AppRTCAudioManager audioManager = null;
-    private VideoRenderer.Callbacks localRender;
-    private VideoRenderer.Callbacks remoteRender;
-    private ScalingType scalingType;
-    private Toast logToast;
-    private boolean commandLineRun;
-    private int runTimeMs;
-    private boolean activityRunning;
-    private PeerConnectionParameters peerConnectionParameters;
-    private boolean iceConnected;
-    private boolean isError;
-    private boolean callControlFragmentVisible = true;
-    private long callStartedTimeMs = 0;
-
-    // List of mandatory application permissions.
-    private static final String[] MANDATORY_PERMISSIONS = {
-            "android.permission.MODIFY_AUDIO_SETTINGS",
-            "android.permission.RECORD_AUDIO",
-            "android.permission.INTERNET"
-    };
-    */
 
     /**
      * Initialize a new RCDevice object
@@ -197,31 +137,6 @@ public class RCDevice implements SipUADeviceListener {
         deviceImpl.Initialize(RCClient.getInstance().context, sipProfile, customHeaders);
         DeviceImpl.GetInstance().sipuaDeviceListener = this;
     }
-
-    /*
-    public void initializeWebrtc(GLSurfaceView videoView, SharedPreferences prefs)
-    {
-        Context context = RCClient.getInstance().context;
-        keyprefVideoCallEnabled = context.getString(R.string.pref_videocall_key);
-        keyprefResolution = context.getString(R.string.pref_resolution_key);
-        keyprefFps = context.getString(R.string.pref_fps_key);
-        keyprefVideoBitrateType = context.getString(R.string.pref_startvideobitrate_key);
-        keyprefVideoBitrateValue = context.getString(R.string.pref_startvideobitratevalue_key);
-        keyprefVideoCodec = context.getString(R.string.pref_videocodec_key);
-        keyprefHwCodecAcceleration = context.getString(R.string.pref_hwcodec_key);
-        keyprefAudioBitrateType = context.getString(R.string.pref_startaudiobitrate_key);
-        keyprefAudioBitrateValue = context.getString(R.string.pref_startaudiobitratevalue_key);
-        keyprefAudioCodec = context.getString(R.string.pref_audiocodec_key);
-        keyprefNoAudioProcessingPipeline = context.getString(R.string.pref_noaudioprocessing_key);
-        keyprefCpuUsageDetection = context.getString(R.string.pref_cpu_usage_detection_key);
-        keyprefDisplayHud = context.getString(R.string.pref_displayhud_key);
-        keyprefRoomServerUrl = context.getString(R.string.pref_room_server_url_key);
-        keyprefRoom = context.getString(R.string.pref_room_key);
-        keyprefRoomList = context.getString(R.string.pref_room_list_key);
-
-        setupWebrtc(videoView, prefs);
-    }
-    */
 
     // 'Copy' constructor
     public RCDevice(RCDevice device) {
@@ -348,9 +263,6 @@ public class RCDevice implements SipUADeviceListener {
     }
 
     public void setIncomingIntent(Intent intent) {
-        //intent.putExtra(EXTRA_DEVICE, this);
-        //intent.putExtra(EXTRA_CONNECTION, this);
-        //intent.setAction("ACTION_INCOMING_CALL");
         pendingIntent = PendingIntent.getActivity(RCClient.getInstance().context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
@@ -460,13 +372,11 @@ public class RCDevice implements SipUADeviceListener {
                     Intent dataIntent = new Intent();
                     dataIntent.setAction(INCOMING_CALL);
                     dataIntent.putExtra(RCDevice.EXTRA_DID, from);
-                    //dataIntent.putExtra(RCDevice.EXTRA_SDP, sdp);
                     pendingIntent.send(RCClient.getInstance().context, 0, dataIntent);
 
                 } catch (PendingIntent.CanceledException e) {
                     e.printStackTrace();
                 }
-                //listener.onIncomingConnection(finalDevice, finalConnection);
             }
         };
         mainHandler.post(myRunnable);

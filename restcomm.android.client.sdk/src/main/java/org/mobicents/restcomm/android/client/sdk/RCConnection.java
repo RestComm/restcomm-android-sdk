@@ -23,24 +23,21 @@
 package org.mobicents.restcomm.android.client.sdk;
 
 import android.content.Context;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.net.wifi.WifiManager;
 import android.opengl.GLSurfaceView;
 import android.os.Handler;
-import android.os.Parcel;
-import android.os.Parcelable;
 import android.util.Log;
 import android.widget.Toast;
-
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
 import org.mobicents.restcomm.android.sipua.SipUAConnectionListener;
 import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
 import org.mobicents.restcomm.android.sipua.impl.SipEvent;
+
 import org.webrtc.IceCandidate;
 import org.webrtc.PeerConnection;
 import org.webrtc.SessionDescription;
@@ -209,6 +206,241 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         this.listener = connection.listener;
     }
 
+    /**
+     * Retrieves the current state of the connection
+     */
+    public ConnectionState getState()
+    {
+        return this.state;
+    }
+
+    /**
+     * Retrieves the set of application parameters associated with this connection <b>Not Implemented yet</b>
+     * @return Connection parameters
+     */
+    public Map<String, String> getParameters()
+    {
+        return parameters;
+    }
+
+    /**
+     * Returns whether the connection is incoming or outgoing
+     * @return True if incoming, false otherwise
+     */
+    public boolean isIncoming()
+    {
+        return this.incoming;
+    }
+
+    /**
+     * Accept the incoming connection
+     */
+    public void accept()
+    {
+        if (haveConnectivity()) {
+          //  DeviceImpl.GetInstance().Accept(
+            LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
+            iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
+            this.signalingParameters = new SignalingParameters(iceServers, false, "", "", "", null, null);
+            SignalingParameters params = SignalingParameters.extractCandidates(new SessionDescription(SessionDescription.Type.OFFER, incomingCallSdp));
+            this.signalingParameters.offerSdp = params.offerSdp;
+            this.signalingParameters.iceCandidates = params.iceCandidates;
+
+            startCall(this.signalingParameters);
+        }
+    }
+
+    private void acceptWebrtc(final String sdp)
+    {
+        if (haveConnectivity()) {
+            DeviceImpl.GetInstance().AcceptWebrtc(sdp);
+            this.state = state.CONNECTED;
+        }
+    }
+
+    /**
+     * Ignore incoming connection
+     */
+    public void ignore()
+    {
+
+    }
+
+    /**
+     * Reject incoming connection
+     */
+    public void reject()
+    {
+        if (haveConnectivity()) {
+            DeviceImpl.GetInstance().Reject();
+            this.state = state.DISCONNECTED;
+        }
+    }
+
+    /**
+     * Disconnect the established connection
+     */
+    public void disconnect()
+    {
+        if (haveConnectivity()) {
+            if (state == ConnectionState.CONNECTING) {
+                DeviceImpl.GetInstance().Cancel();
+            } else if (state == ConnectionState.CONNECTED) {
+                DeviceImpl.GetInstance().Hangup();
+            }
+            //this.state = state.DISCONNECTED;
+        }
+
+        disconnectWebrtc();
+    }
+
+    /**
+     * Mute connection so that the other party cannot local audio
+     * @param muted True to mute and false in order to unmute
+     */
+    public void setMuted(boolean muted)
+    {
+        DeviceImpl.GetInstance().Mute(muted);
+    }
+
+    /**
+     * Retrieve whether connection is muted or not
+     * @return True connection is muted and false otherwise
+     */
+    public boolean isMuted()
+    {
+        return false;
+    }
+
+    /**
+     * Send DTMF digits over the connection (<b>Not Implemented yet</b>)
+     * @param digits A string of DTMF digits to be sent
+     */
+    public void sendDigits(String digits)
+    {
+
+    }
+
+    /**
+     * Update connection listener to be receiving Connection related events
+     * @param listener  New connection listener
+     */
+    public void setConnectionListener(RCConnectionListener listener)
+    {
+        this.listener = listener;
+        DeviceImpl.GetInstance().sipuaConnectionListener = this;
+    }
+
+    // SipUA Connection Listeners
+    public void onSipUAConnecting(SipEvent event)
+    {
+        this.state = ConnectionState.CONNECTING;
+        final RCConnection finalConnection = new RCConnection(this);
+
+        // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                listener.onConnecting(finalConnection);
+            }
+        };
+        mainHandler.post(myRunnable);
+    }
+
+    public void onSipUAConnected(SipEvent event)
+    {
+        this.state = ConnectionState.CONNECTED;
+        final RCConnection finalConnection = new RCConnection(this);
+
+        // we want to notify webrtc onRemoteDescription *only* on an outgoing call
+        if (!this.isIncoming()) {
+            onRemoteDescription(event.sdp);
+        }
+
+        // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                listener.onConnected(finalConnection);
+            }
+        };
+        mainHandler.post(myRunnable);
+    }
+
+    public void onSipUADisconnected(SipEvent event)
+    {
+        // we 're first notifying listener and then setting new state because we want the listener to be able to
+        // differentiate between disconnect and remote cancel events with the same listener method: onDisconnected.
+        // In the first case listener will see stat CONNECTED and in the second CONNECTING
+        final RCConnection finalConnection = new RCConnection(this);
+
+        // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                disconnectWebrtc();
+                listener.onDisconnected(finalConnection);
+            }
+        };
+        mainHandler.post(myRunnable);
+
+        this.state = ConnectionState.DISCONNECTED;
+    }
+
+    public void onSipUACancelled(SipEvent event)
+    {
+        final RCConnection finalConnection = new RCConnection(this);
+
+        // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                listener.onCancelled(finalConnection);
+            }
+        };
+        mainHandler.post(myRunnable);
+
+        this.state = ConnectionState.DISCONNECTED;
+    }
+
+    public void onSipUADeclined(SipEvent event)
+    {
+        final RCConnection finalConnection = new RCConnection(this);
+
+        // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                listener.onDeclined(finalConnection);
+            }
+        };
+        mainHandler.post(myRunnable);
+
+        this.state = ConnectionState.DISCONNECTED;
+    }
+
+    // Helpers
+    private boolean haveConnectivity()
+    {
+        RCClient client = RCClient.getInstance();
+        WifiManager wifi = (WifiManager)client.context.getSystemService(client.context.WIFI_SERVICE);
+        if (wifi.isWifiEnabled()) {
+            return true;
+        }
+        else {
+            if (this.listener != null) {
+                this.listener.onDisconnected(this, RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal(), RCClient.errorText(RCClient.ErrorCodes.NO_CONNECTIVITY));
+            }
+            return false;
+        }
+    }
+
+    // -- WebRTC stuff:
     public void setupWebrtcAndCall(String sipUri)
     {
         initializeWebrtc();
@@ -225,6 +457,8 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     {
         Log.e(TAG, "@@@@@ initializeWebrtc  ");
         Context context = RCClient.getInstance().context;
+
+        // Leave this around for when we add settings as part of the RCConnection parameters hash:
         /*
         keyprefVideoCallEnabled = context.getString(R.string.pref_videocall_key);
         keyprefResolution = context.getString(R.string.pref_resolution_key);
@@ -244,9 +478,6 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         keyprefRoomList = context.getString(R.string.pref_room_list_key);
         */
 
-        //Context context = RCClient.getInstance().context;
-        //Thread.setDefaultUncaughtExceptionHandler(
-        //        new UnhandledExceptionHandler(this));
         iceConnected = false;
         signalingParameters = null;
         scalingType = VideoRendererGui.ScalingType.SCALE_ASPECT_FILL;
@@ -279,6 +510,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             }
         }
 
+        // Leave this around for when we add settings as part of the RCConnection parameters hash:
         /*
         // Get video resolution from settings.
         int videoWidth = 0;
@@ -341,7 +573,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                 prefs.getString(keyprefAudioCodec, context.getString(R.string.pref_audiocodec_default)),
                 prefs.getBoolean(keyprefNoAudioProcessingPipeline, Boolean.valueOf(context.getString(R.string.pref_noaudioprocessing_default))),
                 prefs.getBoolean(keyprefCpuUsageDetection, Boolean.valueOf(context.getString(R.string.pref_cpu_usage_detection_default))));
-                */
+         */
 
         peerConnectionParameters = new PeerConnectionClient.PeerConnectionParameters(
                 false,
@@ -525,7 +757,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                     // we have gathered all candidates and SDP. Combine then in SIP SDP and send over to JAIN SIP
                     DeviceImpl.GetInstance().CallWebrtc(signalingParameters.sipUrl,
                             connection.signalingParameters.generateSipSdp(connection.signalingParameters.offerSdp,
-                                connection.signalingParameters.iceCandidates));
+                                    connection.signalingParameters.iceCandidates));
                 }
                 else {
                     DeviceImpl.GetInstance().AcceptWebrtc(connection.signalingParameters.generateSipSdp(connection.signalingParameters.answerSdp,
@@ -690,26 +922,9 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         for (IceCandidate candidate : candidates) {
             peerConnectionClient.addRemoteIceCandidate(candidate);
         }
-
-        /*
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
-        Runnable myRunnable = new Runnable() {
-            @Override
-            public void run() {
-                if (peerConnectionClient == null) {
-                    Log.e(TAG,
-                            "Received ICE candidates for non-initilized peer connection.");
-                    return;
-                }
-                for (IceCandidate candidate : candidates) {
-                    peerConnectionClient.addRemoteIceCandidate(candidate);
-                }
-            }
-        };
-        mainHandler.post(myRunnable);
-        */
     }
 
+    /*
     //@Override
     public void onChannelClose() {
         Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
@@ -721,250 +936,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             }
         };
         mainHandler.post(myRunnable);
-    }
-
-
-    /**
-     * Retrieves the current state of the connection
-     */
-    public ConnectionState getState()
-    {
-        return this.state;
-    }
-
-    /**
-     * Retrieves the set of application parameters associated with this connection <b>Not Implemented yet</b>
-     * @return Connection parameters
-     */
-    public Map<String, String> getParameters()
-    {
-        return parameters;
-    }
-
-    /**
-     * Returns whether the connection is incoming or outgoing
-     * @return True if incoming, false otherwise
-     */
-    public boolean isIncoming()
-    {
-        return this.incoming;
-    }
-
-    /**
-     * Accept the incoming connection
-     */
-    public void accept()
-    {
-        if (haveConnectivity()) {
-          //  DeviceImpl.GetInstance().Accept(
-            LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
-            iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
-            this.signalingParameters = new SignalingParameters(iceServers, false, "", "", "", null, null);
-            SignalingParameters params = SignalingParameters.extractCandidates(new SessionDescription(SessionDescription.Type.OFFER, incomingCallSdp));
-            this.signalingParameters.offerSdp = params.offerSdp;
-            this.signalingParameters.iceCandidates = params.iceCandidates;
-
-            startCall(this.signalingParameters);
-        }
-    }
-
-    private void acceptWebrtc(final String sdp)
-    {
-        if (haveConnectivity()) {
-            DeviceImpl.GetInstance().AcceptWebrtc(sdp);
-            this.state = state.CONNECTED;
-        }
-    }
-
-    /**
-     * Ignore incoming connection
-     */
-    public void ignore()
-    {
-
-    }
-
-    /**
-     * Reject incoming connection
-     */
-    public void reject()
-    {
-        if (haveConnectivity()) {
-            DeviceImpl.GetInstance().Reject();
-            this.state = state.DISCONNECTED;
-        }
-    }
-
-    /**
-     * Disconnect the established connection
-     */
-    public void disconnect()
-    {
-        if (haveConnectivity()) {
-            if (state == ConnectionState.CONNECTING) {
-                DeviceImpl.GetInstance().Cancel();
-            } else if (state == ConnectionState.CONNECTED) {
-                DeviceImpl.GetInstance().Hangup();
-            }
-            //this.state = state.DISCONNECTED;
-        }
-
-        disconnectWebrtc();
-        /*
-        // need to free webrtc resources as well; notify RCDevice that hosts webrtc facilities
-        ArrayList<RCDevice> deviceList = RCClient.getInstance().listDevices();
-        if (deviceList.size() > 0) {
-            RCDevice device = deviceList.get(0);
-            device.disconnect();
-        }
-        */
-    }
-
-    /**
-     * Mute connection so that the other party cannot local audio
-     * @param muted True to mute and false in order to unmute
-     */
-    public void setMuted(boolean muted)
-    {
-        DeviceImpl.GetInstance().Mute(muted);
-    }
-
-    /**
-     * Retrieve whether connection is muted or not
-     * @return True connection is muted and false otherwise
-     */
-    public boolean isMuted()
-    {
-        return false;
-    }
-
-    /**
-     * Send DTMF digits over the connection (<b>Not Implemented yet</b>)
-     * @param digits A string of DTMF digits to be sent
-     */
-    public void sendDigits(String digits)
-    {
-
-    }
-
-    /**
-     * Update connection listener to be receiving Connection related events
-     * @param listener  New connection listener
-     */
-    public void setConnectionListener(RCConnectionListener listener)
-    {
-        this.listener = listener;
-        DeviceImpl.GetInstance().sipuaConnectionListener = this;
-    }
-
-    // SipUA Connection Listeners
-    public void onSipUAConnecting(SipEvent event)
-    {
-        this.state = ConnectionState.CONNECTING;
-        final RCConnection finalConnection = new RCConnection(this);
-
-        // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
-        Runnable myRunnable = new Runnable() {
-            @Override
-            public void run() {
-                listener.onConnecting(finalConnection);
-            }
-        };
-        mainHandler.post(myRunnable);
-    }
-
-    public void onSipUAConnected(SipEvent event)
-    {
-        this.state = ConnectionState.CONNECTED;
-        final RCConnection finalConnection = new RCConnection(this);
-
-        // we want to notify webrtc onRemoteDescription *only* on an outgoing call
-        if (!this.isIncoming()) {
-            onRemoteDescription(event.sdp);
-        }
-
-        // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
-        Runnable myRunnable = new Runnable() {
-            @Override
-            public void run() {
-                listener.onConnected(finalConnection);
-            }
-        };
-        mainHandler.post(myRunnable);
-    }
-
-    public void onSipUADisconnected(SipEvent event)
-    {
-        // we 're first notifying listener and then setting new state because we want the listener to be able to
-        // differentiate between disconnect and remote cancel events with the same listener method: onDisconnected.
-        // In the first case listener will see stat CONNECTED and in the second CONNECTING
-        final RCConnection finalConnection = new RCConnection(this);
-
-        // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
-        Runnable myRunnable = new Runnable() {
-            @Override
-            public void run() {
-                disconnectWebrtc();
-                listener.onDisconnected(finalConnection);
-            }
-        };
-        mainHandler.post(myRunnable);
-
-        this.state = ConnectionState.DISCONNECTED;
-    }
-
-    public void onSipUACancelled(SipEvent event)
-    {
-        final RCConnection finalConnection = new RCConnection(this);
-
-        // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
-        Runnable myRunnable = new Runnable() {
-            @Override
-            public void run() {
-                listener.onCancelled(finalConnection);
-            }
-        };
-        mainHandler.post(myRunnable);
-
-        this.state = ConnectionState.DISCONNECTED;
-    }
-
-    public void onSipUADeclined(SipEvent event)
-    {
-        final RCConnection finalConnection = new RCConnection(this);
-
-        // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
-        Runnable myRunnable = new Runnable() {
-            @Override
-            public void run() {
-                listener.onDeclined(finalConnection);
-            }
-        };
-        mainHandler.post(myRunnable);
-
-        this.state = ConnectionState.DISCONNECTED;
-    }
-
-    // Helpers
-    private boolean haveConnectivity()
-    {
-        RCClient client = RCClient.getInstance();
-        WifiManager wifi = (WifiManager)client.context.getSystemService(client.context.WIFI_SERVICE);
-        if (wifi.isWifiEnabled()) {
-            return true;
-        }
-        else {
-            if (this.listener != null) {
-                this.listener.onDisconnected(this, RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal(), RCClient.errorText(RCClient.ErrorCodes.NO_CONNECTIVITY));
-            }
-            return false;
-        }
-    }
+    }*/
 
     // Parcelable stuff (not needed for now -let's keep around in case we use it at some point):
     /*

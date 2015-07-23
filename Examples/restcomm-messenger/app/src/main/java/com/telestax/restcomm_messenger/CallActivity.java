@@ -9,7 +9,6 @@ import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.opengl.GLSurfaceView;
-//import android.support.v7.app.ActionBarActivity;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.util.Log;
@@ -21,18 +20,13 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
-import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import java.util.HashMap;
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.client.sdk.RCConnectionListener;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
-import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
-import org.mobicents.restcomm.android.client.sdk.RCPresenceEvent;
-
-import java.util.HashMap;
-
 
 public class CallActivity extends Activity implements RCConnectionListener, View.OnClickListener,
         CompoundButton.OnCheckedChangeListener, AudioManager.OnAudioFocusChangeListener {
@@ -58,7 +52,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        // #webrtc
         // Set window styles for fullscreen-window size. Needs to be done before
         // adding content.
         requestWindowFeature(Window.FEATURE_NO_TITLE);
@@ -86,11 +79,13 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         cbMuted = (CheckBox)findViewById(R.id.checkbox_muted);
         cbMuted.setOnCheckedChangeListener(this);
         parentLayout = (RelativeLayout) findViewById(R.id.layout_video_call);
-        //videoView = (GLSurfaceView) findViewById(R.id.glview_call);
 
         audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
         // volume control should be by default 'music' which will control the ringing sounds and 'voice call' when within a call
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
+        // Setup Media (notice that I'm not preparing the media as create does that implicitly plus
+        // I'm not ever stopping a player -instead I'm pausing so no additional preparation is needed
+        // there either. We might need to revisit this at some point though
         ringingPlayer = MediaPlayer.create(getApplicationContext(), R.raw.ringing);
         ringingPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         ringingPlayer.setLooping(true);
@@ -199,13 +194,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     @Override
     public void onResume() {
         super.onResume();
-        //videoView.onResume();
-        /*
-        activityRunning = true;
-        if (peerConnectionClient != null) {
-            peerConnectionClient.startVideoSource();
-        }
-        */
     }
 
     // RCConnection Listeners
