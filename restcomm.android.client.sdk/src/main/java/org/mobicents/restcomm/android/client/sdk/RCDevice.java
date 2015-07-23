@@ -115,7 +115,8 @@ public class RCDevice implements SipUADeviceListener {
     public static String EXTRA_SDP = "com.telestax.restcomm_messenger.SDP";
     //public static String EXTRA_DEVICE = "com.telestax.restcomm.android.client.sdk.extra-device";
     //public static String EXTRA_CONNECTION = "com.telestax.restcomm.android.client.sdk.extra-connection";
-    PendingIntent pendingIntent;
+    PendingIntent pendingCallIntent;
+    PendingIntent pendingMessageIntent;
     public RCConnection incomingConnection;
 
 
@@ -262,8 +263,9 @@ public class RCDevice implements SipUADeviceListener {
 
     }
 
-    public void setIncomingIntent(Intent intent) {
-        pendingIntent = PendingIntent.getActivity(RCClient.getInstance().context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+    public void setPendingIntents(Intent callIntent, Intent messageIntent) {
+        pendingCallIntent = PendingIntent.getActivity(RCClient.getInstance().context, 0, callIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        pendingMessageIntent = PendingIntent.getActivity(RCClient.getInstance().context, 0, messageIntent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
     public RCConnection getPendingConnection() {
@@ -372,7 +374,7 @@ public class RCDevice implements SipUADeviceListener {
                     Intent dataIntent = new Intent();
                     dataIntent.setAction(INCOMING_CALL);
                     dataIntent.putExtra(RCDevice.EXTRA_DID, from);
-                    pendingIntent.send(RCClient.getInstance().context, 0, dataIntent);
+                    pendingCallIntent.send(RCClient.getInstance().context, 0, dataIntent);
 
                 } catch (PendingIntent.CanceledException e) {
                     e.printStackTrace();
@@ -401,7 +403,7 @@ public class RCDevice implements SipUADeviceListener {
                     dataIntent.setAction(INCOMING_MESSAGE);
                     dataIntent.putExtra("MESSAGE_PARMS", finalParameters);
                     dataIntent.putExtra("MESSAGE", finalContent);
-                    pendingIntent.send(RCClient.getInstance().context, 0, dataIntent);
+                    pendingMessageIntent.send(RCClient.getInstance().context, 0, dataIntent);
                 } catch (PendingIntent.CanceledException e) {
                     e.printStackTrace();
                 }

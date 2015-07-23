@@ -81,8 +81,8 @@ public class MainActivity extends Activity implements RCDeviceListener,
 
         // TODO: we don't support capability tokens yet so let's use an empty string
         device = RCClient.createDevice("", this);
-        Intent intent = new Intent(getApplicationContext(), CallActivity.class);
-        device.setIncomingIntent(intent);
+        device.setPendingIntents(new Intent(getApplicationContext(), CallActivity.class),
+                new Intent(getApplicationContext(), MainActivity.class));
 
         params = new HashMap<String, String>();
 
@@ -175,21 +175,6 @@ public class MainActivity extends Activity implements RCDeviceListener,
 
     }
 
-    public void onIncomingConnection(RCDevice device, RCConnection connection)
-    {
-    }
-
-    public void onIncomingMessage(RCDevice device, String message, HashMap<String, String> parameters)
-    {
-        Log.i(TAG, "Message arrived: " + message);
-        int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
-        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            messagePlayer.start();
-        }
-        // put new text on the bottom
-        txtWall.append(parameters.get("username") + ": " + message + "\n");
-    }
-
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
@@ -280,7 +265,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
             if (list.size() != 0) {
                 RCDevice device = list.get(0);
                 RCConnection pendingConnection = device.getPendingConnection();
-                onIncomingConnection(device, pendingConnection);
+                handleIncomingConnection(device, pendingConnection);
             }
         }
         if (intent.getAction() == RCDevice.INCOMING_MESSAGE) {
@@ -290,10 +275,26 @@ public class MainActivity extends Activity implements RCDeviceListener,
                 RCConnection pendingConnection = device.getPendingConnection();
                 HashMap<String, String> parms = (HashMap)intent.getSerializableExtra("MESSAGE_PARMS");
                 String message = (String)intent.getSerializableExtra("MESSAGE");
-                onIncomingMessage(device, message, parms);
+                handleIncomingMessage(device, message, parms);
             }
         }
     }
+
+    public void handleIncomingConnection(RCDevice device, RCConnection connection)
+    {
+    }
+
+    public void handleIncomingMessage(RCDevice device, String message, HashMap<String, String> parameters)
+    {
+        Log.i(TAG, "Message arrived: " + message);
+        int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+            messagePlayer.start();
+        }
+        // put new text on the bottom
+        txtWall.append(parameters.get("username") + ": " + message + "\n");
+    }
+
     @Override
     protected void onPause() {
         super.onPause();
