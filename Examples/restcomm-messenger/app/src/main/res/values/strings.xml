@@ -7,7 +7,7 @@
 
     <string name="hello_world">Hello world!</string>
 
-
+<!--
     <string name="settings_name" translatable="no">AppRTC Settings</string>
     <string name="disconnect_call">Disconnect Call</string>
     <string name="room_names">Room names:</string>
@@ -30,7 +30,7 @@
     <string name="connect_description">Connect to the room</string>
     <string name="connect_loopback_description">Loopback connection</string>
 
-    <!-- Settings strings. -->
+    // TODO: Settings strings
     <string name="pref_room_key">room_preference</string>
     <string name="pref_room_list_key">room_list_preference</string>
 
@@ -115,5 +115,6 @@
     <string name="pref_displayhud_title">Display call statistics.</string>
     <string name="pref_displayhud_dlg">Display call statistics.</string>
     <string name="pref_displayhud_default" translatable="false">false</string>
+    -->
 
 </resources>
