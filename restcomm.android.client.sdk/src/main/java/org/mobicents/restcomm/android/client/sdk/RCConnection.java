@@ -109,7 +109,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
      */
     boolean muted;
 
-
+    /*
     // #webrtc
     private String keyprefVideoCallEnabled;
     private String keyprefResolution;
@@ -127,6 +127,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     private String keyprefRoomServerUrl;
     private String keyprefRoom;
     private String keyprefRoomList;
+    */
 
     // Peer connection statistics callback period in ms.
     private static final int STAT_CALLBACK_PERIOD = 1000;
@@ -154,14 +155,15 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     private VideoRenderer.Callbacks remoteRender;
     private VideoRendererGui.ScalingType scalingType;
     private Toast logToast;
-    private boolean commandLineRun;
-    private int runTimeMs;
+    //private boolean commandLineRun;
+    //private int runTimeMs;
     private boolean activityRunning;
     private PeerConnectionClient.PeerConnectionParameters peerConnectionParameters;
     private boolean iceConnected;
     private boolean isError;
-    private boolean callControlFragmentVisible = true;
+    //private boolean callControlFragmentVisible = true;
     private long callStartedTimeMs = 0;
+    private GLSurfaceView videoView;
 
     // List of mandatory application permissions.
     private static final String[] MANDATORY_PERMISSIONS = {
@@ -189,9 +191,10 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         this.listener = null;
     }
 
-    public void updateListener(RCConnectionListener listener)
+    public void listenerReady(RCConnectionListener listener)
     {
         this.listener = listener;
+        initializeWebrtc();
     }
 
     // 'Copy' constructor
@@ -206,9 +209,9 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         this.listener = connection.listener;
     }
 
-    public void setupWebrtcAndCall(GLSurfaceView videoView, SharedPreferences prefs, String sipUri)
+    public void setupWebrtcAndCall(String sipUri)
     {
-        initializeWebrtc(videoView, prefs);
+        initializeWebrtc();
 
         LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
         iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
@@ -217,30 +220,12 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         startCall(this.signalingParameters);
     }
 
-    public void setupWebrtcForIncomingCall(GLSurfaceView videoView, SharedPreferences prefs)
-    {
-        initializeWebrtc(videoView, prefs);
-    }
-
-    // TODO: remove this when ready
-    public void answerCall(String sipUri, String sdp)
-    {
-
-        LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
-        iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
-        this.signalingParameters = new SignalingParameters(iceServers, false, "", sipUri, "", null, null);
-        SignalingParameters params = SignalingParameters.extractCandidates(new SessionDescription(SessionDescription.Type.OFFER, sdp));
-        this.signalingParameters.offerSdp = params.offerSdp;
-        this.signalingParameters.iceCandidates = params.iceCandidates;
-
-        startCall(this.signalingParameters);
-    }
-
     // initialize webrtc facilities for the call
-    private void initializeWebrtc(GLSurfaceView videoView, SharedPreferences prefs)
+    void initializeWebrtc()
     {
         Log.e(TAG, "@@@@@ initializeWebrtc  ");
         Context context = RCClient.getInstance().context;
+        /*
         keyprefVideoCallEnabled = context.getString(R.string.pref_videocall_key);
         keyprefResolution = context.getString(R.string.pref_resolution_key);
         keyprefFps = context.getString(R.string.pref_fps_key);
@@ -257,25 +242,17 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         keyprefRoomServerUrl = context.getString(R.string.pref_room_server_url_key);
         keyprefRoom = context.getString(R.string.pref_room_key);
         keyprefRoomList = context.getString(R.string.pref_room_list_key);
+        */
 
-        setupWebrtc(videoView, prefs);
-    }
-
-    public void setupWebrtc(GLSurfaceView videoView, SharedPreferences prefs)
-    {
-        Log.e(TAG, "@@@@@ setupWebrtc");
-        Context context = RCClient.getInstance().context;
+        //Context context = RCClient.getInstance().context;
         //Thread.setDefaultUncaughtExceptionHandler(
         //        new UnhandledExceptionHandler(this));
-
         iceConnected = false;
         signalingParameters = null;
         scalingType = VideoRendererGui.ScalingType.SCALE_ASPECT_FILL;
 
-        // Create UI controls.
-        //videoView = (GLSurfaceView) findViewById(R.id.glview_call);
-        //callFragment = new CallFragment();
-        //hudFragment = new HudFragment();
+        videoView = new GLSurfaceView(context);
+        listener.onReceiveLocalVideo(this, videoView);
 
         // Create video renderers.
         VideoRendererGui.setView(videoView, new Runnable() {
@@ -291,26 +268,18 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                 LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING,
                 LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING, scalingType, true);
 
-        // Show/hide call control fragment on view click.
-        /*
-        videoView.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                //toggleCallControlFragmentVisibility();
-            }
-        });
-        */
-
         // Check for mandatory permissions.
         for (String permission : MANDATORY_PERMISSIONS) {
             if (context.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
                 logAndToast("Permission " + permission + " is not granted");
+                // TODO: return eror to RCConnection listener
                 //activity.setResult(activity.RESULT_CANCELED);
                 //activity.finish();
                 return;
             }
         }
 
+        /*
         // Get video resolution from settings.
         int videoWidth = 0;
         int videoHeight = 0;
@@ -372,58 +341,21 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                 prefs.getString(keyprefAudioCodec, context.getString(R.string.pref_audiocodec_default)),
                 prefs.getBoolean(keyprefNoAudioProcessingPipeline, Boolean.valueOf(context.getString(R.string.pref_noaudioprocessing_default))),
                 prefs.getBoolean(keyprefCpuUsageDetection, Boolean.valueOf(context.getString(R.string.pref_cpu_usage_detection_default))));
+                */
 
-        // Check statistics display option.
-        boolean displayHud = prefs.getBoolean(keyprefDisplayHud,
-                Boolean.valueOf(context.getString(R.string.pref_displayhud_default)));
-
-        /*
-        // Get Intent parameters.
-        final Intent intent = getIntent();
-        Uri roomUri = intent.getData();
-        if (roomUri == null) {
-            logAndToast(activity.getString(R.string.missing_url));
-            Log.e(TAG, "Didn't get any URL in intent!");
-            activity.setResult(activity.RESULT_CANCELED);
-            activity.finish();
-            return;
-        }
-        String roomId = intent.getStringExtra(EXTRA_ROOMID);
-        if (roomId == null || roomId.length() == 0) {
-            logAndToast(activity.getString(R.string.missing_url));
-            Log.e(TAG, "Incorrect room ID in intent!");
-            activity.setResult(activity.RESULT_CANCELED);
-            activity.finish();
-            return;
-        }
-        */
-
-        // Create connection client and connection parameters.
-        /*
-        appRtcClient = new WebSocketRTCClient(this, new LooperExecutor());
-        roomConnectionParameters = new RoomConnectionParameters(
-                roomUri.toString(), roomId, loopback);
-        */
-        // Send intent arguments to fragments.
-        //callFragment.setArguments(intent.getExtras());
-        //hudFragment.setArguments(intent.getExtras());
-        // Activate call and HUD fragments and start the call.
-        //FragmentTransaction ft = activity.getFragmentManager().beginTransaction();
-        //ft.add(callFragmentContainer, callFragment);
-        //ft.add(hudFragmentContainer, hudFragment);
-        //ft.commit();
-        //startCall();
-
-        /*
-        // For command line execution run connection for <runTimeMs> and exit.
-        if (commandLineRun && runTimeMs > 0) {
-            videoView.postDelayed(new Runnable() {
-                public void run() {
-                    disconnect();
-                }
-            }, runTimeMs);
-        }
-        */
+        peerConnectionParameters = new PeerConnectionClient.PeerConnectionParameters(
+                false,
+                false,
+                0,
+                0,
+                0,
+                0,
+                "VP8",
+                true,
+                0,
+                "OPUS",
+                false,
+                true);
     }
 
     private void startCall(SignalingParameters signalingParameters)

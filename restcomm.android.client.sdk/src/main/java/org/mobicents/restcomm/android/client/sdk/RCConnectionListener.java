@@ -22,6 +22,8 @@
 
 package org.mobicents.restcomm.android.client.sdk;
 
+import android.opengl.GLSurfaceView;
+
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
 
@@ -63,5 +65,19 @@ public interface RCConnectionListener {
      * @param errorText Error Text
      */
     public abstract void onDisconnected(RCConnection connection, int errorCode, String errorText);
+
+    /**
+     * Connection just disconnected with an error
+     * @param connection Connection
+     * @param videoView View hosting the local video
+     */
+    public void onReceiveLocalVideo(RCConnection connection, GLSurfaceView videoView);
+
+    /**
+     * Connection just disconnected with an error
+     * @param connection Connection
+     * @param videoView View hosting the remote video
+     */
+    //public void onReceiveRemoteVideo(RCConnection connection, GLSurfaceView videoView);
 }
 

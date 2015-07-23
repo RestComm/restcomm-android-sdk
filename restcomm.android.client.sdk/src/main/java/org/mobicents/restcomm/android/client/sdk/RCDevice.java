@@ -271,16 +271,9 @@ public class RCDevice implements SipUADeviceListener {
 
     }
 
-    /**
-     * Create an outgoing connection to an endpoint
-     *
-     * @param parameters Connections such as the endpoint we want to connect to
-     * @param listener   The listener object that will receive events when the connection state changes
-     * @return An RCConnection object representing the new connection
-     */
-    public RCConnection connect(Map<String, String> parameters, RCConnectionListener listener) {
-        return connect(parameters, listener, null, null);
         /*
+    public RCConnection connect(Map<String, String> parameters, RCConnectionListener listener) {
+        return connect(parameters, listener);
         if (haveConnectivity()) {
             RCConnection connection = new RCConnection(listener);
             connection.incoming = false;
@@ -295,18 +288,24 @@ public class RCDevice implements SipUADeviceListener {
         else {
             return null;
         }
-        */
     }
+        */
 
-    public RCConnection connect(Map<String, String> parameters, RCConnectionListener listener, GLSurfaceView videoView,
-                                SharedPreferences prefs) {
+    /**
+     * Create an outgoing connection to an endpoint
+     *
+     * @param parameters Connections such as the endpoint we want to connect to
+     * @param listener   The listener object that will receive events when the connection state changes
+     * @return An RCConnection object representing the new connection
+     */
+    public RCConnection connect(Map<String, String> parameters, RCConnectionListener listener) {
         Activity activity = (Activity) listener;
         if (haveConnectivity()) {
             RCConnection connection = new RCConnection(listener);
             connection.incoming = false;
             connection.state = RCConnection.ConnectionState.PENDING;
             DeviceImpl.GetInstance().sipuaConnectionListener = connection;
-            connection.setupWebrtcAndCall(videoView, prefs, parameters.get("username"));
+            connection.setupWebrtcAndCall(parameters.get("username"));
 
             return connection;
         } else {
@@ -465,6 +464,7 @@ public class RCDevice implements SipUADeviceListener {
         incomingConnection.incoming = true;
         incomingConnection.state = RCConnection.ConnectionState.CONNECTING;
         incomingConnection.incomingCallSdp = event.sdp;
+        //incomingConnection.initializeWebrtc();
         DeviceImpl.GetInstance().sipuaConnectionListener = incomingConnection;
 
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread

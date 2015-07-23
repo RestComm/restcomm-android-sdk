@@ -21,6 +21,8 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
@@ -35,25 +37,23 @@ import java.util.HashMap;
 public class CallActivity extends Activity implements RCConnectionListener, View.OnClickListener,
         CompoundButton.OnCheckedChangeListener, AudioManager.OnAudioFocusChangeListener {
 
-    private GLSurfaceView videoView;
+    //private GLSurfaceView videoView;
     private RCConnection connection, pendingConnection;
     SharedPreferences prefs;
     private static final String TAG = "CallActivity";
     private HashMap<String, String> connectParams = new HashMap<String, String>();
     private RCDevice device;
+    private RelativeLayout parentLayout;
     MediaPlayer ringingPlayer;
     MediaPlayer callingPlayer;
     AudioManager audioManager;
+    final String TAG_LOCAL_VIDEO_VIEW = "local-video-view";
 
     CheckBox cbMuted;
     Button btnHangup;
     Button btnAnswer;
     Button btnDecline;
     Button btnCancel;
-
-    String incomingCallDid = "";
-    // TODO: remove those when the API is structured properlu
-    // String incomingCallSdp = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -85,7 +85,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         btnCancel.setOnClickListener(this);
         cbMuted = (CheckBox)findViewById(R.id.checkbox_muted);
         cbMuted.setOnCheckedChangeListener(this);
-        videoView = (GLSurfaceView) findViewById(R.id.glview_call);
+        parentLayout = (RelativeLayout) findViewById(R.id.layout_video_call);
+        //videoView = (GLSurfaceView) findViewById(R.id.glview_call);
 
         audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
         // volume control should be by default 'music' which will control the ringing sounds and 'voice call' when within a call
@@ -108,7 +109,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         final Intent intent = getIntent();
         if (intent.getAction() == RCDevice.OUTGOING_CALL) {
             connectParams.put("username", intent.getStringExtra(RCDevice.EXTRA_DID));
-            connection = device.connect(connectParams, this, videoView, prefs);
+            connection = device.connect(connectParams, this);
 
             if (connection == null) {
                 Log.e(TAG, "Error: error connecting");
@@ -121,21 +122,15 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 ringingPlayer.start();
             }
             pendingConnection = device.incomingConnection;
-            pendingConnection.updateListener(this);
-            pendingConnection.setupWebrtcForIncomingCall(videoView, prefs);
+            pendingConnection.listenerReady(this);
 
             // the number from which we got the call
-            incomingCallDid =  intent.getStringExtra(RCDevice.EXTRA_DID);
-            //incomingCallSdp = intent.getStringExtra(RCDevice.EXTRA_SDP);
+            String incomingCallDid =  intent.getStringExtra(RCDevice.EXTRA_DID);
         }
     }
 
     // UI Events
     public void onClick(View view) {
-        if (view.getId() == R.id.glview_call) {
-            //connection = device.connect(connectParams, this, videoView, prefs);
-        }
-
         if (view.getId() == R.id.button_hangup) {
             if (connection == null) {
                 Log.e(TAG, "Error: not connected");
@@ -148,8 +143,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         } else if (view.getId() == R.id.button_answer) {
             if (pendingConnection != null) {
                 pendingConnection.accept();
-                //pendingConnection.answerCall(incomingCallDid, incomingCallSdp);
                 connection = this.pendingConnection;
+                pendingConnection = null;
                 ringingPlayer.pause();
                 // Abandon audio focus when playback complete
                 audioManager.abandonAudioFocus(this);
@@ -161,6 +156,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 ringingPlayer.pause();
                 // Abandon audio focus when playback complete
                 audioManager.abandonAudioFocus(this);
+                finish();
             }
         } else if (view.getId() == R.id.button_cancel) {
             if (connection == null) {
@@ -173,6 +169,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 callingPlayer.pause();
                 // Abandon audio focus when playback complete
                 audioManager.abandonAudioFocus(this);
+                finish();
             }
         }
     }
@@ -202,7 +199,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     @Override
     public void onResume() {
         super.onResume();
-        videoView.onResume();
+        //videoView.onResume();
         /*
         activityRunning = true;
         if (peerConnectionClient != null) {
@@ -256,6 +253,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
         this.connection = null;
         pendingConnection = null;
+
+        finish();
     }
 
     public void onDeclined(RCConnection connection) {
@@ -267,6 +266,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
         this.connection = null;
         pendingConnection = null;
+
+        finish();
     }
 
     public void onDisconnected(RCConnection connection, int errorCode, String errorText) {
@@ -287,6 +288,17 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             if (connection != null) {
                 connection.setMuted(isChecked);
             }
+        }
+    }
+
+    public void onReceiveLocalVideo(RCConnection connection, GLSurfaceView videoView) {
+        if (videoView != null) {
+            //show media on screen
+            videoView.setTag(TAG_LOCAL_VIDEO_VIEW);
+            if (parentLayout.findViewWithTag(TAG_LOCAL_VIDEO_VIEW) != null) {
+                parentLayout.removeView(videoView);
+            }
+            parentLayout.addView(videoView, 0);
         }
     }
 
