@@ -87,7 +87,7 @@ public class DeviceImpl implements IDevice,Serializable {
 			this.soundManager.startStreaming(sipEventObject.remoteRtpPort, this.sipProfile.getRemoteIp());
 			if (this.sipuaConnectionListener != null) {
 				// notify our listener that we are connected
-				this.sipuaConnectionListener.onSipUAConnected(null);
+				this.sipuaConnectionListener.onSipUAConnected(sipEventObject);
 			}
 		} else if (sipEventObject.type == SipEventType.REMOTE_RINGING) {
 			if (this.sipuaConnectionListener != null) {
@@ -96,7 +96,7 @@ public class DeviceImpl implements IDevice,Serializable {
 			}
 		} else if (sipEventObject.type == SipEventType.LOCAL_RINGING) {
 			if (this.sipuaDeviceListener != null) {
-				this.sipuaDeviceListener.onSipUAConnectionArrived(null);
+				this.sipuaDeviceListener.onSipUAConnectionArrived(sipEventObject);
 			}
 		}
 	}
@@ -113,9 +113,21 @@ public class DeviceImpl implements IDevice,Serializable {
 		}
 	}
 
+	public void CallWebrtc(String to, String sdp) {
+		try {
+			this.sipManager.CallWebrtc(to, sdp);
+		} catch (NotInitializedException e) {
+			e.printStackTrace();
+		}
+	}
+
 	@Override
 	public void Accept() {
 		sipManager.AcceptCall(soundManager.setupAudioStream());
+	}
+
+	public void AcceptWebrtc(final String sdp) {
+		sipManager.AcceptCallWebrtc(sdp);
 	}
 
 	@Override

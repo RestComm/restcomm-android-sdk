@@ -20,6 +20,8 @@ android {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
+    compile files('libs/autobanh.jar')
+    compile files('libs/libjingle_peerconnection_java.jar')
     compile 'com.android.support:appcompat-v7:22.2.0'
     compile project(':sipua')
 }

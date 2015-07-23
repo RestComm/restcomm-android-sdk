@@ -7,6 +7,7 @@ public class SipEvent extends EventObject {
 	public String from;
 	public SipEventType type;
 	public int remoteRtpPort;
+	public String sdp;
 
 	public enum SipEventType {
 		MESSAGE, BYE, CALL, BUSY_HERE, ACCEPTED, SERVICE_UNAVAILABLE, CALL_CONNECTED, LOCAL_RINGING, DECLINED, REMOTE_RINGING, REMOTE_CANCEL
@@ -22,12 +23,13 @@ public class SipEvent extends EventObject {
 	}
 
 	public SipEvent(Object source, SipEventType type, String content,
-			String from, int rtpPort) {
+			String from, int rtpPort, String sdp) {
 		super(source);
 		this.type = type;
 		this.content = content;
 		this.from = from;
 		this.remoteRtpPort = rtpPort;
+		this.sdp = sdp;
 	}
 
 }

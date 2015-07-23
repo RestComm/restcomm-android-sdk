@@ -29,10 +29,10 @@ import java.util.Map;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.net.wifi.WifiManager;
+import android.opengl.GLSurfaceView;
 import android.os.Handler;
-import android.os.Parcel;
-import android.os.Parcelable;
 
 import org.mobicents.restcomm.android.sipua.SipProfile;
 import org.mobicents.restcomm.android.sipua.SipUADeviceListener;
@@ -55,43 +55,47 @@ import org.mobicents.restcomm.android.sipua.impl.SipEvent;
 
 public class RCDevice implements SipUADeviceListener {
     /**
-     *  @abstract Device state (<b>Not Implemented yet</b>: device is always READY)
+     * @abstract Device state (<b>Not Implemented yet</b>: device is always READY)
      */
     DeviceState state;
     /**
-     *  @abstract Device capabilities (<b>Not Implemented yet</b>)
+     * @abstract Device capabilities (<b>Not Implemented yet</b>)
      */
     HashMap<DeviceCapability, Object> capabilities;
     /**
-     *  @abstract Listener that will be receiving RCDevice events described at RCDeviceListener
+     * @abstract Listener that will be receiving RCDevice events described at RCDeviceListener
      */
     RCDeviceListener listener;
     /**
-     *  @abstract Is sound for incoming connections enabled (<b>Not Implemented yet</b>)
+     * @abstract Is sound for incoming connections enabled (<b>Not Implemented yet</b>)
      */
     boolean incomingSoundEnabled;
     /**
-     *  @abstract Is sound for outgoing connections enabled (<b>Not Implemented yet</b>)
+     * @abstract Is sound for outgoing connections enabled (<b>Not Implemented yet</b>)
      */
     boolean outgoingSoundEnabled;
     /**
-     *  @abstract Is sound for disconnect enabled (<b>Not Implemented yet</b>)
+     * @abstract Is sound for disconnect enabled (<b>Not Implemented yet</b>)
      */
     boolean disconnectSoundEnabled;
 
     private SipProfile sipProfile;
 
     /**
-     *  Device state (<b>Not Implemented yet</b>)
+     * Device state (<b>Not Implemented yet</b>)
      */
     public enum DeviceState {
-        OFFLINE,  /** Device is offline */
-        READY,  /** Device is ready to make and receive connections */
+        OFFLINE, /**
+         * Device is offline
+         */
+        READY, /**
+         * Device is ready to make and receive connections
+         */
         BUSY,  /** Device is busy */
     }
 
     /**
-     *  Device capability (<b>Not Implemented yet</b>)
+     * Device capability (<b>Not Implemented yet</b>)
      */
     public enum DeviceCapability {
         INCOMING,
@@ -103,37 +107,124 @@ public class RCDevice implements SipUADeviceListener {
         CLIENT_NAME,
     }
 
-    public static String EXTRA_DEVICE = "com.telestax.restcomm.android.client.sdk.extra-device";
-    public static String EXTRA_CONNECTION = "com.telestax.restcomm.android.client.sdk.extra-connection";
+    private static final String TAG = "RCDevice";
+    public static String OUTGOING_CALL = "ACTION_OUTGOING_CALL";
+    public static String INCOMING_CALL = "ACTION_INCOMING_CALL";
+    public static String INCOMING_MESSAGE = "ACTION_INCOMING_MESSAGE";
+    public static String EXTRA_DID = "com.telestax.restcomm_messenger.DID";
+    public static String EXTRA_SDP = "com.telestax.restcomm_messenger.SDP";
+    //public static String EXTRA_DEVICE = "com.telestax.restcomm.android.client.sdk.extra-device";
+    //public static String EXTRA_CONNECTION = "com.telestax.restcomm.android.client.sdk.extra-connection";
     PendingIntent pendingIntent;
+    public RCConnection incomingConnection;
+
+    /*
+    // #webrtc
+    private String keyprefVideoCallEnabled;
+    private String keyprefResolution;
+    private String keyprefFps;
+    private String keyprefVideoBitrateType;
+    private String keyprefVideoBitrateValue;
+    private String keyprefVideoCodec;
+    private String keyprefAudioBitrateType;
+    private String keyprefAudioBitrateValue;
+    private String keyprefAudioCodec;
+    private String keyprefHwCodecAcceleration;
+    private String keyprefNoAudioProcessingPipeline;
+    private String keyprefCpuUsageDetection;
+    private String keyprefDisplayHud;
+    private String keyprefRoomServerUrl;
+    private String keyprefRoom;
+    private String keyprefRoomList;
+
+    // Peer connection statistics callback period in ms.
+    private static final int STAT_CALLBACK_PERIOD = 1000;
+    // Local preview screen position before call is connected.
+    private static final int LOCAL_X_CONNECTING = 0;
+    private static final int LOCAL_Y_CONNECTING = 0;
+    private static final int LOCAL_WIDTH_CONNECTING = 100;
+    private static final int LOCAL_HEIGHT_CONNECTING = 100;
+    // Local preview screen position after call is connected.
+    private static final int LOCAL_X_CONNECTED = 72;
+    private static final int LOCAL_Y_CONNECTED = 72;
+    private static final int LOCAL_WIDTH_CONNECTED = 25;
+    private static final int LOCAL_HEIGHT_CONNECTED = 25;
+    // Remote video screen position
+    private static final int REMOTE_X = 0;
+    private static final int REMOTE_Y = 0;
+    private static final int REMOTE_WIDTH = 100;
+    private static final int REMOTE_HEIGHT = 100;
+
+    private PeerConnectionClient peerConnectionClient = null;
+    private SignalingParameters signalingParameters;
+    private AppRTCAudioManager audioManager = null;
+    private VideoRenderer.Callbacks localRender;
+    private VideoRenderer.Callbacks remoteRender;
+    private ScalingType scalingType;
+    private Toast logToast;
+    private boolean commandLineRun;
+    private int runTimeMs;
+    private boolean activityRunning;
+    private PeerConnectionParameters peerConnectionParameters;
+    private boolean iceConnected;
+    private boolean isError;
+    private boolean callControlFragmentVisible = true;
+    private long callStartedTimeMs = 0;
+
+    // List of mandatory application permissions.
+    private static final String[] MANDATORY_PERMISSIONS = {
+            "android.permission.MODIFY_AUDIO_SETTINGS",
+            "android.permission.RECORD_AUDIO",
+            "android.permission.INTERNET"
+    };
+    */
 
     /**
-     *  Initialize a new RCDevice object
+     * Initialize a new RCDevice object
      *
-     *  @param capabilityToken Capability Token
-     *  @param deviceListener  Listener of RCDevice
-     *
+     * @param capabilityToken Capability Token
+     * @param deviceListener  Listener of RCDevice
      */
-    protected RCDevice(String capabilityToken, RCDeviceListener deviceListener)
-    {
-        //this.client = client;
+    protected RCDevice(String capabilityToken, RCDeviceListener deviceListener) {
         this.updateCapabilityToken(capabilityToken);
         this.listener = deviceListener;
 
         sipProfile = new SipProfile();
         // TODO: check if those headers are needed
         HashMap<String, String> customHeaders = new HashMap<>();
-        //customHeaders.put("customHeader1","customValue1");
-        //customHeaders.put("customHeader2", "customValue2");
 
         DeviceImpl deviceImpl = DeviceImpl.GetInstance();
         deviceImpl.Initialize(RCClient.getInstance().context, sipProfile, customHeaders);
         DeviceImpl.GetInstance().sipuaDeviceListener = this;
     }
 
-    // 'Copy' constructor
-    public RCDevice(RCDevice device)
+    /*
+    public void initializeWebrtc(GLSurfaceView videoView, SharedPreferences prefs)
     {
+        Context context = RCClient.getInstance().context;
+        keyprefVideoCallEnabled = context.getString(R.string.pref_videocall_key);
+        keyprefResolution = context.getString(R.string.pref_resolution_key);
+        keyprefFps = context.getString(R.string.pref_fps_key);
+        keyprefVideoBitrateType = context.getString(R.string.pref_startvideobitrate_key);
+        keyprefVideoBitrateValue = context.getString(R.string.pref_startvideobitratevalue_key);
+        keyprefVideoCodec = context.getString(R.string.pref_videocodec_key);
+        keyprefHwCodecAcceleration = context.getString(R.string.pref_hwcodec_key);
+        keyprefAudioBitrateType = context.getString(R.string.pref_startaudiobitrate_key);
+        keyprefAudioBitrateValue = context.getString(R.string.pref_startaudiobitratevalue_key);
+        keyprefAudioCodec = context.getString(R.string.pref_audiocodec_key);
+        keyprefNoAudioProcessingPipeline = context.getString(R.string.pref_noaudioprocessing_key);
+        keyprefCpuUsageDetection = context.getString(R.string.pref_cpu_usage_detection_key);
+        keyprefDisplayHud = context.getString(R.string.pref_displayhud_key);
+        keyprefRoomServerUrl = context.getString(R.string.pref_room_server_url_key);
+        keyprefRoom = context.getString(R.string.pref_room_key);
+        keyprefRoomList = context.getString(R.string.pref_room_list_key);
+
+        setupWebrtc(videoView, prefs);
+    }
+    */
+
+    // 'Copy' constructor
+    public RCDevice(RCDevice device) {
         this.state = device.state;
         this.incomingSoundEnabled = device.incomingSoundEnabled;
         this.outgoingSoundEnabled = device.outgoingSoundEnabled;
@@ -147,211 +238,190 @@ public class RCDevice implements SipUADeviceListener {
     /**
      * Shuts down and release the Device (<b>Not Implemented yet</b>)
      */
-    public void release()
-    {
+    public void release() {
 
     }
 
     /**
      * Start listening for incoming connections (<b>Not Implemented yet</b>: for now once the RCDevice is created we are always listening for incoming connections)
      */
-    public void listen()
-    {
+    public void listen() {
 
     }
 
     /**
      * Stop listeninig for incoming connections (Not Implemented yet)
      */
-    public void unlisten()
-    {
+    public void unlisten() {
 
     }
 
     /**
      * Retrieves the capability token passed to RCClient.createDevice
-     * @return  Capability token
+     *
+     * @return Capability token
      */
-    public String getCapabilityToken()
-    {
+    public String getCapabilityToken() {
         return "";
     }
 
     /**
      * Updates the capability token (<b>Not implemented yet</b>
      */
-    public void updateCapabilityToken(String token)
-    {
+    public void updateCapabilityToken(String token) {
 
     }
 
     /**
-     *  Create an outgoing connection to an endpoint
+     * Create an outgoing connection to an endpoint
      *
-     *  @param parameters Connections such as the endpoint we want to connect to
-     *  @param listener   The listener object that will receive events when the connection state changes
-     *
-     *  @return An RCConnection object representing the new connection
-     */    public RCConnection connect(Map<String, Object> parameters, RCConnectionListener listener)
-    {
+     * @param parameters Connections such as the endpoint we want to connect to
+     * @param listener   The listener object that will receive events when the connection state changes
+     * @return An RCConnection object representing the new connection
+     */
+    public RCConnection connect(Map<String, String> parameters, RCConnectionListener listener) {
+        Activity activity = (Activity) listener;
         if (haveConnectivity()) {
             RCConnection connection = new RCConnection(listener);
             connection.incoming = false;
             connection.state = RCConnection.ConnectionState.PENDING;
-            //DeviceImpl.GetInstance().listener = this;
             DeviceImpl.GetInstance().sipuaConnectionListener = connection;
+            connection.setupWebrtcAndCall(parameters.get("username"));
 
-            // create a new hash map
-            HashMap<String, String> sipHeaders = null;
-            if (parameters.containsKey("sip-headers")) {
-                sipHeaders = (HashMap<String, String>)parameters.get("sip-headers");
-            }
-            DeviceImpl.GetInstance().Call((String)parameters.get("username"), sipHeaders);
-            /*
-            for (Map.Entry<String, String> entry : parameters.entrySet()) {
-                if (entry.getKey().startsWith("X")) {
-                    sipHeaders.put(entry.getKey(), entry.getValue());
-                }
-            }
-            */
             return connection;
-        }
-        else {
+        } else {
             return null;
         }
     }
 
     /**
-     *  Send an instant message to a an endpoint
+     * Send an instant message to a an endpoint
      *
-     *  @param message  Message text
-     *  @param parameters Parameters used for the message, such as 'username' that holds the recepient for the message
+     * @param message    Message text
+     * @param parameters Parameters used for the message, such as 'username' that holds the recepient for the message
      */
-    public boolean sendMessage(String message, Map<String, String> parameters)
-    {
+    public boolean sendMessage(String message, Map<String, String> parameters) {
         if (haveConnectivity()) {
             DeviceImpl.GetInstance().SendMessage(parameters.get("username"), message);
             return true;
-        }
-        else {
+        } else {
             return false;
         }
     }
 
     /**
-     *  Disconnect all connections (<b>Not implemented yet</b>)
+     * Disconnect all connections (<b>Not implemented yet</b>)
      */
-    public void disconnectAll()
-    {
+    public void disconnectAll() {
         if (haveConnectivity()) {
             // TODO: disconnect open connections
         }
     }
 
     /**
-     *  Retrieve the capabilities
-     *  @return  Capabilities
+     * Retrieve the capabilities
+     *
+     * @return Capabilities
      */
-    public Map<DeviceCapability, Object> getCapabilities()
-    {
+    public Map<DeviceCapability, Object> getCapabilities() {
         HashMap<DeviceCapability, Object> map = new HashMap<DeviceCapability, Object>();
         return map;
     }
 
     /**
      * Retrieve the Device state
+     *
      * @return State
      */
-    public DeviceState getState()
-    {
+    public DeviceState getState() {
         DeviceState state = DeviceState.READY;
         return state;
     }
 
     /**
      * Update the Device listener
-     * @param listener  Updated device listener
+     *
+     * @param listener Updated device listener
      */
-    public void setDeviceListener(RCDeviceListener listener)
-    {
+    public void setDeviceListener(RCDeviceListener listener) {
 
     }
-    public void setIncomingIntent(Intent intent)
-    {
+
+    public void setIncomingIntent(Intent intent) {
         //intent.putExtra(EXTRA_DEVICE, this);
         //intent.putExtra(EXTRA_CONNECTION, this);
         //intent.setAction("ACTION_INCOMING_CALL");
         pendingIntent = PendingIntent.getActivity(RCClient.getInstance().context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
-    public RCConnection getPendingConnection()
-    {
-        return (RCConnection)DeviceImpl.GetInstance().sipuaConnectionListener;
+    public RCConnection getPendingConnection() {
+        return (RCConnection) DeviceImpl.GetInstance().sipuaConnectionListener;
     }
 
-    public RCConnection getDevice()
-    {
-        return (RCConnection)DeviceImpl.GetInstance().sipuaConnectionListener;
+    public RCConnection getDevice() {
+        return (RCConnection) DeviceImpl.GetInstance().sipuaConnectionListener;
     }
 
     /**
      * Should a ringing sound be played in a incoming connection or message
-     * @param incomingSound  Whether or not the sound should be played
+     *
+     * @param incomingSound Whether or not the sound should be played
      */
-    public void setIncomingSoundEnabled(boolean incomingSound)
-    {
+    public void setIncomingSoundEnabled(boolean incomingSound) {
 
     }
 
     /**
      * Retrieve the incoming sound setting
-     * @return  Whether the sound will be played
+     *
+     * @return Whether the sound will be played
      */
-    public boolean isIncomingSoundEnabled()
-    {
+    public boolean isIncomingSoundEnabled() {
         return true;
     }
+
     /**
      * Should a ringing sound be played in an outgoing connection or message
-     * @param outgoingSound  Whether or not the sound should be played
+     *
+     * @param outgoingSound Whether or not the sound should be played
      */
-    public void setOutgoingSoundEnabled(boolean outgoingSound)
-    {
+    public void setOutgoingSoundEnabled(boolean outgoingSound) {
 
     }
+
     /**
      * Retrieve the outgoint sound setting
-     * @return  Whether the sound will be played
+     *
+     * @return Whether the sound will be played
      */
-    public boolean isOutgoingSoundEnabled()
-    {
+    public boolean isOutgoingSoundEnabled() {
         return true;
     }
 
     /**
      * Should a disconnect sound be played when disconnecting a connection
-     * @param disconnectSound  Whether or not the sound should be played
+     *
+     * @param disconnectSound Whether or not the sound should be played
      */
-    public void setDisconnectSoundEnabled(boolean disconnectSound)
-    {
+    public void setDisconnectSoundEnabled(boolean disconnectSound) {
 
     }
 
     /**
      * Retrieve the disconnect sound setting
-     * @return  Whether the sound will be played
+     *
+     * @return Whether the sound will be played
      */
-    public boolean isDisconnectSoundEnabled()
-    {
+    public boolean isDisconnectSoundEnabled() {
         return true;
     }
 
     /**
      * Update prefernce parameters such as username/password
-     * @param params  The params to be updated
+     *
+     * @param params The params to be updated
      */
-    public void updateParams(HashMap<String, String> params)
-    {
+    public void updateParams(HashMap<String, String> params) {
         if (haveConnectivity()) {
             for (String key : params.keySet()) {
                 if (key.equals("pref_proxy_ip")) {
@@ -369,15 +439,18 @@ public class RCDevice implements SipUADeviceListener {
     }
 
     // SipUA listeners
-    public void onSipUAConnectionArrived(SipEvent event)
-    {
-        RCConnectionListener connectionListener = (RCConnectionListener)this.listener;
-        RCConnection connection = new RCConnection(connectionListener);
-        connection.incoming = true;
-        connection.state = RCConnection.ConnectionState.CONNECTING;
-        DeviceImpl.GetInstance().sipuaConnectionListener = connection;
+    public void onSipUAConnectionArrived(SipEvent event) {
+        //RCConnectionListener connectionListener = (RCConnectionListener) this.listener;
+        incomingConnection = new RCConnection();
+        incomingConnection.incoming = true;
+        incomingConnection.state = RCConnection.ConnectionState.CONNECTING;
+        incomingConnection.incomingCallSdp = event.sdp;
+        //incomingConnection.initializeWebrtc();
+        DeviceImpl.GetInstance().sipuaConnectionListener = incomingConnection;
 
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
+        final String from = event.from;
+        //final String sdp = event.sdp;
         Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
@@ -385,7 +458,9 @@ public class RCDevice implements SipUADeviceListener {
                 // bring the App to front
                 try {
                     Intent dataIntent = new Intent();
-                    dataIntent.setAction("ACTION_INCOMING_CALL");
+                    dataIntent.setAction(INCOMING_CALL);
+                    dataIntent.putExtra(RCDevice.EXTRA_DID, from);
+                    //dataIntent.putExtra(RCDevice.EXTRA_SDP, sdp);
                     pendingIntent.send(RCClient.getInstance().context, 0, dataIntent);
 
                 } catch (PendingIntent.CanceledException e) {
@@ -397,8 +472,7 @@ public class RCDevice implements SipUADeviceListener {
         mainHandler.post(myRunnable);
     }
 
-    public void onSipUAMessageArrived(SipEvent event)
-    {
+    public void onSipUAMessageArrived(SipEvent event) {
         HashMap<String, String> parameters = new HashMap<String, String>();
         // filter out SIP URI stuff and leave just the name
         String from = event.from.replaceAll("^<sip:", "").replaceAll("@.*$", "");
@@ -414,7 +488,7 @@ public class RCDevice implements SipUADeviceListener {
                 // bring the App to front
                 try {
                     Intent dataIntent = new Intent();
-                    dataIntent.setAction("ACTION_INCOMING_MESSAGE");
+                    dataIntent.setAction(INCOMING_MESSAGE);
                     dataIntent.putExtra("MESSAGE_PARMS", finalParameters);
                     dataIntent.putExtra("MESSAGE", finalContent);
                     pendingIntent.send(RCClient.getInstance().context, 0, dataIntent);
@@ -428,52 +502,16 @@ public class RCDevice implements SipUADeviceListener {
     }
 
     // Helpers
-    private boolean haveConnectivity()
-    {
+    private boolean haveConnectivity() {
         RCClient client = RCClient.getInstance();
-        WifiManager wifi = (WifiManager)client.context.getSystemService(client.context.WIFI_SERVICE);
+        WifiManager wifi = (WifiManager) client.context.getSystemService(client.context.WIFI_SERVICE);
         if (wifi.isWifiEnabled()) {
             return true;
-        }
-        else {
+        } else {
             if (this.listener != null) {
                 this.listener.onStopListening(this, RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal(), RCClient.errorText(RCClient.ErrorCodes.NO_CONNECTIVITY));
             }
             return false;
         }
     }
-
-    // Parcelable stuff (not needed for now -let's keep around in case we use it at some point):
-    /*
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    // Parceable stuff
-    public void writeToParcel(Parcel out, int flags) {
-        //out.writeInt(state.ordinal());
-        boolean one[] = new boolean[1];
-        one[0] = incomingSoundEnabled;
-        out.writeBooleanArray(one);
-    }
-
-    public static final Parcelable.Creator<RCDevice> CREATOR = new Parcelable.Creator<RCDevice>() {
-        public RCDevice createFromParcel(Parcel in) {
-            return new RCDevice(in);
-        }
-
-        public RCDevice[] newArray(int size) {
-            return new RCDevice[size];
-        }
-    };
-
-    private RCDevice(Parcel in) {
-        //state = in.readInt();
-        boolean one[] = new boolean[1];
-        in.readBooleanArray(one);
-        incomingSoundEnabled = one[0];
-    }
-    */
-
 }
