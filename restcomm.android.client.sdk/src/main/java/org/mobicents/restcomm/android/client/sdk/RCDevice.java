@@ -41,14 +41,16 @@ import org.mobicents.restcomm.android.sipua.impl.SipEvent;
 
 /**
  *  RCDevice Represents an abstraction of a communications device able to make and receive calls, send and receive messages etc. Remember that
- *  in order to be notified of RestComm Client events you need to set a listener to RCDevice and implement the applicable methods.
+ *  in order to be notified of RestComm Client events you need to set a listener to RCDevice and implement the applicable methods, and also 'register'
+ *  to the applicable intents by calling RCDevice.setPendingIntents() and provide one intent for whichever activity will be receiving calls and another
+ *  intent for the activity receiving messages.
  *  If you want to initiate a media connection towards another party you use RCDevice.connect() which returns an RCConnection object representing
  *  the new outgoing connection. From then on you can act on the new connection by applying RCConnection methods on the handle you got from RCDevice.connect().
- *  If there’s an incoming connection you will be notified by RCDeviceListener.onIncomingConnection() listener method. At that point you can use RCConnection methods to
+ *  If there’s an incoming connection you will be receiving an intent with action 'RCDevice.INCOMING_CALL'. At that point you can use RCConnection methods to
  *  accept or reject the connection.
  *
  *  As far as instant messages are concerned you can send a message using RCDevice.sendMessage() and you will be notified of an incoming message
- *  via RCDeviceListener.onIncomingMessage() listener method.
+ *  through an intent with action 'RCDevice.INCOMING_MESSAGE'.
  *
  *  @see RCConnection
  */

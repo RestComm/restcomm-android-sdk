@@ -148,8 +148,8 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     private PeerConnectionClient peerConnectionClient = null;
     private SignalingParameters signalingParameters;
     private AppRTCAudioManager audioManager = null;
-    private VideoRenderer.Callbacks localRender;
-    private VideoRenderer.Callbacks remoteRender;
+    private VideoRenderer.Callbacks localRender = null;
+    private VideoRenderer.Callbacks remoteRender = null;
     private VideoRendererGui.ScalingType scalingType;
     private Toast logToast;
     //private boolean commandLineRun;
@@ -482,6 +482,8 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         signalingParameters = null;
         scalingType = VideoRendererGui.ScalingType.SCALE_ASPECT_FILL;
 
+        // Uncomment when video is enabled
+        /**/
         videoView = new GLSurfaceView(context);
         listener.onReceiveLocalVideo(this, videoView);
 
@@ -492,18 +494,21 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                 createPeerConnectionFactory();
             }
         });
+
         remoteRender = VideoRendererGui.create(
                 REMOTE_X, REMOTE_Y,
                 REMOTE_WIDTH, REMOTE_HEIGHT, scalingType, false);
         localRender = VideoRendererGui.create(
                 LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING,
                 LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING, scalingType, true);
+        /**/
+        //createPeerConnectionFactory();
 
         // Check for mandatory permissions.
         for (String permission : MANDATORY_PERMISSIONS) {
             if (context.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
                 logAndToast("Permission " + permission + " is not granted");
-                // TODO: return eror to RCConnection listener
+                // TODO: return error to RCConnection listener
                 //activity.setResult(activity.RESULT_CANCELED);
                 //activity.finish();
                 return;
@@ -666,6 +671,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                     final long delta = System.currentTimeMillis() - callStartedTimeMs;
                     Log.d(TAG, "Creating peer connection factory, delay=" + delta + "ms");
                     peerConnectionClient = PeerConnectionClient.getInstance();
+                    //peerConnectionClient.setVideoEnabled(false);
                     peerConnectionClient.createPeerConnectionFactory(RCClient.getInstance().context,
                             VideoRendererGui.getEGLContext(), peerConnectionParameters,
                             connection);

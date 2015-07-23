@@ -134,6 +134,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 connection.disconnect();
                 connection = null;
                 pendingConnection = null;
+                finish();
             }
         } else if (view.getId() == R.id.button_answer) {
             if (pendingConnection != null) {

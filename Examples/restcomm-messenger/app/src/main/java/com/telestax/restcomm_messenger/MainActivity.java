@@ -90,8 +90,8 @@ public class MainActivity extends Activity implements RCDeviceListener,
         prefs.registerOnSharedPreferenceChangeListener(this);
         initializeSipFromPreferences();
 
-        //txtUri.setText("sip:1235@54.225.212.193:5080");
-        txtUri.setText("sip:alice@192.168.2.32:5080");
+        txtUri.setText("sip:1235@54.225.212.193:5080");
+        //txtUri.setText("sip:alice@192.168.2.32:5080");
         txtMessage.setText("Hello there!");
 
         // volume control should be by default 'music' which will control the ringing sounds and 'voice call' when within a call
