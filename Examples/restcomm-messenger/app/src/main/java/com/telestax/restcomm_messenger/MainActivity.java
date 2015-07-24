@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.Menu;
@@ -88,7 +89,6 @@ public class MainActivity extends Activity implements RCDeviceListener,
 
         // preferences
         prefs.registerOnSharedPreferenceChangeListener(this);
-        initializeSipFromPreferences();
 
         txtUri.setText("sip:1235@54.225.212.193:5080");
         //txtUri.setText("sip:alice@192.168.2.32:5080");
@@ -118,10 +118,16 @@ public class MainActivity extends Activity implements RCDeviceListener,
     // UI Events
     public void onClick(View view) {
         if (view.getId() == R.id.button_dial) {
-            Intent intent = new Intent(this, CallActivity.class);
-            intent.setAction(RCDevice.OUTGOING_CALL);
-            intent.putExtra(RCDevice.EXTRA_DID, txtUri.getText().toString());
-            startActivityForResult(intent, CONNECTION_REQUEST);
+            WifiManager wifi = (WifiManager) getSystemService(WIFI_SERVICE);
+            if (wifi.isWifiEnabled()) {
+                Intent intent = new Intent(this, CallActivity.class);
+                intent.setAction(RCDevice.OUTGOING_CALL);
+                intent.putExtra(RCDevice.EXTRA_DID, txtUri.getText().toString());
+                startActivityForResult(intent, CONNECTION_REQUEST);
+            }
+            else {
+                showOkAlert("No Connectivity", "No network connectivity");
+            }
         }
         else if (view.getId() == R.id.button_register) {
             device.updateParams(params);
@@ -259,6 +265,9 @@ public class MainActivity extends Activity implements RCDeviceListener,
         // The activity has become visible (it is now "resumed").
         Log.i(TAG, "%% onResume");
         Intent intent = getIntent();
+
+        initializeSipFromPreferences();
+
         // If reason for resume is that we got an intent designating either an incoming call or message
         if (intent.getAction() == RCDevice.INCOMING_CALL) {
             ArrayList<RCDevice> list = RCClient.getInstance().listDevices();

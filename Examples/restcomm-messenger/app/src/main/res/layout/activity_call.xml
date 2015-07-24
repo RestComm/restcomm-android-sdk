@@ -15,17 +15,19 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_marginBottom="61dp"
-        android:minWidth="100dp" />
+        android:minWidth="100dp"
+        android:layout_marginLeft="10dp" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Answer"
         android:id="@+id/button_answer"
+        android:minWidth="100dp"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"
-        android:minWidth="100dp" />
+        android:layout_marginBottom="10dp"
+        android:layout_marginRight="10dp" />
 
     <Button
         android:layout_width="wrap_content"
@@ -35,17 +37,19 @@
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:minWidth="100dp" />
+        android:minWidth="100dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginBottom="10dp" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Cancel"
         android:id="@+id/button_cancel"
+        android:minWidth="100dp"
+        android:layout_marginRight="10dp"
         android:layout_alignTop="@+id/button_hangup"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"
-        android:minWidth="100dp" />
+        android:layout_alignStart="@+id/button_answer" />
 
     <CheckBox
         android:layout_width="wrap_content"
@@ -55,6 +59,7 @@
         android:layout_below="@+id/button_register"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:layout_marginTop="17dp" />
+        android:layout_marginTop="17dp"
+        android:layout_marginLeft="10dp" />
 
 </RelativeLayout>

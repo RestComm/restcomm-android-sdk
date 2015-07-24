@@ -302,6 +302,14 @@ public class AppRTCAudioManager {
     audioManager.setMicrophoneMute(on);
   }
 
+  public void setMute(boolean on) {
+    audioManager.setMicrophoneMute(on);
+  }
+
+  public boolean getMute() {
+    return audioManager.isMicrophoneMute();
+  }
+
   /** Gets the current earpiece state. */
   private boolean hasEarpiece() {
     return apprtcContext.getPackageManager().hasSystemFeature(

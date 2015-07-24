@@ -28,6 +28,7 @@ import android.net.wifi.WifiManager;
 import android.opengl.GLSurfaceView;
 import android.os.Handler;
 import android.util.Log;
+import android.view.Gravity;
 import android.widget.Toast;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -300,7 +301,8 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
      */
     public void setMuted(boolean muted)
     {
-        DeviceImpl.GetInstance().Mute(muted);
+        audioManager.setMute(muted);
+        //DeviceImpl.GetInstance().Mute(muted);
     }
 
     /**
@@ -309,7 +311,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
      */
     public boolean isMuted()
     {
-        return false;
+        return audioManager.getMute();
     }
 
     /**
@@ -693,6 +695,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             logToast.cancel();
         }
         logToast = Toast.makeText(RCClient.getInstance().context, msg, Toast.LENGTH_SHORT);
+        logToast.setGravity(Gravity.CENTER_HORIZONTAL|Gravity.CENTER_VERTICAL, 0, 0);
         logToast.show();
     }
 
