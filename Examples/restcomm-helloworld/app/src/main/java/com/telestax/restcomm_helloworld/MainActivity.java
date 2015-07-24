@@ -58,7 +58,8 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         // TODO: we don't support capability tokens yet so let's use an empty string
         device = RCClient.createDevice("", this);
         Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-        device.setIncomingIntent(intent);
+        // we don't have a separate activity for the calls, so use the same intent both for calls and messages
+        device.setPendingIntents(intent, intent);
 
         connection = null;
 

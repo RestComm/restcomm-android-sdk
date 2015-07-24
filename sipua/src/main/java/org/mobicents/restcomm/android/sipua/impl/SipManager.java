@@ -53,6 +53,7 @@ import android.javax.sip.TransactionUnavailableException;
 import android.javax.sip.address.Address;
 import android.javax.sip.address.AddressFactory;
 import android.javax.sip.header.CSeqHeader;
+import android.javax.sip.header.CallIdHeader;
 import android.javax.sip.header.ContactHeader;
 import android.javax.sip.header.ContentTypeHeader;
 import android.javax.sip.header.HeaderFactory;
@@ -91,6 +92,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
     private HashMap<String,String> customHeaders;
 	private ClientTransaction currentClientTransaction = null;
 	private ServerTransaction currentServerTransaction;
+	private static final int MAX_REGISTER_ATTEMPTS = 3;
+	HashMap<String, Integer> registerAuthenticationMap = new HashMap<>();
 	public int ackCount = 0;
 	DigestServerAuthenticationHelper dsam;
 	// Is it an outgoing call or incoming call. We're using this so that when we hit
@@ -501,10 +504,21 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 									sipProfile.getRemoteIp(), sipProfile
 									.getSipPassword()), headerFactory);
 			try {
-				ClientTransaction inviteTid = authenticationHelper
-						.handleChallenge(response, tid, sipProvider, 5, true);
-				currentClientTransaction = inviteTid;
-				inviteTid.sendRequest();
+				CallIdHeader callId = (CallIdHeader)response.getHeader("Call-ID");  //responseDialog.getCallId();
+				int attempts = 0;
+				if (registerAuthenticationMap.containsKey(callId.toString())) {
+					attempts = registerAuthenticationMap.get(callId.toString()).intValue();
+				}
+
+				// we 're subtracting one since the first attempt has already taken place
+				// (that way we are enforcing MAX_REGISTER_ATTEMPTS at most)
+				if (attempts < MAX_REGISTER_ATTEMPTS - 1) {
+					ClientTransaction inviteTid = authenticationHelper
+							.handleChallenge(response, tid, sipProvider, 5, true);
+					currentClientTransaction = inviteTid;
+					inviteTid.sendRequest();
+					registerAuthenticationMap.put(callId.toString(), attempts + 1);
+				}
 			} catch (NullPointerException e) {
 				e.printStackTrace();
 			} catch (SipException e) {
@@ -544,7 +558,12 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					e.printStackTrace();
 				}
 
-			} else if (cseq.getMethod().equals(Request.CANCEL)) {
+			}
+			else if (cseq.getMethod().equals(Request.REGISTER)) {
+				// we got 200 OK to register request, clear the map
+				registerAuthenticationMap.clear();
+			}
+			else if (cseq.getMethod().equals(Request.CANCEL)) {
 				if (dialog.getState() == DialogState.CONFIRMED) {
 					// oops cancel went in too late. Need to hang up the
 					// dialog.
