@@ -331,7 +331,7 @@ public class PeerConnectionClient {
             preferIsac = true;
         }
         if (!PeerConnectionFactory.initializeAndroidGlobals(
-                context, true, true,
+                context, true, /*peerConnectionParameters.videoCallEnabled */ true,
                 peerConnectionParameters.videoCodecHwAcceleration, renderEGLContext)) {
             events.onPeerConnectionError("Failed to initializeAndroidGlobals");
         }

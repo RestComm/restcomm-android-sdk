@@ -71,13 +71,15 @@ public interface RCConnectionListener {
      * @param connection Connection
      * @param videoView View hosting the local video
      */
-    public void onReceiveLocalVideo(RCConnection connection, GLSurfaceView videoView);
+    // #WEBRTC-VIDEO TODO uncomment
+    //public void onReceiveLocalVideo(RCConnection connection, GLSurfaceView videoView);
 
     /**
      * Connection just disconnected with an error
      * @param connection Connection
      * @param videoView View hosting the remote video
      */
-    //public void onReceiveRemoteVideo(RCConnection connection, GLSurfaceView videoView);
+    // #WEBRTC-VIDEO TODO uncomment
+    // public void onReceiveRemoteVideo(RCConnection connection, GLSurfaceView videoView);
 }
 

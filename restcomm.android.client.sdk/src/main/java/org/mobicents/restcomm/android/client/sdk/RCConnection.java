@@ -484,8 +484,8 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         signalingParameters = null;
         scalingType = VideoRendererGui.ScalingType.SCALE_ASPECT_FILL;
 
-        // Uncomment when video is enabled
-        /**/
+        // #WEBRTC-VIDEO TODO: Uncomment when video is enabled
+        /*
         videoView = new GLSurfaceView(context);
         listener.onReceiveLocalVideo(this, videoView);
 
@@ -503,8 +503,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         localRender = VideoRendererGui.create(
                 LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING,
                 LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING, scalingType, true);
-        /**/
-        //createPeerConnectionFactory();
+        */
 
         // Check for mandatory permissions.
         for (String permission : MANDATORY_PERMISSIONS) {
@@ -595,6 +594,9 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                 "OPUS",
                 false,
                 true);
+
+        // #WEBRTC-VIDEO TODO: remove this
+        createPeerConnectionFactory();
     }
 
     private void startCall(SignalingParameters signalingParameters)
@@ -681,7 +683,11 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                 }
                 if (signalingParameters != null) {
                     Log.w(TAG, "EGL context is ready after room connection.");
-                    onConnectedToRoomInternal(signalingParameters);
+                    // #WEBRTC-VIDEO TODO: when I disabled the video view stuff, I also had to comment this out cause it turns out
+                    // that in that case this part of the code was executed (as if signalingParameters was null and now it isn't),
+                    // which resulted in onConnectedToRoomInternal being called twice for the same call! When I reinstate
+                    // video this should probably be uncommented:
+                    //onConnectedToRoomInternal(signalingParameters);
                 }
             }
         };
@@ -832,7 +838,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     @Override
     public void onPeerConnectionError(final String description) {
         //reportError(description);
-        Log.e(TAG, "PeerConnection error");
+        Log.e(TAG, "PeerConnection error: " + description);
         disconnect();
     }
 

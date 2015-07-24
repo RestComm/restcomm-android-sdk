@@ -37,7 +37,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     private static final String TAG = "CallActivity";
     private HashMap<String, String> connectParams = new HashMap<String, String>();
     private RCDevice device;
-    private RelativeLayout parentLayout;
+    // #WEBRTC-VIDEO TODO: uncomment when video is introduced
+    //private RelativeLayout parentLayout;
     MediaPlayer ringingPlayer;
     MediaPlayer callingPlayer;
     AudioManager audioManager;
@@ -78,7 +79,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         btnCancel.setOnClickListener(this);
         cbMuted = (CheckBox)findViewById(R.id.checkbox_muted);
         cbMuted.setOnCheckedChangeListener(this);
-        parentLayout = (RelativeLayout) findViewById(R.id.layout_video_call);
+        // #WEBRTC-VIDEO TODO: uncomment when video is introduced
+        //parentLayout = (RelativeLayout) findViewById(R.id.layout_video_call);
 
         audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
         // volume control should be by default 'music' which will control the ringing sounds and 'voice call' when within a call
@@ -280,6 +282,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         }
     }
 
+    // #WEBRTC-VIDEO TODO: uncomment when video is introduced
+    /*
     public void onReceiveLocalVideo(RCConnection connection, GLSurfaceView videoView) {
         if (videoView != null) {
             //show media on screen
@@ -290,6 +294,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             parentLayout.addView(videoView, 0);
         }
     }
+    */
 
     // Callbacks for auio focus change events
     public void onAudioFocusChange(int focusChange)
