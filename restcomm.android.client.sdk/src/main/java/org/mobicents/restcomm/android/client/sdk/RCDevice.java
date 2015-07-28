@@ -264,7 +264,15 @@ public class RCDevice implements SipUADeviceListener {
     public void setDeviceListener(RCDeviceListener listener) {
 
     }
-
+    /**
+     * Set pending intents for incoming calls and messages. In order to be notified of RestComm Client
+     * events you need to associate your Activities with intents and provide one intent for whichever activity
+     * will be receiving calls and another intent for the activity receiving messages. If you use a single Activity
+     * for both then you can pass the same intent both as a callIntent as well as a messageIntent
+     *
+     * @param callIntent: an intent that will be sent on an incoming call
+     * @param messageIntent: an intent that will be sent on an incoming text message
+     */
     public void setPendingIntents(Intent callIntent, Intent messageIntent) {
         pendingCallIntent = PendingIntent.getActivity(RCClient.getInstance().context, 0, callIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         pendingMessageIntent = PendingIntent.getActivity(RCClient.getInstance().context, 0, messageIntent, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -354,7 +362,9 @@ public class RCDevice implements SipUADeviceListener {
         }
     }
 
-    // SipUA listeners
+    /**
+     * INTERNAL: not to be used from the Application
+     */
     public void onSipUAConnectionArrived(SipEvent event) {
         //RCConnectionListener connectionListener = (RCConnectionListener) this.listener;
         incomingConnection = new RCConnection();
@@ -386,6 +396,9 @@ public class RCDevice implements SipUADeviceListener {
         mainHandler.post(myRunnable);
     }
 
+    /**
+     * INTERNAL: not to be used from the Application
+     */
     public void onSipUAMessageArrived(SipEvent event) {
         HashMap<String, String> parameters = new HashMap<String, String>();
         // filter out SIP URI stuff and leave just the name
