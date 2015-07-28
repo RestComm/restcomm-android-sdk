@@ -24,22 +24,19 @@
         android:text="Answer"
         android:id="@+id/button_answer"
         android:minWidth="100dp"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginBottom="10dp"
-        android:layout_marginRight="10dp" />
+        android:layout_below="@+id/button_cancel"
+        android:layout_alignLeft="@+id/button_cancel"
+        android:layout_alignStart="@+id/button_cancel" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Decline"
         android:id="@+id/button_decline"
-        android:layout_alignParentBottom="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
         android:minWidth="100dp"
-        android:layout_marginLeft="10dp"
-        android:layout_marginBottom="10dp" />
+        android:layout_below="@+id/button_cancel"
+        android:layout_alignLeft="@+id/button_hangup"
+        android:layout_alignStart="@+id/button_hangup" />
 
     <Button
         android:layout_width="wrap_content"
@@ -47,16 +44,16 @@
         android:text="Cancel"
         android:id="@+id/button_cancel"
         android:minWidth="100dp"
-        android:layout_marginRight="10dp"
         android:layout_alignTop="@+id/button_hangup"
-        android:layout_alignStart="@+id/button_answer" />
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:layout_marginRight="10dp" />
 
     <CheckBox
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Mute"
         android:id="@+id/checkbox_muted"
-        android:layout_below="@+id/button_register"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_marginTop="17dp"

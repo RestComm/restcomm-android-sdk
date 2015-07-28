@@ -11,7 +11,9 @@
         android:text="Dial"
         android:id="@+id/button_dial"
         android:layout_below="@+id/text_uri"
-        android:layout_alignEnd="@+id/button_send"
+        android:layout_alignRight="@+id/text_uri"
+        android:layout_alignEnd="@+id/text_uri"
+        android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true" />
 <!--
     <Button
@@ -31,8 +33,10 @@
         android:text="Register"
         android:id="@+id/button_register"
         android:layout_alignParentBottom="true"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentEnd="true" />
+        android:layout_alignRight="@+id/button_send"
+        android:layout_alignEnd="@+id/button_send"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
 <!--
     <Button
         android:layout_width="wrap_content"
@@ -71,7 +75,9 @@
         android:text="Send"
         android:id="@+id/button_send"
         android:layout_below="@+id/text_message"
+        android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"
+        android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true" />
 
     <EditText
@@ -83,7 +89,8 @@
         android:layout_alignParentStart="true"
         android:layout_toStartOf="@+id/button_send"
         android:layout_marginTop="10dp"
-        android:layout_alignEnd="@+id/button_send" />
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
 
     <EditText
         android:layout_width="wrap_content"
@@ -96,7 +103,8 @@
         android:layout_alignParentStart="true"
         android:layout_marginTop="25dp"
         android:layout_toStartOf="@+id/button_send"
-        android:layout_alignParentEnd="true" />
+        android:layout_alignRight="@+id/text_wall"
+        android:layout_alignEnd="@+id/text_wall" />
 
     <EditText
         android:layout_width="wrap_content"
@@ -111,8 +119,8 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_marginTop="20dp"
-        android:layout_alignRight="@+id/button_send"
-        android:layout_alignEnd="@+id/button_send" />
+        android:layout_alignRight="@+id/button_dial"
+        android:layout_alignEnd="@+id/button_dial" />
 <!--
     <CheckBox
         android:layout_width="wrap_content"
