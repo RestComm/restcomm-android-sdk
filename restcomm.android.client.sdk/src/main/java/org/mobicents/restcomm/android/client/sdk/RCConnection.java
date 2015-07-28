@@ -242,7 +242,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
           //  DeviceImpl.GetInstance().Accept(
             LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
             iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
-            this.signalingParameters = new SignalingParameters(iceServers, false, "", "", "", null, null);
+            this.signalingParameters = new SignalingParameters(iceServers, false, "", "", "", null, null, null);
             SignalingParameters params = SignalingParameters.extractCandidates(new SessionDescription(SessionDescription.Type.OFFER, incomingCallSdp));
             this.signalingParameters.offerSdp = params.offerSdp;
             this.signalingParameters.iceCandidates = params.iceCandidates;
@@ -443,13 +443,13 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     }
 
     // -- WebRTC stuff:
-    public void setupWebrtcAndCall(String sipUri)
+    public void setupWebrtcAndCall(String sipUri, HashMap<String, String> sipHeaders)
     {
         initializeWebrtc();
 
         LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
         iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
-        this.signalingParameters = new SignalingParameters(iceServers, true, "", sipUri, "", null, null);
+        this.signalingParameters = new SignalingParameters(iceServers, true, "", sipUri, "", null, null, sipHeaders);
 
         startCall(this.signalingParameters);
     }
@@ -772,7 +772,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                     // we have gathered all candidates and SDP. Combine then in SIP SDP and send over to JAIN SIP
                     DeviceImpl.GetInstance().CallWebrtc(signalingParameters.sipUrl,
                             connection.signalingParameters.generateSipSdp(connection.signalingParameters.offerSdp,
-                                    connection.signalingParameters.iceCandidates));
+                                    connection.signalingParameters.iceCandidates), connection.signalingParameters.sipHeaders);
                 }
                 else {
                     DeviceImpl.GetInstance().AcceptWebrtc(connection.signalingParameters.generateSipSdp(connection.signalingParameters.answerSdp,

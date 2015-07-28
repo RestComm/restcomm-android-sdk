@@ -193,18 +193,27 @@ public class RCDevice implements SipUADeviceListener {
     /**
      * Create an outgoing connection to an endpoint
      *
-     * @param parameters Connections such as the endpoint we want to connect to
+     * @param parameters Parameters such as the endpoint we want to connect to or SIP custom headers. If
+     *                   you want to pass SIP custom headers, you need to add a separate (String, String) HashMap
+     *                   inside 'parameters' hash and introduce your headers there.
+     *                   For an example please check HelloWorld or Messenger samples.
      * @param listener   The listener object that will receive events when the connection state changes
      * @return An RCConnection object representing the new connection
      */
-    public RCConnection connect(Map<String, String> parameters, RCConnectionListener listener) {
+    public RCConnection connect(Map<String, Object> parameters, RCConnectionListener listener) {
         Activity activity = (Activity) listener;
         if (haveConnectivity()) {
             RCConnection connection = new RCConnection(listener);
             connection.incoming = false;
             connection.state = RCConnection.ConnectionState.PENDING;
             DeviceImpl.GetInstance().sipuaConnectionListener = connection;
-            connection.setupWebrtcAndCall(parameters.get("username"));
+
+            // create a new hash map
+            HashMap<String, String> sipHeaders = null;
+            if (parameters.containsKey("sip-headers")) {
+                sipHeaders = (HashMap<String, String>)parameters.get("sip-headers");
+            }
+            connection.setupWebrtcAndCall((String)parameters.get("username"), sipHeaders);
 
             return connection;
         } else {

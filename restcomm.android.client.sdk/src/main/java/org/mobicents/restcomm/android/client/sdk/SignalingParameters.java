@@ -6,6 +6,7 @@ import org.webrtc.IceCandidate;
 import org.webrtc.PeerConnection;
 import org.webrtc.SessionDescription;
 
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Vector;
@@ -24,13 +25,15 @@ public class SignalingParameters {
     public SessionDescription offerSdp;
     public SessionDescription answerSdp;
     public List<IceCandidate> iceCandidates;
+    public HashMap<String, String> sipHeaders;
     //public List<IceCandidate> answerIceCandidates;
 
     public SignalingParameters(
             List<PeerConnection.IceServer> iceServers,
             boolean initiator, String clientId,
             String sipUrl, String wssPostUrl,
-            SessionDescription offerSdp, List<IceCandidate> iceCandidates) {
+            SessionDescription offerSdp, List<IceCandidate> iceCandidates,
+            HashMap<String, String> sipHeaders) {
         this.iceServers = iceServers;
         this.initiator = initiator;
         this.clientId = clientId;
@@ -39,6 +42,7 @@ public class SignalingParameters {
         this.offerSdp = offerSdp;
         this.answerSdp = null;
         this.iceCandidates = iceCandidates;
+        this.sipHeaders = sipHeaders;
         //this.answerIceCandidates = null;
     }
     public SignalingParameters() {
@@ -50,6 +54,7 @@ public class SignalingParameters {
         this.offerSdp = null;
         this.answerSdp = null;
         this.iceCandidates = null;
+        this.sipHeaders = null;
         //this.answerIceCandidates = null;
     }
 

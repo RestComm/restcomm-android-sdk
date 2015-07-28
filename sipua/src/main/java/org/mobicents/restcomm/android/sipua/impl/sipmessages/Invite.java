@@ -27,7 +27,7 @@ import android.javax.sip.message.Request;
 
 public class Invite  {
 
-    public Request MakeRequest(SipManager sipManager,String to, int port){
+    public Request MakeRequest(SipManager sipManager,String to, int port, HashMap<String, String> sipHeaders) {
     	
     	try {
 			SipURI from = sipManager.addressFactory.createSipURI(sipManager.getSipProfile().getSipUserName(), sipManager.getSipProfile().getLocalEndpoint());
@@ -59,7 +59,7 @@ public class Invite  {
 			SupportedHeader supportedHeader = sipManager.headerFactory
 					.createSupportedHeader("replaces, outbound");
 			callRequest.addHeader(supportedHeader);
-            addCustomHeaders(callRequest,sipManager);
+            addCustomHeaders(callRequest, sipManager, sipHeaders);
 
 			SipURI routeUri = sipManager.addressFactory.createSipURI(null, sipManager.getSipProfile().getRemoteIp());
 			routeUri.setTransportParam(sipManager.getSipProfile().getTransport());
@@ -137,7 +137,7 @@ public class Invite  {
 		return null;
 	}
 
-	public Request MakeRequestWebrtc(SipManager sipManager, String to, String sdp){
+	public Request MakeRequestWebrtc(SipManager sipManager, String to, String sdp, HashMap<String, String> sipHeaders) {
 
 		try {
 			SipURI from = sipManager.addressFactory.createSipURI(sipManager.getSipProfile().getSipUserName(), sipManager.getSipProfile().getLocalEndpoint());
@@ -169,7 +169,7 @@ public class Invite  {
 			SupportedHeader supportedHeader = sipManager.headerFactory
 					.createSupportedHeader("replaces, outbound");
 			callRequest.addHeader(supportedHeader);
-			addCustomHeaders(callRequest,sipManager);
+			addCustomHeaders(callRequest, sipManager, sipHeaders);
 
 			SipURI routeUri = sipManager.addressFactory.createSipURI(null, sipManager.getSipProfile().getRemoteIp());
 			routeUri.setTransportParam(sipManager.getSipProfile().getTransport());
@@ -251,24 +251,24 @@ public class Invite  {
 		return null;
 	}
 
-    private void addCustomHeaders(Request callRequest, SipManager sipManager) {
-
-        // Get a set of the entries
-        Set set = sipManager.getCustomHeaders().entrySet();
-        // Get an iterator
-        Iterator i = set.iterator();
-        // Display elements
-        while(i.hasNext()) {
-            Map.Entry me = (Map.Entry) i.next();
-            try {
-                Header customHeader = sipManager.headerFactory.createHeader(me.getKey().toString(),me.getValue().toString());
-                callRequest.addHeader(customHeader);
-            } catch (ParseException e) {
-                e.printStackTrace();
-            }
-
-
-        }
+    private void addCustomHeaders(Request callRequest, SipManager sipManager, HashMap<String, String> sipHeaders)
+	{
+		if (sipHeaders != null) {
+			// Get a set of the entries
+			Set set = sipHeaders.entrySet();
+			// Get an iterator
+			Iterator i = set.iterator();
+			// Display elements
+			while (i.hasNext()) {
+				Map.Entry me = (Map.Entry) i.next();
+				try {
+					Header customHeader = sipManager.headerFactory.createHeader(me.getKey().toString(), me.getValue().toString());
+					callRequest.addHeader(customHeader);
+				} catch (ParseException e) {
+					e.printStackTrace();
+				}
+			}
+		}
     }
 
 

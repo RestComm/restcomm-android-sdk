@@ -102,20 +102,27 @@ public class DeviceImpl implements IDevice,Serializable {
 	}
 
 	@Override
-	public void Call(String to, HashMap<String, String> sipHeaders) {
+	public void Call(String to,  HashMap<String, String> sipHeaders) {
 		try {
+			/*
 			if (sipHeaders != null) {
 				sipManager.setCustomHeaders(sipHeaders);
 			}
-			this.sipManager.Call(to, this.soundManager.setupAudioStream());
+			*/
+			this.sipManager.Call(to, this.soundManager.setupAudioStream(), sipHeaders);
 		} catch (NotInitializedException e) {
 			e.printStackTrace();
 		}
 	}
 
-	public void CallWebrtc(String to, String sdp) {
+	public void CallWebrtc(String to, String sdp, HashMap<String, String> sipHeaders) {
 		try {
-			this.sipManager.CallWebrtc(to, sdp);
+			/*
+			if (sipHeaders != null) {
+				sipManager.setCustomHeaders(sipHeaders);
+			}
+			*/
+			this.sipManager.CallWebrtc(to, sdp, sipHeaders);
 		} catch (NotInitializedException e) {
 			e.printStackTrace();
 		}

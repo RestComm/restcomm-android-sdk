@@ -35,7 +35,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     private RCConnection connection, pendingConnection;
     SharedPreferences prefs;
     private static final String TAG = "CallActivity";
-    private HashMap<String, String> connectParams = new HashMap<String, String>();
+    private HashMap<String, Object> connectParams = new HashMap<String, Object>();
     private RCDevice device;
     // #WEBRTC-VIDEO TODO: uncomment when video is introduced
     //private RelativeLayout parentLayout;
@@ -106,6 +106,12 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         final Intent intent = getIntent();
         if (intent.getAction() == RCDevice.OUTGOING_CALL) {
             connectParams.put("username", intent.getStringExtra(RCDevice.EXTRA_DID));
+
+            // if you want to add custom SIP headers, please uncomment this
+            //HashMap<String, String> sipHeaders = new HashMap<>();
+            //sipHeaders.put("X-SIP-Header1", "Value1");
+            //connectParams.put("sip-headers", sipHeaders);
+
             connection = device.connect(connectParams, this);
 
             if (connection == null) {

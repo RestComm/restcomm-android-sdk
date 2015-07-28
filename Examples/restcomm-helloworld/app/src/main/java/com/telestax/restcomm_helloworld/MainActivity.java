@@ -102,10 +102,17 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
                 Log.e(TAG, "Error: already connected");
                 return;
             }
-            HashMap<String, String> connectParams = new HashMap<String, String>();
+
+            HashMap<String, Object> connectParams = new HashMap<String, Object>();
             // CHANGEME: update the IP address to your Restcomm instance. Also, you can update the number
             // from '1235' to any Restcomm application you wish to reach
             connectParams.put("username", "sip:1235@54.225.212.193:5080");
+
+            // if you want to add custom SIP headers, please uncomment this
+            //HashMap<String, String> sipHeaders = new HashMap<>();
+            //sipHeaders.put("X-SIP-Header1", "Value1");
+            //connectParams.put("sip-headers", sipHeaders);
+
             connection = device.connect(connectParams, this);
             if (connection == null) {
                 Log.e(TAG, "Error: error connecting");

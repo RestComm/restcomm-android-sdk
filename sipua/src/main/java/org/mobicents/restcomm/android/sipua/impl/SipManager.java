@@ -320,13 +320,13 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	@Override
-	public void Call(String to, int localRtpPort)
+	public void Call(String to, int localRtpPort, HashMap<String, String> sipHeaders)
 			throws NotInitializedException {
 		if (!initialized)
 			throw new NotInitializedException("Sip Stack not initialized");
 		this.sipManagerState = SipManagerState.CALLING;
 		Invite inviteRequest = new Invite();
-		Request r = inviteRequest.MakeRequest(this, to, localRtpPort);
+		Request r = inviteRequest.MakeRequest(this, to, localRtpPort, sipHeaders);
 		try {
 			final ClientTransaction transaction = this.sipProvider
 					.getNewClientTransaction(r);
@@ -347,13 +347,13 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		direction = CallDirection.OUTGOING;
 	}
 
-	public void CallWebrtc(String to, String sdp)
+	public void CallWebrtc(String to, String sdp, HashMap<String, String> sipHeaders)
 			throws NotInitializedException {
 		if (!initialized)
 			throw new NotInitializedException("Sip Stack not initialized");
 		this.sipManagerState = SipManagerState.CALLING;
 		Invite inviteRequest = new Invite();
-		Request r = inviteRequest.MakeRequestWebrtc(this, to, sdp);
+		Request r = inviteRequest.MakeRequestWebrtc(this, to, sdp, sipHeaders);
 		try {
 			final ClientTransaction transaction = this.sipProvider
 					.getNewClientTransaction(r);
