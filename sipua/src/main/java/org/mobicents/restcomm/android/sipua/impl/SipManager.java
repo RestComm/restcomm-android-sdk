@@ -294,17 +294,20 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 		org.mobicents.restcomm.android.sipua.impl.sipmessages.Register registerRequest = new org.mobicents.restcomm.android.sipua.impl.sipmessages.Register();
 		try {
-			Request r = registerRequest.MakeRequest(this);
-			final ClientTransaction transaction = this.sipProvider
-					.getNewClientTransaction(r);
+			final Request r = registerRequest.MakeRequest(this);
+			final SipProvider sipProvider = this.sipProvider;
 			// Send the request statefully, through the client transaction.
 			Thread thread = new Thread() {
 				public void run() {
 					try {
+						final ClientTransaction transaction = sipProvider.getNewClientTransaction(r);
 						transaction.sendRequest();
 					} catch (SipException e) {
 						e.printStackTrace();
 					}
+					//catch (TransactionUnavailableException e) {
+					//	e.printStackTrace();
+					//}
 				}
 			};
 			thread.start();
@@ -313,10 +316,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			e.printStackTrace();
 		} catch (InvalidArgumentException e) {
 			e.printStackTrace();
-		} catch (TransactionUnavailableException e) {
-			e.printStackTrace();
 		}
-
 	}
 
 	@Override
@@ -326,24 +326,26 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			throw new NotInitializedException("Sip Stack not initialized");
 		this.sipManagerState = SipManagerState.CALLING;
 		Invite inviteRequest = new Invite();
-		Request r = inviteRequest.MakeRequest(this, to, localRtpPort, sipHeaders);
-		try {
-			final ClientTransaction transaction = this.sipProvider
-					.getNewClientTransaction(r);
-			currentClientTransaction = transaction;
+		final Request r = inviteRequest.MakeRequest(this, to, localRtpPort, sipHeaders);
+		//try {
+			final SipProvider sipProvider = this.sipProvider;
 			Thread thread = new Thread() {
 				public void run() {
 					try {
+						final ClientTransaction transaction = sipProvider.getNewClientTransaction(r);
+						// note: we might need to make this 'syncrhonized' to avoid race at some point
+						currentClientTransaction = transaction;
 						transaction.sendRequest();
 					} catch (SipException e) {
 						e.printStackTrace();
 					}
+					//catch (TransactionUnavailableException e) {
+					//	e.printStackTrace();
+					//}
 				}
 			};
 			thread.start();
-		} catch (TransactionUnavailableException e) {
-			e.printStackTrace();
-		}
+		//}
 		direction = CallDirection.OUTGOING;
 	}
 
@@ -353,24 +355,26 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			throw new NotInitializedException("Sip Stack not initialized");
 		this.sipManagerState = SipManagerState.CALLING;
 		Invite inviteRequest = new Invite();
-		Request r = inviteRequest.MakeRequestWebrtc(this, to, sdp, sipHeaders);
-		try {
-			final ClientTransaction transaction = this.sipProvider
-					.getNewClientTransaction(r);
-			currentClientTransaction = transaction;
+		final Request r = inviteRequest.MakeRequestWebrtc(this, to, sdp, sipHeaders);
+		//try {
+			final SipProvider sipProvider = this.sipProvider;
 			Thread thread = new Thread() {
 				public void run() {
 					try {
+						final ClientTransaction transaction = sipProvider.getNewClientTransaction(r);
+						// note: we might need to make this 'syncrhonized' to avoid race at some point
+						currentClientTransaction = transaction;
 						transaction.sendRequest();
 					} catch (SipException e) {
 						e.printStackTrace();
 					}
+					//catch (TransactionUnavailableException e) {
+					//	e.printStackTrace();
+					//}
 				}
 			};
 			thread.start();
-		} catch (TransactionUnavailableException e) {
-			e.printStackTrace();
-		}
+		//}
 		direction = CallDirection.OUTGOING;
 	}
 
@@ -381,22 +385,23 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			throw new NotInitializedException("Sip Stack not initialized");
 		Message inviteRequest = new Message();
 		try {
-			Request r = inviteRequest.MakeRequest(this, to, message);
-
-			final ClientTransaction transaction = this.sipProvider
-					.getNewClientTransaction(r);
+			final Request r = inviteRequest.MakeRequest(this, to, message);
+			final SipProvider sipProvider = this.sipProvider;
 			Thread thread = new Thread() {
 				public void run() {
 					try {
+						// note: we might need to make this 'syncrhonized' to avoid race at some point
+						ClientTransaction transaction = sipProvider.getNewClientTransaction(r);
 						transaction.sendRequest();
 					} catch (SipException e) {
 						e.printStackTrace();
 					}
+					//catch (TransactionUnavailableException e) {
+					//	e.printStackTrace();
+					//}
 				}
 			};
 			thread.start();
-		} catch (TransactionUnavailableException e) {
-			e.printStackTrace();
 		} catch (ParseException e1) {
 			e1.printStackTrace();
 		} catch (InvalidArgumentException e1) {
