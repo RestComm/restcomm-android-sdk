@@ -20,7 +20,6 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
-import android.widget.RelativeLayout;
 import java.util.HashMap;
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
@@ -28,10 +27,34 @@ import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.client.sdk.RCConnectionListener;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
 
+import org.webrtc.VideoRenderer;
+import org.webrtc.VideoRendererGui;
+import org.webrtc.VideoTrack;
+
 public class CallActivity extends Activity implements RCConnectionListener, View.OnClickListener,
         CompoundButton.OnCheckedChangeListener, AudioManager.OnAudioFocusChangeListener {
 
-    //private GLSurfaceView videoView;
+    private GLSurfaceView videoView;
+    private VideoRenderer.Callbacks localRender = null;
+    private VideoRenderer.Callbacks remoteRender = null;
+
+    // Local preview screen position before call is connected.
+    private static final int LOCAL_X_CONNECTING = 0;
+    private static final int LOCAL_Y_CONNECTING = 0;
+    private static final int LOCAL_WIDTH_CONNECTING = 100;
+    private static final int LOCAL_HEIGHT_CONNECTING = 100;
+    // Local preview screen position after call is connected.
+    private static final int LOCAL_X_CONNECTED = 72;
+    private static final int LOCAL_Y_CONNECTED = 2;
+    private static final int LOCAL_WIDTH_CONNECTED = 25;
+    private static final int LOCAL_HEIGHT_CONNECTED = 25;
+    // Remote video screen position
+    private static final int REMOTE_X = 0;
+    private static final int REMOTE_Y = 0;
+    private static final int REMOTE_WIDTH = 100;
+    private static final int REMOTE_HEIGHT = 100;
+    private VideoRendererGui.ScalingType scalingType;
+
     private RCConnection connection, pendingConnection;
     SharedPreferences prefs;
     private static final String TAG = "CallActivity";
@@ -104,32 +127,63 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
         // Get Intent parameters.
         final Intent intent = getIntent();
-        if (intent.getAction() == RCDevice.OUTGOING_CALL) {
-            connectParams.put("username", intent.getStringExtra(RCDevice.EXTRA_DID));
 
-            // if you want to add custom SIP headers, please uncomment this
-            //HashMap<String, String> sipHeaders = new HashMap<>();
-            //sipHeaders.put("X-SIP-Header1", "Value1");
-            //connectParams.put("sip-headers", sipHeaders);
-
-            connection = device.connect(connectParams, this);
-
-            if (connection == null) {
-                Log.e(TAG, "Error: error connecting");
-                return;
+        // Setup video stuff
+        scalingType = VideoRendererGui.ScalingType.SCALE_ASPECT_FILL;
+        videoView = (GLSurfaceView) findViewById(R.id.glview_call);
+        // Create video renderers.
+        VideoRendererGui.setView(videoView, new Runnable() {
+            @Override
+            public void run() {
+                //createPeerConnectionFactory();
+                videoContextReady(intent);
             }
-        }
-        if (intent.getAction() == RCDevice.INCOMING_CALL) {
-            int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
-            if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                ringingPlayer.start();
-            }
-            pendingConnection = device.incomingConnection;
-            pendingConnection.listenerReady(this);
+        });
+        remoteRender = VideoRendererGui.create(
+                REMOTE_X, REMOTE_Y,
+                REMOTE_WIDTH, REMOTE_HEIGHT, scalingType, false);
+        localRender = VideoRendererGui.create(
+                LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING,
+                LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING, scalingType, true);
 
-            // the number from which we got the call
-            String incomingCallDid =  intent.getStringExtra(RCDevice.EXTRA_DID);
-        }
+    }
+
+    private void videoContextReady(Intent intent)
+    {
+        final Intent finalIntent = intent;
+        final CallActivity finalActivity = this;
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+
+                if (finalIntent.getAction() == RCDevice.OUTGOING_CALL) {
+                    connectParams.put("username", finalIntent.getStringExtra(RCDevice.EXTRA_DID));
+
+                    // if you want to add custom SIP headers, please uncomment this
+                    //HashMap<String, String> sipHeaders = new HashMap<>();
+                    //sipHeaders.put("X-SIP-Header1", "Value1");
+                    //connectParams.put("sip-headers", sipHeaders);
+
+                    connection = device.connect(connectParams, finalActivity);
+
+                    if (connection == null) {
+                        Log.e(TAG, "Error: error connecting");
+                        return;
+                    }
+                }
+                if (finalIntent.getAction() == RCDevice.INCOMING_CALL) {
+                    int result = audioManager.requestAudioFocus(finalActivity, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+                    if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                        ringingPlayer.start();
+                    }
+                    pendingConnection = device.incomingConnection;
+                    pendingConnection.listenerReady(finalActivity);
+
+                    // the number from which we got the call
+                    String incomingCallDid = finalIntent.getStringExtra(RCDevice.EXTRA_DID);
+                }
+            }
+        });
     }
 
     // UI Events
@@ -288,19 +342,51 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         }
     }
 
-    // #WEBRTC-VIDEO TODO: uncomment when video is introduced
-    /*
-    public void onReceiveLocalVideo(RCConnection connection, GLSurfaceView videoView) {
-        if (videoView != null) {
+    public void onReceiveLocalVideo(RCConnection connection, VideoTrack videoTrack) {
+        if (videoTrack != null) {
             //show media on screen
+            /*
             videoView.setTag(TAG_LOCAL_VIDEO_VIEW);
             if (parentLayout.findViewWithTag(TAG_LOCAL_VIDEO_VIEW) != null) {
                 parentLayout.removeView(videoView);
             }
             parentLayout.addView(videoView, 0);
+            */
+            videoTrack.setEnabled(true);
+            videoTrack.addRenderer(new VideoRenderer(localRender));
         }
     }
-    */
+
+    public void onReceiveRemoteVideo(RCConnection connection, VideoTrack videoTrack) {
+        if (videoTrack != null) {
+            //show media on screen
+            /*
+            videoView.setTag(TAG_LOCAL_VIDEO_VIEW);
+            if (parentLayout.findViewWithTag(TAG_LOCAL_VIDEO_VIEW) != null) {
+                parentLayout.removeView(videoView);
+            }
+            parentLayout.addView(videoView, 0);
+            */
+            videoTrack.setEnabled(true);
+            videoTrack.addRenderer(new VideoRenderer(remoteRender));
+
+            VideoRendererGui.update(remoteRender,
+                    REMOTE_X, REMOTE_Y,
+                    REMOTE_WIDTH, REMOTE_HEIGHT, scalingType, false);
+            //if (iceConnected) {
+                VideoRendererGui.update(localRender,
+                        LOCAL_X_CONNECTED, LOCAL_Y_CONNECTED,
+                        LOCAL_WIDTH_CONNECTED, LOCAL_HEIGHT_CONNECTED,
+                        VideoRendererGui.ScalingType.SCALE_ASPECT_FIT, true);
+            /*
+            } else {
+                VideoRendererGui.update(localRender,
+                        LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING,
+                        LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING, scalingType, true);
+            }
+            */
+        }
+    }
 
     // Callbacks for auio focus change events
     public void onAudioFocusChange(int focusChange)

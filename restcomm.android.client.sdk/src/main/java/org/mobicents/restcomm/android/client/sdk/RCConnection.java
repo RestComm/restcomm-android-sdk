@@ -45,6 +45,7 @@ import org.webrtc.SessionDescription;
 import org.webrtc.StatsReport;
 import org.webrtc.VideoRenderer;
 import org.webrtc.VideoRendererGui;
+import org.webrtc.VideoTrack;
 
 /**
  *  RCConnection represents a call. An RCConnection can be either incoming or outgoing. RCConnections are not created by themselves but
@@ -582,7 +583,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
          */
 
         peerConnectionParameters = new PeerConnectionClient.PeerConnectionParameters(
-                false,
+                true,
                 false,
                 0,
                 0,
@@ -842,6 +843,37 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         disconnect();
     }
 
+    public void onLocalVideo(VideoTrack videoTrack)
+    {
+        final VideoTrack finalVideoTrack = videoTrack;
+        final RCConnection connection = this;
+
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                Log.e(TAG, "@@@@@ onLocalVideo");
+                listener.onReceiveLocalVideo(connection, finalVideoTrack);
+            }
+        };
+        mainHandler.post(myRunnable);
+    }
+
+    public void onRemoteVideo(VideoTrack videoTrack)
+    {
+        final VideoTrack finalVideoTrack = videoTrack;
+        final RCConnection connection = this;
+
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                Log.e(TAG, "@@@@@ onRemoteVideo");
+                listener.onReceiveRemoteVideo(connection, finalVideoTrack);
+            }
+        };
+        mainHandler.post(myRunnable);
+    }
 
     // -----Implementation of AppRTCClient.AppRTCSignalingEvents ---------------
     // All callbacks are invoked from websocket signaling looper thread and

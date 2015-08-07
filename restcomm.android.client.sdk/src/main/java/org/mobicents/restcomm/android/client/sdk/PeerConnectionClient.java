@@ -222,6 +222,16 @@ public class PeerConnectionClient {
          * Callback fired once peer connection error happened.
          */
         public void onPeerConnectionError(final String description);
+
+        /**
+         * Callback fired when local video is ready.
+         */
+        public void onLocalVideo(VideoTrack videoTrack);
+
+        /**
+         * Callback fired when remote video is ready.
+         */
+        public void onRemoteVideo(VideoTrack videoTrack);
     }
 
     private PeerConnectionClient() {
@@ -272,6 +282,7 @@ public class PeerConnectionClient {
         });
     }
 
+    // TODO: remove local & remoteRender after we are done, they shouldn't be needed
     public void createPeerConnection(
             final VideoRenderer.Callbacks localRender,
             final VideoRenderer.Callbacks remoteRender,
@@ -473,7 +484,14 @@ public class PeerConnectionClient {
                 reportError("Failed to open camera");
                 return;
             }
-            mediaStream.addTrack(createVideoTrack(videoCapturer));
+            //private VideoTrack createVideoTrack(VideoCapturerAndroid capturer) {
+            videoSource = factory.createVideoSource(videoCapturer, videoConstraints);
+            localVideoTrack = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
+            //localVideoTrack.setEnabled(renderVideo);
+            //localVideoTrack.addRenderer(new VideoRenderer(localRender));
+            mediaStream.addTrack(localVideoTrack);
+
+            events.onLocalVideo(localVideoTrack);
         }
 
         mediaStream.addTrack(factory.createAudioTrack(
@@ -700,6 +718,7 @@ public class PeerConnectionClient {
         });
     }
 
+    /*
     private VideoTrack createVideoTrack(VideoCapturerAndroid capturer) {
         videoSource = factory.createVideoSource(capturer, videoConstraints);
 
@@ -708,6 +727,7 @@ public class PeerConnectionClient {
         localVideoTrack.addRenderer(new VideoRenderer(localRender));
         return localVideoTrack;
     }
+    */
 
     private static String setStartBitrate(String codec, boolean isVideoCodec,
                                           String sdpDescription, int bitrateKbps) {
@@ -924,8 +944,10 @@ public class PeerConnectionClient {
                     }
                     if (stream.videoTracks.size() == 1) {
                         remoteVideoTrack = stream.videoTracks.get(0);
-                        remoteVideoTrack.setEnabled(renderVideo);
-                        remoteVideoTrack.addRenderer(new VideoRenderer(remoteRender));
+                        //remoteVideoTrack.setEnabled(renderVideo);
+                        //remoteVideoTrack.addRenderer(new VideoRenderer(remoteRender));
+                        events.onRemoteVideo(remoteVideoTrack);
+
                     }
                 }
             });

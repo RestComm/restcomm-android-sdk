@@ -22,10 +22,9 @@
 
 package org.mobicents.restcomm.android.client.sdk;
 
-import android.opengl.GLSurfaceView;
-
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
+import org.webrtc.VideoTrack;
 
 public interface RCConnectionListener {
     /**
@@ -69,17 +68,15 @@ public interface RCConnectionListener {
     /**
      * Connection just disconnected with an error
      * @param connection Connection
-     * @param videoView View hosting the local video
+     * @param videoTrack View hosting the local video
      */
-    // #WEBRTC-VIDEO TODO uncomment
-    //public void onReceiveLocalVideo(RCConnection connection, GLSurfaceView videoView);
+    public void onReceiveLocalVideo(RCConnection connection, VideoTrack videoTrack);
 
     /**
      * Connection just disconnected with an error
      * @param connection Connection
-     * @param videoView View hosting the remote video
+     * @param videoTrack Video track hosting the remote video
      */
-    // #WEBRTC-VIDEO TODO uncomment
-    // public void onReceiveRemoteVideo(RCConnection connection, GLSurfaceView videoView);
+    public void onReceiveRemoteVideo(RCConnection connection, VideoTrack videoTrack);
 }
 
