@@ -26,6 +26,7 @@ public class SignalingParameters {
     public SessionDescription answerSdp;
     public List<IceCandidate> iceCandidates;
     public HashMap<String, String> sipHeaders;
+    public boolean videoEnabled;
     //public List<IceCandidate> answerIceCandidates;
 
     public SignalingParameters(
@@ -33,7 +34,7 @@ public class SignalingParameters {
             boolean initiator, String clientId,
             String sipUrl, String wssPostUrl,
             SessionDescription offerSdp, List<IceCandidate> iceCandidates,
-            HashMap<String, String> sipHeaders) {
+            HashMap<String, String> sipHeaders, boolean videoEnabled) {
         this.iceServers = iceServers;
         this.initiator = initiator;
         this.clientId = clientId;
@@ -43,6 +44,7 @@ public class SignalingParameters {
         this.answerSdp = null;
         this.iceCandidates = iceCandidates;
         this.sipHeaders = sipHeaders;
+        this.videoEnabled = videoEnabled;
         //this.answerIceCandidates = null;
     }
     public SignalingParameters() {
@@ -55,25 +57,52 @@ public class SignalingParameters {
         this.answerSdp = null;
         this.iceCandidates = null;
         this.sipHeaders = null;
+        this.videoEnabled = false;
         //this.answerIceCandidates = null;
     }
 
     // combines offerSdp with iceCandidates and comes up with the full SDP
     public String generateSipSdp(SessionDescription offerSdp, List<IceCandidate> iceCandidates) {
         // concatenate all candidates in one String
-        String candidates = "";
+        String audioCandidates = "";
+        String videoCandidates = "";
+        boolean isVideo = false;
         for (IceCandidate candidate : iceCandidates) {
-            candidates += "a=" + candidate.sdp + "\r\n";
+            //Log.e(TAG, "@@@@ candidate.sdp: " + candidate.sdp);
+            if (candidate.sdpMid.equals("audio")) {
+                audioCandidates += "a=" + candidate.sdp + "\r\n";
+            }
+            if (candidate.sdpMid.equals("video")) {
+                videoCandidates += "a=" + candidate.sdp + "\r\n";
+                isVideo = true;
+            }
         }
-
-        Log.e(TAG, "@@@@ Before replace: " + offerSdp.description);
+        //Log.e(TAG, "@@@@ audio candidates: " + audioCandidates);
+        //Log.e(TAG, "@@@@ video candidates: " + videoCandidates);
+        //Log.e(TAG, "@@@@ Before replace: " + offerSdp.description);
+        // first, audio
         // place the candidates after the 'a=rtcp:' string; use replace all because
         // we are supporting both audio and video so more than one replacements will be made
-        String resultString = offerSdp.description.replaceAll("(a=rtcp:.*?\\r\\n)", "$1" + candidates);
+        //String resultString = offerSdp.description.replaceFirst("(a=rtcp:.*?\\r\\n)", "$1" + audioCandidates);
 
-        Log.e(TAG, "@@@@ After replace: " + resultString);
+        Matcher matcher = Pattern.compile("(a=rtcp:.*?\\r\\n)").matcher(offerSdp.description);
+        int index = 0;
+        StringBuffer stringBuffer = new StringBuffer();
+        while (matcher.find()) {
+            if (index == 0) {
+                // audio
+                matcher.appendReplacement(stringBuffer, "$1" + audioCandidates);
+            } else {
+                // video
+                matcher.appendReplacement(stringBuffer, "$1" + videoCandidates);
+            }
+            index++;
+        }
+        matcher.appendTail(stringBuffer);
 
-        return resultString;
+        Log.e(TAG, "@@@@ After replace: " + stringBuffer.toString());
+
+        return stringBuffer.toString();
     }
 
     // gets a full SDP and a. populates .iceCandidates with individual candidates, and
@@ -85,9 +114,20 @@ public class SignalingParameters {
         // first parse the candidates
         // TODO: for video to work properly we need to do some more work to split the full SDP and differentiate candidates
         // based on media type (i.e. audio vs. video)
-        Matcher matcher = Pattern.compile("a=(candidate.*?)\\r\\n").matcher(sdp.description);
+        //Matcher matcher = Pattern.compile("a=(candidate.*?)\\r\\n").matcher(sdp.description);
+        Matcher matcher = Pattern.compile("m=audio|m=video|a=(candidate.*)\\r\\n").matcher(sdp.description);
+        String collectionState = "none";
         while (matcher.find()) {
-            IceCandidate iceCandidate = new IceCandidate("audio", 0, matcher.group(1));
+            if (matcher.group(0).equals("m=audio")) {
+                collectionState = "audio";
+                continue;
+            }
+            if (matcher.group(0).equals("m=video")) {
+                collectionState = "video";
+                continue;
+            }
+
+            IceCandidate iceCandidate = new IceCandidate(collectionState, 0, matcher.group(1));
             params.iceCandidates.add(iceCandidate);
         }
 

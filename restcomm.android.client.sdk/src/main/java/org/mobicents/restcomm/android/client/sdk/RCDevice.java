@@ -114,6 +114,7 @@ public class RCDevice implements SipUADeviceListener {
     public static String INCOMING_CALL = "ACTION_INCOMING_CALL";
     public static String INCOMING_MESSAGE = "ACTION_INCOMING_MESSAGE";
     public static String EXTRA_DID = "com.telestax.restcomm_messenger.DID";
+    public static String EXTRA_VIDEO_ENABLED = "com.telestax.restcomm_messenger.VIDEO_ENABLED";
     public static String EXTRA_SDP = "com.telestax.restcomm_messenger.SDP";
     //public static String EXTRA_DEVICE = "com.telestax.restcomm.android.client.sdk.extra-device";
     //public static String EXTRA_CONNECTION = "com.telestax.restcomm.android.client.sdk.extra-connection";
@@ -203,6 +204,7 @@ public class RCDevice implements SipUADeviceListener {
     public RCConnection connect(Map<String, Object> parameters, RCConnectionListener listener) {
         Activity activity = (Activity) listener;
         if (haveConnectivity()) {
+            Boolean enableVideo = (Boolean)parameters.get("video-enabled");
             RCConnection connection = new RCConnection(listener);
             connection.incoming = false;
             connection.state = RCConnection.ConnectionState.PENDING;
@@ -213,7 +215,7 @@ public class RCDevice implements SipUADeviceListener {
             if (parameters.containsKey("sip-headers")) {
                 sipHeaders = (HashMap<String, String>)parameters.get("sip-headers");
             }
-            connection.setupWebrtcAndCall((String)parameters.get("username"), sipHeaders);
+            connection.setupWebrtcAndCall((String)parameters.get("username"), sipHeaders, enableVideo.booleanValue());
 
             return connection;
         } else {

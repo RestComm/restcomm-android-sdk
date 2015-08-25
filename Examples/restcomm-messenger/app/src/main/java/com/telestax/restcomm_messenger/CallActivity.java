@@ -59,6 +59,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     SharedPreferences prefs;
     private static final String TAG = "CallActivity";
     private HashMap<String, Object> connectParams = new HashMap<String, Object>();
+    private HashMap<String, Object> acceptParams = new HashMap<String, Object>();
     private RCDevice device;
     // #WEBRTC-VIDEO TODO: uncomment when video is introduced
     //private RelativeLayout parentLayout;
@@ -69,7 +70,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
     CheckBox cbMuted;
     Button btnHangup;
-    Button btnAnswer;
+    Button btnAnswer, btnAnswerAudio;
     Button btnDecline;
     Button btnCancel;
 
@@ -96,6 +97,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         btnHangup.setOnClickListener(this);
         btnAnswer = (Button)findViewById(R.id.button_answer);
         btnAnswer.setOnClickListener(this);
+        btnAnswerAudio = (Button)findViewById(R.id.button_answer_audio);
+        btnAnswerAudio.setOnClickListener(this);
         btnDecline = (Button)findViewById(R.id.button_decline);
         btnDecline.setOnClickListener(this);
         btnCancel = (Button)findViewById(R.id.button_cancel);
@@ -145,7 +148,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         localRender = VideoRendererGui.create(
                 LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING,
                 LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING, scalingType, true);
-
     }
 
     private void videoContextReady(Intent intent)
@@ -158,6 +160,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
                 if (finalIntent.getAction() == RCDevice.OUTGOING_CALL) {
                     connectParams.put("username", finalIntent.getStringExtra(RCDevice.EXTRA_DID));
+                    connectParams.put("video-enabled", finalIntent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
 
                     // if you want to add custom SIP headers, please uncomment this
                     //HashMap<String, String> sipHeaders = new HashMap<>();
@@ -181,6 +184,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
                     // the number from which we got the call
                     String incomingCallDid = finalIntent.getStringExtra(RCDevice.EXTRA_DID);
+                    // notice that this is not used yet; the sdk doesn't tell us if the incoming call is video/audio (TODO)
+                    acceptParams.put("video-enabled", new Boolean(finalIntent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false)));
                 }
             }
         });
@@ -200,7 +205,20 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             }
         } else if (view.getId() == R.id.button_answer) {
             if (pendingConnection != null) {
-                pendingConnection.accept();
+                HashMap<String, Object> params = new HashMap<String, Object>();
+                params.put("video-enabled", new Boolean(true));
+                pendingConnection.accept(params);
+                connection = this.pendingConnection;
+                pendingConnection = null;
+                ringingPlayer.pause();
+                // Abandon audio focus when playback complete
+                audioManager.abandonAudioFocus(this);
+            }
+        } else if (view.getId() == R.id.button_answer_audio) {
+            if (pendingConnection != null) {
+                HashMap<String, Object> params = new HashMap<String, Object>();
+                params.put("video-enabled", new Boolean(false));
+                pendingConnection.accept(params);
                 connection = this.pendingConnection;
                 pendingConnection = null;
                 ringingPlayer.pause();

@@ -8,11 +8,9 @@
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Dial"
+        android:text="Video Call"
         android:id="@+id/button_dial"
         android:layout_below="@+id/text_uri"
-        android:layout_alignRight="@+id/text_uri"
-        android:layout_alignEnd="@+id/text_uri"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true" />
 <!--
@@ -104,7 +102,7 @@
         android:layout_marginTop="25dp"
         android:layout_toStartOf="@+id/button_send"
         android:layout_alignRight="@+id/text_wall"
-        android:layout_alignEnd="@+id/text_wall" />
+        android:layout_alignEnd="@+id/text_uri" />
 
     <EditText
         android:layout_width="wrap_content"
@@ -119,19 +117,29 @@
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_marginTop="20dp"
-        android:layout_alignRight="@+id/button_dial"
-        android:layout_alignEnd="@+id/button_dial" />
-<!--
-    <CheckBox
+        android:layout_alignRight="@+id/text_uri"
+        android:layout_alignEnd="@+id/text_uri" />
+
+    <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Mute"
-        android:id="@+id/checkbox_muted"
-        android:layout_below="@+id/button_register"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"
-        android:layout_marginTop="17dp" />
-        -->
+        android:text="Audio Call"
+        android:id="@+id/button_dial_audio"
+        android:layout_above="@+id/text_wall"
+        android:layout_alignRight="@+id/text_wall"
+        android:layout_alignEnd="@+id/text_wall" />
+
+    <!--
+        <CheckBox
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mute"
+            android:id="@+id/checkbox_muted"
+            android:layout_below="@+id/button_register"
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentStart="true"
+            android:layout_marginTop="17dp" />
+            -->
 <!--
     <android.opengl.GLSurfaceView
         android:id="@+id/glview_call"

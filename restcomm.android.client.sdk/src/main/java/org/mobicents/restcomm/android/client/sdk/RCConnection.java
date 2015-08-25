@@ -193,7 +193,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     public void listenerReady(RCConnectionListener listener)
     {
         this.listener = listener;
-        initializeWebrtc();
+        //initializeWebrtc(true);
     }
 
     // 'Copy' constructor
@@ -237,17 +237,19 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     /**
      * Accept the incoming connection
      */
-    public void accept()
+    public void accept(Map<String, Object> parameters)
     {
         if (haveConnectivity()) {
-          //  DeviceImpl.GetInstance().Accept(
+            //  DeviceImpl.GetInstance().Accept(
+            Boolean enableVideo = (Boolean)parameters.get("video-enabled");
+            initializeWebrtc(enableVideo.booleanValue());
+
             LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
             iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
-            this.signalingParameters = new SignalingParameters(iceServers, false, "", "", "", null, null, null);
+            this.signalingParameters = new SignalingParameters(iceServers, false, "", "", "", null, null, null, enableVideo.booleanValue());
             SignalingParameters params = SignalingParameters.extractCandidates(new SessionDescription(SessionDescription.Type.OFFER, incomingCallSdp));
             this.signalingParameters.offerSdp = params.offerSdp;
             this.signalingParameters.iceCandidates = params.iceCandidates;
-
             startCall(this.signalingParameters);
         }
     }
@@ -444,19 +446,19 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     }
 
     // -- WebRTC stuff:
-    public void setupWebrtcAndCall(String sipUri, HashMap<String, String> sipHeaders)
+    public void setupWebrtcAndCall(String sipUri, HashMap<String, String> sipHeaders, boolean videoEnabled)
     {
-        initializeWebrtc();
+        initializeWebrtc(videoEnabled);
 
         LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
         iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
-        this.signalingParameters = new SignalingParameters(iceServers, true, "", sipUri, "", null, null, sipHeaders);
+        this.signalingParameters = new SignalingParameters(iceServers, true, "", sipUri, "", null, null, sipHeaders, videoEnabled);
 
         startCall(this.signalingParameters);
     }
 
     // initialize webrtc facilities for the call
-    void initializeWebrtc()
+    void initializeWebrtc(boolean videoEnabled)
     {
         Log.e(TAG, "@@@@@ initializeWebrtc  ");
         Context context = RCClient.getInstance().context;
@@ -583,7 +585,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
          */
 
         peerConnectionParameters = new PeerConnectionClient.PeerConnectionParameters(
-                true,
+                videoEnabled,
                 false,
                 0,
                 0,

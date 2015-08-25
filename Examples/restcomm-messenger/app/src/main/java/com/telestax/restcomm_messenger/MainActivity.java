@@ -42,7 +42,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
 
     // UI elements
     Button btnRegister;
-    Button btnDial;
+    Button btnDial, btnDialAudio;
     Button btnSend;
     EditText txtUri;
     EditText txtMessage;
@@ -61,6 +61,8 @@ public class MainActivity extends Activity implements RCDeviceListener,
         btnRegister.setOnClickListener(this);
         btnDial = (Button)findViewById(R.id.button_dial);
         btnDial.setOnClickListener(this);
+        btnDialAudio= (Button)findViewById(R.id.button_dial_audio);
+        btnDialAudio.setOnClickListener(this);
         btnSend = (Button)findViewById(R.id.button_send);
         btnSend.setOnClickListener(this);
         txtUri = (EditText)findViewById(R.id.text_uri);
@@ -117,12 +119,18 @@ public class MainActivity extends Activity implements RCDeviceListener,
 
     // UI Events
     public void onClick(View view) {
-        if (view.getId() == R.id.button_dial) {
+        if (view.getId() == R.id.button_dial || view.getId() == R.id.button_dial_audio) {
             WifiManager wifi = (WifiManager) getSystemService(WIFI_SERVICE);
             if (wifi.isWifiEnabled()) {
                 Intent intent = new Intent(this, CallActivity.class);
                 intent.setAction(RCDevice.OUTGOING_CALL);
                 intent.putExtra(RCDevice.EXTRA_DID, txtUri.getText().toString());
+                if (view.getId() == R.id.button_dial_audio) {
+                    intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, false);
+                }
+                else {
+                    intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, true);
+                }
                 startActivityForResult(intent, CONNECTION_REQUEST);
             }
             else {
