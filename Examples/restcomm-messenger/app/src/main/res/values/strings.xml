@@ -3,9 +3,10 @@
 
     <string name="messenger">Messenger</string>
     <string name="action_settings">Settings</string>
-    <string name="title_activity_call">CallActivity</string>
+    <string name="title_activity_call">Call</string>
 
     <string name="hello_world">Hello world!</string>
+    <string name="title_activity_message">Messages</string>
 
 <!--
     <string name="settings_name" translatable="no">AppRTC Settings</string>

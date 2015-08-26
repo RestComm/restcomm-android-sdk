@@ -112,7 +112,10 @@ public class RCDevice implements SipUADeviceListener {
     private static final String TAG = "RCDevice";
     public static String OUTGOING_CALL = "ACTION_OUTGOING_CALL";
     public static String INCOMING_CALL = "ACTION_INCOMING_CALL";
+    public static String OPEN_MESSAGE_SCREEN = "ACTION_OPEN_MESSAGE_SCREEN";
     public static String INCOMING_MESSAGE = "ACTION_INCOMING_MESSAGE";
+    public static String INCOMING_MESSAGE_TEXT = "INCOMING_MESSAGE_TEXT";
+    public static String INCOMING_MESSAGE_PARAMS = "INCOMING_MESSAGE_PARAMS";
     public static String EXTRA_DID = "com.telestax.restcomm_messenger.DID";
     public static String EXTRA_VIDEO_ENABLED = "com.telestax.restcomm_messenger.VIDEO_ENABLED";
     public static String EXTRA_SDP = "com.telestax.restcomm_messenger.SDP";
@@ -413,7 +416,8 @@ public class RCDevice implements SipUADeviceListener {
     public void onSipUAMessageArrived(SipEvent event) {
         HashMap<String, String> parameters = new HashMap<String, String>();
         // filter out SIP URI stuff and leave just the name
-        String from = event.from.replaceAll("^<sip:", "").replaceAll("@.*$", "");
+        String from = event.from.replaceAll("^<", "").replaceAll(">$", "");
+        //String from = event.from.replaceAll("^<sip:", "").replaceAll("@.*$", "");
         parameters.put("username", from);
 
         final String finalContent = new String(event.content);
@@ -427,8 +431,8 @@ public class RCDevice implements SipUADeviceListener {
                 try {
                     Intent dataIntent = new Intent();
                     dataIntent.setAction(INCOMING_MESSAGE);
-                    dataIntent.putExtra("MESSAGE_PARMS", finalParameters);
-                    dataIntent.putExtra("MESSAGE", finalContent);
+                    dataIntent.putExtra(INCOMING_MESSAGE_PARAMS, finalParameters);
+                    dataIntent.putExtra(INCOMING_MESSAGE_TEXT, finalContent);
                     pendingMessageIntent.send(RCClient.getInstance().context, 0, dataIntent);
                 } catch (PendingIntent.CanceledException e) {
                     e.printStackTrace();

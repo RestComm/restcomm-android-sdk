@@ -10,6 +10,7 @@ public class SettingsActivity extends PreferenceActivity {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        getActionBar().setDisplayHomeAsUpEnabled(true);
 
         addPreferencesFromResource(com.telestax.restcomm_messenger.R.xml.preferences);
     }

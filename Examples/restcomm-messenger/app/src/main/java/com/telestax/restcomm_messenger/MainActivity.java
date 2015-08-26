@@ -2,12 +2,10 @@ package com.telestax.restcomm_messenger;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
-import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
@@ -20,33 +18,26 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.view.View.OnClickListener;
 import org.mobicents.restcomm.android.client.sdk.RCClient;
-import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
 import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
 import org.mobicents.restcomm.android.client.sdk.RCPresenceEvent;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 
 
 public class MainActivity extends Activity implements RCDeviceListener,
         OnClickListener, SharedPreferences.OnSharedPreferenceChangeListener,
-        MediaPlayer.OnPreparedListener, AudioManager.OnAudioFocusChangeListener {
+        MediaPlayer.OnPreparedListener {
 
     SharedPreferences prefs;
     private RCDevice device;
     private HashMap<String, String> params;
     private static final String TAG = "MainActivity";
-    MediaPlayer messagePlayer;
-    AudioManager audioManager;
 
     // UI elements
-    Button btnRegister;
+    Button btnRegister, btnMessage;
     Button btnDial, btnDialAudio;
-    Button btnSend;
     EditText txtUri;
-    EditText txtMessage;
-    EditText txtWall;
 
     // #webrtc
     private static final int CONNECTION_REQUEST = 1;
@@ -63,11 +54,9 @@ public class MainActivity extends Activity implements RCDeviceListener,
         btnDial.setOnClickListener(this);
         btnDialAudio= (Button)findViewById(R.id.button_dial_audio);
         btnDialAudio.setOnClickListener(this);
-        btnSend = (Button)findViewById(R.id.button_send);
-        btnSend.setOnClickListener(this);
         txtUri = (EditText)findViewById(R.id.text_uri);
-        txtMessage = (EditText)findViewById(R.id.text_message);
-        txtWall = (EditText)findViewById(R.id.text_wall);
+        btnMessage = (Button)findViewById(R.id.button_message);
+        btnMessage.setOnClickListener(this);
 
         PreferenceManager.setDefaultValues(this, "preferences.xml", MODE_PRIVATE, R.xml.preferences, false);
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -85,7 +74,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
         // TODO: we don't support capability tokens yet so let's use an empty string
         device = RCClient.createDevice("", this);
         device.setPendingIntents(new Intent(getApplicationContext(), CallActivity.class),
-                new Intent(getApplicationContext(), MainActivity.class));
+                new Intent(getApplicationContext(), MessageActivity.class));
 
         params = new HashMap<String, String>();
 
@@ -94,14 +83,6 @@ public class MainActivity extends Activity implements RCDeviceListener,
 
         //txtUri.setText("sip:1235@54.225.212.193:5080");
         txtUri.setText("sip:alice@192.168.2.32:5080");
-        txtMessage.setText("Hello there!");
-
-        // volume control should be by default 'music' which will control the ringing sounds and 'voice call' when within a call
-        setVolumeControlStream(AudioManager.STREAM_MUSIC);
-        messagePlayer = MediaPlayer.create(getApplicationContext(), R.raw.message);
-        messagePlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-
-        audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
     }
 
     @Override
@@ -140,18 +121,11 @@ public class MainActivity extends Activity implements RCDeviceListener,
         else if (view.getId() == R.id.button_register) {
             device.updateParams(params);
         }
-        else if (view.getId() == R.id.button_send) {
-            HashMap<String, String> sendParams = new HashMap<String, String>();
-            sendParams.put("username", txtUri.getText().toString());
-            if (device.sendMessage(txtMessage.getText().toString(), sendParams)) {
-                // also output the message in the wall
-                txtWall.append("Me: " + txtMessage.getText().toString() + "\n");
-
-                int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
-                if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                    messagePlayer.start();
-                }
-            }
+        else if (view.getId() == R.id.button_message) {
+            Intent intent = new Intent(this, MessageActivity.class);
+            intent.setAction(RCDevice.OPEN_MESSAGE_SCREEN);
+            intent.putExtra(RCDevice.EXTRA_DID, txtUri.getText().toString());
+            startActivity(intent);
         }
     }
 
@@ -276,6 +250,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
 
         initializeSipFromPreferences();
 
+        /*
         // If reason for resume is that we got an intent designating either an incoming call or message
         if (intent.getAction() == RCDevice.INCOMING_CALL) {
             ArrayList<RCDevice> list = RCClient.getInstance().listDevices();
@@ -285,31 +260,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
                 handleIncomingConnection(device, pendingConnection);
             }
         }
-        if (intent.getAction() == RCDevice.INCOMING_MESSAGE) {
-            ArrayList<RCDevice> list = RCClient.getInstance().listDevices();
-            if (list.size() != 0) {
-                RCDevice device = list.get(0);
-                RCConnection pendingConnection = device.getPendingConnection();
-                HashMap<String, String> parms = (HashMap)intent.getSerializableExtra("MESSAGE_PARMS");
-                String message = (String)intent.getSerializableExtra("MESSAGE");
-                handleIncomingMessage(device, message, parms);
-            }
-        }
-    }
-
-    public void handleIncomingConnection(RCDevice device, RCConnection connection)
-    {
-    }
-
-    public void handleIncomingMessage(RCDevice device, String message, HashMap<String, String> parameters)
-    {
-        Log.i(TAG, "Message arrived: " + message);
-        int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
-        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            messagePlayer.start();
-        }
-        // put new text on the bottom
-        txtWall.append(parameters.get("username") + ": " + message + "\n");
+        */
     }
 
     @Override
@@ -329,27 +280,5 @@ public class MainActivity extends Activity implements RCDeviceListener,
         super.onDestroy();
         // The activity is about to be destroyed.
         Log.i(TAG, "%% onDestroy");
-    }
-
-    // Callbacks for audio focus change events
-    public void onAudioFocusChange(int focusChange)
-    {
-        Log.i(TAG, "onAudioFocusChange: " + focusChange);
-		/*
-		if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
-			// Pause playback
-		}
-		else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
-			// Resume playback or raise it back to normal if we were ducked
-		}
-		else if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
-			//am.unregisterMediaButtonEventReceiver(RemoteControlReceiver);
-			audio.abandonAudioFocus(this);
-			// Stop playback
-		}
-		else if (focusChange == AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
-            // Lower the volume
-        }
-		*/
     }
 }

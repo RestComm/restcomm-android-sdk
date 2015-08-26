@@ -30,15 +30,22 @@
         </activity>
         <activity
             android:name=".SettingsActivity"
-            android:label="@string/title_activity_settings" >
+            android:label="@string/title_activity_settings"
+            android:parentActivityName="com.telestax.restcomm_messenger.MainActivity" >
         </activity>
         <activity
             android:name=".CallActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             android:label="@string/title_activity_call"
-            android:screenOrientation="portrait"
-            android:configChanges="orientation|screenSize|keyboardHidden" >
+            android:parentActivityName="com.telestax.restcomm_messenger.MainActivity"
+            android:screenOrientation="portrait" >
         </activity>
-
+        <activity
+            android:name=".MessageActivity"
+            android:label="@string/title_activity_message"
+            android:parentActivityName="com.telestax.restcomm_messenger.MainActivity"
+            android:launchMode="singleTop">
+        </activity>
     </application>
 
 </manifest>
