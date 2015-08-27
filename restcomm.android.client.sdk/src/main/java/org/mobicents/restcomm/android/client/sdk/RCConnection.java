@@ -24,6 +24,8 @@ package org.mobicents.restcomm.android.client.sdk;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.net.wifi.WifiManager;
 import android.opengl.GLSurfaceView;
 import android.os.Handler;
@@ -163,6 +165,11 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     //private boolean callControlFragmentVisible = true;
     private long callStartedTimeMs = 0;
     private GLSurfaceView videoView;
+    /*
+    MediaPlayer ringingPlayer;
+    MediaPlayer callingPlayer;
+    AudioManager soundsManager;
+    */
 
     // List of mandatory application permissions.
     private static final String[] MANDATORY_PERMISSIONS = {
@@ -182,6 +189,21 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     public RCConnection(RCConnectionListener connectionListener)
     {
         this.listener = connectionListener;
+
+        /*
+        soundsManager = (AudioManager)RCClient.getInstance().context.getSystemService(Context.AUDIO_SERVICE);
+        // volume control should be by default 'music' which will control the ringing sounds and 'voice call' when within a call
+        //setVolumeControlStream(AudioManager.STREAM_MUSIC);
+        // Setup Media (notice that I'm not preparing the media as create does that implicitly plus
+        // I'm not ever stopping a player -instead I'm pausing so no additional preparation is needed
+        // there either. We might need to revisit this at some point though
+        ringingPlayer = MediaPlayer.create(RCClient.getInstance().context, R.raw.ringing);
+        ringingPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        ringingPlayer.setLooping(true);
+        callingPlayer = MediaPlayer.create(RCClient.getInstance().context, R.raw.calling);
+        callingPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        callingPlayer.setLooping(true);
+        */
     }
 
     // could not use the previous constructor with connectionListener = null, hence created this:
@@ -263,7 +285,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     }
 
     /**
-     * Ignore incoming connection
+     * Ignore incoming connection (<b>Not Implemented yet</b>)
      */
     public void ignore()
     {

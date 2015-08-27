@@ -63,9 +63,9 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     private RCDevice device;
     // #WEBRTC-VIDEO TODO: uncomment when video is introduced
     //private RelativeLayout parentLayout;
-    MediaPlayer ringingPlayer;
-    MediaPlayer callingPlayer;
-    AudioManager audioManager;
+    //MediaPlayer ringingPlayer;
+    //MediaPlayer callingPlayer;
+    //AudioManager audioManager;
     final String TAG_LOCAL_VIDEO_VIEW = "local-video-view";
 
     CheckBox cbMuted;
@@ -108,6 +108,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         // #WEBRTC-VIDEO TODO: uncomment when video is introduced
         //parentLayout = (RelativeLayout) findViewById(R.id.layout_video_call);
 
+        /*
         audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
         // volume control should be by default 'music' which will control the ringing sounds and 'voice call' when within a call
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
@@ -120,6 +121,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         callingPlayer = MediaPlayer.create(getApplicationContext(), R.raw.calling);
         callingPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         callingPlayer.setLooping(true);
+        */
 
         cbMuted.setEnabled(false);
 
@@ -175,10 +177,12 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                     }
                 }
                 if (finalIntent.getAction() == RCDevice.INCOMING_CALL) {
+                    /*
                     int result = audioManager.requestAudioFocus(finalActivity, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
                     if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
                         ringingPlayer.start();
                     }
+                    */
                     pendingConnection = device.incomingConnection;
                     pendingConnection.listenerReady(finalActivity);
 
@@ -210,9 +214,11 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 pendingConnection.accept(params);
                 connection = this.pendingConnection;
                 pendingConnection = null;
+                /*
                 ringingPlayer.pause();
                 // Abandon audio focus when playback complete
                 audioManager.abandonAudioFocus(this);
+                */
             }
         } else if (view.getId() == R.id.button_answer_audio) {
             if (pendingConnection != null) {
@@ -221,17 +227,21 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 pendingConnection.accept(params);
                 connection = this.pendingConnection;
                 pendingConnection = null;
+                /*
                 ringingPlayer.pause();
                 // Abandon audio focus when playback complete
                 audioManager.abandonAudioFocus(this);
+                */
             }
         } else if (view.getId() == R.id.button_decline) {
             if (pendingConnection != null) {
                 pendingConnection.reject();
                 pendingConnection = null;
+                /*
                 ringingPlayer.pause();
                 // Abandon audio focus when playback complete
                 audioManager.abandonAudioFocus(this);
+                */
                 finish();
             }
         } else if (view.getId() == R.id.button_cancel) {
@@ -242,9 +252,11 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 connection.disconnect();
                 connection = null;
                 pendingConnection = null;
+                /*
                 callingPlayer.pause();
                 // Abandon audio focus when playback complete
                 audioManager.abandonAudioFocus(this);
+                */
                 finish();
             }
         }
@@ -281,20 +293,24 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     public void onConnecting(RCConnection connection)
     {
         Log.i(TAG, "RCConnection connecting");
+        /*
         int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
         if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
             callingPlayer.start();
         }
+        */
     }
 
     public void onConnected(RCConnection connection) {
         Log.i(TAG, "RCConnection connected");
         cbMuted.setEnabled(true);
+        /*
         if (!connection.isIncoming()) {
             callingPlayer.pause();
             // Abandon audio focus when playback complete
             audioManager.abandonAudioFocus(this);
         }
+        */
         setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
     }
 
@@ -311,6 +327,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
     public void onCancelled(RCConnection connection) {
         Log.i(TAG, "RCConnection cancelled");
+        /*
         if (connection.isIncoming() == true) {
             ringingPlayer.pause();
         }
@@ -319,6 +336,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         }
         // Abandon audio focus when playback complete
         audioManager.abandonAudioFocus(this);
+        */
 
         this.connection = null;
         pendingConnection = null;
@@ -328,10 +346,11 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
     public void onDeclined(RCConnection connection) {
         Log.i(TAG, "RCConnection declined");
+        /*
         callingPlayer.pause();
         // Abandon audio focus when playback complete
         audioManager.abandonAudioFocus(this);
-
+        */
 
         this.connection = null;
         pendingConnection = null;

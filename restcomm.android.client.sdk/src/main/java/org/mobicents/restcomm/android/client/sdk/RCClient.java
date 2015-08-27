@@ -40,6 +40,8 @@ import android.util.Log;
  */
 public class RCClient {
     private static RCClient instance = null;
+    private static boolean initialized = false;
+
     public enum ErrorCodes {
         GENERIC_ERROR,
         CONNECTION_DECLINED,
@@ -67,7 +69,7 @@ public class RCClient {
 
 
     protected RCClient() {
-        // Exists only to defeat instantiation.
+        // Exists to defeat instantiation.
     }
 
     public static RCClient getInstance()
@@ -102,16 +104,20 @@ public class RCClient {
      */
     public static void shutdown()
     {
-
+        RCDevice device = list.get(0);
+        // remove the reference so that RCDevice instance is removed
+        list.clear();
+        device.shutdown();
+        initialized = false;
     }
 
     /**
-     * Retrieve whether Restcomm Client is initialized (<b>Not implemented yet</b>)
+     * Retrieve whether Restcomm Client is initialized
      * @return
      */
     public static boolean isInitialized()
     {
-        return true;
+        return initialized;
     }
 
     /**
@@ -126,6 +132,7 @@ public class RCClient {
         if (list.size() == 0) {
             RCDevice device = new RCDevice(capabilityToken, deviceListener);  //, videoView, prefs, viewId);
             list.add(device);
+            initialized = true;
         }
         else {
             Log.i(TAG, "Device already exists, so we 're returning this one -multiple devices not implemented");

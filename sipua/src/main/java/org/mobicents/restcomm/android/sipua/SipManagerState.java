@@ -57,6 +57,10 @@ package org.mobicents.restcomm.android.sipua;
         /**
          * This state is used when a remote contact ended the call.
          */
-        BYE
+        BYE,
+        /**
+          * This state is used when a remote contact ended the call.
+          */
+        STACK_STOPPED,
 }
 

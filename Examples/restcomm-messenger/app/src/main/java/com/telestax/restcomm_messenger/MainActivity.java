@@ -38,10 +38,13 @@ public class MainActivity extends Activity implements RCDeviceListener,
     Button btnRegister, btnMessage;
     Button btnDial, btnDialAudio;
     EditText txtUri;
+    // debug
+    Button btnListen, btnUnlisten, btnInit, btnShutdown;
 
     // #webrtc
     private static final int CONNECTION_REQUEST = 1;
 
+    // Activity lifetime methods
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -57,6 +60,17 @@ public class MainActivity extends Activity implements RCDeviceListener,
         txtUri = (EditText)findViewById(R.id.text_uri);
         btnMessage = (Button)findViewById(R.id.button_message);
         btnMessage.setOnClickListener(this);
+
+        // debug
+        btnListen = (Button)findViewById(R.id.button_listen);
+        btnListen.setOnClickListener(this);
+        btnUnlisten = (Button)findViewById(R.id.button_unlisten);
+        btnUnlisten.setOnClickListener(this);
+        btnInit = (Button)findViewById(R.id.button_init);
+        btnInit.setOnClickListener(this);
+        btnShutdown = (Button)findViewById(R.id.button_shutdown);
+        btnShutdown.setOnClickListener(this);
+
 
         PreferenceManager.setDefaultValues(this, "preferences.xml", MODE_PRIVATE, R.xml.preferences, false);
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -83,6 +97,57 @@ public class MainActivity extends Activity implements RCDeviceListener,
 
         //txtUri.setText("sip:1235@54.225.212.193:5080");
         txtUri.setText("sip:alice@192.168.2.32:5080");
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        // The activity is about to become visible.
+        Log.i(TAG, "%% onStart");
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // The activity has become visible (it is now "resumed").
+        Log.i(TAG, "%% onResume");
+        Intent intent = getIntent();
+
+        initializeSipFromPreferences();
+
+        /*
+        // If reason for resume is that we got an intent designating either an incoming call or message
+        if (intent.getAction() == RCDevice.INCOMING_CALL) {
+            ArrayList<RCDevice> list = RCClient.getInstance().listDevices();
+            if (list.size() != 0) {
+                RCDevice device = list.get(0);
+                RCConnection pendingConnection = device.getPendingConnection();
+                handleIncomingConnection(device, pendingConnection);
+            }
+        }
+        */
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Another activity is taking focus (this activity is about to be "paused").
+        Log.i(TAG, "%% onPause");
+    }
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // The activity is no longer visible (it is now "stopped")
+        Log.i(TAG, "%% onStop");
+    }
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        // The activity is about to be destroyed.
+        Log.i(TAG, "%% onDestroy");
+        RCClient.shutdown();
+        device = null;
     }
 
     @Override
@@ -126,6 +191,21 @@ public class MainActivity extends Activity implements RCDeviceListener,
             intent.setAction(RCDevice.OPEN_MESSAGE_SCREEN);
             intent.putExtra(RCDevice.EXTRA_DID, txtUri.getText().toString());
             startActivity(intent);
+        }
+        else if (view.getId() == R.id.button_listen) {
+            device.listen();
+        }
+        else if (view.getId() == R.id.button_unlisten) {
+            device.unlisten();
+        }
+        else if (view.getId() == R.id.button_init) {
+            device = RCClient.createDevice("", this);
+            device.setPendingIntents(new Intent(getApplicationContext(), CallActivity.class),
+                    new Intent(getApplicationContext(), MessageActivity.class));
+        }
+        else if (view.getId() == R.id.button_shutdown) {
+            RCClient.shutdown();
+            device = null;
         }
     }
 
@@ -232,53 +312,5 @@ public class MainActivity extends Activity implements RCDeviceListener,
             }
         });
         alertDialog.show();
-    }
-
-    // Activity lifetime
-    @Override
-    protected void onStart() {
-        super.onStart();
-        // The activity is about to become visible.
-        Log.i(TAG, "%% onStart");
-    }
-    @Override
-    protected void onResume() {
-        super.onResume();
-        // The activity has become visible (it is now "resumed").
-        Log.i(TAG, "%% onResume");
-        Intent intent = getIntent();
-
-        initializeSipFromPreferences();
-
-        /*
-        // If reason for resume is that we got an intent designating either an incoming call or message
-        if (intent.getAction() == RCDevice.INCOMING_CALL) {
-            ArrayList<RCDevice> list = RCClient.getInstance().listDevices();
-            if (list.size() != 0) {
-                RCDevice device = list.get(0);
-                RCConnection pendingConnection = device.getPendingConnection();
-                handleIncomingConnection(device, pendingConnection);
-            }
-        }
-        */
-    }
-
-    @Override
-    protected void onPause() {
-        super.onPause();
-        // Another activity is taking focus (this activity is about to be "paused").
-        Log.i(TAG, "%% onPause");
-    }
-    @Override
-    protected void onStop() {
-        super.onStop();
-        // The activity is no longer visible (it is now "stopped")
-        Log.i(TAG, "%% onStop");
-    }
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        // The activity is about to be destroyed.
-        Log.i(TAG, "%% onDestroy");
     }
 }

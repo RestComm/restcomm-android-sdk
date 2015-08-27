@@ -22,7 +22,7 @@ import org.mobicents.restcomm.android.client.sdk.RCDevice;
 import java.util.HashMap;
 
 
-public class MessageActivity extends Activity implements View.OnClickListener, OnAudioFocusChangeListener {
+public class MessageActivity extends Activity implements View.OnClickListener {
 
     private RCDevice device;
     HashMap<String, Object> params = new HashMap<String, Object>();
@@ -31,8 +31,8 @@ public class MessageActivity extends Activity implements View.OnClickListener, O
     Button btnSend;
     EditText txtMessage;
     TextView txtWall;
-    MediaPlayer messagePlayer;
-    AudioManager audioManager;
+    //MediaPlayer messagePlayer;
+    //AudioManager audioManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,12 +48,13 @@ public class MessageActivity extends Activity implements View.OnClickListener, O
         txtMessage = (EditText)findViewById(R.id.text_message);
         txtMessage.setOnClickListener(this);
 
+        /*
         // volume control should be by default 'music' which will control the ringing sounds and 'voice call' when within a call
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
         messagePlayer = MediaPlayer.create(getApplicationContext(), R.raw.message);
         messagePlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-
         audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        */
     }
 
     // We 've set MessageActivity to be 'singleTop' on the manifest to be able to receive messages while already open, without instantiating
@@ -89,10 +90,12 @@ public class MessageActivity extends Activity implements View.OnClickListener, O
 
             txtWall.append(shortname + ": " + message + "\n\n");
 
+            /*
             int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
             if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
                 messagePlayer.start();
             }
+            */
         }
     }
 
@@ -105,10 +108,12 @@ public class MessageActivity extends Activity implements View.OnClickListener, O
                 // also output the message in the wall
                 txtWall.append("Me: " + txtMessage.getText().toString() + "\n\n");
 
+                /*
                 int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
                 if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
                     messagePlayer.start();
                 }
+                */
                 txtMessage.setText("");
             }
         }
@@ -145,28 +150,6 @@ public class MessageActivity extends Activity implements View.OnClickListener, O
         txtWall.append(parameters.get("username") + ": " + message + "\n");
     }
     */
-
-    // Callbacks for audio focus change events
-    public void onAudioFocusChange(int focusChange)
-    {
-        Log.i(TAG, "onAudioFocusChange: " + focusChange);
-		/*
-		if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
-			// Pause playback
-		}
-		else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
-			// Resume playback or raise it back to normal if we were ducked
-		}
-		else if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
-			//am.unregisterMediaButtonEventReceiver(RemoteControlReceiver);
-			audio.abandonAudioFocus(this);
-			// Stop playback
-		}
-		else if (focusChange == AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
-            // Lower the volume
-        }
-		*/
-    }
 
     @Override
     protected void onPause() {

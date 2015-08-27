@@ -28,7 +28,7 @@ public class DeviceImpl implements IDevice,Serializable {
 	Context context;
 	SipManager sipManager;
 	SipProfile sipProfile;
-	SoundManager soundManager;
+	public SoundManager soundManager;
 	boolean isInitialized;
 	public SipUADeviceListener sipuaDeviceListener = null;
 	public SipUAConnectionListener sipuaConnectionListener = null;
@@ -37,7 +37,7 @@ public class DeviceImpl implements IDevice,Serializable {
 		
 	}
 	public static DeviceImpl GetInstance(){
-		if(device == null){
+		if (device == null){
 			device = new DeviceImpl();
 		}
 		return device;
@@ -46,12 +46,23 @@ public class DeviceImpl implements IDevice,Serializable {
         this.Initialize(context,sipProfile);
         sipManager.setCustomHeaders(customHeaders);
     }
-	public void Initialize(Context context, SipProfile sipProfile){
+	public void Initialize(Context context, SipProfile sipProfile) {
 		this.context = context;
 		this.sipProfile = sipProfile;
 		sipManager = new SipManager(sipProfile);
 		soundManager = new SoundManager(context,sipProfile.getLocalIp());
 		sipManager.addSipListener(this);
+	}
+
+	public void Shutdown()
+	{
+		sipManager.removeSipListener(this);
+		sipManager.shutdown();
+		sipuaDeviceListener = null;
+		sipuaConnectionListener = null;
+
+		// mark the instace null so that it gets freed
+		device = null;
 	}
 	
 	@Override
@@ -60,43 +71,52 @@ public class DeviceImpl implements IDevice,Serializable {
 		if (sipEventObject.type == SipEventType.MESSAGE) {
 			if (this.sipuaDeviceListener != null) {
 				this.sipuaDeviceListener.onSipUAMessageArrived(new SipEvent(this, SipEvent.SipEventType.MESSAGE, sipEventObject.content, sipEventObject.from));
+				soundManager.incomingMessage();
 			}
 		} else if (sipEventObject.type == SipEventType.BYE) {
-			this.soundManager.stopStreaming();
+			//this.soundManager.stopStreaming();
 			if (this.sipuaConnectionListener != null) {
 				// notify our listener that we are connected
 				this.sipuaConnectionListener.onSipUADisconnected(null);
 			}
 		} else if (sipEventObject.type == SipEventType.REMOTE_CANCEL) {
-			this.soundManager.stopStreaming();
+			//this.soundManager.stopStreaming();
 			if (this.sipuaConnectionListener != null) {
 				// notify our listener that we are connected
 				this.sipuaConnectionListener.onSipUACancelled(null);
+				soundManager.stopRinging();
 			}
 		} else if (sipEventObject.type == SipEventType.DECLINED) {
-			this.soundManager.stopStreaming();
+			//this.soundManager.stopStreaming();
 			if (this.sipuaConnectionListener != null) {
 				// notify our listener that we are connected
 				this.sipuaConnectionListener.onSipUADeclined(null);
+				soundManager.stopCalling();
 			}
 		}else if (sipEventObject.type == SipEventType.BUSY_HERE) {
-			this.soundManager.stopStreaming();
+			soundManager.stopCalling();
+			//this.soundManager.stopStreaming();
 		} else if (sipEventObject.type == SipEventType.SERVICE_UNAVAILABLE) {
-			this.soundManager.stopStreaming();
+			soundManager.stopCalling();
+			//this.soundManager.stopStreaming();
 		} else if (sipEventObject.type == SipEventType.CALL_CONNECTED) {
-			this.soundManager.startStreaming(sipEventObject.remoteRtpPort, this.sipProfile.getRemoteIp());
+			//this.soundManager.startStreaming(sipEventObject.remoteRtpPort, this.sipProfile.getRemoteIp());
 			if (this.sipuaConnectionListener != null) {
 				// notify our listener that we are connected
 				this.sipuaConnectionListener.onSipUAConnected(sipEventObject);
+				soundManager.stopRinging();
+				soundManager.stopCalling();
 			}
 		} else if (sipEventObject.type == SipEventType.REMOTE_RINGING) {
 			if (this.sipuaConnectionListener != null) {
 				// notify our listener that we are connecting
 				this.sipuaConnectionListener.onSipUAConnecting(null);
+				soundManager.startCalling();
 			}
 		} else if (sipEventObject.type == SipEventType.LOCAL_RINGING) {
 			if (this.sipuaDeviceListener != null) {
 				this.sipuaDeviceListener.onSipUAConnectionArrived(sipEventObject);
+				soundManager.startRinging();
 			}
 		}
 	}
@@ -109,7 +129,7 @@ public class DeviceImpl implements IDevice,Serializable {
 				sipManager.setCustomHeaders(sipHeaders);
 			}
 			*/
-			this.sipManager.Call(to, this.soundManager.setupAudioStream(), sipHeaders);
+			this.sipManager.Call(to, 0, sipHeaders);
 		} catch (NotInitializedException e) {
 			e.printStackTrace();
 		}
@@ -130,16 +150,19 @@ public class DeviceImpl implements IDevice,Serializable {
 
 	@Override
 	public void Accept() {
-		sipManager.AcceptCall(soundManager.setupAudioStream());
+		sipManager.AcceptCall(0);
+		soundManager.stopRinging();
 	}
 
 	public void AcceptWebrtc(final String sdp) {
 		sipManager.AcceptCallWebrtc(sdp);
+		soundManager.stopRinging();
 	}
 
 	@Override
 	public void Reject() {
 		sipManager.RejectCall();
+		soundManager.stopRinging();
 	}
 
 	@Override
@@ -149,6 +172,7 @@ public class DeviceImpl implements IDevice,Serializable {
 		} catch (NotInitializedException e) {
 			e.printStackTrace();
 		}
+		soundManager.stopCalling();
 	}
 
 	@Override
@@ -170,6 +194,7 @@ public class DeviceImpl implements IDevice,Serializable {
 		} catch (NotInitializedException e) {
 			e.printStackTrace();
 		}
+		soundManager.outgoingMessage();
 	}
 	@Override
 	public void SendDTMF(String digit) {
@@ -183,7 +208,9 @@ public class DeviceImpl implements IDevice,Serializable {
 	public void Register() {
 		this.sipManager.Register();
 	}
-
+	public void Unregister() {
+		this.sipManager.Unregister();
+	}
 	@Override
 	public SipManager GetSipManager() {
 		// TODO Auto-generated method stub
@@ -193,7 +220,7 @@ public class DeviceImpl implements IDevice,Serializable {
 	@Override
 	public void Mute(boolean muted)
 	{
-		soundManager.muteAudio(muted);
+		//soundManager.muteAudio(muted);
 	}
 
 	@Override

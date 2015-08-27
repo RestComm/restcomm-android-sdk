@@ -6,8 +6,11 @@ import java.net.UnknownHostException;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import android.app.PendingIntent;
 import android.content.Context;
+import android.content.Intent;
 import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.net.rtp.AudioCodec;
 import android.net.rtp.AudioGroup;
 import android.net.rtp.AudioStream;
@@ -15,149 +18,172 @@ import android.net.rtp.RtpStream;
 import android.os.Handler;
 import android.util.Log;
 
+import org.mobicents.restcomm.android.sipua.R;
+
 public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 	Context appContext;
-	AudioManager audio;
-	AudioStream audioStream;
-	AudioGroup audioGroup;
-	InetAddress localAddress;
 
+	AudioManager audioManager;
+	MediaPlayer ringingPlayer;
+	MediaPlayer callingPlayer;
+	MediaPlayer messagePlayer;
+	boolean incomingOn = true, outgoingOn = true, disconnectOn = true;
 	private static final String TAG = "SoundManager";
 
 	public SoundManager(Context appContext, String ip){
 		this.appContext = appContext;
-		/*
-		audio = (AudioManager) appContext.getSystemService(Context.AUDIO_SERVICE);
-		try {
-			localAddress = InetAddress.getByName(ip);
-			audioGroup = new AudioGroup();
-			audioGroup.setMode(AudioGroup.MODE_ECHO_SUPPRESSION);
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
-		*/
+		audioManager = (AudioManager)this.appContext.getSystemService(Context.AUDIO_SERVICE);
+		// volume control should be by default 'music' which will control the ringing sounds and 'voice call' when within a call
+		//setVolumeControlStream(AudioManager.STREAM_MUSIC);
+		// Setup Media (notice that I'm not preparing the media as create does that implicitly plus
+		// I'm not ever stopping a player -instead I'm pausing so no additional preparation is needed
+		// there either. We might need to revisit this at some point though
+		ringingPlayer = MediaPlayer.create(this.appContext, R.raw.ringing);
+		ringingPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+		ringingPlayer.setLooping(true);
+		callingPlayer = MediaPlayer.create(this.appContext, R.raw.calling);
+		callingPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+		callingPlayer.setLooping(true);
+		messagePlayer = MediaPlayer.create(this.appContext, R.raw.message);
+		messagePlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+		audioManager = (AudioManager)this.appContext.getSystemService(Context.AUDIO_SERVICE);
 	}
 
-	public int setupAudioStream() {
-		/*
-		Log.i(TAG, "Setting up Audio Stream");
-		try {
-			audioStream = new AudioStream(localAddress);
-			audioStream.setCodec(AudioCodec.PCMU);
-			audioStream.setMode(RtpStream.MODE_NORMAL);
-		}
-		catch (SocketException e) {
-			e.printStackTrace();
-		}
-
-		return audioStream.getLocalPort();
-		*/
-		return 0;
+	// handle mutes for the sounds
+	public void setIncoming(boolean on)
+	{
+		incomingOn = on;
+	}
+	public void setOutgoing(boolean on)
+	{
+		outgoingOn = on;
+	}
+	public void setDisconnect(boolean on)
+	{
+		disconnectOn = on;
+	}
+	public boolean getIncoming()
+	{
+		return incomingOn;
+	}
+	public boolean getOutgoing()
+	{
+		return outgoingOn;
+	}
+	public boolean getDisconnect()
+	{
+		return disconnectOn;
 	}
 
-	// Start sending/receiving media
-	public void startStreaming(int remoteRtpPort, String remoteIp) {
-		/*
-		Log.i(TAG, "Starting streaming: " + remoteIp + "/" + remoteRtpPort);
-
-		audio.setMode(AudioManager.MODE_IN_COMMUNICATION);
-
-		// Request audio focus for playback
-		int result = audio.requestAudioFocus(this, AudioManager.STREAM_VOICE_CALL, AudioManager.AUDIOFOCUS_GAIN);
-		if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-			//////// DEBUG
-			if (audio.isBluetoothA2dpOn()) {
-				// Adjust output for Bluetooth.
-				Log.i(TAG, "Using Bluetooth");
-			} else if (audio.isSpeakerphoneOn()) {
-				// Adjust output for Speakerphone.
-				Log.i(TAG, "Using Speaker");
-			} else if (audio.isMicrophoneMute()) {
-				// Adjust output for headsets
-				Log.i(TAG, "Using Microphone is mute");
-			} else {
-				// If audio plays and noone can hear it, is it still playing?
-				Log.i(TAG, "Using None ??");
-				audio.setSpeakerphoneOn(true);
-				//audio.setStreamVolume(AudioManager.STREAM_VOICE_CALL, 1, 0);
-			}
-			//audio.setSpeakerphoneOn(false);
-
-			Log.i(TAG, "Vol/max: " + audio.getStreamVolume(audio.STREAM_VOICE_CALL) + "/" + audio.getStreamMaxVolume(audio.STREAM_VOICE_CALL));
-
-
-			try {
-				audioStream.associate(
-						InetAddress.getByName(remoteIp),
-						remoteRtpPort);
-			} catch (UnknownHostException e) {
-				e.printStackTrace();
-			} catch (IllegalArgumentException e) {
-				e.printStackTrace();
-			} catch (IllegalStateException e) {
-				e.printStackTrace();
-			}
-
-			try {
-				audioStream.join(audioGroup);
-			} catch (IllegalStateException e) {
-				e.printStackTrace();
-			}
+	public void startRinging()
+	{
+		if (incomingOn == false) {
+			return;
 		}
-		else {
-			Log.e(TAG, "Cannot receive audio focus; media stream not setup");
-
-		}
-		*/
-	}
-
-	public void stopStreaming() {
-		/*
-		// workaround: android RTP facilities seem to induce around 500ms delay in the incoming media stream.
-		// Let's delay the media tear-down to avoid media truncation for now
-		final SoundManager finalSoundManager = this;
+		final SoundManager sm = this;
+		// Important: need to fire the event in UI context cause we might be in JAIN SIP thread
 		Handler mainHandler = new Handler(appContext.getMainLooper());
 		Runnable myRunnable = new Runnable() {
 			@Override
 			public void run() {
-				Log.i(TAG, "Releasing Audio: ");
-				try {
-					audioStream.join(null);
-				} catch (IllegalStateException e) {
-					e.printStackTrace();
+				int result = audioManager.requestAudioFocus(sm, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+				if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+					ringingPlayer.start();
 				}
-
-				audioGroup.clear();
-				if (audioStream.isBusy()) {
-					Log.i(TAG, "AudioStream is busy");
-				}
-				//audioStream.release();
-				audioStream = null;
-				audio.setMode(AudioManager.MODE_NORMAL);
-
-				// Abandon audio focus when playback complete
-				audio.abandonAudioFocus(finalSoundManager);
 			}
 		};
-		mainHandler.postDelayed(myRunnable, 500);
-		*/
+		mainHandler.post(myRunnable);
+	}
+	public void stopRinging()
+	{
+		final SoundManager sm = this;
+		// Important: need to fire the event in UI context cause we might be in JAIN SIP thread
+		Handler mainHandler = new Handler(appContext.getMainLooper());
+		Runnable myRunnable = new Runnable() {
+			@Override
+			public void run() {
+				ringingPlayer.pause();
+				// Abandon audio focus when playback complete
+				audioManager.abandonAudioFocus(sm);
+			}
+		};
+		mainHandler.post(myRunnable);
+	}
+	public void startCalling()
+	{
+		if (outgoingOn == false) {
+			return;
+		}
+
+		final SoundManager sm = this;
+		// Important: need to fire the event in UI context cause we might be in JAIN SIP thread
+		Handler mainHandler = new Handler(appContext.getMainLooper());
+		Runnable myRunnable = new Runnable() {
+			@Override
+			public void run() {
+				int result = audioManager.requestAudioFocus(sm, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+				if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+					callingPlayer.start();
+				}
+			}
+		};
+		mainHandler.post(myRunnable);
+	}
+	public void stopCalling()
+	{
+		final SoundManager sm = this;
+		// Important: need to fire the event in UI context cause we might be in JAIN SIP thread
+		Handler mainHandler = new Handler(appContext.getMainLooper());
+		Runnable myRunnable = new Runnable() {
+			@Override
+			public void run() {
+				callingPlayer.pause();
+				// Abandon audio focus when playback complete
+				audioManager.abandonAudioFocus(sm);
+			}
+		};
+		mainHandler.post(myRunnable);
+	}
+	public void incomingMessage()
+	{
+		if (incomingOn == false) {
+			return;
+		}
+
+		final SoundManager sm = this;
+		// Important: need to fire the event in UI context cause we might be in JAIN SIP thread
+		Handler mainHandler = new Handler(appContext.getMainLooper());
+		Runnable myRunnable = new Runnable() {
+			@Override
+			public void run() {
+				int result = audioManager.requestAudioFocus(sm, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+				if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+					messagePlayer.start();
+				}
+			}
+		};
+		mainHandler.post(myRunnable);
 	}
 
-	public void muteAudio(boolean muted)
+	public void outgoingMessage()
 	{
-		/*
-		System.out.println("Muting audio: " + muted);
-		if (muted) {
-			if (audioGroup.getMode() != audioGroup.MODE_MUTED) {
-				audioGroup.setMode(audioGroup.MODE_MUTED);
-			}
+		if (outgoingOn == false) {
+			return;
 		}
-		else {
-			if (audioGroup.getMode() == audioGroup.MODE_MUTED) {
-				audioGroup.setMode(audioGroup.MODE_NORMAL);
+
+		final SoundManager sm = this;
+		// Important: need to fire the event in UI context cause we might be in JAIN SIP thread
+		Handler mainHandler = new Handler(appContext.getMainLooper());
+		Runnable myRunnable = new Runnable() {
+			@Override
+			public void run() {
+				int result = audioManager.requestAudioFocus(sm, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+				if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+					messagePlayer.start();
+				}
 			}
-		}
-		*/
+		};
+		mainHandler.post(myRunnable);
 	}
 
 	// Callbacks for auio focus change events

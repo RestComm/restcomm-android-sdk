@@ -28,11 +28,15 @@ import java.util.Map;
 
 import android.app.Activity;
 import android.app.PendingIntent;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.media.AudioManager;
+import android.media.MediaPlayer;
 import android.net.wifi.WifiManager;
 import android.opengl.GLSurfaceView;
 import android.os.Handler;
+import android.util.Log;
 
 import org.mobicents.restcomm.android.sipua.SipProfile;
 import org.mobicents.restcomm.android.sipua.SipUADeviceListener;
@@ -55,9 +59,9 @@ import org.mobicents.restcomm.android.sipua.impl.SipEvent;
  *  @see RCConnection
  */
 
-public class RCDevice implements SipUADeviceListener {
+public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusChangeListener {
     /**
-     * @abstract Device state (<b>Not Implemented yet</b>: device is always READY)
+     * @abstract Device state
      */
     DeviceState state;
     /**
@@ -69,22 +73,22 @@ public class RCDevice implements SipUADeviceListener {
      */
     RCDeviceListener listener;
     /**
-     * @abstract Is sound for incoming connections enabled (<b>Not Implemented yet</b>)
+     * @abstract Is sound for incoming connections enabled
      */
     boolean incomingSoundEnabled;
     /**
-     * @abstract Is sound for outgoing connections enabled (<b>Not Implemented yet</b>)
+     * @abstract Is sound for outgoing connections enabled
      */
     boolean outgoingSoundEnabled;
     /**
-     * @abstract Is sound for disconnect enabled (<b>Not Implemented yet</b>)
+     * @abstract Is sound for disconnect enabled
      */
     boolean disconnectSoundEnabled;
 
     private SipProfile sipProfile;
 
     /**
-     * Device state (<b>Not Implemented yet</b>)
+     * Device state
      */
     public enum DeviceState {
         OFFLINE, /**
@@ -124,7 +128,8 @@ public class RCDevice implements SipUADeviceListener {
     PendingIntent pendingCallIntent;
     PendingIntent pendingMessageIntent;
     public RCConnection incomingConnection;
-
+    //MediaPlayer messagePlayer;
+    //AudioManager audioManager;
 
     /**
      * Initialize a new RCDevice object
@@ -143,6 +148,22 @@ public class RCDevice implements SipUADeviceListener {
         DeviceImpl deviceImpl = DeviceImpl.GetInstance();
         deviceImpl.Initialize(RCClient.getInstance().context, sipProfile, customHeaders);
         DeviceImpl.GetInstance().sipuaDeviceListener = this;
+        state = DeviceState.READY;
+
+        /*
+        // volume control should be by default 'music' which will control the ringing sounds and 'voice call' when within a call
+        //setVolumeControlStream(AudioManager.STREAM_MUSIC);
+        messagePlayer = MediaPlayer.create(RCClient.getInstance().context, R.raw.message);
+        messagePlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
+        audioManager = (AudioManager)RCClient.getInstance().context.getSystemService(Context.AUDIO_SERVICE);
+        */
+    }
+
+    public void shutdown() {
+        this.listener = null;
+
+        DeviceImpl.GetInstance().Shutdown();
+        state = DeviceState.OFFLINE;
     }
 
     // 'Copy' constructor
@@ -168,14 +189,20 @@ public class RCDevice implements SipUADeviceListener {
      * Start listening for incoming connections (<b>Not Implemented yet</b>: for now once the RCDevice is created we are always listening for incoming connections)
      */
     public void listen() {
-
+        if (state == DeviceState.OFFLINE) {
+            DeviceImpl.GetInstance().Register();
+            state = DeviceState.READY;
+        }
     }
 
     /**
      * Stop listeninig for incoming connections (Not Implemented yet)
      */
     public void unlisten() {
-
+        if (state != DeviceState.OFFLINE) {
+            DeviceImpl.GetInstance().Unregister();
+            state = DeviceState.OFFLINE;
+        }
     }
 
     /**
@@ -219,6 +246,7 @@ public class RCDevice implements SipUADeviceListener {
                 sipHeaders = (HashMap<String, String>)parameters.get("sip-headers");
             }
             connection.setupWebrtcAndCall((String)parameters.get("username"), sipHeaders, enableVideo.booleanValue());
+            state = DeviceState.BUSY;
 
             return connection;
         } else {
@@ -235,6 +263,13 @@ public class RCDevice implements SipUADeviceListener {
     public boolean sendMessage(String message, Map<String, String> parameters) {
         if (haveConnectivity()) {
             DeviceImpl.GetInstance().SendMessage(parameters.get("username"), message);
+            /*
+            int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+            if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                messagePlayer.start();
+            }
+            */
+
             return true;
         } else {
             return false;
@@ -242,11 +277,14 @@ public class RCDevice implements SipUADeviceListener {
     }
 
     /**
-     * Disconnect all connections (<b>Not implemented yet</b>)
+     * Disconnect all connections
      */
     public void disconnectAll() {
-        if (haveConnectivity()) {
-            // TODO: disconnect open connections
+        if (state == DeviceState.BUSY) {
+            // TODO: currently only support one live connection. Maybe would be a better idea to use a separate reference to the active RCConnection
+            RCConnection connection = (RCConnection)DeviceImpl.GetInstance().sipuaConnectionListener;
+            connection.disconnect();
+            state = DeviceState.READY;
         }
     }
 
@@ -266,7 +304,6 @@ public class RCDevice implements SipUADeviceListener {
      * @return State
      */
     public DeviceState getState() {
-        DeviceState state = DeviceState.READY;
         return state;
     }
 
@@ -306,7 +343,7 @@ public class RCDevice implements SipUADeviceListener {
      * @param incomingSound Whether or not the sound should be played
      */
     public void setIncomingSoundEnabled(boolean incomingSound) {
-
+        DeviceImpl.GetInstance().soundManager.setIncoming(incomingSound);
     }
 
     /**
@@ -315,7 +352,7 @@ public class RCDevice implements SipUADeviceListener {
      * @return Whether the sound will be played
      */
     public boolean isIncomingSoundEnabled() {
-        return true;
+        return DeviceImpl.GetInstance().soundManager.getIncoming();
     }
 
     /**
@@ -324,7 +361,7 @@ public class RCDevice implements SipUADeviceListener {
      * @param outgoingSound Whether or not the sound should be played
      */
     public void setOutgoingSoundEnabled(boolean outgoingSound) {
-
+        DeviceImpl.GetInstance().soundManager.setOutgoing(outgoingSound);
     }
 
     /**
@@ -333,7 +370,7 @@ public class RCDevice implements SipUADeviceListener {
      * @return Whether the sound will be played
      */
     public boolean isOutgoingSoundEnabled() {
-        return true;
+        return DeviceImpl.GetInstance().soundManager.getOutgoing();
     }
 
     /**
@@ -342,7 +379,7 @@ public class RCDevice implements SipUADeviceListener {
      * @param disconnectSound Whether or not the sound should be played
      */
     public void setDisconnectSoundEnabled(boolean disconnectSound) {
-
+        DeviceImpl.GetInstance().soundManager.setDisconnect(disconnectSound);
     }
 
     /**
@@ -351,7 +388,7 @@ public class RCDevice implements SipUADeviceListener {
      * @return Whether the sound will be played
      */
     public boolean isDisconnectSoundEnabled() {
-        return true;
+        return DeviceImpl.GetInstance().soundManager.getDisconnect();
     }
 
     /**
@@ -387,6 +424,7 @@ public class RCDevice implements SipUADeviceListener {
         incomingConnection.incomingCallSdp = event.sdp;
         //incomingConnection.initializeWebrtc();
         DeviceImpl.GetInstance().sipuaConnectionListener = incomingConnection;
+        state = DeviceState.BUSY;
 
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
         final String from = event.from;
@@ -422,6 +460,7 @@ public class RCDevice implements SipUADeviceListener {
 
         final String finalContent = new String(event.content);
         final HashMap<String, String> finalParameters = new HashMap<String, String>(parameters);
+        final RCDevice device = this;
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
         Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
         Runnable myRunnable = new Runnable() {
@@ -434,6 +473,13 @@ public class RCDevice implements SipUADeviceListener {
                     dataIntent.putExtra(INCOMING_MESSAGE_PARAMS, finalParameters);
                     dataIntent.putExtra(INCOMING_MESSAGE_TEXT, finalContent);
                     pendingMessageIntent.send(RCClient.getInstance().context, 0, dataIntent);
+                    /*
+                    int result = audioManager.requestAudioFocus(device, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+                    if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
+                        messagePlayer.start();
+                    }
+                    */
+
                 } catch (PendingIntent.CanceledException e) {
                     e.printStackTrace();
                 }
@@ -456,4 +502,27 @@ public class RCDevice implements SipUADeviceListener {
             return false;
         }
     }
+
+    // Callbacks for audio focus change events
+    public void onAudioFocusChange(int focusChange)
+    {
+        Log.i(TAG, "onAudioFocusChange: " + focusChange);
+		/*
+		if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+			// Pause playback
+		}
+		else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
+			// Resume playback or raise it back to normal if we were ducked
+		}
+		else if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
+			//am.unregisterMediaButtonEventReceiver(RemoteControlReceiver);
+			audio.abandonAudioFocus(this);
+			// Stop playback
+		}
+		else if (focusChange == AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
+            // Lower the volume
+        }
+		*/
+    }
+
 }

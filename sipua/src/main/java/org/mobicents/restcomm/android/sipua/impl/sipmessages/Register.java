@@ -19,7 +19,7 @@ import android.os.AsyncTask;
 
 public class Register {
 
-	public Request MakeRequest(org.mobicents.restcomm.android.sipua.impl.SipManager sipManager) throws ParseException,
+	public Request MakeRequest(org.mobicents.restcomm.android.sipua.impl.SipManager sipManager, int expires) throws ParseException,
 			InvalidArgumentException {
 
 		AddressFactory addressFactory = sipManager.addressFactory;
@@ -51,7 +51,7 @@ public class Register {
 
 		// Add the contact header
 		request.addHeader(headerFactory.createContactHeader(contactAddress));
-		ExpiresHeader eh = headerFactory.createExpiresHeader(300);
+		ExpiresHeader eh = headerFactory.createExpiresHeader(expires);
 		request.addHeader(eh);
 		// Print the request
 		System.out.println(request.toString());

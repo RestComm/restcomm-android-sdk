@@ -18,6 +18,7 @@ import org.mobicents.restcomm.android.sipua.SipManagerState;
 import org.mobicents.restcomm.android.sipua.impl.SipEvent.SipEventType;
 import org.mobicents.restcomm.android.sipua.impl.sipmessages.Invite;
 import org.mobicents.restcomm.android.sipua.impl.sipmessages.Message;
+import org.mobicents.restcomm.android.sipua.impl.sipmessages.*;
 import org.mobicents.restcomm.android.sipua.SipProfile;
 
 import android.gov.nist.javax.sdp.SessionDescriptionImpl;
@@ -156,6 +157,26 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		return true;
 	}
 
+	// shutdown SIP stack
+	public boolean shutdown()
+	{
+		if (sipManagerState != SipManagerState.STACK_STOPPED) {
+			try {
+				// during initialization we use this ordering: stack, point, provider, listener
+				sipProvider.removeSipListener(this);
+
+				sipStack.deleteSipProvider(sipProvider);
+				sipStack.deleteListeningPoint(udpListeningPoint);
+				sipStack.stop();
+				sipManagerState = SipManagerState.STACK_STOPPED;
+
+			} catch (ObjectInUseException e) {
+				return false;
+			}
+		}
+
+		return true;
+	}
 	// *** Setters/Getters *** //
 	public boolean isInitialized() {
 		return initialized;
@@ -292,9 +313,40 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		if(!initialize())
 			return;//If initialization failed, dont proceeds
 
-		org.mobicents.restcomm.android.sipua.impl.sipmessages.Register registerRequest = new org.mobicents.restcomm.android.sipua.impl.sipmessages.Register();
+		Register registerRequest = new Register();
 		try {
-			final Request r = registerRequest.MakeRequest(this);
+			final Request r = registerRequest.MakeRequest(this, 300);
+			final SipProvider sipProvider = this.sipProvider;
+			// Send the request statefully, through the client transaction.
+			Thread thread = new Thread() {
+				public void run() {
+					try {
+						final ClientTransaction transaction = sipProvider.getNewClientTransaction(r);
+						transaction.sendRequest();
+					} catch (SipException e) {
+						e.printStackTrace();
+					}
+					//catch (TransactionUnavailableException e) {
+					//	e.printStackTrace();
+					//}
+				}
+			};
+			thread.start();
+
+		} catch (ParseException e) {
+			e.printStackTrace();
+		} catch (InvalidArgumentException e) {
+			e.printStackTrace();
+		}
+	}
+
+	public void Unregister() {
+		if(!initialize())
+			return;//If initialization failed, dont proceeds
+
+		Register registerRequest = new Register();
+		try {
+			final Request r = registerRequest.MakeRequest(this, 0);
 			final SipProvider sipProvider = this.sipProvider;
 			// Send the request statefully, through the client transaction.
 			Thread thread = new Thread() {
@@ -954,6 +1006,12 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	public synchronized void addSipListener(ISipEventListener listener) {
 		if (!sipEventListenerList.contains(listener)) {
 			sipEventListenerList.add(listener);
+		}
+	}
+
+	public synchronized void removeSipListener(ISipEventListener listener) {
+		if (sipEventListenerList.contains(listener)) {
+			sipEventListenerList.remove(listener);
 		}
 	}
 

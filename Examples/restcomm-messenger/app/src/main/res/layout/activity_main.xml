@@ -54,4 +54,40 @@
         android:layout_alignRight="@+id/text_uri"
         android:layout_below="@+id/button_dial" />
 
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="listen"
+        android:id="@+id/button_listen"
+        android:layout_below="@+id/button_message"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="unlisten"
+        android:id="@+id/button_unlisten"
+        android:layout_below="@+id/button_message"
+        android:layout_toRightOf="@+id/button_listen"
+        android:layout_toEndOf="@+id/button_listen" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="shutdown"
+        android:id="@+id/button_shutdown"
+        android:layout_below="@+id/button_message"
+        android:layout_toRightOf="@+id/button_unlisten"
+        android:layout_toEndOf="@+id/button_unlisten" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="init"
+        android:id="@+id/button_init"
+        android:layout_below="@+id/button_message"
+        android:layout_toRightOf="@+id/button_shutdown"
+        android:layout_toEndOf="@+id/button_shutdown" />
+
 </RelativeLayout>
