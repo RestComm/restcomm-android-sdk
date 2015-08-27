@@ -167,4 +167,16 @@ public class MessageActivity extends Activity implements View.OnClickListener, O
         }
 		*/
     }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        // Another activity is taking focus (this activity is about to be "paused").
+        Log.i(TAG, "%% onPause");
+        Intent intent = getIntent();
+        // #129: clear the action so that on subsequent indirect activity open (i.e. via lock & unlock) we don't get the old action firing again
+        intent.setAction("CLEAR_ACTION");
+        setIntent(intent);
+    }
+
 }
