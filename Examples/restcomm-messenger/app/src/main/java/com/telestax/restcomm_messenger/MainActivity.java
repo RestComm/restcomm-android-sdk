@@ -95,8 +95,8 @@ public class MainActivity extends Activity implements RCDeviceListener,
         // preferences
         prefs.registerOnSharedPreferenceChangeListener(this);
 
-        //txtUri.setText("sip:1235@54.225.212.193:5080");
-        txtUri.setText("sip:alice@192.168.2.32:5080");
+        txtUri.setText("sip:1235@23.23.228.238:5080");
+        //txtUri.setText("sip:alice@192.168.2.32:5080");
     }
 
     @Override

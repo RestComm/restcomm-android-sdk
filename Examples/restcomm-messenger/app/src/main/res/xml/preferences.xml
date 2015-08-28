@@ -13,7 +13,7 @@
         android:key="pref_sip_password"
         android:title="Password" />
     <EditTextPreference
-        android:defaultValue="54.225.212.193"
+        android:defaultValue="23.23.228.238"
         android:key="pref_proxy_ip"
         android:title="Proxy IP" />
     <EditTextPreference

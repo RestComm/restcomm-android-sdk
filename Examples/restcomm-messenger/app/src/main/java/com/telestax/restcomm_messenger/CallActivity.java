@@ -159,6 +159,26 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING, scalingType, true);
     }
 
+    @Override
+    protected void onPause() {
+        super.onPause();
+        Log.i(TAG, "%% onPause");
+
+        if (pendingConnection != null) {
+            // incoming ringing
+            pendingConnection.reject();
+            pendingConnection = null;
+        } else {
+            if (connection != null) {
+                // incoming established or outgoing any state (pending, connecting, connected)
+                connection.disconnect();
+                connection = null;
+                pendingConnection = null;
+            }
+        }
+        finish();
+    }
+
     private void videoContextReady(Intent intent)
     {
         final Intent finalIntent = intent;
@@ -289,11 +309,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         }
 
         return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    public void onResume() {
-        super.onResume();
     }
 
     // RCConnection Listeners
