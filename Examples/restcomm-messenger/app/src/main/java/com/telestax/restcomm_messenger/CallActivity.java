@@ -187,7 +187,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             @Override
             public void run() {
 
-                if (finalIntent.getAction() == RCDevice.OUTGOING_CALL) {
+                if (finalIntent.getAction().equals(RCDevice.OUTGOING_CALL)) {
                     connectParams.put("username", finalIntent.getStringExtra(RCDevice.EXTRA_DID));
                     connectParams.put("video-enabled", finalIntent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
 
@@ -203,20 +203,20 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                         return;
                     }
                 }
-                if (finalIntent.getAction() == RCDevice.INCOMING_CALL) {
+                if (finalIntent.getAction().equals(RCDevice.INCOMING_CALL)) {
                     /*
                     int result = audioManager.requestAudioFocus(finalActivity, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
                     if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
                         ringingPlayer.start();
                     }
                     */
-                    pendingConnection = device.incomingConnection;
+                    pendingConnection = device.getPendingConnection();
                     pendingConnection.setConnectionListener(finalActivity);
 
                     // the number from which we got the call
                     String incomingCallDid = finalIntent.getStringExtra(RCDevice.EXTRA_DID);
                     // notice that this is not used yet; the sdk doesn't tell us if the incoming call is video/audio (TODO)
-                    acceptParams.put("video-enabled", new Boolean(finalIntent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false)));
+                    acceptParams.put("video-enabled", finalIntent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
                 }
             }
         });
@@ -243,7 +243,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         } else if (view.getId() == R.id.button_answer) {
             if (pendingConnection != null) {
                 HashMap<String, Object> params = new HashMap<String, Object>();
-                params.put("video-enabled", new Boolean(true));
+                params.put("video-enabled", true);
                 pendingConnection.accept(params);
                 connection = this.pendingConnection;
                 pendingConnection = null;
@@ -256,7 +256,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         } else if (view.getId() == R.id.button_answer_audio) {
             if (pendingConnection != null) {
                 HashMap<String, Object> params = new HashMap<String, Object>();
-                params.put("video-enabled", new Boolean(false));
+                params.put("video-enabled", false);
                 pendingConnection.accept(params);
                 connection = this.pendingConnection;
                 pendingConnection = null;

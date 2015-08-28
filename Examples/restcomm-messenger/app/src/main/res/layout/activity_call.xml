@@ -51,6 +51,7 @@
         android:id="@+id/button_answer_audio"
         android:layout_above="@+id/button_hangup"
         android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
+        android:layout_alignParentEnd="true"
+        android:minWidth="100dp" />
 
 </RelativeLayout>

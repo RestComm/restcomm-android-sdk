@@ -127,7 +127,7 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
     //public static String EXTRA_CONNECTION = "com.telestax.restcomm.android.client.sdk.extra-connection";
     PendingIntent pendingCallIntent;
     PendingIntent pendingMessageIntent;
-    public RCConnection incomingConnection;
+    private RCConnection incomingConnection;
     //MediaPlayer messagePlayer;
     //AudioManager audioManager;
 
@@ -334,7 +334,7 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
     }
 
     public RCConnection getPendingConnection() {
-        return (RCConnection) DeviceImpl.GetInstance().sipuaConnectionListener;
+        return incomingConnection;
     }
 
     public RCConnection getDevice() {

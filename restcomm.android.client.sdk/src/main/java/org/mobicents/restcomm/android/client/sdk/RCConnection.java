@@ -158,7 +158,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     private Toast logToast;
     //private boolean commandLineRun;
     //private int runTimeMs;
-    private boolean activityRunning;
+    //private boolean activityRunning;
     private PeerConnectionClient.PeerConnectionParameters peerConnectionParameters;
     private boolean iceConnected;
     private boolean isError;
@@ -477,7 +477,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         initializeWebrtc(videoEnabled);
 
         LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
-        iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
+        iceServers.add(new PeerConnection.IceServer("stun:sftun.l.google.com:19302", "", ""));
         this.signalingParameters = new SignalingParameters(iceServers, true, "", sipUri, "", null, null, sipHeaders, videoEnabled);
 
         startCall(this.signalingParameters);
@@ -489,50 +489,9 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         Log.e(TAG, "@@@@@ initializeWebrtc  ");
         Context context = RCClient.getInstance().context;
 
-        // Leave this around for when we add settings as part of the RCConnection parameters hash:
-        /*
-        keyprefVideoCallEnabled = context.getString(R.string.pref_videocall_key);
-        keyprefResolution = context.getString(R.string.pref_resolution_key);
-        keyprefFps = context.getString(R.string.pref_fps_key);
-        keyprefVideoBitrateType = context.getString(R.string.pref_startvideobitrate_key);
-        keyprefVideoBitrateValue = context.getString(R.string.pref_startvideobitratevalue_key);
-        keyprefVideoCodec = context.getString(R.string.pref_videocodec_key);
-        keyprefHwCodecAcceleration = context.getString(R.string.pref_hwcodec_key);
-        keyprefAudioBitrateType = context.getString(R.string.pref_startaudiobitrate_key);
-        keyprefAudioBitrateValue = context.getString(R.string.pref_startaudiobitratevalue_key);
-        keyprefAudioCodec = context.getString(R.string.pref_audiocodec_key);
-        keyprefNoAudioProcessingPipeline = context.getString(R.string.pref_noaudioprocessing_key);
-        keyprefCpuUsageDetection = context.getString(R.string.pref_cpu_usage_detection_key);
-        keyprefDisplayHud = context.getString(R.string.pref_displayhud_key);
-        keyprefRoomServerUrl = context.getString(R.string.pref_room_server_url_key);
-        keyprefRoom = context.getString(R.string.pref_room_key);
-        keyprefRoomList = context.getString(R.string.pref_room_list_key);
-        */
-
         iceConnected = false;
         signalingParameters = null;
         scalingType = VideoRendererGui.ScalingType.SCALE_ASPECT_FILL;
-
-        // #WEBRTC-VIDEO TODO: Uncomment when video is enabled
-        /*
-        videoView = new GLSurfaceView(context);
-        listener.onReceiveLocalVideo(this, videoView);
-
-        // Create video renderers.
-        VideoRendererGui.setView(videoView, new Runnable() {
-            @Override
-            public void run() {
-                createPeerConnectionFactory();
-            }
-        });
-
-        remoteRender = VideoRendererGui.create(
-                REMOTE_X, REMOTE_Y,
-                REMOTE_WIDTH, REMOTE_HEIGHT, scalingType, false);
-        localRender = VideoRendererGui.create(
-                LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING,
-                LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING, scalingType, true);
-        */
 
         // Check for mandatory permissions.
         for (String permission : MANDATORY_PERMISSIONS) {
@@ -544,71 +503,6 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                 return;
             }
         }
-
-        // Leave this around for when we add settings as part of the RCConnection parameters hash:
-        /*
-        // Get video resolution from settings.
-        int videoWidth = 0;
-        int videoHeight = 0;
-        String resolution = prefs.getString(keyprefResolution, context.getString(R.string.pref_resolution_default));
-        String[] dimensions = resolution.split("[ x]+");
-        if (dimensions.length == 2) {
-            try {
-                videoWidth = Integer.parseInt(dimensions[0]);
-                videoHeight = Integer.parseInt(dimensions[1]);
-            } catch (NumberFormatException e) {
-                videoWidth = 0;
-                videoHeight = 0;
-                Log.e(TAG, "Wrong video resolution setting: " + resolution);
-            }
-        }
-
-        // Get camera fps from settings.
-        int cameraFps = 0;
-        String fps = prefs.getString(keyprefFps, context.getString(R.string.pref_fps_default));
-        String[] fpsValues = fps.split("[ x]+");
-        if (fpsValues.length == 2) {
-            try {
-                cameraFps = Integer.parseInt(fpsValues[0]);
-            } catch (NumberFormatException e) {
-                Log.e(TAG, "Wrong camera fps setting: " + fps);
-            }
-        }
-
-        // Get video and audio start bitrate.
-        int videoStartBitrate = 0;
-        String bitrateTypeDefault = context.getString(R.string.pref_startvideobitrate_default);
-        String bitrateType = prefs.getString(keyprefVideoBitrateType, bitrateTypeDefault);
-        if (!bitrateType.equals(bitrateTypeDefault)) {
-            String bitrateValue = prefs.getString(keyprefVideoBitrateValue, context.getString(R.string.pref_startvideobitratevalue_default));
-            videoStartBitrate = Integer.parseInt(bitrateValue);
-        }
-
-        int audioStartBitrate = 0;
-        bitrateTypeDefault = context.getString(R.string.pref_startaudiobitrate_default);
-        bitrateType = prefs.getString(
-                keyprefAudioBitrateType, bitrateTypeDefault);
-        if (!bitrateType.equals(bitrateTypeDefault)) {
-            String bitrateValue = prefs.getString(keyprefAudioBitrateValue, context.getString(R.string.pref_startaudiobitratevalue_default));
-            audioStartBitrate = Integer.parseInt(bitrateValue);
-        }
-
-        // TODO: could make that configurable
-        boolean loopback = false;  //intent.getBooleanExtra(EXTRA_LOOPBACK, false);
-        peerConnectionParameters = new PeerConnectionClient.PeerConnectionParameters(
-                false, //prefs.getBoolean(keyprefVideoCallEnabled, Boolean.valueOf(context.getString(R.string.pref_videocall_default))),
-                loopback,
-                videoWidth,
-                videoHeight,
-                cameraFps,
-                videoStartBitrate,
-                prefs.getString(keyprefVideoCodec, context.getString(R.string.pref_videocodec_default)),
-                prefs.getBoolean(keyprefHwCodecAcceleration, Boolean.valueOf(context.getString(R.string.pref_hwcodec_default))),
-                audioStartBitrate,
-                prefs.getString(keyprefAudioCodec, context.getString(R.string.pref_audiocodec_default)),
-                prefs.getBoolean(keyprefNoAudioProcessingPipeline, Boolean.valueOf(context.getString(R.string.pref_noaudioprocessing_default))),
-                prefs.getBoolean(keyprefCpuUsageDetection, Boolean.valueOf(context.getString(R.string.pref_cpu_usage_detection_default))));
-         */
 
         peerConnectionParameters = new PeerConnectionClient.PeerConnectionParameters(
                 videoEnabled,
@@ -660,13 +554,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     // Disconnect from remote resources, dispose of local resources, and exit.
     public void disconnectWebrtc() {
         Log.e(TAG, "@@@@@ disconnectWebrtc");
-        activityRunning = false;
-        /* Signaling is already disconnected
-        if (appRtcClient != null) {
-            appRtcClient.disconnectFromRoom();
-            appRtcClient = null;
-        }
-        */
+
         if (peerConnectionClient != null) {
             peerConnectionClient.close();
             peerConnectionClient = null;
@@ -675,14 +563,6 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             audioManager.close();
             audioManager = null;
         }
-        /*
-        if (iceConnected && !isError) {
-            setResult(RESULT_OK);
-        } else {
-            setResult(RESULT_CANCELED);
-        }
-        finish();
-        */
     }
 
     private void onAudioManagerChangedState() {
@@ -797,6 +677,10 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             @Override
             public void run() {
                 Log.e(TAG, "@@@@@ onIceGatheringComplete");
+                if (peerConnectionClient == null) {
+                    // if the user hangs up the call before its setup we need to bail
+                    return;
+                }
                 if (signalingParameters.initiator) {
                     // we have gathered all candidates and SDP. Combine then in SIP SDP and send over to JAIN SIP
                     DeviceImpl.GetInstance().CallWebrtc(signalingParameters.sipUrl,
