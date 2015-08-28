@@ -71,8 +71,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     CheckBox cbMuted;
     Button btnHangup;
     Button btnAnswer, btnAnswerAudio;
-    Button btnDecline;
-    Button btnCancel;
+    //Button btnDecline;
+    //Button btnCancel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -99,10 +99,10 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         btnAnswer.setOnClickListener(this);
         btnAnswerAudio = (Button)findViewById(R.id.button_answer_audio);
         btnAnswerAudio.setOnClickListener(this);
-        btnDecline = (Button)findViewById(R.id.button_decline);
-        btnDecline.setOnClickListener(this);
-        btnCancel = (Button)findViewById(R.id.button_cancel);
-        btnCancel.setOnClickListener(this);
+        //btnDecline = (Button)findViewById(R.id.button_decline);
+        //btnDecline.setOnClickListener(this);
+        //btnCancel = (Button)findViewById(R.id.button_cancel);
+        //btnCancel.setOnClickListener(this);
         cbMuted = (CheckBox)findViewById(R.id.checkbox_muted);
         cbMuted.setOnCheckedChangeListener(this);
         // #WEBRTC-VIDEO TODO: uncomment when video is introduced
@@ -132,7 +132,14 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
         // Get Intent parameters.
         final Intent intent = getIntent();
-
+        if (intent.getAction() == RCDevice.OUTGOING_CALL) {
+            btnAnswer.setVisibility(View.INVISIBLE);
+            btnAnswerAudio.setVisibility(View.INVISIBLE);
+        }
+        else {
+            btnAnswer.setVisibility(View.VISIBLE);
+            btnAnswerAudio.setVisibility(View.VISIBLE);
+        }
         // Setup video stuff
         scalingType = VideoRendererGui.ScalingType.SCALE_ASPECT_FILL;
         videoView = (GLSurfaceView) findViewById(R.id.glview_call);
@@ -198,15 +205,21 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     // UI Events
     public void onClick(View view) {
         if (view.getId() == R.id.button_hangup) {
-            if (connection == null) {
-                Log.e(TAG, "Error: not connected");
-            }
-            else {
-                connection.disconnect();
-                connection = null;
+            if (pendingConnection != null) {
+                // incoming ringing
+                pendingConnection.reject();
                 pendingConnection = null;
-                finish();
+            } else {
+                if (connection != null) {
+                    // incoming established or outgoing any state (pending, connecting, connected)
+                    connection.disconnect();
+                    connection = null;
+                    pendingConnection = null;
+                } else {
+                    Log.e(TAG, "Error: not connected/connecting/pending");
+                }
             }
+            finish();
         } else if (view.getId() == R.id.button_answer) {
             if (pendingConnection != null) {
                 HashMap<String, Object> params = new HashMap<String, Object>();
@@ -233,15 +246,13 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 audioManager.abandonAudioFocus(this);
                 */
             }
-        } else if (view.getId() == R.id.button_decline) {
+        }
+        /*
+        else if (view.getId() == R.id.button_decline) {
+
             if (pendingConnection != null) {
                 pendingConnection.reject();
                 pendingConnection = null;
-                /*
-                ringingPlayer.pause();
-                // Abandon audio focus when playback complete
-                audioManager.abandonAudioFocus(this);
-                */
                 finish();
             }
         } else if (view.getId() == R.id.button_cancel) {
@@ -252,14 +263,10 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 connection.disconnect();
                 connection = null;
                 pendingConnection = null;
-                /*
-                callingPlayer.pause();
-                // Abandon audio focus when playback complete
-                audioManager.abandonAudioFocus(this);
-                */
                 finish();
             }
         }
+        */
     }
 
     @Override
