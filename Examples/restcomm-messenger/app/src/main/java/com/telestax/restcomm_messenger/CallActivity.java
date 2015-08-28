@@ -211,7 +211,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                     }
                     */
                     pendingConnection = device.incomingConnection;
-                    pendingConnection.listenerReady(finalActivity);
+                    pendingConnection.setConnectionListener(finalActivity);
 
                     // the number from which we got the call
                     String incomingCallDid = finalIntent.getStringExtra(RCDevice.EXTRA_DID);

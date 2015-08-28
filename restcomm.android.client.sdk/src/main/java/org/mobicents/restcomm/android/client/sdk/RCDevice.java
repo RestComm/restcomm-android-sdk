@@ -206,6 +206,18 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
     }
 
     /**
+     * Update Device listener to be receiving Device related events. This is
+     * usually needed when we switch activities and want the new activity to receive
+     * events
+     * @param listener  New device listener
+     */
+    public void setDeviceListener(RCDeviceListener listener)
+    {
+        this.listener = listener;
+        //DeviceImpl.GetInstance().sipuaConnectionListener = this;
+    }
+
+    /**
      * Retrieves the capability token passed to RCClient.createDevice
      *
      * @return Capability token
@@ -307,14 +319,6 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
         return state;
     }
 
-    /**
-     * Update the Device listener
-     *
-     * @param listener Updated device listener
-     */
-    public void setDeviceListener(RCDeviceListener listener) {
-
-    }
     /**
      * Set pending intents for incoming calls and messages. In order to be notified of RestComm Client
      * events you need to associate your Activities with intents and provide one intent for whichever activity

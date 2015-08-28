@@ -212,11 +212,13 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         this.listener = null;
     }
 
+    /*
     public void listenerReady(RCConnectionListener listener)
     {
         this.listener = listener;
         //initializeWebrtc(true);
     }
+    */
 
     // 'Copy' constructor
     public RCConnection(RCConnection connection)
@@ -349,7 +351,9 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     }
 
     /**
-     * Update connection listener to be receiving Connection related events
+     * Update connection listener to be receiving Connection related events. This is
+     * usually needed when we switch activities and want the new activity to receive
+     * events
      * @param listener  New connection listener
      */
     public void setConnectionListener(RCConnectionListener listener)

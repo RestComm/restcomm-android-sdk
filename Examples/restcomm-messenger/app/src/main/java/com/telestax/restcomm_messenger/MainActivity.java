@@ -187,10 +187,16 @@ public class MainActivity extends Activity implements RCDeviceListener,
             device.updateParams(params);
         }
         else if (view.getId() == R.id.button_message) {
-            Intent intent = new Intent(this, MessageActivity.class);
-            intent.setAction(RCDevice.OPEN_MESSAGE_SCREEN);
-            intent.putExtra(RCDevice.EXTRA_DID, txtUri.getText().toString());
-            startActivity(intent);
+            WifiManager wifi = (WifiManager) getSystemService(WIFI_SERVICE);
+            if (wifi.isWifiEnabled()) {
+                Intent intent = new Intent(this, MessageActivity.class);
+                intent.setAction(RCDevice.OPEN_MESSAGE_SCREEN);
+                intent.putExtra(RCDevice.EXTRA_DID, txtUri.getText().toString());
+                startActivity(intent);
+            }
+            else {
+                showOkAlert("No Connectivity", "No network connectivity");
+            }
         }
         else if (view.getId() == R.id.button_listen) {
             device.listen();
