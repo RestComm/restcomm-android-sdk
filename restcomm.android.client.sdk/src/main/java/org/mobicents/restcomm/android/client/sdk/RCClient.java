@@ -47,6 +47,7 @@ public class RCClient {
         CONNECTION_DECLINED,
         CONNECTION_TIMEOUT,
         NO_CONNECTIVITY,
+        WEBRTC_PEERCONNECTION_ERROR,
     }
 
     public static String errorText(ErrorCodes errorCode) {
@@ -59,6 +60,9 @@ public class RCClient {
         }
         else if (errorCode == ErrorCodes.NO_CONNECTIVITY) {
             return "No network connectivity";
+        }
+        else if (errorCode == ErrorCodes.WEBRTC_PEERCONNECTION_ERROR) {
+            return "Webrtc Peer Connection error";
         }
         return "Generic Restcomm Client error";
     }

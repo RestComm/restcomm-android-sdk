@@ -61,6 +61,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     private HashMap<String, Object> connectParams = new HashMap<String, Object>();
     private HashMap<String, Object> acceptParams = new HashMap<String, Object>();
     private RCDevice device;
+    private boolean pendingError = false;
     // #WEBRTC-VIDEO TODO: uncomment when video is introduced
     //private RelativeLayout parentLayout;
     //MediaPlayer ringingPlayer;
@@ -344,7 +345,12 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         pendingConnection = null;
         setVolumeControlStream(AudioManager.STREAM_MUSIC);
 
-        finish();
+        if (!pendingError) {
+            finish();
+        }
+        else {
+            pendingError = false;
+        }
     }
 
     public void onCancelled(RCConnection connection) {
@@ -381,6 +387,9 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     }
 
     public void onDisconnected(RCConnection connection, int errorCode, String errorText) {
+        pendingError = true;
+        showOkAlert("RCConnection Error", errorText);
+        /*
         if (errorCode == RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal()) {
             showOkAlert("No Connectivity", errorText);
         } else if (errorCode == RCClient.ErrorCodes.GENERIC_ERROR.ordinal()) {
@@ -388,6 +397,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         } else {
             showOkAlert("Unknown Error", "Unknown Restcomm Client error");
         }
+        */
         this.connection = null;
         pendingConnection = null;
     }
@@ -477,6 +487,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
+                finish();
             }
         });
         alertDialog.show();

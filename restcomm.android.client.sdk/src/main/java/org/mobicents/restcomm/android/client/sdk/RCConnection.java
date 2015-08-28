@@ -749,10 +749,21 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     }
 
     @Override
-    public void onPeerConnectionError(final String description) {
-        //reportError(description);
-        Log.e(TAG, "PeerConnection error: " + description);
-        disconnect();
+    public void onPeerConnectionError(final String description)
+    {
+        final RCConnection connection = this;
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                Log.e(TAG, "PeerConnection error: " + description);
+                disconnect();
+                if (connection.listener != null) {
+                    connection.listener.onDisconnected(connection, RCClient.ErrorCodes.WEBRTC_PEERCONNECTION_ERROR.ordinal(), description);
+                }
+            }
+        };
+        mainHandler.post(myRunnable);
     }
 
     public void onLocalVideo(VideoTrack videoTrack)
