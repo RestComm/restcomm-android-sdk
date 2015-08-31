@@ -31,7 +31,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
 
     SharedPreferences prefs;
     private RCDevice device;
-    private HashMap<String, String> params;
+    private HashMap<String, Object> params;
     private static final String TAG = "MainActivity";
 
     // UI elements
@@ -71,7 +71,6 @@ public class MainActivity extends Activity implements RCDeviceListener,
         btnShutdown = (Button)findViewById(R.id.button_shutdown);
         btnShutdown.setOnClickListener(this);
 
-
         PreferenceManager.setDefaultValues(this, "preferences.xml", MODE_PRIVATE, R.xml.preferences, false);
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -86,16 +85,19 @@ public class MainActivity extends Activity implements RCDeviceListener,
         });
 
         // TODO: we don't support capability tokens yet so let's use an empty string
-        device = RCClient.createDevice("", this);
+        params = new HashMap<String, Object>();
+        params.put("pref_proxy_ip", prefs.getString("pref_proxy_ip", "54.225.212.193"));
+        params.put("pref_proxy_port", prefs.getString("pref_proxy_port", "5080"));
+        params.put("pref_sip_user", prefs.getString("pref_sip_user", "bob"));
+        params.put("pref_sip_password", prefs.getString("pref_sip_password", "1234"));
+        device = RCClient.createDevice(params, this);
         device.setPendingIntents(new Intent(getApplicationContext(), CallActivity.class),
                 new Intent(getApplicationContext(), MessageActivity.class));
-
-        params = new HashMap<String, String>();
 
         // preferences
         prefs.registerOnSharedPreferenceChangeListener(this);
 
-        txtUri.setText("sip:1235@23.23.228.238:5080");
+        txtUri.setText("sip:1235@192.168.2.32:5080");
         //txtUri.setText("sip:alice@192.168.2.32:5080");
     }
 
@@ -114,7 +116,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
         Log.i(TAG, "%% onResume");
         Intent intent = getIntent();
 
-        initializeSipFromPreferences();
+        //initializeSipFromPreferences();
 
         /*
         // If reason for resume is that we got an intent designating either an incoming call or message
@@ -205,7 +207,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
             device.unlisten();
         }
         else if (view.getId() == R.id.button_init) {
-            device = RCClient.createDevice("", this);
+            device = RCClient.createDevice(params, this);
             device.setPendingIntents(new Intent(getApplicationContext(), CallActivity.class),
                     new Intent(getApplicationContext(), MessageActivity.class));
         }
@@ -299,6 +301,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
     }
 
     @SuppressWarnings("static-access")
+    /*
     private void initializeSipFromPreferences() {
         params.put("pref_proxy_ip", prefs.getString("pref_proxy_ip", "54.225.212.193"));
         params.put("pref_proxy_port", prefs.getString("pref_proxy_port", "5080"));
@@ -306,6 +309,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
         params.put("pref_sip_password", prefs.getString("pref_sip_password", "1234"));
         device.updateParams(params);
     }
+    */
 
     // Helpers
     private void showOkAlert(final String title, final String detail) {

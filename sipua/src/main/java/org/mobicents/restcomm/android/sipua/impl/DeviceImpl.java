@@ -21,6 +21,7 @@ import org.mobicents.restcomm.android.sipua.impl.SipEvent.SipEventType;
 //import org.mobicents.restcomm.android.sdk.ui.NotifyMessage;
 
 import android.content.Context;
+import android.util.Log;
 
 public class DeviceImpl implements IDevice,Serializable {
 	
@@ -29,15 +30,17 @@ public class DeviceImpl implements IDevice,Serializable {
 	SipManager sipManager;
 	SipProfile sipProfile;
 	public SoundManager soundManager;
-	boolean isInitialized;
+	boolean isInitialized = false;
 	public SipUADeviceListener sipuaDeviceListener = null;
 	public SipUAConnectionListener sipuaConnectionListener = null;
+	private static final String TAG = "DeviceImpl";
 
 	private DeviceImpl(){
 		
 	}
 	public static DeviceImpl GetInstance(){
 		if (device == null){
+			Log.v(TAG, "Getting allocated");
 			device = new DeviceImpl();
 		}
 		return device;
@@ -47,22 +50,30 @@ public class DeviceImpl implements IDevice,Serializable {
         sipManager.setCustomHeaders(customHeaders);
     }
 	public void Initialize(Context context, SipProfile sipProfile) {
+		Log.v(TAG, "Initialize()");
+
 		this.context = context;
 		this.sipProfile = sipProfile;
 		sipManager = new SipManager(sipProfile);
 		soundManager = new SoundManager(context,sipProfile.getLocalIp());
 		sipManager.addSipListener(this);
+		isInitialized = true;
 	}
 
 	public void Shutdown()
 	{
-		sipManager.removeSipListener(this);
-		sipManager.shutdown();
-		sipuaDeviceListener = null;
-		sipuaConnectionListener = null;
+		Log.v(TAG, "Shutdown");
+		if (isInitialized) {
+			Log.v(TAG, "Shutdown while initialized");
+			sipManager.removeSipListener(this);
+			sipManager.shutdown();
+			sipuaDeviceListener = null;
+			sipuaConnectionListener = null;
 
-		// mark the instace null so that it gets freed
-		device = null;
+			// mark the instace null so that it gets freed
+			device = null;
+			isInitialized = false;
+		}
 	}
 	
 	@Override

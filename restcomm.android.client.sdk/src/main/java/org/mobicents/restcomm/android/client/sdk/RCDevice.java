@@ -28,11 +28,15 @@ import java.util.Map;
 
 import android.app.Activity;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.net.wifi.WifiManager;
 import android.opengl.GLSurfaceView;
 import android.os.Handler;
@@ -113,6 +117,12 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
         CLIENT_NAME,
     }
 
+    public enum ReachabilityState {
+        REACHABILITY_WIFI,
+        REACHABILITY_MOBILE,
+        REACHABILITY_NONE,
+    }
+
     private static final String TAG = "RCDevice";
     public static String OUTGOING_CALL = "ACTION_OUTGOING_CALL";
     public static String INCOMING_CALL = "ACTION_INCOMING_CALL";
@@ -125,6 +135,7 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
     public static String EXTRA_SDP = "com.telestax.restcomm_messenger.SDP";
     //public static String EXTRA_DEVICE = "com.telestax.restcomm.android.client.sdk.extra-device";
     //public static String EXTRA_CONNECTION = "com.telestax.restcomm.android.client.sdk.extra-connection";
+    HashMap<String, Object> parameters;
     PendingIntent pendingCallIntent;
     PendingIntent pendingMessageIntent;
     private RCConnection incomingConnection;
@@ -134,21 +145,58 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
     /**
      * Initialize a new RCDevice object
      *
-     * @param capabilityToken Capability Token
+     * @param parameters RCDevice parameters
      * @param deviceListener  Listener of RCDevice
      */
-    protected RCDevice(String capabilityToken, RCDeviceListener deviceListener) {
-        this.updateCapabilityToken(capabilityToken);
+    protected RCDevice(HashMap<String, Object> parameters, RCDeviceListener deviceListener) {
+        //this.updateCapabilityToken(capabilityToken);
         this.listener = deviceListener;
 
-        sipProfile = new SipProfile();
         // TODO: check if those headers are needed
         HashMap<String, String> customHeaders = new HashMap<>();
+        state = DeviceState.OFFLINE;
 
-        DeviceImpl deviceImpl = DeviceImpl.GetInstance();
-        deviceImpl.Initialize(RCClient.getInstance().context, sipProfile, customHeaders);
-        DeviceImpl.GetInstance().sipuaDeviceListener = this;
-        state = DeviceState.READY;
+        // register broadcast receiver for reachability
+        BroadcastReceiver networkStateReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                RCDevice device = RCClient.getInstance().listDevices().get(0);
+                //Log.w(TAG, "Reachability changed");
+                ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+                NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+                if (null != activeNetwork) {
+                    if (activeNetwork.getType() == ConnectivityManager.TYPE_WIFI) {
+                        reachabilityChanged(ReachabilityState.REACHABILITY_WIFI);
+                        return;
+                    }
+
+                    if (activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE) {
+                        reachabilityChanged(ReachabilityState.REACHABILITY_MOBILE);
+                        return;
+                    }
+                }
+                reachabilityChanged(ReachabilityState.REACHABILITY_NONE);
+            }
+        };
+        Context context = RCClient.getInstance().context;
+        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
+        context.registerReceiver(networkStateReceiver, filter);
+
+        // initialize JAIN SIP if we have connectivity
+        this.parameters = parameters;
+        RCClient client = RCClient.getInstance();
+        WifiManager wifi = (WifiManager) client.context.getSystemService(client.context.WIFI_SERVICE);
+        if (wifi.isWifiEnabled()) {
+            initializeSignalling(this);
+            /*
+            sipProfile = new SipProfile();
+            DeviceImpl deviceImpl = DeviceImpl.GetInstance();
+            deviceImpl.Initialize(RCClient.getInstance().context, sipProfile, customHeaders);
+            DeviceImpl.GetInstance().sipuaDeviceListener = this;
+            state = DeviceState.READY;
+            */
+        }
 
         /*
         // volume control should be by default 'music' which will control the ringing sounds and 'voice call' when within a call
@@ -157,6 +205,56 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
         messagePlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         audioManager = (AudioManager)RCClient.getInstance().context.getSystemService(Context.AUDIO_SERVICE);
         */
+    }
+
+    private void initializeSignalling(RCDevice device)
+    {
+        sipProfile = new SipProfile();
+        updateSipProfile(parameters);
+        DeviceImpl deviceImpl = DeviceImpl.GetInstance();
+        deviceImpl.Initialize(RCClient.getInstance().context, sipProfile);
+        DeviceImpl.GetInstance().sipuaDeviceListener = device;
+        device.state = DeviceState.READY;
+        //final RCDevice finalDevice = device;
+        DeviceImpl.GetInstance().Register();
+
+        /*
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                DeviceImpl.GetInstance().Register();
+            }
+        };
+        // TODO: for now I register with a delay. The optimum solution is to be notified from JAIN SIP when setup is ready and then register
+        mainHandler.postDelayed(myRunnable, 1000);
+        */
+    }
+
+    private void reachabilityChanged(ReachabilityState newState)
+    {
+        final RCDevice device = this;
+        final ReachabilityState state = newState;
+
+        // important: post this in the main thread in next loop as broadcast receivers have issues with asynchronous operations. Not sure
+        // what JAIN does behind the scenes but I got crashes when trying shut down jain without 'post'ing below
+        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (state == ReachabilityState.REACHABILITY_WIFI && device.state != DeviceState.READY) {
+                    Log.w(TAG, "Reachability changed; wifi available");
+                    initializeSignalling(device);
+                }
+                if (state == ReachabilityState.REACHABILITY_NONE && device.state != DeviceState.OFFLINE) {
+                    Log.w(TAG, "Reachability changed; no connectivity");
+                    DeviceImpl.GetInstance().Shutdown();
+                    sipProfile = null;
+                    device.state = DeviceState.OFFLINE;
+                }
+            }
+        };
+        mainHandler.post(myRunnable);
     }
 
     public void shutdown() {
@@ -400,20 +498,26 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
      *
      * @param params The params to be updated
      */
-    public void updateParams(HashMap<String, String> params) {
+    public void updateParams(HashMap<String, Object> params) {
         if (haveConnectivity()) {
+            updateSipProfile(params);
+            DeviceImpl.GetInstance().Register();
+        }
+    }
+
+    public void updateSipProfile(HashMap<String, Object> params) {
+        if (params != null) {
             for (String key : params.keySet()) {
                 if (key.equals("pref_proxy_ip")) {
-                    sipProfile.setRemoteIp(params.get(key));
+                    sipProfile.setRemoteIp((String) params.get(key));
                 } else if (key.equals("pref_proxy_port")) {
-                    sipProfile.setRemotePort(Integer.parseInt(params.get(key)));
+                    sipProfile.setRemotePort(Integer.parseInt((String) params.get(key)));
                 } else if (key.equals("pref_sip_user")) {
-                    sipProfile.setSipUserName(params.get(key));
+                    sipProfile.setSipUserName((String) params.get(key));
                 } else if (key.equals("pref_sip_password")) {
-                    sipProfile.setSipPassword(params.get(key));
+                    sipProfile.setSipPassword((String) params.get(key));
                 }
             }
-            DeviceImpl.GetInstance().Register();
         }
     }
 

@@ -23,6 +23,7 @@
 package org.mobicents.restcomm.android.client.sdk;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -126,15 +127,15 @@ public class RCClient {
 
     /**
      * Create an initialize a new Device object
-     * @param capabilityToken  The capability token to use
+     * @param parameters  Restcomm Client parameters
      * @param deviceListener  The listener for upcoming RCDevice events
      * @return The newly created RCDevice
      * @see RCDevice
      */
-    public static RCDevice createDevice(String capabilityToken, RCDeviceListener deviceListener) //, GLSurfaceView videoView, SharedPreferences prefs, int viewId)
+    public static RCDevice createDevice(HashMap<String, Object> parameters, RCDeviceListener deviceListener) //, GLSurfaceView videoView, SharedPreferences prefs, int viewId)
     {
         if (list.size() == 0) {
-            RCDevice device = new RCDevice(capabilityToken, deviceListener);  //, videoView, prefs, viewId);
+            RCDevice device = new RCDevice(parameters, deviceListener);  //, videoView, prefs, viewId);
             list.add(device);
             initialized = true;
         }

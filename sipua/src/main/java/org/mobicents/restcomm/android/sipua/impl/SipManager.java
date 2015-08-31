@@ -82,13 +82,14 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	private ListeningPoint udpListeningPoint;
 	private SipProfile sipProfile;
+	private String latestProxyIp;
 	private Dialog dialog;
 	// Save the created ACK request, to respond to retransmitted 2xx
 	private Request ackRequest;
 	private boolean ackReceived;
 
 	private ArrayList<ISipEventListener> sipEventListenerList = new ArrayList<ISipEventListener>();
-	private boolean initialized;
+	private boolean initialized = false;
 	private SipManagerState sipManagerState;
     private HashMap<String,String> customHeaders;
 	private ClientTransaction currentClientTransaction = null;
@@ -111,6 +112,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	private boolean initialize()
 	{
+		Log.v(TAG, "initialize()");
+
 		sipManagerState = SipManagerState.REGISTERING;
 		this.sipProfile.setLocalIp(getIPAddress(true));
 
@@ -124,6 +127,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				sipProfile.getRemoteEndpoint() + "/"
 						+ sipProfile.getTransport());
 		properties.setProperty("android.javax.sip.STACK_NAME", "androidSip");
+		latestProxyIp = sipProfile.getRemoteIp();
 
 		try {
 			if (udpListeningPoint != null) {
@@ -160,7 +164,10 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	// shutdown SIP stack
 	public boolean shutdown()
 	{
+		Log.v(TAG, "shutdown");
+
 		if (sipManagerState != SipManagerState.STACK_STOPPED) {
+			Log.v(TAG, "shutdown while stack is started");
 			try {
 				// during initialization we use this ordering: stack, point, provider, listener
 				sipProvider.removeSipListener(this);
@@ -310,8 +317,11 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	@Override
 	public void Register() {
-		if(!initialize())
-			return;//If initialization failed, dont proceeds
+		if (!latestProxyIp.equals(sipProfile.getRemoteIp())) {
+			// proxy ip address has been updated, need to re-initialize
+			if (!initialize())
+				return;//If initialization failed, dont proceeds
+		}
 
 		Register registerRequest = new Register();
 		try {
@@ -341,8 +351,11 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	public void Unregister() {
-		if(!initialize())
-			return;//If initialization failed, dont proceeds
+		if (!latestProxyIp.equals(sipProfile.getRemoteIp())) {
+			// proxy ip address has been updated, need to re-initialize
+			if (!initialize())
+				return;//If initialization failed, dont proceeds
+		}
 
 		Register registerRequest = new Register();
 		try {

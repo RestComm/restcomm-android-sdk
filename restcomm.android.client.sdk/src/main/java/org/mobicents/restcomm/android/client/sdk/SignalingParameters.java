@@ -100,7 +100,7 @@ public class SignalingParameters {
         }
         matcher.appendTail(stringBuffer);
 
-        Log.e(TAG, "@@@@ After replace: " + stringBuffer.toString());
+        //Log.v(TAG, "@@@@ After replace: " + stringBuffer.toString());
 
         return stringBuffer.toString();
     }
