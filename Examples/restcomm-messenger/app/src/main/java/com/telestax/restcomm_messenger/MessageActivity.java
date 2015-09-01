@@ -1,6 +1,8 @@
 package com.telestax.restcomm_messenger;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.app.Activity;
@@ -116,6 +118,9 @@ public class MessageActivity extends Activity implements View.OnClickListener {
                 */
                 txtMessage.setText("");
             }
+            else {
+                showOkAlert("RCDevice Error", "No network connectivity");
+            }
         }
     }
 
@@ -161,5 +166,20 @@ public class MessageActivity extends Activity implements View.OnClickListener {
         intent.setAction("CLEAR_ACTION");
         setIntent(intent);
     }
+
+    // Helpers
+    private void showOkAlert(final String title, final String detail) {
+        AlertDialog alertDialog = new AlertDialog.Builder(MessageActivity.this).create();
+        alertDialog.setTitle(title);
+        alertDialog.setMessage(detail);
+        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+                //finish();
+            }
+        });
+        alertDialog.show();
+    }
+
 
 }

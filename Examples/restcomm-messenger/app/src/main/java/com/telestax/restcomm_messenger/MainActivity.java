@@ -84,9 +84,8 @@ public class MainActivity extends Activity implements RCDeviceListener,
             }
         });
 
-        // TODO: we don't support capability tokens yet so let's use an empty string
         params = new HashMap<String, Object>();
-        params.put("pref_proxy_ip", prefs.getString("pref_proxy_ip", "54.225.212.193"));
+        params.put("pref_proxy_ip", prefs.getString("pref_proxy_ip", "23.23.228.238"));
         params.put("pref_proxy_port", prefs.getString("pref_proxy_port", "5080"));
         params.put("pref_sip_user", prefs.getString("pref_sip_user", "bob"));
         params.put("pref_sip_password", prefs.getString("pref_sip_password", "1234"));
@@ -97,7 +96,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
         // preferences
         prefs.registerOnSharedPreferenceChangeListener(this);
 
-        txtUri.setText("sip:1235@192.168.2.32:5080");
+        txtUri.setText("sip:1235@23.23.228.238:5080");
         //txtUri.setText("sip:alice@192.168.2.32:5080");
     }
 
@@ -115,20 +114,6 @@ public class MainActivity extends Activity implements RCDeviceListener,
         // The activity has become visible (it is now "resumed").
         Log.i(TAG, "%% onResume");
         Intent intent = getIntent();
-
-        //initializeSipFromPreferences();
-
-        /*
-        // If reason for resume is that we got an intent designating either an incoming call or message
-        if (intent.getAction() == RCDevice.INCOMING_CALL) {
-            ArrayList<RCDevice> list = RCClient.getInstance().listDevices();
-            if (list.size() != 0) {
-                RCDevice device = list.get(0);
-                RCConnection pendingConnection = device.getPendingConnection();
-                handleIncomingConnection(device, pendingConnection);
-            }
-        }
-        */
     }
 
     @Override
@@ -168,8 +153,8 @@ public class MainActivity extends Activity implements RCDeviceListener,
     // UI Events
     public void onClick(View view) {
         if (view.getId() == R.id.button_dial || view.getId() == R.id.button_dial_audio) {
-            WifiManager wifi = (WifiManager) getSystemService(WIFI_SERVICE);
-            if (wifi.isWifiEnabled()) {
+            //WifiManager wifi = (WifiManager) getSystemService(WIFI_SERVICE);
+            //if (wifi.isWifiEnabled()) {
                 Intent intent = new Intent(this, CallActivity.class);
                 intent.setAction(RCDevice.OUTGOING_CALL);
                 intent.putExtra(RCDevice.EXTRA_DID, txtUri.getText().toString());
@@ -180,25 +165,28 @@ public class MainActivity extends Activity implements RCDeviceListener,
                     intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, true);
                 }
                 startActivityForResult(intent, CONNECTION_REQUEST);
-            }
-            else {
-                showOkAlert("No Connectivity", "No network connectivity");
-            }
+            //}
+            //else {
+            //    showOkAlert("No Connectivity", "No network connectivity");
+            //}
         }
         else if (view.getId() == R.id.button_register) {
-            device.updateParams(params);
+            if (!device.updateParams(params)) {
+                showOkAlert("RCDevice Error", "No network connectivity");
+            }
+
         }
         else if (view.getId() == R.id.button_message) {
-            WifiManager wifi = (WifiManager) getSystemService(WIFI_SERVICE);
-            if (wifi.isWifiEnabled()) {
+            //WifiManager wifi = (WifiManager) getSystemService(WIFI_SERVICE);
+            //if (wifi.isWifiEnabled()) {
                 Intent intent = new Intent(this, MessageActivity.class);
                 intent.setAction(RCDevice.OPEN_MESSAGE_SCREEN);
                 intent.putExtra(RCDevice.EXTRA_DID, txtUri.getText().toString());
                 startActivity(intent);
-            }
-            else {
-                showOkAlert("No Connectivity", "No network connectivity");
-            }
+            //}
+            //else {
+            //    showOkAlert("No Connectivity", "No network connectivity");
+            //}
         }
         else if (view.getId() == R.id.button_listen) {
             device.listen();
@@ -283,7 +271,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
                                           String key) {
         boolean updated = false;
         if (key.equals("pref_proxy_ip")) {
-            params.put("pref_proxy_ip", prefs.getString("pref_proxy_ip", "54.225.212.193"));
+            params.put("pref_proxy_ip", prefs.getString("pref_proxy_ip", "23.23.228.238"));
             updated = true;
         } else if (key.equals("pref_proxy_port")) {
             params.put("pref_proxy_port", prefs.getString("pref_proxy_port", "5060"));
@@ -296,20 +284,11 @@ public class MainActivity extends Activity implements RCDeviceListener,
             updated = true;
         }
         if (updated) {
-            device.updateParams(params);
+            if (!device.updateParams(params)) {
+                showOkAlert("RCDevice Error", "No network connectivity");
+            }
         }
     }
-
-    @SuppressWarnings("static-access")
-    /*
-    private void initializeSipFromPreferences() {
-        params.put("pref_proxy_ip", prefs.getString("pref_proxy_ip", "54.225.212.193"));
-        params.put("pref_proxy_port", prefs.getString("pref_proxy_port", "5080"));
-        params.put("pref_sip_user", prefs.getString("pref_sip_user", "bob"));
-        params.put("pref_sip_password", prefs.getString("pref_sip_password", "1234"));
-        device.updateParams(params);
-    }
-    */
 
     // Helpers
     private void showOkAlert(final String title, final String detail) {

@@ -95,12 +95,8 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
      * Device state
      */
     public enum DeviceState {
-        OFFLINE, /**
-         * Device is offline
-         */
-        READY, /**
-         * Device is ready to make and receive connections
-         */
+        OFFLINE, /** Device is offline */
+        READY, /** Device is ready to make and receive connections */
         BUSY,  /** Device is busy */
     }
 
@@ -189,13 +185,6 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
         WifiManager wifi = (WifiManager) client.context.getSystemService(client.context.WIFI_SERVICE);
         if (wifi.isWifiEnabled()) {
             initializeSignalling(this);
-            /*
-            sipProfile = new SipProfile();
-            DeviceImpl deviceImpl = DeviceImpl.GetInstance();
-            deviceImpl.Initialize(RCClient.getInstance().context, sipProfile, customHeaders);
-            DeviceImpl.GetInstance().sipuaDeviceListener = this;
-            state = DeviceState.READY;
-            */
         }
 
         /*
@@ -214,9 +203,8 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
         DeviceImpl deviceImpl = DeviceImpl.GetInstance();
         deviceImpl.Initialize(RCClient.getInstance().context, sipProfile);
         DeviceImpl.GetInstance().sipuaDeviceListener = device;
-        device.state = DeviceState.READY;
-        //final RCDevice finalDevice = device;
         DeviceImpl.GetInstance().Register();
+        device.state = DeviceState.READY;
 
         /*
         Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
@@ -284,22 +272,20 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
     }
 
     /**
-     * Start listening for incoming connections (<b>Not Implemented yet</b>: for now once the RCDevice is created we are always listening for incoming connections)
+     * Start listening for incoming connections
      */
     public void listen() {
-        if (state == DeviceState.OFFLINE) {
+        if (state == DeviceState.READY) {
             DeviceImpl.GetInstance().Register();
-            state = DeviceState.READY;
         }
     }
 
     /**
-     * Stop listeninig for incoming connections (Not Implemented yet)
+     * Stop listeninig for incoming connections
      */
     public void unlisten() {
-        if (state != DeviceState.OFFLINE) {
+        if (state == DeviceState.READY) {
             DeviceImpl.GetInstance().Unregister();
-            state = DeviceState.OFFLINE;
         }
     }
 
@@ -343,7 +329,9 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
      */
     public RCConnection connect(Map<String, Object> parameters, RCConnectionListener listener) {
         Activity activity = (Activity) listener;
-        if (haveConnectivity()) {
+        if (this.state == DeviceState.READY) {
+            Log.i(TAG, "RCDevice.connect(), with connectivity");
+
             Boolean enableVideo = (Boolean)parameters.get("video-enabled");
             RCConnection connection = new RCConnection(listener);
             connection.incoming = false;
@@ -371,7 +359,7 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
      * @param parameters Parameters used for the message, such as 'username' that holds the recepient for the message
      */
     public boolean sendMessage(String message, Map<String, String> parameters) {
-        if (haveConnectivity()) {
+        if (this.state == DeviceState.READY) {
             DeviceImpl.GetInstance().SendMessage(parameters.get("username"), message);
             /*
             int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
@@ -497,11 +485,16 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
      * Update prefernce parameters such as username/password
      *
      * @param params The params to be updated
+     * @return Whether the update was successful or not
      */
-    public void updateParams(HashMap<String, Object> params) {
-        if (haveConnectivity()) {
+    public boolean updateParams(HashMap<String, Object> params) {
+        if (this.state == DeviceState.READY) {
             updateSipProfile(params);
             DeviceImpl.GetInstance().Register();
+            return true;
+        }
+        else {
+            return false;
         }
     }
 

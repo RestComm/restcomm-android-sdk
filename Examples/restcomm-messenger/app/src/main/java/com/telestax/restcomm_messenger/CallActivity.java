@@ -2,12 +2,10 @@ package com.telestax.restcomm_messenger;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
-import android.media.MediaPlayer;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -62,12 +60,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     private HashMap<String, Object> acceptParams = new HashMap<String, Object>();
     private RCDevice device;
     private boolean pendingError = false;
-    // #WEBRTC-VIDEO TODO: uncomment when video is introduced
-    //private RelativeLayout parentLayout;
-    //MediaPlayer ringingPlayer;
-    //MediaPlayer callingPlayer;
-    //AudioManager audioManager;
-    final String TAG_LOCAL_VIDEO_VIEW = "local-video-view";
 
     CheckBox cbMuted;
     Button btnHangup;
@@ -106,24 +98,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         //btnCancel.setOnClickListener(this);
         cbMuted = (CheckBox)findViewById(R.id.checkbox_muted);
         cbMuted.setOnCheckedChangeListener(this);
-        // #WEBRTC-VIDEO TODO: uncomment when video is introduced
-        //parentLayout = (RelativeLayout) findViewById(R.id.layout_video_call);
-
-        /*
-        audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
-        // volume control should be by default 'music' which will control the ringing sounds and 'voice call' when within a call
-        setVolumeControlStream(AudioManager.STREAM_MUSIC);
-        // Setup Media (notice that I'm not preparing the media as create does that implicitly plus
-        // I'm not ever stopping a player -instead I'm pausing so no additional preparation is needed
-        // there either. We might need to revisit this at some point though
-        ringingPlayer = MediaPlayer.create(getApplicationContext(), R.raw.ringing);
-        ringingPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-        ringingPlayer.setLooping(true);
-        callingPlayer = MediaPlayer.create(getApplicationContext(), R.raw.calling);
-        callingPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-        callingPlayer.setLooping(true);
-        */
-
         cbMuted.setEnabled(false);
 
         device = RCClient.getInstance().listDevices().get(0);
@@ -148,7 +122,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         VideoRendererGui.setView(videoView, new Runnable() {
             @Override
             public void run() {
-                //createPeerConnectionFactory();
                 videoContextReady(intent);
             }
         });
@@ -201,16 +174,11 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
                     if (connection == null) {
                         Log.e(TAG, "Error: error connecting");
+                        showOkAlert("RCDevice Error", "No network connectivity");
                         return;
                     }
                 }
                 if (finalIntent.getAction().equals(RCDevice.INCOMING_CALL)) {
-                    /*
-                    int result = audioManager.requestAudioFocus(finalActivity, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
-                    if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                        ringingPlayer.start();
-                    }
-                    */
                     pendingConnection = device.getPendingConnection();
                     pendingConnection.setConnectionListener(finalActivity);
 
@@ -248,11 +216,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 pendingConnection.accept(params);
                 connection = this.pendingConnection;
                 pendingConnection = null;
-                /*
-                ringingPlayer.pause();
-                // Abandon audio focus when playback complete
-                audioManager.abandonAudioFocus(this);
-                */
             }
         } else if (view.getId() == R.id.button_answer_audio) {
             if (pendingConnection != null) {
@@ -261,33 +224,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 pendingConnection.accept(params);
                 connection = this.pendingConnection;
                 pendingConnection = null;
-                /*
-                ringingPlayer.pause();
-                // Abandon audio focus when playback complete
-                audioManager.abandonAudioFocus(this);
-                */
             }
         }
-        /*
-        else if (view.getId() == R.id.button_decline) {
-
-            if (pendingConnection != null) {
-                pendingConnection.reject();
-                pendingConnection = null;
-                finish();
-            }
-        } else if (view.getId() == R.id.button_cancel) {
-            if (connection == null) {
-                Log.e(TAG, "Error: not connected");
-            }
-            else {
-                connection.disconnect();
-                connection = null;
-                pendingConnection = null;
-                finish();
-            }
-        }
-        */
     }
 
     @Override
@@ -316,24 +254,11 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     public void onConnecting(RCConnection connection)
     {
         Log.i(TAG, "RCConnection connecting");
-        /*
-        int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
-        if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-            callingPlayer.start();
-        }
-        */
     }
 
     public void onConnected(RCConnection connection) {
         Log.i(TAG, "RCConnection connected");
         cbMuted.setEnabled(true);
-        /*
-        if (!connection.isIncoming()) {
-            callingPlayer.pause();
-            // Abandon audio focus when playback complete
-            audioManager.abandonAudioFocus(this);
-        }
-        */
         setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
     }
 
@@ -355,17 +280,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
     public void onCancelled(RCConnection connection) {
         Log.i(TAG, "RCConnection cancelled");
-        /*
-        if (connection.isIncoming() == true) {
-            ringingPlayer.pause();
-        }
-        else {
-            callingPlayer.pause();
-        }
-        // Abandon audio focus when playback complete
-        audioManager.abandonAudioFocus(this);
-        */
-
         this.connection = null;
         pendingConnection = null;
 
@@ -374,11 +288,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
     public void onDeclined(RCConnection connection) {
         Log.i(TAG, "RCConnection declined");
-        /*
-        callingPlayer.pause();
-        // Abandon audio focus when playback complete
-        audioManager.abandonAudioFocus(this);
-        */
 
         this.connection = null;
         pendingConnection = null;
@@ -389,15 +298,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     public void onDisconnected(RCConnection connection, int errorCode, String errorText) {
         pendingError = true;
         showOkAlert("RCConnection Error", errorText);
-        /*
-        if (errorCode == RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal()) {
-            showOkAlert("No Connectivity", errorText);
-        } else if (errorCode == RCClient.ErrorCodes.GENERIC_ERROR.ordinal()) {
-            showOkAlert("Generic Error", errorText);
-        } else {
-            showOkAlert("Unknown Error", "Unknown Restcomm Client error");
-        }
-        */
         this.connection = null;
         pendingConnection = null;
     }
@@ -414,13 +314,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     public void onReceiveLocalVideo(RCConnection connection, VideoTrack videoTrack) {
         if (videoTrack != null) {
             //show media on screen
-            /*
-            videoView.setTag(TAG_LOCAL_VIDEO_VIEW);
-            if (parentLayout.findViewWithTag(TAG_LOCAL_VIDEO_VIEW) != null) {
-                parentLayout.removeView(videoView);
-            }
-            parentLayout.addView(videoView, 0);
-            */
             videoTrack.setEnabled(true);
             videoTrack.addRenderer(new VideoRenderer(localRender));
         }
@@ -429,13 +322,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     public void onReceiveRemoteVideo(RCConnection connection, VideoTrack videoTrack) {
         if (videoTrack != null) {
             //show media on screen
-            /*
-            videoView.setTag(TAG_LOCAL_VIDEO_VIEW);
-            if (parentLayout.findViewWithTag(TAG_LOCAL_VIDEO_VIEW) != null) {
-                parentLayout.removeView(videoView);
-            }
-            parentLayout.addView(videoView, 0);
-            */
             videoTrack.setEnabled(true);
             videoTrack.addRenderer(new VideoRenderer(remoteRender));
 

@@ -413,6 +413,11 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             @Override
             public void run() {
                 disconnectWebrtc();
+                // also update RCDevice state
+                RCDevice device = RCClient.getInstance().listDevices().get(0);
+                if (device.state == RCDevice.DeviceState.BUSY) {
+                    device.state = RCDevice.DeviceState.READY;
+                }
                 listener.onDisconnected(finalConnection);
             }
         };
@@ -430,6 +435,12 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
+                // also update RCDevice state
+                RCDevice device = RCClient.getInstance().listDevices().get(0);
+                if (device.state == RCDevice.DeviceState.BUSY) {
+                    device.state = RCDevice.DeviceState.READY;
+                }
+
                 listener.onCancelled(finalConnection);
             }
         };
@@ -447,6 +458,11 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
+                // also update RCDevice state
+                RCDevice device = RCClient.getInstance().listDevices().get(0);
+                if (device.state == RCDevice.DeviceState.BUSY) {
+                    device.state = RCDevice.DeviceState.READY;
+                }
                 listener.onDeclined(finalConnection);
             }
         };
