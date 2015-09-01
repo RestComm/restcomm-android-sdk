@@ -111,6 +111,9 @@ public class MainActivity extends Activity implements RCDeviceListener,
     protected void onResume() {
         super.onResume();
 
+        if (device.getState() == RCDevice.DeviceState.OFFLINE) {
+            showOkAlert("No Connectivity", "No network connectivity");
+        }
         // The activity has become visible (it is now "resumed").
         Log.i(TAG, "%% onResume");
         Intent intent = getIntent();
@@ -138,8 +141,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
     }
 
     @Override
-    public void onNewIntent(Intent intent)
-    {
+    public void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         setIntent(intent);
     }

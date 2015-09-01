@@ -302,6 +302,12 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         if (haveConnectivity()) {
             DeviceImpl.GetInstance().Reject();
             this.state = state.DISCONNECTED;
+
+            // also update RCDevice state
+            RCDevice device = RCClient.getInstance().listDevices().get(0);
+            if (device.state == RCDevice.DeviceState.BUSY) {
+                device.state = RCDevice.DeviceState.READY;
+            }
         }
     }
 
@@ -313,6 +319,12 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         if (haveConnectivity()) {
             if (state == ConnectionState.CONNECTING) {
                 DeviceImpl.GetInstance().Cancel();
+
+                // also update RCDevice state
+                RCDevice device = RCClient.getInstance().listDevices().get(0);
+                if (device.state == RCDevice.DeviceState.BUSY) {
+                    device.state = RCDevice.DeviceState.READY;
+                }
             } else if (state == ConnectionState.CONNECTED) {
                 DeviceImpl.GetInstance().Hangup();
             }

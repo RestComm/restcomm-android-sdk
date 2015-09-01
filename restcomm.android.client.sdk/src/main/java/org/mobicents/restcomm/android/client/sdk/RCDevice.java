@@ -135,6 +135,7 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
     PendingIntent pendingCallIntent;
     PendingIntent pendingMessageIntent;
     private RCConnection incomingConnection;
+    private ReachabilityState reachabilityState = ReachabilityState.REACHABILITY_NONE;
     //MediaPlayer messagePlayer;
     //AudioManager audioManager;
 
@@ -156,23 +157,7 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
         BroadcastReceiver networkStateReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                RCDevice device = RCClient.getInstance().listDevices().get(0);
-                //Log.w(TAG, "Reachability changed");
-                ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-
-                NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-                if (null != activeNetwork) {
-                    if (activeNetwork.getType() == ConnectivityManager.TYPE_WIFI) {
-                        reachabilityChanged(ReachabilityState.REACHABILITY_WIFI);
-                        return;
-                    }
-
-                    if (activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE) {
-                        reachabilityChanged(ReachabilityState.REACHABILITY_MOBILE);
-                        return;
-                    }
-                }
-                reachabilityChanged(ReachabilityState.REACHABILITY_NONE);
+                reachabilityChanged(checkReachability());
             }
         };
         Context context = RCClient.getInstance().context;
@@ -181,11 +166,25 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
 
         // initialize JAIN SIP if we have connectivity
         this.parameters = parameters;
-        RCClient client = RCClient.getInstance();
-        WifiManager wifi = (WifiManager) client.context.getSystemService(client.context.WIFI_SERVICE);
-        if (wifi.isWifiEnabled()) {
+        //RCClient client = RCClient.getInstance();
+        reachabilityState = checkReachability();
+
+        if (reachabilityState == ReachabilityState.REACHABILITY_WIFI) {
             initializeSignalling(this);
         }
+        /*
+        else {
+            final RCDevice device = this;
+            Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+            Runnable myRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    listener.onStopListening(device, RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal(), RCClient.errorText(RCClient.ErrorCodes.NO_CONNECTIVITY));
+                }
+            };
+            mainHandler.post(myRunnable);
+        }
+        */
 
         /*
         // volume control should be by default 'music' which will control the ringing sounds and 'voice call' when within a call
@@ -194,6 +193,23 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
         messagePlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
         audioManager = (AudioManager)RCClient.getInstance().context.getSystemService(Context.AUDIO_SERVICE);
         */
+    }
+
+    private ReachabilityState checkReachability()
+    {
+        ConnectivityManager cm = (ConnectivityManager) RCClient.getInstance().context.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        if (null != activeNetwork) {
+            if (activeNetwork.getType() == ConnectivityManager.TYPE_WIFI) {
+                return ReachabilityState.REACHABILITY_WIFI;
+            }
+
+            if (activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE) {
+                return ReachabilityState.REACHABILITY_MOBILE;
+            }
+        }
+        return ReachabilityState.REACHABILITY_NONE;
     }
 
     private void initializeSignalling(RCDevice device)
