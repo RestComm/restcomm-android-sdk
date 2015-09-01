@@ -21,6 +21,7 @@ import org.mobicents.restcomm.android.sipua.impl.SipEvent.SipEventType;
 //import org.mobicents.restcomm.android.sdk.ui.NotifyMessage;
 
 import android.content.Context;
+import android.os.Handler;
 import android.util.Log;
 
 public class DeviceImpl implements IDevice,Serializable {
@@ -31,9 +32,12 @@ public class DeviceImpl implements IDevice,Serializable {
 	SipProfile sipProfile;
 	public SoundManager soundManager;
 	boolean isInitialized = false;
+	private int registrationExpiry = 3600;
 	public SipUADeviceListener sipuaDeviceListener = null;
 	public SipUAConnectionListener sipuaConnectionListener = null;
 	private static final String TAG = "DeviceImpl";
+	// use this handler for registration refreshes
+	Handler registerRefreshHandler = null;
 
 	private DeviceImpl(){
 		
@@ -46,7 +50,7 @@ public class DeviceImpl implements IDevice,Serializable {
 		return device;
 	}
     public void Initialize(Context context, SipProfile sipProfile, HashMap<String,String> customHeaders){
-        this.Initialize(context,sipProfile);
+        this.Initialize(context, sipProfile);
         sipManager.setCustomHeaders(customHeaders);
     }
 	public void Initialize(Context context, SipProfile sipProfile) {
@@ -57,6 +61,7 @@ public class DeviceImpl implements IDevice,Serializable {
 		sipManager = new SipManager(sipProfile);
 		soundManager = new SoundManager(context,sipProfile.getLocalIp());
 		sipManager.addSipListener(this);
+		registerRefreshHandler = new Handler(context.getMainLooper());
 		isInitialized = true;
 	}
 
@@ -69,6 +74,8 @@ public class DeviceImpl implements IDevice,Serializable {
 			sipManager.shutdown();
 			sipuaDeviceListener = null;
 			sipuaConnectionListener = null;
+			registerRefreshHandler.removeCallbacksAndMessages(null);
+			registerRefreshHandler = null;
 
 			// mark the instace null so that it gets freed
 			device = null;
@@ -217,7 +224,25 @@ public class DeviceImpl implements IDevice,Serializable {
 	}
 	@Override
 	public void Register() {
-		this.sipManager.Register();
+		Log.v(TAG, "Register");
+		this.sipManager.Register(registrationExpiry);
+		if (registerRefreshHandler != null) {
+			// if this is an on-demand registration (as opposed to scheduled) we need
+			// to cancel any pending scheduled registrations
+			registerRefreshHandler.removeCallbacksAndMessages(null);
+		}
+
+		//final SipManager finalSipManager = this.sipManager;
+		// schedule a registration update after 'registrationExpiry' seconds
+		//registerRefreshHandler = new Handler(context.getMainLooper());
+		Runnable myRunnable = new Runnable() {
+			@Override
+			public void run() {
+				Register();
+			}
+		};
+		registerRefreshHandler.postDelayed(myRunnable, registrationExpiry*1000);
+
 	}
 	public void Unregister() {
 		this.sipManager.Unregister();

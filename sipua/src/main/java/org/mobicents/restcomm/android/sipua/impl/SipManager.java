@@ -316,7 +316,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	@Override
-	public void Register() {
+	public void Register(int expiry) {
 		if (!latestProxyIp.equals(sipProfile.getRemoteIp())) {
 			// proxy ip address has been updated, need to re-initialize
 			if (!initialize())
@@ -325,7 +325,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 		Register registerRequest = new Register();
 		try {
-			final Request r = registerRequest.MakeRequest(this, 300);
+			final Request r = registerRequest.MakeRequest(this, expiry);
 			final SipProvider sipProvider = this.sipProvider;
 			// Send the request statefully, through the client transaction.
 			Thread thread = new Thread() {
