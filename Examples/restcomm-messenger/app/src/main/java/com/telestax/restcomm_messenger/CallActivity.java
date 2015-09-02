@@ -60,6 +60,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     private HashMap<String, Object> acceptParams = new HashMap<String, Object>();
     private RCDevice device;
     private boolean pendingError = false;
+    private boolean activityVisible = false;
 
     CheckBox cbMuted;
     Button btnHangup;
@@ -151,6 +152,20 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             }
         }
         finish();
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.i(TAG, "%% onStart");
+        activityVisible = true;
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.i(TAG, "%% onStop");
+        activityVisible = false;
     }
 
     private void videoContextReady(Intent intent)
@@ -367,16 +382,18 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
     // Helpers
     private void showOkAlert(final String title, final String detail) {
-        AlertDialog alertDialog = new AlertDialog.Builder(CallActivity.this).create();
-        alertDialog.setTitle(title);
-        alertDialog.setMessage(detail);
-        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-                finish();
-            }
-        });
-        alertDialog.show();
+        if (activityVisible) {
+            AlertDialog alertDialog = new AlertDialog.Builder(CallActivity.this).create();
+            alertDialog.setTitle(title);
+            alertDialog.setMessage(detail);
+            alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+                    dialog.dismiss();
+                    finish();
+                }
+            });
+            alertDialog.show();
+        }
     }
 
 
