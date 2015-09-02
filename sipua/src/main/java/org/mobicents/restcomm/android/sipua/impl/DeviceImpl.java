@@ -33,6 +33,7 @@ public class DeviceImpl implements IDevice,Serializable {
 	public SoundManager soundManager;
 	boolean isInitialized = false;
 	private int registrationExpiry = 3600;
+	private int registrationRefresh = 60;
 	public SipUADeviceListener sipuaDeviceListener = null;
 	public SipUAConnectionListener sipuaConnectionListener = null;
 	private static final String TAG = "DeviceImpl";
@@ -234,7 +235,7 @@ public class DeviceImpl implements IDevice,Serializable {
 		}
 
 		//final SipManager finalSipManager = this.sipManager;
-		// schedule a registration update after 'registrationExpiry' seconds
+		// schedule a registration update after 'registrationRefresh' seconds
 		//registerRefreshHandler = new Handler(context.getMainLooper());
 		Runnable myRunnable = new Runnable() {
 			@Override
@@ -242,7 +243,7 @@ public class DeviceImpl implements IDevice,Serializable {
 				Register();
 			}
 		};
-		registerRefreshHandler.postDelayed(myRunnable, registrationExpiry*1000);
+		registerRefreshHandler.postDelayed(myRunnable, registrationRefresh*1000);
 
 	}
 	public void Unregister() {
