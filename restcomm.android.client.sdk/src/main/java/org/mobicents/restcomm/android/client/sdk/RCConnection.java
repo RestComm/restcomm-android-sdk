@@ -487,9 +487,15 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     // Helpers
     private boolean haveConnectivity()
     {
-        RCClient client = RCClient.getInstance();
-        WifiManager wifi = (WifiManager)client.context.getSystemService(client.context.WIFI_SERVICE);
-        if (wifi.isWifiEnabled()) {
+        RCDevice device = RCClient.getInstance().listDevices().get(0);
+        if (device == null) {
+            return false;
+        }
+
+        RCDevice.ReachabilityState state = device.getReachability();
+
+        if (state == RCDevice.ReachabilityState.REACHABILITY_WIFI/* ||
+                state == RCDevice.ReachabilityState.REACHABILITY_MOBILE*/) {
             return true;
         }
         else {

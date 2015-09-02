@@ -907,19 +907,16 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				e.printStackTrace();
 			}
 
-			ClientTransaction newTransaction = null;
-			try {
-				newTransaction = sipProvider.getNewClientTransaction(byeRequest);
-			} catch (TransactionUnavailableException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			final ClientTransaction ct = newTransaction;
+			final Request r = byeRequest;
 
 			Thread thread = new Thread() {
 				public void run() {
 					try {
+						ClientTransaction ct = sipProvider.getNewClientTransaction(r);
 						dialog.sendRequest(ct);
+					} catch (TransactionUnavailableException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					} catch (TransactionDoesNotExistException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -937,11 +934,12 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	private void sendCancel(ClientTransaction transaction) {
 		try {
-			Request request = transaction.createCancel();
-			final ClientTransaction cancelTransaction = sipProvider.getNewClientTransaction(request);
+			final Request request = transaction.createCancel();
+
 			Thread thread = new Thread() {
 				public void run() {
 					try {
+						final ClientTransaction cancelTransaction = sipProvider.getNewClientTransaction(request);
 						cancelTransaction.sendRequest();
 					} catch (TransactionDoesNotExistException e) {
 						// TODO Auto-generated catch block

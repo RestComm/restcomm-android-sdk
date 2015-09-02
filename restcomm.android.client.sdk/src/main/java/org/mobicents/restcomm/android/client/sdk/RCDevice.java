@@ -23,7 +23,6 @@
 package org.mobicents.restcomm.android.client.sdk;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import android.app.Activity;
@@ -32,13 +31,9 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.content.SharedPreferences;
 import android.media.AudioManager;
-import android.media.MediaPlayer;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.net.wifi.WifiManager;
-import android.opengl.GLSurfaceView;
 import android.os.Handler;
 import android.util.Log;
 
@@ -157,7 +152,7 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
         BroadcastReceiver networkStateReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
-                reachabilityChanged(checkReachability());
+                onReachabilityChanged(checkReachability());
             }
         };
         Context context = RCClient.getInstance().context;
@@ -169,7 +164,8 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
         //RCClient client = RCClient.getInstance();
         reachabilityState = checkReachability();
 
-        if (reachabilityState == ReachabilityState.REACHABILITY_WIFI) {
+        if (reachabilityState == ReachabilityState.REACHABILITY_WIFI/* ||
+                reachabilityState == ReachabilityState.REACHABILITY_MOBILE*/) {
             initializeSignalling(this);
         }
         /*
@@ -195,6 +191,17 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
         */
     }
 
+    private void initializeSignalling(RCDevice device)
+    {
+        sipProfile = new SipProfile();
+        updateSipProfile(parameters);
+        DeviceImpl deviceImpl = DeviceImpl.GetInstance();
+        deviceImpl.Initialize(RCClient.getInstance().context, sipProfile);
+        DeviceImpl.GetInstance().sipuaDeviceListener = device;
+        DeviceImpl.GetInstance().Register();
+        device.state = DeviceState.READY;
+    }
+
     private ReachabilityState checkReachability()
     {
         ConnectivityManager cm = (ConnectivityManager) RCClient.getInstance().context.getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -212,30 +219,7 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
         return ReachabilityState.REACHABILITY_NONE;
     }
 
-    private void initializeSignalling(RCDevice device)
-    {
-        sipProfile = new SipProfile();
-        updateSipProfile(parameters);
-        DeviceImpl deviceImpl = DeviceImpl.GetInstance();
-        deviceImpl.Initialize(RCClient.getInstance().context, sipProfile);
-        DeviceImpl.GetInstance().sipuaDeviceListener = device;
-        DeviceImpl.GetInstance().Register();
-        device.state = DeviceState.READY;
-
-        /*
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
-        Runnable myRunnable = new Runnable() {
-            @Override
-            public void run() {
-                DeviceImpl.GetInstance().Register();
-            }
-        };
-        // TODO: for now I register with a delay. The optimum solution is to be notified from JAIN SIP when setup is ready and then register
-        mainHandler.postDelayed(myRunnable, 1000);
-        */
-    }
-
-    private void reachabilityChanged(ReachabilityState newState)
+    private void onReachabilityChanged(final ReachabilityState newState)
     {
         final RCDevice device = this;
         final ReachabilityState state = newState;
@@ -246,7 +230,9 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
-                if (state == ReachabilityState.REACHABILITY_WIFI && device.state != DeviceState.READY) {
+                reachabilityState = newState;
+                if ((state == ReachabilityState.REACHABILITY_WIFI/* || state == ReachabilityState.REACHABILITY_MOBILE*/)
+                        && device.state != DeviceState.READY) {
                     Log.w(TAG, "Reachability changed; wifi available");
                     initializeSignalling(device);
                 }
@@ -259,6 +245,11 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
             }
         };
         mainHandler.post(myRunnable);
+    }
+
+    public ReachabilityState getReachability()
+    {
+        return reachabilityState;
     }
 
     public void shutdown() {
@@ -608,6 +599,7 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
     }
 
     // Helpers
+    /*
     private boolean haveConnectivity() {
         RCClient client = RCClient.getInstance();
         WifiManager wifi = (WifiManager) client.context.getSystemService(client.context.WIFI_SERVICE);
@@ -620,6 +612,7 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
             return false;
         }
     }
+    */
 
     // Callbacks for audio focus change events
     public void onAudioFocusChange(int focusChange)

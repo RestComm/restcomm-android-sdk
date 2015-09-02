@@ -33,8 +33,6 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 	public SoundManager(Context appContext, String ip){
 		this.appContext = appContext;
 		audioManager = (AudioManager)this.appContext.getSystemService(Context.AUDIO_SERVICE);
-		// volume control should be by default 'music' which will control the ringing sounds and 'voice call' when within a call
-		//setVolumeControlStream(AudioManager.STREAM_MUSIC);
 		// Setup Media (notice that I'm not preparing the media as create does that implicitly plus
 		// I'm not ever stopping a player -instead I'm pausing so no additional preparation is needed
 		// there either. We might need to revisit this at some point though
