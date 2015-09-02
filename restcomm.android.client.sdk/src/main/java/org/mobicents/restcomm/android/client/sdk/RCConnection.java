@@ -319,16 +319,15 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         if (haveConnectivity()) {
             if (state == ConnectionState.CONNECTING) {
                 DeviceImpl.GetInstance().Cancel();
-
-                // also update RCDevice state
-                RCDevice device = RCClient.getInstance().listDevices().get(0);
-                if (device.state == RCDevice.DeviceState.BUSY) {
-                    device.state = RCDevice.DeviceState.READY;
-                }
             } else if (state == ConnectionState.CONNECTED) {
                 DeviceImpl.GetInstance().Hangup();
             }
             //this.state = state.DISCONNECTED;
+        }
+        // also update RCDevice state
+        RCDevice device = RCClient.getInstance().listDevices().get(0);
+        if (device.state == RCDevice.DeviceState.BUSY) {
+            device.state = RCDevice.DeviceState.READY;
         }
 
         disconnectWebrtc();
@@ -412,7 +411,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         mainHandler.post(myRunnable);
     }
 
-    public void onSipUADisconnected(SipEvent event)
+    public void onSipUADisconnected(final SipEvent event)
     {
         // we 're first notifying listener and then setting new state because we want the listener to be able to
         // differentiate between disconnect and remote cancel events with the same listener method: onDisconnected.
@@ -424,10 +423,12 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
-                disconnectWebrtc();
+                // TODO: we need to move this below so that it is only executed on incoming
                 // also update RCDevice state
                 RCDevice device = RCClient.getInstance().listDevices().get(0);
-                if (device.state == RCDevice.DeviceState.BUSY) {
+                if (event.type == SipEvent.SipEventType.INCOMING_BYE_REQUEST && device.state == RCDevice.DeviceState.BUSY) {
+                    // for outgoing disconnect we are handling it in RCConnection.disconnect()
+                    disconnectWebrtc();
                     device.state = RCDevice.DeviceState.READY;
                 }
                 listener.onDisconnected(finalConnection);
@@ -505,7 +506,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         initializeWebrtc(videoEnabled);
 
         LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
-        iceServers.add(new PeerConnection.IceServer("stun:sftun.l.google.com:19302", "", ""));
+        iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
         this.signalingParameters = new SignalingParameters(iceServers, true, "", sipUri, "", null, null, sipHeaders, videoEnabled);
 
         startCall(this.signalingParameters);

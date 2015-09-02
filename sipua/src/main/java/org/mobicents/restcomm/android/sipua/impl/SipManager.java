@@ -534,7 +534,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		} else if (request.getMethod().equals(Request.BYE)) {
 			sipManagerState = SipManagerState.IDLE;
 			incomingBye(request, serverTransactionId);
-			dispatchSipEvent(new SipEvent(this, SipEventType.BYE, "", sp
+			dispatchSipEvent(new SipEvent(this, SipEventType.INCOMING_BYE_REQUEST, "", sp
 					.getFrom().getAddress().toString()));
 			direction = CallDirection.NONE;
 		}
@@ -668,12 +668,13 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			} else if (cseq.getMethod().equals(Request.BYE)) {
 				sipManagerState = SipManagerState.IDLE;
 				System.out.println("--- Got 200 OK in UAC outgoing BYE");
-				dispatchSipEvent(new SipEvent(this, SipEventType.BYE, "", ""));
+				dispatchSipEvent(new SipEvent(this, SipEventType.INCOMING_BYE_RESPONSE, "", ""));
 			}
 
 		} else if (response.getStatusCode() == Response.DECLINE || response.getStatusCode() == Response.TEMPORARILY_UNAVAILABLE ||
 				(response.getStatusCode() == Response.BUSY_HERE)) {
 			System.out.println("CALL DECLINED");
+			sipManagerState = SipManagerState.IDLE;
 			dispatchSipEvent(new SipEvent(this, SipEventType.DECLINED, "", ""));
 		} else if (response.getStatusCode() == Response.NOT_FOUND) {
 			System.out.println("NOT FOUND");

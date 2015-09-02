@@ -341,7 +341,8 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
      *                   inside 'parameters' hash and introduce your headers there.
      *                   For an example please check HelloWorld or Messenger samples.
      * @param listener   The listener object that will receive events when the connection state changes
-     * @return An RCConnection object representing the new connection
+     * @return An RCConnection object representing the new connection or null in case of error. Error
+     *                   means that RCDevice.state not ready to make a call (this usually means no WiFi available)
      */
     public RCConnection connect(Map<String, Object> parameters, RCConnectionListener listener) {
         Activity activity = (Activity) listener;

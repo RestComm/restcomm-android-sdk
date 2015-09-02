@@ -91,11 +91,12 @@ public class DeviceImpl implements IDevice,Serializable {
 				this.sipuaDeviceListener.onSipUAMessageArrived(new SipEvent(this, SipEvent.SipEventType.MESSAGE, sipEventObject.content, sipEventObject.from));
 				soundManager.incomingMessage();
 			}
-		} else if (sipEventObject.type == SipEventType.BYE) {
+		} else if (sipEventObject.type == SipEventType.INCOMING_BYE_REQUEST ||
+				sipEventObject.type == SipEventType.INCOMING_BYE_RESPONSE) {
 			//this.soundManager.stopStreaming();
 			if (this.sipuaConnectionListener != null) {
-				// notify our listener that we are connected
-				this.sipuaConnectionListener.onSipUADisconnected(null);
+				// notify our listener that we are disconnected (either when we get a response to our BYE, or when we receive a BYE request
+				this.sipuaConnectionListener.onSipUADisconnected(sipEventObject);
 			}
 		} else if (sipEventObject.type == SipEventType.REMOTE_CANCEL) {
 			//this.soundManager.stopStreaming();

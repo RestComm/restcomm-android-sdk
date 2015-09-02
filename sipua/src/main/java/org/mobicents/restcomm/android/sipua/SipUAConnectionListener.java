@@ -25,9 +25,14 @@ package org.mobicents.restcomm.android.sipua;
 import org.mobicents.restcomm.android.sipua.impl.SipEvent;
 
 public interface SipUAConnectionListener {
+    // fires when outgoing call starts ringing
     public abstract void onSipUAConnecting(SipEvent event);
+    // fires either when incoming or outgoing call is established
     public abstract void onSipUAConnected(SipEvent event);
+    // fires either when we get an incoming BYE request or when we get a response to our outgoing BYE request
     public abstract void onSipUADisconnected(SipEvent event);
+    // fires when we get an incoming CANCEL request
     public abstract void onSipUACancelled(SipEvent event);
+    // fires when we get an incoming 'declined' response to our INVITE
     public abstract void onSipUADeclined(SipEvent event);
 }
