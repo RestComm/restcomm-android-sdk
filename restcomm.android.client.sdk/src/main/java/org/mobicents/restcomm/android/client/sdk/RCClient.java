@@ -28,7 +28,10 @@ import java.util.List;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.opengl.GLSurfaceView;
+import android.os.Handler;
 import android.util.Log;
+
+import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
 
 
 /**
@@ -68,8 +71,8 @@ public class RCClient {
         return "Generic Restcomm Client error";
     }
 
-    static ArrayList<RCDevice> list = new ArrayList<RCDevice>();
-    Context context;
+    static ArrayList<RCDevice> list;
+    static Context context;
     private static final String TAG = "RCClient";
 
 
@@ -77,7 +80,8 @@ public class RCClient {
         // Exists to defeat instantiation.
     }
 
-    public static RCClient getInstance()
+    // SDK users need to use initialize()
+    private static RCClient getInstance()
     {
         if (instance == null) {
             instance = new RCClient();
@@ -85,34 +89,67 @@ public class RCClient {
         return instance;
     }
 
+    public static Context getContext()
+    {
+        return context;
+    }
+
     /**
      * Initialize the Restcomm Client SDK
      * @param context  The Android Activity context
      * @param listener  The listener for upcoming events from Restcomm Client
      */
-    public static void initialize(Context context, RCInitListener listener)
+    public static void initialize(Context context, final RCInitListener listener)
     {
         if (context == null) {
             throw new IllegalArgumentException("Error: Context cannot be null");
         } else if (listener == null) {
             throw new IllegalArgumentException("Error: Listener cannot be null");
         } else {
-            RCClient client = RCClient.getInstance();
-            client.context = context;
-            // notify that we are initialized
+            RCClient.getInstance();
+            RCClient.context = context;
+            list = new ArrayList<RCDevice>();
+            initialized = true;
+
             listener.onInitialized();
+
+            /*
+            Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+            Runnable myRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    // notify that we are initialized
+                    listener.onInitialized();
+                }
+            };
+            mainHandler.post(myRunnable);
+            */
         }
     }
 
     /**
-     * Shut down the Restcomm Client (<b>Not implemented yet</b>
+     * Shut down the Restcomm Client
      */
     public static void shutdown()
     {
-        RCDevice device = list.get(0);
-        // remove the reference so that RCDevice instance is removed
-        list.clear();
-        device.shutdown();
+        if (!initialized) {
+            return;
+        }
+
+        if (list.size() > 0) {
+            RCDevice device = list.get(0);
+            // remove the reference so that RCDevice instance is removed
+            list.clear();
+            list = null;
+            // TODO: keep in mind that once this block is left device can be claimed by GC.
+            // Need to make sure that shutdown() will finish its job synchronously
+            device.shutdown();
+        }
+        else {
+            Log.e(TAG, "shutdown(): Warning Restcomm Client already shut down, skipping");
+        }
+        // allow the singleton to be GC'd
+        instance = null;
         initialized = false;
     }
 
@@ -132,15 +169,20 @@ public class RCClient {
      * @return The newly created RCDevice
      * @see RCDevice
      */
-    public static RCDevice createDevice(HashMap<String, Object> parameters, RCDeviceListener deviceListener) //, GLSurfaceView videoView, SharedPreferences prefs, int viewId)
+    public static RCDevice createDevice(HashMap<String, Object> parameters, RCDeviceListener deviceListener)
     {
+        if (!initialized) {
+            Log.i(TAG, "Attempting to create RCDevice without first initializing RCClient");
+            return null;
+        }
+
         if (list.size() == 0) {
-            RCDevice device = new RCDevice(parameters, deviceListener);  //, videoView, prefs, viewId);
+            RCDevice device = new RCDevice(parameters, deviceListener);
             list.add(device);
-            initialized = true;
+            //initialized = true;
         }
         else {
-            Log.i(TAG, "Device already exists, so we 're returning this one -multiple devices not implemented");
+            Log.e(TAG, "Device already exists, so we 're returning this one");
         }
 
         return list.get(0);
@@ -150,9 +192,16 @@ public class RCClient {
      * Retrieve a list of active Devices
      * @return  List of Devices
      */
-    public ArrayList<RCDevice> listDevices()
+    public static ArrayList<RCDevice> listDevices()
     {
-        //ArrayList<RCDevice> list = new ArrayList<RCDevice>();
+        if (!initialized) {
+            Log.w(TAG, "RCClient uninitialized");
+            return null;
+        }
+        if (list.size() == 0) {
+            Log.e(TAG, "Warning: RCDevice list size is 0");
+        }
+
         return list;
     }
 

@@ -10,6 +10,8 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
+import java.util.TooManyListenersException;
+
 import org.apache.http.conn.util.InetAddressUtils;
 import org.mobicents.restcomm.android.sipua.ISipEventListener;
 import org.mobicents.restcomm.android.sipua.ISipManager;
@@ -51,6 +53,7 @@ import android.javax.sip.TimeoutEvent;
 import android.javax.sip.TransactionDoesNotExistException;
 import android.javax.sip.TransactionTerminatedEvent;
 import android.javax.sip.TransactionUnavailableException;
+import android.javax.sip.TransportNotSupportedException;
 import android.javax.sip.address.Address;
 import android.javax.sip.address.AddressFactory;
 import android.javax.sip.header.CSeqHeader;
@@ -122,10 +125,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		sipFactory.setPathName("android.gov.nist");
 
 		Properties properties = new Properties();
-		properties.setProperty(
-				"android.javax.sip.OUTBOUND_PROXY",
-				sipProfile.getRemoteEndpoint() + "/"
-						+ sipProfile.getTransport());
+		properties.setProperty("android.javax.sip.OUTBOUND_PROXY",
+				sipProfile.getRemoteEndpoint() + "/" + sipProfile.getTransport());
 		properties.setProperty("android.javax.sip.STACK_NAME", "androidSip");
 		latestProxyIp = sipProfile.getRemoteIp();
 
@@ -137,12 +138,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			}
 			sipStack = sipFactory.createSipStack(properties);
 			System.out.println("createSipStack " + sipStack);
-		} catch (PeerUnavailableException e) {
-			return false;
-		} catch (ObjectInUseException e) {
-			return false;
-		}
-		try {
 			headerFactory = sipFactory.createHeaderFactory();
 			addressFactory = sipFactory.createAddressFactory();
 			messageFactory = sipFactory.createMessageFactory();
@@ -155,7 +150,17 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			sipManagerState = SipManagerState.READY;
 		} catch (PeerUnavailableException e) {
 			return false;
-		} catch (Exception e) {
+		} catch (ObjectInUseException e) {
+			e.printStackTrace();
+			return false;
+		} catch (InvalidArgumentException e) {
+			e.printStackTrace();
+			return false;
+		} catch (TransportNotSupportedException e) {
+			e.printStackTrace();
+			return false;
+		} catch (TooManyListenersException e) {
+			e.printStackTrace();
 			return false;
 		}
 		return true;
@@ -174,10 +179,12 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 				sipStack.deleteSipProvider(sipProvider);
 				sipStack.deleteListeningPoint(udpListeningPoint);
+				udpListeningPoint = null;
 				sipStack.stop();
 				sipManagerState = SipManagerState.STACK_STOPPED;
 
 			} catch (ObjectInUseException e) {
+				e.printStackTrace();
 				return false;
 			}
 		}

@@ -101,7 +101,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         cbMuted.setOnCheckedChangeListener(this);
         cbMuted.setEnabled(false);
 
-        device = RCClient.getInstance().listDevices().get(0);
+        device = RCClient.listDevices().get(0);
 
         PreferenceManager.setDefaultValues(this, "preferences.xml", MODE_PRIVATE, R.xml.preferences, false);
         prefs = PreferenceManager.getDefaultSharedPreferences(this);

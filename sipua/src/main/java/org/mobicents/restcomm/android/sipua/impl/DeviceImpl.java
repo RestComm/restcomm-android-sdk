@@ -31,7 +31,7 @@ public class DeviceImpl implements IDevice,Serializable {
 	SipManager sipManager;
 	SipProfile sipProfile;
 	public SoundManager soundManager;
-	boolean isInitialized = false;
+	private static boolean initialized = false;
 	private int registrationExpiry = 3600;
 	private int registrationRefresh = 60;
 	public SipUADeviceListener sipuaDeviceListener = null;
@@ -63,13 +63,13 @@ public class DeviceImpl implements IDevice,Serializable {
 		soundManager = new SoundManager(context,sipProfile.getLocalIp());
 		sipManager.addSipListener(this);
 		registerRefreshHandler = new Handler(context.getMainLooper());
-		isInitialized = true;
+		initialized = true;
 	}
 
 	public void Shutdown()
 	{
 		Log.v(TAG, "Shutdown");
-		if (isInitialized) {
+		if (initialized) {
 			Log.v(TAG, "Shutdown while initialized");
 			sipManager.removeSipListener(this);
 			sipManager.shutdown();
@@ -80,10 +80,15 @@ public class DeviceImpl implements IDevice,Serializable {
 
 			// mark the instace null so that it gets freed
 			device = null;
-			isInitialized = false;
+			initialized = false;
 		}
 	}
-	
+
+	public static boolean isInitialized()
+	{
+		return initialized;
+	}
+
 	@Override
 	public void onSipMessage(final SipEvent sipEventObject) {
 		System.out.println("Sip Event fired");

@@ -304,7 +304,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             this.state = state.DISCONNECTED;
 
             // also update RCDevice state
-            RCDevice device = RCClient.getInstance().listDevices().get(0);
+            RCDevice device = RCClient.listDevices().get(0);
             if (device.state == RCDevice.DeviceState.BUSY) {
                 device.state = RCDevice.DeviceState.READY;
             }
@@ -325,7 +325,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             //this.state = state.DISCONNECTED;
         }
         // also update RCDevice state
-        RCDevice device = RCClient.getInstance().listDevices().get(0);
+        RCDevice device = RCClient.listDevices().get(0);
         if (device.state == RCDevice.DeviceState.BUSY) {
             device.state = RCDevice.DeviceState.READY;
         }
@@ -380,7 +380,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         final RCConnection finalConnection = new RCConnection(this);
 
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
@@ -401,7 +401,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         }
 
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
@@ -419,13 +419,13 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         final RCConnection finalConnection = new RCConnection(this);
 
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
                 // TODO: we need to move this below so that it is only executed on incoming
                 // also update RCDevice state
-                RCDevice device = RCClient.getInstance().listDevices().get(0);
+                RCDevice device = RCClient.listDevices().get(0);
                 if (event.type == SipEvent.SipEventType.INCOMING_BYE_REQUEST && device.state == RCDevice.DeviceState.BUSY) {
                     // for outgoing disconnect we are handling it in RCConnection.disconnect()
                     disconnectWebrtc();
@@ -444,12 +444,12 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         final RCConnection finalConnection = new RCConnection(this);
 
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
                 // also update RCDevice state
-                RCDevice device = RCClient.getInstance().listDevices().get(0);
+                RCDevice device = RCClient.listDevices().get(0);
                 if (device.state == RCDevice.DeviceState.BUSY) {
                     device.state = RCDevice.DeviceState.READY;
                 }
@@ -467,12 +467,12 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         final RCConnection finalConnection = new RCConnection(this);
 
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
                 // also update RCDevice state
-                RCDevice device = RCClient.getInstance().listDevices().get(0);
+                RCDevice device = RCClient.listDevices().get(0);
                 if (device.state == RCDevice.DeviceState.BUSY) {
                     device.state = RCDevice.DeviceState.READY;
                 }
@@ -487,7 +487,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     // Helpers
     private boolean haveConnectivity()
     {
-        RCDevice device = RCClient.getInstance().listDevices().get(0);
+        RCDevice device = RCClient.listDevices().get(0);
         if (device == null) {
             return false;
         }
@@ -522,7 +522,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     void initializeWebrtc(boolean videoEnabled)
     {
         Log.e(TAG, "@@@@@ initializeWebrtc  ");
-        Context context = RCClient.getInstance().context;
+        Context context = RCClient.getContext();
 
         iceConnected = false;
         signalingParameters = null;
@@ -567,7 +567,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
         // Create and audio manager that will take care of audio routing,
         // audio modes, audio device enumeration etc.
-        audioManager = AppRTCAudioManager.create(RCClient.getInstance().context, new Runnable() {
+        audioManager = AppRTCAudioManager.create(RCClient.getContext(), new Runnable() {
                     // This method will be called each time the audio state (number and
                     // type of devices) has been changed.
                     @Override
@@ -610,7 +610,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     private void createPeerConnectionFactory() {
         final RCConnection connection = this;
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
@@ -620,7 +620,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                     Log.d(TAG, "Creating peer connection factory, delay=" + delta + "ms");
                     peerConnectionClient = PeerConnectionClient.getInstance();
                     //peerConnectionClient.setVideoEnabled(false);
-                    peerConnectionClient.createPeerConnectionFactory(RCClient.getInstance().context,
+                    peerConnectionClient.createPeerConnectionFactory(RCClient.getContext(),
                             VideoRendererGui.getEGLContext(), peerConnectionParameters,
                             connection);
                     logAndToast("Created PeerConnectionFactory");
@@ -644,7 +644,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         if (logToast != null) {
             logToast.cancel();
         }
-        logToast = Toast.makeText(RCClient.getInstance().context, msg, Toast.LENGTH_SHORT);
+        logToast = Toast.makeText(RCClient.getContext(), msg, Toast.LENGTH_SHORT);
         logToast.setGravity(Gravity.CENTER_HORIZONTAL|Gravity.CENTER_VERTICAL, 0, 0);
         logToast.show();
     }
@@ -657,7 +657,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     public void onLocalDescription(final SessionDescription sdp) {
         final long delta = System.currentTimeMillis() - callStartedTimeMs;
         final RCConnection connection = this;
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
@@ -687,7 +687,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     @Override
     public void onIceCandidate(final IceCandidate candidate) {
         final RCConnection connection = this;
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
@@ -707,7 +707,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     {
         final RCConnection connection = this;
 
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
@@ -736,7 +736,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     public void onIceConnected() {
         final long delta = System.currentTimeMillis() - callStartedTimeMs;
 
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
@@ -751,7 +751,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
     @Override
     public void onIceDisconnected() {
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
@@ -771,7 +771,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
     @Override
     public void onPeerConnectionStatsReady(final StatsReport[] reports) {
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
@@ -787,7 +787,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     public void onPeerConnectionError(final String description)
     {
         final RCConnection connection = this;
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
@@ -806,7 +806,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         final VideoTrack finalVideoTrack = videoTrack;
         final RCConnection connection = this;
 
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
@@ -822,7 +822,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         final VideoTrack finalVideoTrack = videoTrack;
         final RCConnection connection = this;
 
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
@@ -838,7 +838,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     // are routed to UI thread.
     //@Override
     public void onConnectedToRoom(final SignalingParameters params) {
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
@@ -890,7 +890,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     //@Override
     public void onRemoteDescription(final SessionDescription sdp) {
         final long delta = System.currentTimeMillis() - callStartedTimeMs;
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {

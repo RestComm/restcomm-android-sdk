@@ -76,7 +76,7 @@ public class MessageActivity extends Activity implements View.OnClickListener {
         super.onResume();
 
         // retrieve the device
-        device = RCClient.getInstance().listDevices().get(0);
+        device = RCClient.listDevices().get(0);
 
         // Get Intent parameters.
         final Intent finalIntent = getIntent();

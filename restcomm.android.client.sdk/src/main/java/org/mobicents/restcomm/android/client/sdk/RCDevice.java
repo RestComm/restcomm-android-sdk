@@ -58,11 +58,11 @@ import org.mobicents.restcomm.android.sipua.impl.SipEvent;
  *  @see RCConnection
  */
 
-public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusChangeListener {
+public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, AudioManager.OnAudioFocusChangeListener  {
     /**
      * @abstract Device state
      */
-    DeviceState state;
+    static DeviceState state;
     /**
      * @abstract Device capabilities (<b>Not Implemented yet</b>)
      */
@@ -83,8 +83,6 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
      * @abstract Is sound for disconnect enabled
      */
     boolean disconnectSoundEnabled;
-
-    private SipProfile sipProfile;
 
     /**
      * Device state
@@ -115,6 +113,7 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
     }
 
     private static final String TAG = "RCDevice";
+    //private static boolean online = false;
     public static String OUTGOING_CALL = "ACTION_OUTGOING_CALL";
     public static String INCOMING_CALL = "ACTION_INCOMING_CALL";
     public static String OPEN_MESSAGE_SCREEN = "ACTION_OPEN_MESSAGE_SCREEN";
@@ -131,6 +130,7 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
     PendingIntent pendingMessageIntent;
     private RCConnection incomingConnection;
     private ReachabilityState reachabilityState = ReachabilityState.REACHABILITY_NONE;
+    private SipProfile sipProfile = null;
     //MediaPlayer messagePlayer;
     //AudioManager audioManager;
 
@@ -149,15 +149,17 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
         state = DeviceState.OFFLINE;
 
         // register broadcast receiver for reachability
+        /*
         BroadcastReceiver networkStateReceiver = new BroadcastReceiver() {
             @Override
             public void onReceive(Context context, Intent intent) {
                 onReachabilityChanged(checkReachability());
             }
         };
-        Context context = RCClient.getInstance().context;
+        */
+        Context context = RCClient.getContext();
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-        context.registerReceiver(networkStateReceiver, filter);
+        context.registerReceiver(this, filter);
 
         // initialize JAIN SIP if we have connectivity
         this.parameters = parameters;
@@ -166,45 +168,32 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
 
         if (reachabilityState == ReachabilityState.REACHABILITY_WIFI/* ||
                 reachabilityState == ReachabilityState.REACHABILITY_MOBILE*/) {
-            initializeSignalling(this);
+            initializeSignalling();
         }
-        /*
-        else {
-            final RCDevice device = this;
-            Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
-            Runnable myRunnable = new Runnable() {
-                @Override
-                public void run() {
-                    listener.onStopListening(device, RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal(), RCClient.errorText(RCClient.ErrorCodes.NO_CONNECTIVITY));
-                }
-            };
-            mainHandler.post(myRunnable);
-        }
-        */
-
-        /*
-        // volume control should be by default 'music' which will control the ringing sounds and 'voice call' when within a call
-        //setVolumeControlStream(AudioManager.STREAM_MUSIC);
-        messagePlayer = MediaPlayer.create(RCClient.getInstance().context, R.raw.message);
-        messagePlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-        audioManager = (AudioManager)RCClient.getInstance().context.getSystemService(Context.AUDIO_SERVICE);
-        */
     }
 
-    private void initializeSignalling(RCDevice device)
+    @Override
+    public void onReceive(Context context, Intent intent) {
+        onReachabilityChanged(checkReachability());
+    }
+
+    private void initializeSignalling()
     {
         sipProfile = new SipProfile();
         updateSipProfile(parameters);
         DeviceImpl deviceImpl = DeviceImpl.GetInstance();
-        deviceImpl.Initialize(RCClient.getInstance().context, sipProfile);
-        DeviceImpl.GetInstance().sipuaDeviceListener = device;
+        deviceImpl.Initialize(RCClient.getContext(), sipProfile);
+        DeviceImpl.GetInstance().sipuaDeviceListener = this;
+        // register after initialization
         DeviceImpl.GetInstance().Register();
-        device.state = DeviceState.READY;
+        state = DeviceState.READY;
+        //online = true;
+        Log.e(TAG, "---- Set device ready");
     }
 
     private ReachabilityState checkReachability()
     {
-        ConnectivityManager cm = (ConnectivityManager) RCClient.getInstance().context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager cm = (ConnectivityManager) RCClient.getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
 
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
         if (null != activeNetwork) {
@@ -221,30 +210,36 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
 
     private void onReachabilityChanged(final ReachabilityState newState)
     {
-        final RCDevice device = this;
-        final ReachabilityState state = newState;
+        //final RCDevice device = this;
+        //final ReachabilityState state = newState;
 
         // important: post this in the main thread in next loop as broadcast receivers have issues with asynchronous operations. Not sure
         // what JAIN does behind the scenes but I got crashes when trying shut down jain without 'post'ing below
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        /*
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
+            */
                 reachabilityState = newState;
-                if ((state == ReachabilityState.REACHABILITY_WIFI/* || state == ReachabilityState.REACHABILITY_MOBILE*/)
-                        && device.state != DeviceState.READY) {
-                    Log.w(TAG, "Reachability changed; wifi available");
-                    initializeSignalling(device);
+                if ((newState == ReachabilityState.REACHABILITY_WIFI/* || state == ReachabilityState.REACHABILITY_MOBILE*/)
+                        && state != DeviceState.READY) {
+                    Log.w(TAG, "Reachability changed; wifi available. Device state: " + state);
+                    initializeSignalling();
                 }
-                if (state == ReachabilityState.REACHABILITY_NONE && device.state != DeviceState.OFFLINE) {
+                if (newState == ReachabilityState.REACHABILITY_NONE && state != DeviceState.OFFLINE) {
                     Log.w(TAG, "Reachability changed; no connectivity");
+                    // TODO: here we need to unregister before shutting down, but for that we need to wait for the unREGISTER reply, which complicates things
                     DeviceImpl.GetInstance().Shutdown();
                     sipProfile = null;
-                    device.state = DeviceState.OFFLINE;
+                    state = DeviceState.OFFLINE;
+                    //online = false;
                 }
+        /*
             }
         };
         mainHandler.post(myRunnable);
+        */
     }
 
     public ReachabilityState getReachability()
@@ -255,13 +250,15 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
     public void shutdown() {
         this.listener = null;
 
-        DeviceImpl.GetInstance().Shutdown();
+        if (DeviceImpl.isInitialized()) {
+            DeviceImpl.GetInstance().Shutdown();
+        }
         state = DeviceState.OFFLINE;
     }
 
     // 'Copy' constructor
     public RCDevice(RCDevice device) {
-        this.state = device.state;
+        //this.state = device.state;
         this.incomingSoundEnabled = device.incomingSoundEnabled;
         this.outgoingSoundEnabled = device.outgoingSoundEnabled;
         this.disconnectSoundEnabled = device.disconnectSoundEnabled;
@@ -336,8 +333,8 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
      *                   means that RCDevice.state not ready to make a call (this usually means no WiFi available)
      */
     public RCConnection connect(Map<String, Object> parameters, RCConnectionListener listener) {
-        Activity activity = (Activity) listener;
-        if (this.state == DeviceState.READY) {
+        //Activity activity = (Activity) listener;
+        if (state == DeviceState.READY) {
             Log.i(TAG, "RCDevice.connect(), with connectivity");
 
             Boolean enableVideo = (Boolean)parameters.get("video-enabled");
@@ -367,7 +364,7 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
      * @param parameters Parameters used for the message, such as 'username' that holds the recepient for the message
      */
     public boolean sendMessage(String message, Map<String, String> parameters) {
-        if (this.state == DeviceState.READY) {
+        if (state == DeviceState.READY) {
             DeviceImpl.GetInstance().SendMessage(parameters.get("username"), message);
             /*
             int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
@@ -423,8 +420,8 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
      * @param messageIntent: an intent that will be sent on an incoming text message
      */
     public void setPendingIntents(Intent callIntent, Intent messageIntent) {
-        pendingCallIntent = PendingIntent.getActivity(RCClient.getInstance().context, 0, callIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        pendingMessageIntent = PendingIntent.getActivity(RCClient.getInstance().context, 0, messageIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        pendingCallIntent = PendingIntent.getActivity(RCClient.getContext(), 0, callIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        pendingMessageIntent = PendingIntent.getActivity(RCClient.getContext(), 0, messageIntent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 
     public RCConnection getPendingConnection() {
@@ -496,7 +493,7 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
      * @return Whether the update was successful or not
      */
     public boolean updateParams(HashMap<String, Object> params) {
-        if (this.state == DeviceState.READY) {
+        if (state == DeviceState.READY) {
             updateSipProfile(params);
             DeviceImpl.GetInstance().Register();
             return true;
@@ -538,7 +535,7 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
         final String from = event.from;
         //final String sdp = event.sdp;
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
@@ -547,7 +544,7 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
                     Intent dataIntent = new Intent();
                     dataIntent.setAction(INCOMING_CALL);
                     dataIntent.putExtra(RCDevice.EXTRA_DID, from);
-                    pendingCallIntent.send(RCClient.getInstance().context, 0, dataIntent);
+                    pendingCallIntent.send(RCClient.getContext(), 0, dataIntent);
 
                 } catch (PendingIntent.CanceledException e) {
                     e.printStackTrace();
@@ -571,7 +568,7 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
         final HashMap<String, String> finalParameters = new HashMap<String, String>(parameters);
         final RCDevice device = this;
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
@@ -581,7 +578,7 @@ public class RCDevice implements SipUADeviceListener, AudioManager.OnAudioFocusC
                     dataIntent.setAction(INCOMING_MESSAGE);
                     dataIntent.putExtra(INCOMING_MESSAGE_PARAMS, finalParameters);
                     dataIntent.putExtra(INCOMING_MESSAGE_TEXT, finalContent);
-                    pendingMessageIntent.send(RCClient.getInstance().context, 0, dataIntent);
+                    pendingMessageIntent.send(RCClient.getContext(), 0, dataIntent);
                     /*
                     int result = audioManager.requestAudioFocus(device, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
                     if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
