@@ -49,6 +49,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Log.i(TAG, "%% onCreate");
 
         // initialize UI
         btnRegister = (Button)findViewById(R.id.button_register);
@@ -138,6 +139,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
         Log.i(TAG, "%% onDestroy");
         RCClient.shutdown();
         device = null;
+        prefs.unregisterOnSharedPreferenceChangeListener(this);
     }
 
     @Override

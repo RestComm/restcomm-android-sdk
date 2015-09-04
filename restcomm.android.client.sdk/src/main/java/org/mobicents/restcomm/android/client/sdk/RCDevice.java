@@ -149,14 +149,6 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
         state = DeviceState.OFFLINE;
 
         // register broadcast receiver for reachability
-        /*
-        BroadcastReceiver networkStateReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                onReachabilityChanged(checkReachability());
-            }
-        };
-        */
         Context context = RCClient.getContext();
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         context.registerReceiver(this, filter);
@@ -226,6 +218,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
         if (newState == ReachabilityState.REACHABILITY_NONE && state != DeviceState.OFFLINE) {
             Log.w(TAG, "Reachability changed; no connectivity");
             // TODO: here we need to unregister before shutting down, but for that we need to wait for the unREGISTER reply, which complicates things
+            //DeviceImpl.GetInstance().Unregister();
             DeviceImpl.GetInstance().Shutdown();
             sipProfile = null;
             state = DeviceState.OFFLINE;
@@ -239,6 +232,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
             if (state != DeviceState.OFFLINE) {
                 Log.w(TAG, "Reachability action: wifi/mobile available from movile/wifi. Device state: " + state);
                 // stop JAIN
+                //DeviceImpl.GetInstance().Unregister();
                 DeviceImpl.GetInstance().Shutdown();
                 sipProfile = null;
                 state = DeviceState.OFFLINE;
