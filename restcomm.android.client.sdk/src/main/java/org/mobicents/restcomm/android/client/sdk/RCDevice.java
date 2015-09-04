@@ -166,8 +166,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
         //RCClient client = RCClient.getInstance();
         reachabilityState = checkReachability();
 
-        if (reachabilityState == ReachabilityState.REACHABILITY_WIFI/* ||
-                reachabilityState == ReachabilityState.REACHABILITY_MOBILE*/) {
+        if (reachabilityState == ReachabilityState.REACHABILITY_WIFI ||
+                reachabilityState == ReachabilityState.REACHABILITY_MOBILE) {
             initializeSignalling();
         }
     }
@@ -187,8 +187,6 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
         // register after initialization
         DeviceImpl.GetInstance().Register();
         state = DeviceState.READY;
-        //online = true;
-        Log.e(TAG, "---- Set device ready");
     }
 
     private ReachabilityState checkReachability()
@@ -198,13 +196,16 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
         NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
         if (null != activeNetwork) {
             if (activeNetwork.getType() == ConnectivityManager.TYPE_WIFI) {
+                Log.w(TAG, "Reachability event: WIFI");
                 return ReachabilityState.REACHABILITY_WIFI;
             }
 
             if (activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE) {
+                Log.w(TAG, "Reachability event: MOBILE");
                 return ReachabilityState.REACHABILITY_MOBILE;
             }
         }
+        Log.w(TAG, "Reachability event: NONE");
         return ReachabilityState.REACHABILITY_NONE;
     }
 
@@ -221,20 +222,40 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
             @Override
             public void run() {
             */
+
+        if (newState == ReachabilityState.REACHABILITY_NONE && state != DeviceState.OFFLINE) {
+            Log.w(TAG, "Reachability changed; no connectivity");
+            // TODO: here we need to unregister before shutting down, but for that we need to wait for the unREGISTER reply, which complicates things
+            DeviceImpl.GetInstance().Shutdown();
+            sipProfile = null;
+            state = DeviceState.OFFLINE;
+            reachabilityState = newState;
+            return;
+        }
+
+        // old state wifi and new state mobile or the reverse; need to shutdown and restart network facilities
+        if ((reachabilityState == ReachabilityState.REACHABILITY_WIFI && newState == ReachabilityState.REACHABILITY_MOBILE) ||
+                (reachabilityState == ReachabilityState.REACHABILITY_MOBILE && newState == ReachabilityState.REACHABILITY_WIFI)) {
+            if (state != DeviceState.OFFLINE) {
+                Log.w(TAG, "Reachability action: wifi/mobile available from movile/wifi. Device state: " + state);
+                // stop JAIN
+                DeviceImpl.GetInstance().Shutdown();
+                sipProfile = null;
+                state = DeviceState.OFFLINE;
+                // start JAIN
+                initializeSignalling();
                 reachabilityState = newState;
-                if ((newState == ReachabilityState.REACHABILITY_WIFI/* || state == ReachabilityState.REACHABILITY_MOBILE*/)
-                        && state != DeviceState.READY) {
-                    Log.w(TAG, "Reachability changed; wifi available. Device state: " + state);
-                    initializeSignalling();
-                }
-                if (newState == ReachabilityState.REACHABILITY_NONE && state != DeviceState.OFFLINE) {
-                    Log.w(TAG, "Reachability changed; no connectivity");
-                    // TODO: here we need to unregister before shutting down, but for that we need to wait for the unREGISTER reply, which complicates things
-                    DeviceImpl.GetInstance().Shutdown();
-                    sipProfile = null;
-                    state = DeviceState.OFFLINE;
-                    //online = false;
-                }
+                return;
+            }
+        }
+
+        if ((newState == ReachabilityState.REACHABILITY_WIFI || newState == ReachabilityState.REACHABILITY_MOBILE)
+                && state != DeviceState.READY) {
+            Log.w(TAG, "Reachability action: wifi/mobile available. Device state: " + state);
+            initializeSignalling();
+            reachabilityState = newState;
+        }
+
         /*
             }
         };

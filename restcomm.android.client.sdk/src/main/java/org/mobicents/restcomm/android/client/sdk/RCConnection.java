@@ -494,8 +494,8 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
         RCDevice.ReachabilityState state = device.getReachability();
 
-        if (state == RCDevice.ReachabilityState.REACHABILITY_WIFI/* ||
-                state == RCDevice.ReachabilityState.REACHABILITY_MOBILE*/) {
+        if (state == RCDevice.ReachabilityState.REACHABILITY_WIFI ||
+                state == RCDevice.ReachabilityState.REACHABILITY_MOBILE) {
             return true;
         }
         else {

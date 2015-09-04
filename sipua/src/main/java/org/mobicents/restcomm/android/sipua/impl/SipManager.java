@@ -989,8 +989,9 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					}
 				}
 			}
-		} catch (Exception ex) {
-		} // for now eat exceptions
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 		return "";
 	}
 
