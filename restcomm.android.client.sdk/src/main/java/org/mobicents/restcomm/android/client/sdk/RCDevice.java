@@ -278,7 +278,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
                     DeviceImpl.GetInstance().Shutdown();
                 }
             };
-            mainHandler.postDelayed(myRunnable, 2000);
+            mainHandler.postDelayed(myRunnable, 500);
         }
         state = DeviceState.OFFLINE;
     }

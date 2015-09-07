@@ -87,6 +87,7 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 				int result = audioManager.requestAudioFocus(sm, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
 				if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
 					ringingPlayer.start();
+					Log.i(TAG, "startRinging start()");
 				}
 			}
 		};
@@ -100,16 +101,19 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 		Runnable myRunnable = new Runnable() {
 			@Override
 			public void run() {
-				ringingPlayer.pause();
-				// Abandon audio focus when playback complete
-				audioManager.abandonAudioFocus(sm);
+				if (ringingPlayer.isPlaying()) {
+					ringingPlayer.pause();
+					// Abandon audio focus when playback complete
+					audioManager.abandonAudioFocus(sm);
+					Log.i(TAG, "stopRinging pause()");
+				}
 			}
 		};
 		mainHandler.post(myRunnable);
 	}
 	public void startCalling()
 	{
-		if (outgoingOn == false) {
+		if (!outgoingOn) {
 			return;
 		}
 
@@ -122,6 +126,7 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 				int result = audioManager.requestAudioFocus(sm, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
 				if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
 					callingPlayer.start();
+					Log.i(TAG, "startCalling start()");
 				}
 			}
 		};
@@ -135,16 +140,19 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 		Runnable myRunnable = new Runnable() {
 			@Override
 			public void run() {
-				callingPlayer.pause();
-				// Abandon audio focus when playback complete
-				audioManager.abandonAudioFocus(sm);
+				if (callingPlayer.isPlaying()) {
+					callingPlayer.pause();
+					// Abandon audio focus when playback complete
+					audioManager.abandonAudioFocus(sm);
+					Log.i(TAG, "stopCalling pause()");
+				}
 			}
 		};
 		mainHandler.post(myRunnable);
 	}
 	public void incomingMessage()
 	{
-		if (incomingOn == false) {
+		if (!incomingOn) {
 			return;
 		}
 
@@ -157,6 +165,7 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 				int result = audioManager.requestAudioFocus(sm, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
 				if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
 					messagePlayer.start();
+					Log.i(TAG, "incomingMessage start()");
 				}
 			}
 		};
@@ -165,7 +174,7 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 
 	public void outgoingMessage()
 	{
-		if (outgoingOn == false) {
+		if (!outgoingOn) {
 			return;
 		}
 
@@ -178,6 +187,7 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 				int result = audioManager.requestAudioFocus(sm, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
 				if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
 					messagePlayer.start();
+					Log.i(TAG, "outgoingMessage start()");
 				}
 			}
 		};
