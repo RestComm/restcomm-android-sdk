@@ -191,6 +191,86 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 		return true;
 	}
+
+	public void refreshNetworking(int expiry)
+	{
+		// keep the old contact around to use for unregistration
+		Address oldAddress = createContactAddress();
+		if (udpListeningPoint != null) {
+			try {
+				sipProvider.removeSipListener(this);
+				sipStack.deleteSipProvider(sipProvider);
+				sipStack.deleteListeningPoint(udpListeningPoint);
+
+				udpListeningPoint = null;
+			} catch (ObjectInUseException e) {
+				e.printStackTrace();
+			}
+		}
+		if (udpListeningPoint == null) {
+			// new network interface is up, let's retrieve its ip address
+			this.sipProfile.setLocalIp(getIPAddress(true));
+			try {
+				udpListeningPoint = sipStack.createListeningPoint(
+						sipProfile.getLocalIp(), sipProfile.getLocalPort(),
+						sipProfile.getTransport());
+				sipProvider = sipStack.createSipProvider(udpListeningPoint);
+				sipProvider.addSipListener(this);
+			} catch (TransportNotSupportedException e) {
+				e.printStackTrace();
+			} catch (InvalidArgumentException e) {
+				e.printStackTrace();
+			} catch (ObjectInUseException e) {
+				e.printStackTrace();
+			} catch (TooManyListenersException e) {
+				e.printStackTrace();
+			}
+		}
+		// unregister the old contact (keep in mind that the new interface will be used to send this request)
+		Unregister(oldAddress);
+		// register the new contact with the given expiry
+		Register(expiry);
+	}
+
+	// release JAIN networking facilities
+	public void unbind()
+	{
+		if (udpListeningPoint != null) {
+			try {
+				sipProvider.removeSipListener(this);
+				sipStack.deleteSipProvider(sipProvider);
+				sipStack.deleteListeningPoint(udpListeningPoint);
+
+				udpListeningPoint = null;
+			} catch (ObjectInUseException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
+	// setup JAIN networking facilities
+	public void bind()
+	{
+		if (udpListeningPoint == null) {
+			this.sipProfile.setLocalIp(getIPAddress(true));
+			try {
+				udpListeningPoint = sipStack.createListeningPoint(
+						sipProfile.getLocalIp(), sipProfile.getLocalPort(),
+						sipProfile.getTransport());
+				sipProvider = sipStack.createSipProvider(udpListeningPoint);
+				sipProvider.addSipListener(this);
+			} catch (TransportNotSupportedException e) {
+				e.printStackTrace();
+			} catch (InvalidArgumentException e) {
+				e.printStackTrace();
+			} catch (ObjectInUseException e) {
+				e.printStackTrace();
+			} catch (TooManyListenersException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+
 	// *** Setters/Getters *** //
 	public boolean isInitialized() {
 		return initialized;
@@ -332,7 +412,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 		Register registerRequest = new Register();
 		try {
-			final Request r = registerRequest.MakeRequest(this, expiry);
+			final Request r = registerRequest.MakeRequest(this, expiry, null);
 			final SipProvider sipProvider = this.sipProvider;
 			// Send the request statefully, through the client transaction.
 			Thread thread = new Thread() {
@@ -357,7 +437,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		}
 	}
 
-	public void Unregister() {
+	public void Unregister(Address contact) {
 		if (!latestProxyIp.equals(sipProfile.getRemoteIp())) {
 			// proxy ip address has been updated, need to re-initialize
 			if (!initialize())
@@ -366,7 +446,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 		Register registerRequest = new Register();
 		try {
-			final Request r = registerRequest.MakeRequest(this, 0);
+			final Request r = registerRequest.MakeRequest(this, 0, contact);
 			final SipProvider sipProvider = this.sipProvider;
 			// Send the request statefully, through the client transaction.
 			Thread thread = new Thread() {
@@ -706,21 +786,23 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	// *** JAIN SIP: Exception *** //
 	public void processIOException(IOExceptionEvent exceptionEvent) {
-		System.out.println("IOException happened for "
-				+ exceptionEvent.getHost() + " port = "
-				+ exceptionEvent.getPort());
+		Log.e(TAG, "SipManager.processIOException: " + exceptionEvent.toString() + "\n" +
+				"\thost: " +  exceptionEvent.getHost() + "\n" +
+				"\tport: " + exceptionEvent.getPort());
 	}
 
 	// *** JAIN SIP: Transaction terminated *** //
-	public void processTransactionTerminated(
-			TransactionTerminatedEvent transactionTerminatedEvent) {
-		System.out.println("Transaction terminated event recieved");
+	public void processTransactionTerminated(TransactionTerminatedEvent transactionTerminatedEvent) {
+		Log.i(TAG, "SipManager.processTransactionTerminated: " + transactionTerminatedEvent.toString() + "\n" +
+				"\tclient transaction: " + transactionTerminatedEvent.getClientTransaction() + "\n" +
+				"\tserver transaction: " + transactionTerminatedEvent.getServerTransaction() + "\n" +
+				"\tisServerTransaction: " + transactionTerminatedEvent.isServerTransaction());
 	}
 
 	// *** JAIN SIP: Dialog terminated *** //
-	public void processDialogTerminated(
-			DialogTerminatedEvent dialogTerminatedEvent) {
-		System.out.println("dialogTerminatedEvent");
+	public void processDialogTerminated(DialogTerminatedEvent dialogTerminatedEvent) {
+		Log.i(TAG, "SipManager.processDialogTerminated: " + dialogTerminatedEvent.toString() + "\n" +
+				"\tdialog: " + dialogTerminatedEvent.getDialog());
 	}
 
 	// *** JAIN SIP: Time out *** //

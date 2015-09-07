@@ -230,14 +230,15 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
         if ((reachabilityState == ReachabilityState.REACHABILITY_WIFI && newState == ReachabilityState.REACHABILITY_MOBILE) ||
                 (reachabilityState == ReachabilityState.REACHABILITY_MOBILE && newState == ReachabilityState.REACHABILITY_WIFI)) {
             if (state != DeviceState.OFFLINE) {
-                Log.w(TAG, "Reachability action: wifi/mobile available from movile/wifi. Device state: " + state);
+                Log.w(TAG, "Reachability action: switch between wifi and mobile. Device state: " + state);
                 // stop JAIN
-                //DeviceImpl.GetInstance().Unregister();
-                DeviceImpl.GetInstance().Shutdown();
-                sipProfile = null;
-                state = DeviceState.OFFLINE;
+                DeviceImpl.GetInstance().RefreshNetworking();
+                ////DeviceImpl.GetInstance().Unregister();
+                //DeviceImpl.GetInstance().Shutdown();
+                //sipProfile = null;
+                //state = DeviceState.OFFLINE;
                 // start JAIN
-                initializeSignalling();
+                //initializeSignalling();
                 reachabilityState = newState;
                 return;
             }
@@ -266,6 +267,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
         this.listener = null;
 
         if (DeviceImpl.isInitialized()) {
+            DeviceImpl.GetInstance().Unregister();
             DeviceImpl.GetInstance().Shutdown();
         }
         state = DeviceState.OFFLINE;

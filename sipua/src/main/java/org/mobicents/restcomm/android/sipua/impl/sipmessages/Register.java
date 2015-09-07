@@ -19,7 +19,7 @@ import android.os.AsyncTask;
 
 public class Register {
 
-	public Request MakeRequest(org.mobicents.restcomm.android.sipua.impl.SipManager sipManager, int expires) throws ParseException,
+	public Request MakeRequest(org.mobicents.restcomm.android.sipua.impl.SipManager sipManager, int expires, final Address contact) throws ParseException,
 			InvalidArgumentException {
 
 		AddressFactory addressFactory = sipManager.addressFactory;
@@ -36,7 +36,13 @@ public class Register {
 				+ sipManager.getSipProfile().getRemoteIp());
 		toAddress.setDisplayName(sipManager.getSipProfile().getSipUserName());
 
-		Address contactAddress = sipManager.createContactAddress();
+		Address contactAddress;
+		if (contact == null) {
+			contactAddress = sipManager.createContactAddress();
+		}
+		else {
+			contactAddress = contact;
+		}
 		ArrayList<ViaHeader> viaHeaders = sipManager.createViaHeader();
 		URI requestURI = addressFactory.createAddress(
 				"sip:" + sipManager.getSipProfile().getRemoteEndpoint())

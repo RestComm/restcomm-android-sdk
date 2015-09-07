@@ -251,8 +251,14 @@ public class DeviceImpl implements IDevice,Serializable {
 		registerRefreshHandler.postDelayed(myRunnable, registrationRefresh*1000);
 
 	}
+
+	public void RefreshNetworking()
+	{
+		this.sipManager.refreshNetworking(registrationExpiry);
+	}
+
 	public void Unregister() {
-		this.sipManager.Unregister();
+		this.sipManager.Unregister(null);
 	}
 	@Override
 	public SipManager GetSipManager() {
