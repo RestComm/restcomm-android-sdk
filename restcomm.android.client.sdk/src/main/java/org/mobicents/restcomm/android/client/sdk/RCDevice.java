@@ -268,7 +268,17 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
 
         if (DeviceImpl.isInitialized()) {
             DeviceImpl.GetInstance().Unregister();
-            DeviceImpl.GetInstance().Shutdown();
+            // allow for the unregister to be serviced before we shut down the stack (delay 2 secs)
+            // TODO: a better way to do this would be to wait for the response to the unregistration
+            // before we shutdown
+            Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+            Runnable myRunnable = new Runnable() {
+                @Override
+                public void run() {
+                    DeviceImpl.GetInstance().Shutdown();
+                }
+            };
+            mainHandler.postDelayed(myRunnable, 2000);
         }
         state = DeviceState.OFFLINE;
     }
