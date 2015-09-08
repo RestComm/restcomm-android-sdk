@@ -210,8 +210,21 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         return reachabilityState;
     }
 
-    public void shutdown()
-    {
+    // 'Copy' constructor
+    public RCDevice(RCDevice device) {
+        this.incomingSoundEnabled = device.incomingSoundEnabled;
+        this.outgoingSoundEnabled = device.outgoingSoundEnabled;
+        this.disconnectSoundEnabled = device.disconnectSoundEnabled;
+        this.listener = device.listener;
+
+        // Not used yet
+        this.capabilities = null;
+    }
+
+    /**
+     * Shuts down and release the Device
+     */
+    public void release() {
         this.listener = null;
 
         if (DeviceImpl.isInitialized()) {
@@ -237,24 +250,6 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         // important, otherwise if shutdown and re-initialized the old RCDevice instance will be getting events
         RCClient.getContext().unregisterReceiver(this);
         state = DeviceState.OFFLINE;
-    }
-
-    // 'Copy' constructor
-    public RCDevice(RCDevice device) {
-        this.incomingSoundEnabled = device.incomingSoundEnabled;
-        this.outgoingSoundEnabled = device.outgoingSoundEnabled;
-        this.disconnectSoundEnabled = device.disconnectSoundEnabled;
-        this.listener = device.listener;
-
-        // Not used yet
-        this.capabilities = null;
-    }
-
-    /**
-     * Shuts down and release the Device (<b>Not Implemented yet</b>)
-     */
-    public void release() {
-
     }
 
     /**

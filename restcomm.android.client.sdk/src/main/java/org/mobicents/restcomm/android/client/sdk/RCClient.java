@@ -144,7 +144,7 @@ public class RCClient {
             list = null;
             // Need to make sure that shutdown() will finish its job synchronously.
             // Keep in mind that once this block is left device can be claimed by GC
-            device.shutdown();
+            device.release();
         }
         else {
             Log.e(TAG, "shutdown(): Warning Restcomm Client already shut down, skipping");
