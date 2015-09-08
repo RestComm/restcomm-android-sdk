@@ -339,8 +339,9 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
      */
     public void setMuted(boolean muted)
     {
-        audioManager.setMute(muted);
-        //DeviceImpl.GetInstance().Mute(muted);
+        if (audioManager != null) {
+            audioManager.setMute(muted);
+        }
     }
 
     /**
