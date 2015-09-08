@@ -46,7 +46,7 @@ import org.mobicents.restcomm.android.sipua.impl.SipEvent;
  *  intent for the activity receiving messages.
  *  If you want to initiate a media connection towards another party you use RCDevice.connect() which returns an RCConnection object representing
  *  the new outgoing connection. From then on you can act on the new connection by applying RCConnection methods on the handle you got from RCDevice.connect().
- *  If there’s an incoming connection you will be receiving an intent with action 'RCDevice.INCOMING_CALL'. At that point you can use RCConnection methods to
+ *  If there is an incoming connection you will be receiving an intent with action 'RCDevice.INCOMING_CALL'. At that point you can use RCConnection methods to
  *  accept or reject the connection.
  *
  *  As far as instant messages are concerned you can send a message using RCDevice.sendMessage() and you will be notified of an incoming message
