@@ -1,3 +1,25 @@
+/*
+ * TeleStax, Open Source Cloud Communications
+ * Copyright 2011-2015, Telestax Inc and individual contributors
+ * by the @authors tag.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation; either version 3 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ *
+ * For questions related to commercial use licensing, please contact sales@telestax.com.
+ *
+ */
+
 package com.telestax.restcomm_messenger;
 
 import android.app.Activity;
@@ -7,7 +29,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.media.MediaPlayer;
-import android.net.wifi.WifiManager;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.view.Menu;
@@ -117,7 +138,6 @@ public class MainActivity extends Activity implements RCDeviceListener,
         }
         // The activity has become visible (it is now "resumed").
         Log.i(TAG, "%% onResume");
-        Intent intent = getIntent();
     }
 
     @Override
@@ -157,22 +177,15 @@ public class MainActivity extends Activity implements RCDeviceListener,
     // UI Events
     public void onClick(View view) {
         if (view.getId() == R.id.button_dial || view.getId() == R.id.button_dial_audio) {
-            //WifiManager wifi = (WifiManager) getSystemService(WIFI_SERVICE);
-            //if (wifi.isWifiEnabled()) {
-                Intent intent = new Intent(this, CallActivity.class);
-                intent.setAction(RCDevice.OUTGOING_CALL);
-                intent.putExtra(RCDevice.EXTRA_DID, txtUri.getText().toString());
-                if (view.getId() == R.id.button_dial_audio) {
-                    intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, false);
-                }
-                else {
-                    intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, true);
-                }
-                startActivityForResult(intent, CONNECTION_REQUEST);
-            //}
-            //else {
-            //    showOkAlert("No Connectivity", "No network connectivity");
-            //}
+            Intent intent = new Intent(this, CallActivity.class);
+            intent.setAction(RCDevice.OUTGOING_CALL);
+            intent.putExtra(RCDevice.EXTRA_DID, txtUri.getText().toString());
+            if (view.getId() == R.id.button_dial_audio) {
+                intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, false);
+            } else {
+                intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, true);
+            }
+            startActivityForResult(intent, CONNECTION_REQUEST);
         }
         else if (view.getId() == R.id.button_register) {
             if (!device.updateParams(params)) {
@@ -181,16 +194,10 @@ public class MainActivity extends Activity implements RCDeviceListener,
 
         }
         else if (view.getId() == R.id.button_message) {
-            //WifiManager wifi = (WifiManager) getSystemService(WIFI_SERVICE);
-            //if (wifi.isWifiEnabled()) {
-                Intent intent = new Intent(this, MessageActivity.class);
-                intent.setAction(RCDevice.OPEN_MESSAGE_SCREEN);
-                intent.putExtra(RCDevice.EXTRA_DID, txtUri.getText().toString());
-                startActivity(intent);
-            //}
-            //else {
-            //    showOkAlert("No Connectivity", "No network connectivity");
-            //}
+            Intent intent = new Intent(this, MessageActivity.class);
+            intent.setAction(RCDevice.OPEN_MESSAGE_SCREEN);
+            intent.putExtra(RCDevice.EXTRA_DID, txtUri.getText().toString());
+            startActivity(intent);
         }
         else if (view.getId() == R.id.button_listen) {
             device.listen();

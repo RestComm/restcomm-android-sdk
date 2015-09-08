@@ -1,3 +1,25 @@
+/*
+ * TeleStax, Open Source Cloud Communications
+ * Copyright 2011-2015, Telestax Inc and individual contributors
+ * by the @authors tag.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation; either version 3 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ *
+ * For questions related to commercial use licensing, please contact sales@telestax.com.
+ *
+ */
+
 package com.telestax.restcomm_messenger;
 
 import android.app.Activity;
@@ -30,7 +52,7 @@ import org.webrtc.VideoRendererGui;
 import org.webrtc.VideoTrack;
 
 public class CallActivity extends Activity implements RCConnectionListener, View.OnClickListener,
-        CompoundButton.OnCheckedChangeListener, AudioManager.OnAudioFocusChangeListener {
+        CompoundButton.OnCheckedChangeListener {
 
     private GLSurfaceView videoView;
     private VideoRenderer.Callbacks localRender = null;
@@ -65,8 +87,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     CheckBox cbMuted;
     Button btnHangup;
     Button btnAnswer, btnAnswerAudio;
-    //Button btnDecline;
-    //Button btnCancel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -93,10 +113,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         btnAnswer.setOnClickListener(this);
         btnAnswerAudio = (Button)findViewById(R.id.button_answer_audio);
         btnAnswerAudio.setOnClickListener(this);
-        //btnDecline = (Button)findViewById(R.id.button_decline);
-        //btnDecline.setOnClickListener(this);
-        //btnCancel = (Button)findViewById(R.id.button_cancel);
-        //btnCancel.setOnClickListener(this);
         cbMuted = (CheckBox)findViewById(R.id.checkbox_muted);
         cbMuted.setOnCheckedChangeListener(this);
         cbMuted.setEnabled(false);
@@ -343,41 +359,11 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             VideoRendererGui.update(remoteRender,
                     REMOTE_X, REMOTE_Y,
                     REMOTE_WIDTH, REMOTE_HEIGHT, scalingType, false);
-            //if (iceConnected) {
-                VideoRendererGui.update(localRender,
-                        LOCAL_X_CONNECTED, LOCAL_Y_CONNECTED,
-                        LOCAL_WIDTH_CONNECTED, LOCAL_HEIGHT_CONNECTED,
-                        VideoRendererGui.ScalingType.SCALE_ASPECT_FIT, true);
-            /*
-            } else {
-                VideoRendererGui.update(localRender,
-                        LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING,
-                        LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING, scalingType, true);
-            }
-            */
+            VideoRendererGui.update(localRender,
+                    LOCAL_X_CONNECTED, LOCAL_Y_CONNECTED,
+                    LOCAL_WIDTH_CONNECTED, LOCAL_HEIGHT_CONNECTED,
+                    VideoRendererGui.ScalingType.SCALE_ASPECT_FIT, true);
         }
-    }
-
-    // Callbacks for auio focus change events
-    public void onAudioFocusChange(int focusChange)
-    {
-        Log.i(TAG, "onAudioFocusChange: " + focusChange);
-		/*
-		if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
-			// Pause playback
-		}
-		else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
-			// Resume playback or raise it back to normal if we were ducked
-		}
-		else if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
-			//am.unregisterMediaButtonEventReceiver(RemoteControlReceiver);
-			audio.abandonAudioFocus(this);
-			// Stop playback
-		}
-		else if (focusChange == AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
-            // Lower the volume
-        }
-		*/
     }
 
     // Helpers

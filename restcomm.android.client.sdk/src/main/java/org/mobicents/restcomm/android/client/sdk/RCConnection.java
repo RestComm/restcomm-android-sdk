@@ -20,13 +20,37 @@
  *
  */
 
+/*
+ * libjingle
+ * Copyright 2014 Google Inc.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  1. Redistributions of source code must retain the above copyright notice,
+ *     this list of conditions and the following disclaimer.
+ *  2. Redistributions in binary form must reproduce the above copyright notice,
+ *     this list of conditions and the following disclaimer in the documentation
+ *     and/or other materials provided with the distribution.
+ *  3. The name of the author may not be used to endorse or promote products
+ *     derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+ * EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
 package org.mobicents.restcomm.android.client.sdk;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
-import android.media.AudioManager;
-import android.media.MediaPlayer;
-import android.net.wifi.WifiManager;
 import android.opengl.GLSurfaceView;
 import android.os.Handler;
 import android.util.Log;
@@ -110,44 +134,6 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
      */
     boolean muted;
 
-    /*
-    // #webrtc
-    private String keyprefVideoCallEnabled;
-    private String keyprefResolution;
-    private String keyprefFps;
-    private String keyprefVideoBitrateType;
-    private String keyprefVideoBitrateValue;
-    private String keyprefVideoCodec;
-    private String keyprefAudioBitrateType;
-    private String keyprefAudioBitrateValue;
-    private String keyprefAudioCodec;
-    private String keyprefHwCodecAcceleration;
-    private String keyprefNoAudioProcessingPipeline;
-    private String keyprefCpuUsageDetection;
-    private String keyprefDisplayHud;
-    private String keyprefRoomServerUrl;
-    private String keyprefRoom;
-    private String keyprefRoomList;
-    */
-
-    // Peer connection statistics callback period in ms.
-    private static final int STAT_CALLBACK_PERIOD = 1000;
-    // Local preview screen position before call is connected.
-    private static final int LOCAL_X_CONNECTING = 0;
-    private static final int LOCAL_Y_CONNECTING = 0;
-    private static final int LOCAL_WIDTH_CONNECTING = 100;
-    private static final int LOCAL_HEIGHT_CONNECTING = 100;
-    // Local preview screen position after call is connected.
-    private static final int LOCAL_X_CONNECTED = 72;
-    private static final int LOCAL_Y_CONNECTED = 72;
-    private static final int LOCAL_WIDTH_CONNECTED = 25;
-    private static final int LOCAL_HEIGHT_CONNECTED = 25;
-    // Remote video screen position
-    private static final int REMOTE_X = 0;
-    private static final int REMOTE_Y = 0;
-    private static final int REMOTE_WIDTH = 100;
-    private static final int REMOTE_HEIGHT = 100;
-
     public String incomingCallSdp = "";
     private PeerConnectionClient peerConnectionClient = null;
     private SignalingParameters signalingParameters;
@@ -156,20 +142,11 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     private VideoRenderer.Callbacks remoteRender = null;
     private VideoRendererGui.ScalingType scalingType;
     private Toast logToast;
-    //private boolean commandLineRun;
-    //private int runTimeMs;
-    //private boolean activityRunning;
     private PeerConnectionClient.PeerConnectionParameters peerConnectionParameters;
     private boolean iceConnected;
     private boolean isError;
-    //private boolean callControlFragmentVisible = true;
     private long callStartedTimeMs = 0;
     private GLSurfaceView videoView;
-    /*
-    MediaPlayer ringingPlayer;
-    MediaPlayer callingPlayer;
-    AudioManager soundsManager;
-    */
 
     // List of mandatory application permissions.
     private static final String[] MANDATORY_PERMISSIONS = {
@@ -189,21 +166,6 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     public RCConnection(RCConnectionListener connectionListener)
     {
         this.listener = connectionListener;
-
-        /*
-        soundsManager = (AudioManager)RCClient.getInstance().context.getSystemService(Context.AUDIO_SERVICE);
-        // volume control should be by default 'music' which will control the ringing sounds and 'voice call' when within a call
-        //setVolumeControlStream(AudioManager.STREAM_MUSIC);
-        // Setup Media (notice that I'm not preparing the media as create does that implicitly plus
-        // I'm not ever stopping a player -instead I'm pausing so no additional preparation is needed
-        // there either. We might need to revisit this at some point though
-        ringingPlayer = MediaPlayer.create(RCClient.getInstance().context, R.raw.ringing);
-        ringingPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-        ringingPlayer.setLooping(true);
-        callingPlayer = MediaPlayer.create(RCClient.getInstance().context, R.raw.calling);
-        callingPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-        callingPlayer.setLooping(true);
-        */
     }
 
     // could not use the previous constructor with connectionListener = null, hence created this:
@@ -211,14 +173,6 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     {
         this.listener = null;
     }
-
-    /*
-    public void listenerReady(RCConnectionListener listener)
-    {
-        this.listener = listener;
-        //initializeWebrtc(true);
-    }
-    */
 
     // 'Copy' constructor
     public RCConnection(RCConnection connection)
@@ -322,7 +276,6 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             } else if (state == ConnectionState.CONNECTED) {
                 DeviceImpl.GetInstance().Hangup();
             }
-            //this.state = state.DISCONNECTED;
         }
         // also update RCDevice state
         RCDevice device = RCClient.listDevices().get(0);
@@ -493,6 +446,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             return false;
         }
 
+        // get reachability state from RCDevice
         DeviceImpl.ReachabilityState state = device.getReachability();
 
         if (state == DeviceImpl.ReachabilityState.REACHABILITY_WIFI ||
@@ -534,8 +488,6 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             if (context.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
                 logAndToast("Permission " + permission + " is not granted");
                 // TODO: return error to RCConnection listener
-                //activity.setResult(activity.RESULT_CANCELED);
-                //activity.finish();
                 return;
             }
         }
@@ -554,7 +506,6 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                 false,
                 true);
 
-        // #WEBRTC-VIDEO TODO: remove this
         createPeerConnectionFactory();
     }
 
@@ -620,7 +571,6 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                     final long delta = System.currentTimeMillis() - callStartedTimeMs;
                     Log.d(TAG, "Creating peer connection factory, delay=" + delta + "ms");
                     peerConnectionClient = PeerConnectionClient.getInstance();
-                    //peerConnectionClient.setVideoEnabled(false);
                     peerConnectionClient.createPeerConnectionFactory(RCClient.getContext(),
                             VideoRendererGui.getEGLContext(), peerConnectionParameters,
                             connection);
@@ -694,11 +644,6 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             public void run() {
                 Log.e(TAG, "@@@@@ onIceCandidate:");
                 connection.signalingParameters.addIceCandidate(candidate);
-                /*
-                if (appRtcClient != null) {
-                    appRtcClient.sendLocalIceCandidate(candidate);
-                }
-                */
             }
         };
         mainHandler.post(myRunnable);
@@ -744,7 +689,6 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                 Log.e(TAG, "@@@@@ onIceConnected");
                 logAndToast("ICE connected, delay=" + delta + "ms");
                 iceConnected = true;
-                //callConnected();
             }
         };
         mainHandler.post(myRunnable);
@@ -929,51 +873,4 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             peerConnectionClient.addRemoteIceCandidate(candidate);
         }
     }
-
-    /*
-    //@Override
-    public void onChannelClose() {
-        Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
-        Runnable myRunnable = new Runnable() {
-            @Override
-            public void run() {
-                logAndToast("Remote end hung up; dropping PeerConnection");
-                disconnect();
-            }
-        };
-        mainHandler.post(myRunnable);
-    }*/
-
-    // Parcelable stuff (not needed for now -let's keep around in case we use it at some point):
-    /*
-    @Override
-    public int describeContents() {
-        return 0;
-    }
-
-    // Parceable stuff
-    public void writeToParcel(Parcel out, int flags) {
-        //out.writeInt(state.ordinal());
-        boolean one[] = new boolean[1];
-        one[0] = incoming;
-        out.writeBooleanArray(one);
-    }
-
-    public static final Parcelable.Creator<RCConnection> CREATOR = new Parcelable.Creator<RCConnection>() {
-        public RCConnection createFromParcel(Parcel in) {
-            return new RCConnection(in);
-        }
-
-        public RCConnection[] newArray(int size) {
-            return new RCConnection[size];
-        }
-    };
-
-    private RCConnection(Parcel in) {
-        //state = in.readInt();
-        boolean one[] = new boolean[1];
-        in.readBooleanArray(one);
-        incoming = one[0];
-    }
-    */
 }

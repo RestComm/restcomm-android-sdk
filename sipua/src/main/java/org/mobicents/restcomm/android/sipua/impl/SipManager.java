@@ -87,9 +87,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	private SipProfile sipProfile;
 	private String latestProxyIp;
 	private Dialog dialog;
-	// Save the created ACK request, to respond to retransmitted 2xx
-	private Request ackRequest;
-	private boolean ackReceived;
 
 	private ArrayList<ISipEventListener> sipEventListenerList = new ArrayList<ISipEventListener>();
 	private boolean initialized = false;
@@ -99,8 +96,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	private ServerTransaction currentServerTransaction;
 	private static final int MAX_REGISTER_ATTEMPTS = 3;
 	HashMap<String, Integer> registerAuthenticationMap = new HashMap<>();
-	public int ackCount = 0;
-	DigestServerAuthenticationHelper dsam;
 	// Is it an outgoing call or incoming call. We're using this so that when we hit
 	// hangup we know which transaction to use, the client or the server (maybe we
 	// could also use dialog.isServer() flag but have found mixed opinions about it)
@@ -118,7 +113,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		Log.v(TAG, "initialize()");
 
 		sipManagerState = SipManagerState.REGISTERING;
-		//this.sipProfile.setLocalIp(getIPAddress(true));
 
 		sipFactory = SipFactory.getInstance();
 		sipFactory.resetFactory();
@@ -146,13 +140,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			if (connectivity) {
 				bind();
 			}
-			/*
-			udpListeningPoint = sipStack.createListeningPoint(
-					sipProfile.getLocalIp(), sipProfile.getLocalPort(),
-					sipProfile.getTransport());
-			sipProvider = sipStack.createSipProvider(udpListeningPoint);
-			sipProvider.addSipListener(this);
-			*/
 
 			initialized = true;
 			sipManagerState = SipManagerState.READY;
@@ -162,18 +149,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			e.printStackTrace();
 			return false;
 		}
-		/*
-		catch (InvalidArgumentException e) {
-			e.printStackTrace();
-			return false;
-		} catch (TransportNotSupportedException e) {
-			e.printStackTrace();
-			return false;
-		} catch (TooManyListenersException e) {
-			e.printStackTrace();
-			return false;
-		}
-		*/
 		return true;
 	}
 
@@ -184,24 +159,9 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 		if (sipManagerState != SipManagerState.STACK_STOPPED) {
 			Log.v(TAG, "shutdown while stack is started");
-			//try {
-				unbind();
-				/*
-				// during initialization we use this ordering: stack, point, provider, listener
-				sipProvider.removeSipListener(this);
-
-				sipStack.deleteSipProvider(sipProvider);
-				sipStack.deleteListeningPoint(udpListeningPoint);
-				udpListeningPoint = null;
-				*/
-				sipStack.stop();
-				sipManagerState = SipManagerState.STACK_STOPPED;
-			/*
-			} catch (ObjectInUseException e) {
-				e.printStackTrace();
-				return false;
-			}
-			*/
+			unbind();
+			sipStack.stop();
+			sipManagerState = SipManagerState.STACK_STOPPED;
 		}
 
 		return true;
@@ -251,42 +211,10 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	{
 		// keep the old contact around to use for unregistration
 		Address oldAddress = createContactAddress();
-		unbind();
-		/*
-		if (udpListeningPoint != null) {
-			try {
-				sipProvider.removeSipListener(this);
-				sipStack.deleteSipProvider(sipProvider);
-				sipStack.deleteListeningPoint(udpListeningPoint);
 
-				udpListeningPoint = null;
-			} catch (ObjectInUseException e) {
-				e.printStackTrace();
-			}
-		}
-		*/
+		unbind();
 		bind();
-		/*
-		if (udpListeningPoint == null) {
-			// new network interface is up, let's retrieve its ip address
-			this.sipProfile.setLocalIp(getIPAddress(true));
-			try {
-				udpListeningPoint = sipStack.createListeningPoint(
-						sipProfile.getLocalIp(), sipProfile.getLocalPort(),
-						sipProfile.getTransport());
-				sipProvider = sipStack.createSipProvider(udpListeningPoint);
-				sipProvider.addSipListener(this);
-			} catch (TransportNotSupportedException e) {
-				e.printStackTrace();
-			} catch (InvalidArgumentException e) {
-				e.printStackTrace();
-			} catch (ObjectInUseException e) {
-				e.printStackTrace();
-			} catch (TooManyListenersException e) {
-				e.printStackTrace();
-			}
-		}
-		*/
+
 		// unregister the old contact (keep in mind that the new interface will be used to send this request)
 		Unregister(oldAddress);
 		// register the new contact with the given expiry
@@ -454,9 +382,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					} catch (SipException e) {
 						e.printStackTrace();
 					}
-					//catch (TransactionUnavailableException e) {
-					//	e.printStackTrace();
-					//}
 				}
 			};
 			thread.start();
@@ -498,9 +423,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					} catch (SipException e) {
 						e.printStackTrace();
 					}
-					//catch (TransactionUnavailableException e) {
-					//	e.printStackTrace();
-					//}
 				}
 			};
 			thread.start();
@@ -520,25 +442,20 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		this.sipManagerState = SipManagerState.CALLING;
 		Invite inviteRequest = new Invite();
 		final Request r = inviteRequest.MakeRequest(this, to, localRtpPort, sipHeaders);
-		//try {
-			final SipProvider sipProvider = this.sipProvider;
-			Thread thread = new Thread() {
-				public void run() {
-					try {
-						final ClientTransaction transaction = sipProvider.getNewClientTransaction(r);
-						// note: we might need to make this 'syncrhonized' to avoid race at some point
-						currentClientTransaction = transaction;
-						transaction.sendRequest();
-					} catch (SipException e) {
-						e.printStackTrace();
-					}
-					//catch (TransactionUnavailableException e) {
-					//	e.printStackTrace();
-					//}
+		final SipProvider sipProvider = this.sipProvider;
+		Thread thread = new Thread() {
+			public void run() {
+				try {
+					final ClientTransaction transaction = sipProvider.getNewClientTransaction(r);
+					// note: we might need to make this 'syncrhonized' to avoid race at some point
+					currentClientTransaction = transaction;
+					transaction.sendRequest();
+				} catch (SipException e) {
+					e.printStackTrace();
 				}
-			};
-			thread.start();
-		//}
+			}
+		};
+		thread.start();
 		direction = CallDirection.OUTGOING;
 	}
 
@@ -549,25 +466,20 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		this.sipManagerState = SipManagerState.CALLING;
 		Invite inviteRequest = new Invite();
 		final Request r = inviteRequest.MakeRequestWebrtc(this, to, sdp, sipHeaders);
-		//try {
-			final SipProvider sipProvider = this.sipProvider;
-			Thread thread = new Thread() {
-				public void run() {
-					try {
-						final ClientTransaction transaction = sipProvider.getNewClientTransaction(r);
-						// note: we might need to make this 'syncrhonized' to avoid race at some point
-						currentClientTransaction = transaction;
-						transaction.sendRequest();
-					} catch (SipException e) {
-						e.printStackTrace();
-					}
-					//catch (TransactionUnavailableException e) {
-					//	e.printStackTrace();
-					//}
+		final SipProvider sipProvider = this.sipProvider;
+		Thread thread = new Thread() {
+			public void run() {
+				try {
+					final ClientTransaction transaction = sipProvider.getNewClientTransaction(r);
+					// note: we might need to make this 'syncrhonized' to avoid race at some point
+					currentClientTransaction = transaction;
+					transaction.sendRequest();
+				} catch (SipException e) {
+					e.printStackTrace();
 				}
-			};
-			thread.start();
-		//}
+			}
+		};
+		thread.start();
 		direction = CallDirection.OUTGOING;
 	}
 
@@ -589,9 +501,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					} catch (SipException e) {
 						e.printStackTrace();
 					}
-					//catch (TransactionUnavailableException e) {
-					//	e.printStackTrace();
-					//}
 				}
 			};
 			thread.start();
@@ -612,13 +521,11 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		if (direction == CallDirection.OUTGOING) {
 			if (currentClientTransaction != null) {
 				sendByeClient(currentClientTransaction);
-				//sipManagerState = SipManagerState.IDLE;
 			}
 		}
 		else if (direction == CallDirection.INCOMING) {
 			if (currentServerTransaction != null) {
 				sendByeClient(currentServerTransaction);
-				//
 			}
 		}
 	}
@@ -809,12 +716,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		} else if (response.getStatusCode() == Response.ACCEPTED) {
 			System.out.println("ACCEPTED");
 		}
-		/*
-		else if (response.getStatusCode() == Response.BUSY_HERE) {
-			System.out.println("BUSY");
-			dispatchSipEvent(new SipEvent(this, SipEventType.BUSY_HERE, "", ""));
-		}
-		*/
 		else if (response.getStatusCode() == Response.RINGING) {
 			System.out.println("RINGING");
 			dispatchSipEvent(new SipEvent(this, SipEventType.REMOTE_RINGING, "", ""));

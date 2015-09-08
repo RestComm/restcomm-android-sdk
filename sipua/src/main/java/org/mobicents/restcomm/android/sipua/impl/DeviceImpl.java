@@ -8,7 +8,6 @@ import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.HashMap;
-import android.javax.sdp.SdpException;
 
 import org.mobicents.restcomm.android.sipua.IDevice;
 import org.mobicents.restcomm.android.sipua.NotInitializedException;
@@ -16,12 +15,8 @@ import org.mobicents.restcomm.android.sipua.SipProfile;
 import org.mobicents.restcomm.android.sipua.SipUAConnectionListener;
 import org.mobicents.restcomm.android.sipua.SipUADeviceListener;
 import org.mobicents.restcomm.android.sipua.impl.SipEvent.SipEventType;
-// ISSUE#17: commented those, as we need to decouple the UI details
-//import org.mobicents.restcomm.android.sdk.ui.IncomingCall;
-//import org.mobicents.restcomm.android.sdk.ui.NotifyMessage;
 
 import android.content.Context;
-import android.javax.sip.ObjectInUseException;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
@@ -122,20 +117,17 @@ public class DeviceImpl implements IDevice,Serializable {
 			}
 		} else if (sipEventObject.type == SipEventType.INCOMING_BYE_REQUEST ||
 				sipEventObject.type == SipEventType.INCOMING_BYE_RESPONSE) {
-			//this.soundManager.stopStreaming();
 			if (this.sipuaConnectionListener != null) {
 				// notify our listener that we are disconnected (either when we get a response to our BYE, or when we receive a BYE request
 				this.sipuaConnectionListener.onSipUADisconnected(sipEventObject);
 			}
 		} else if (sipEventObject.type == SipEventType.REMOTE_CANCEL) {
-			//this.soundManager.stopStreaming();
 			if (this.sipuaConnectionListener != null) {
 				// notify our listener that we are connected
 				this.sipuaConnectionListener.onSipUACancelled(null);
 				soundManager.stopRinging();
 			}
 		} else if (sipEventObject.type == SipEventType.DECLINED) {
-			//this.soundManager.stopStreaming();
 			if (this.sipuaConnectionListener != null) {
 				// notify our listener that we are connected
 				this.sipuaConnectionListener.onSipUADeclined(null);
@@ -143,12 +135,9 @@ public class DeviceImpl implements IDevice,Serializable {
 			}
 		}else if (sipEventObject.type == SipEventType.BUSY_HERE) {
 			soundManager.stopCalling();
-			//this.soundManager.stopStreaming();
 		} else if (sipEventObject.type == SipEventType.SERVICE_UNAVAILABLE) {
 			soundManager.stopCalling();
-			//this.soundManager.stopStreaming();
 		} else if (sipEventObject.type == SipEventType.CALL_CONNECTED) {
-			//this.soundManager.startStreaming(sipEventObject.remoteRtpPort, this.sipProfile.getRemoteIp());
 			if (this.sipuaConnectionListener != null) {
 				// notify our listener that we are connected
 				this.sipuaConnectionListener.onSipUAConnected(sipEventObject);
@@ -172,11 +161,6 @@ public class DeviceImpl implements IDevice,Serializable {
 	@Override
 	public void Call(String to,  HashMap<String, String> sipHeaders) {
 		try {
-			/*
-			if (sipHeaders != null) {
-				sipManager.setCustomHeaders(sipHeaders);
-			}
-			*/
 			this.sipManager.Call(to, 0, sipHeaders);
 		} catch (NotInitializedException e) {
 			e.printStackTrace();
@@ -185,11 +169,6 @@ public class DeviceImpl implements IDevice,Serializable {
 
 	public void CallWebrtc(String to, String sdp, HashMap<String, String> sipHeaders) {
 		try {
-			/*
-			if (sipHeaders != null) {
-				sipManager.setCustomHeaders(sipHeaders);
-			}
-			*/
 			if (checkReachability(this.context) != ReachabilityState.REACHABILITY_NONE) {
 				this.sipManager.CallWebrtc(to, sdp, sipHeaders);
 			}
@@ -267,9 +246,7 @@ public class DeviceImpl implements IDevice,Serializable {
 			registerRefreshHandler.removeCallbacksAndMessages(null);
 		}
 
-		//final SipManager finalSipManager = this.sipManager;
 		// schedule a registration update after 'registrationRefresh' seconds
-		//registerRefreshHandler = new Handler(context.getMainLooper());
 		Runnable myRunnable = new Runnable() {
 			@Override
 			public void run() {
@@ -297,7 +274,6 @@ public class DeviceImpl implements IDevice,Serializable {
 	@Override
 	public void Mute(boolean muted)
 	{
-		//soundManager.muteAudio(muted);
 	}
 
 	@Override

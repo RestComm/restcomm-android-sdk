@@ -25,16 +25,12 @@ package org.mobicents.restcomm.android.client.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
-import android.media.AudioManager;
 import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
-import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.util.Log;
 
@@ -59,7 +55,7 @@ import org.mobicents.restcomm.android.sipua.impl.SipEvent;
  *  @see RCConnection
  */
 
-public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, AudioManager.OnAudioFocusChangeListener  {
+public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  {
     /**
      * @abstract Device state
      */
@@ -126,8 +122,6 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
     private RCConnection incomingConnection;
     private DeviceImpl.ReachabilityState reachabilityState = DeviceImpl.ReachabilityState.REACHABILITY_NONE;
     private SipProfile sipProfile = null;
-    //MediaPlayer messagePlayer;
-    //AudioManager audioManager;
 
     /**
      * Initialize a new RCDevice object
@@ -150,7 +144,6 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
 
         // initialize JAIN SIP if we have connectivity
         this.parameters = parameters;
-        //RCClient client = RCClient.getInstance();
         reachabilityState = DeviceImpl.checkReachability(RCClient.getContext());
 
         boolean connectivity = false;
@@ -182,24 +175,9 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
 
     private void onReachabilityChanged(final DeviceImpl.ReachabilityState newState)
     {
-        //final RCDevice device = this;
-        //final ReachabilityState state = newState;
-
-        // important: post this in the main thread in next loop as broadcast receivers have issues with asynchronous operations. Not sure
-        // what JAIN does behind the scenes but I got crashes when trying shut down jain without 'post'ing below
-        /*
-        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
-        Runnable myRunnable = new Runnable() {
-            @Override
-            public void run() {
-            */
-
         if (newState == DeviceImpl.ReachabilityState.REACHABILITY_NONE && state != DeviceState.OFFLINE) {
             Log.w(TAG, "Reachability changed; no connectivity");
-            // TODO: here we need to unregister before shutting down, but for that we need to wait for the unREGISTER reply, which complicates things
-            //DeviceImpl.GetInstance().Shutdown();
             DeviceImpl.GetInstance().unbind();
-            //sipProfile = null;
             state = DeviceState.OFFLINE;
             reachabilityState = newState;
             return;
@@ -210,14 +188,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
                 (reachabilityState == DeviceImpl.ReachabilityState.REACHABILITY_MOBILE && newState == DeviceImpl.ReachabilityState.REACHABILITY_WIFI)) {
             if (state != DeviceState.OFFLINE) {
                 Log.w(TAG, "Reachability action: switch between wifi and mobile. Device state: " + state);
-                // stop JAIN
+                // refresh JAIN networking facilities so that we use the new available interface
                 DeviceImpl.GetInstance().RefreshNetworking();
-                ////DeviceImpl.GetInstance().Unregister();
-                //DeviceImpl.GetInstance().Shutdown();
-                //sipProfile = null;
-                //state = DeviceState.OFFLINE;
-                // start JAIN
-                //initializeSignalling();
                 reachabilityState = newState;
                 return;
             }
@@ -228,16 +200,9 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
             Log.w(TAG, "Reachability action: wifi/mobile available. Device state: " + state);
             DeviceImpl.GetInstance().bind();
             DeviceImpl.GetInstance().Register();
-            //initializeSignalling(true);
             reachabilityState = newState;
             state = DeviceState.READY;
         }
-
-        /*
-            }
-        };
-        mainHandler.post(myRunnable);
-        */
     }
 
     public DeviceImpl.ReachabilityState getReachability()
@@ -276,7 +241,6 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
 
     // 'Copy' constructor
     public RCDevice(RCDevice device) {
-        //this.state = device.state;
         this.incomingSoundEnabled = device.incomingSoundEnabled;
         this.outgoingSoundEnabled = device.outgoingSoundEnabled;
         this.disconnectSoundEnabled = device.disconnectSoundEnabled;
@@ -351,7 +315,6 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
      *                   means that RCDevice.state not ready to make a call (this usually means no WiFi available)
      */
     public RCConnection connect(Map<String, Object> parameters, RCConnectionListener listener) {
-        //Activity activity = (Activity) listener;
         if (DeviceImpl.checkReachability(RCClient.getContext()) == DeviceImpl.ReachabilityState.REACHABILITY_NONE) {
             Log.e(TAG, "connect(): No reachability");
             return null;
@@ -389,13 +352,6 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
     public boolean sendMessage(String message, Map<String, String> parameters) {
         if (state == DeviceState.READY) {
             DeviceImpl.GetInstance().SendMessage(parameters.get("username"), message);
-            /*
-            int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
-            if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                messagePlayer.start();
-            }
-            */
-
             return true;
         } else {
             return false;
@@ -546,18 +502,15 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
      * INTERNAL: not to be used from the Application
      */
     public void onSipUAConnectionArrived(SipEvent event) {
-        //RCConnectionListener connectionListener = (RCConnectionListener) this.listener;
         incomingConnection = new RCConnection();
         incomingConnection.incoming = true;
         incomingConnection.state = RCConnection.ConnectionState.CONNECTING;
         incomingConnection.incomingCallSdp = event.sdp;
-        //incomingConnection.initializeWebrtc();
         DeviceImpl.GetInstance().sipuaConnectionListener = incomingConnection;
         state = DeviceState.BUSY;
 
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
         final String from = event.from;
-        //final String sdp = event.sdp;
         Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
@@ -602,58 +555,13 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
                     dataIntent.putExtra(INCOMING_MESSAGE_PARAMS, finalParameters);
                     dataIntent.putExtra(INCOMING_MESSAGE_TEXT, finalContent);
                     pendingMessageIntent.send(RCClient.getContext(), 0, dataIntent);
-                    /*
-                    int result = audioManager.requestAudioFocus(device, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
-                    if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                        messagePlayer.start();
-                    }
-                    */
-
                 } catch (PendingIntent.CanceledException e) {
                     e.printStackTrace();
                 }
-                //listener.onIncomingMessage(finalDevice, finalContent, finalParameters);
             }
         };
         mainHandler.post(myRunnable);
     }
 
     // Helpers
-    /*
-    private boolean haveConnectivity() {
-        Context context = RCClient.getContext();
-        WifiManager wifi = (WifiManager) RCClient.getContext().getSystemService(Context.WIFI_SERVICE);
-        if (wifi.isWifiEnabled()) {
-            return true;
-        } else {
-            if (this.listener != null) {
-                this.listener.onStopListening(this, RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal(), RCClient.errorText(RCClient.ErrorCodes.NO_CONNECTIVITY));
-            }
-            return false;
-        }
-    }
-    */
-
-    // Callbacks for audio focus change events
-    public void onAudioFocusChange(int focusChange)
-    {
-        Log.i(TAG, "onAudioFocusChange: " + focusChange);
-		/*
-		if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
-			// Pause playback
-		}
-		else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
-			// Resume playback or raise it back to normal if we were ducked
-		}
-		else if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
-			//am.unregisterMediaButtonEventReceiver(RemoteControlReceiver);
-			audio.abandonAudioFocus(this);
-			// Stop playback
-		}
-		else if (focusChange == AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK) {
-            // Lower the volume
-        }
-		*/
-    }
-
 }

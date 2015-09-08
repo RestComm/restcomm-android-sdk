@@ -114,6 +114,7 @@ public class RCClient {
             listener.onInitialized();
 
             /*
+            TODO: this would probably make more sense at some point
             Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
             Runnable myRunnable = new Runnable() {
                 @Override
@@ -141,8 +142,8 @@ public class RCClient {
             // remove the reference so that RCDevice instance is removed
             list.clear();
             list = null;
-            // TODO: keep in mind that once this block is left device can be claimed by GC.
-            // Need to make sure that shutdown() will finish its job synchronously
+            // Need to make sure that shutdown() will finish its job synchronously.
+            // Keep in mind that once this block is left device can be claimed by GC
             device.shutdown();
         }
         else {
@@ -179,7 +180,6 @@ public class RCClient {
         if (list.size() == 0) {
             RCDevice device = new RCDevice(parameters, deviceListener);
             list.add(device);
-            //initialized = true;
         }
         else {
             Log.e(TAG, "Device already exists, so we 're returning this one");
@@ -206,11 +206,13 @@ public class RCClient {
     }
 
     /*
+    // TODO: implement
     public static void setLogLevel(int level)
     {
 
     }
 
+    // TODO: implement
     public static String getVersion()
     {
         return "";

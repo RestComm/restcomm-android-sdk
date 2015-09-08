@@ -1,13 +1,31 @@
+/*
+ * TeleStax, Open Source Cloud Communications
+ * Copyright 2011-2015, Telestax Inc and individual contributors
+ * by the @authors tag.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation; either version 3 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ *
+ * For questions related to commercial use licensing, please contact sales@telestax.com.
+ *
+ */
+
 package com.telestax.restcomm_messenger;
 
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.media.AudioManager;
 import android.app.Activity;
-import android.media.AudioManager.OnAudioFocusChangeListener;
-import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
@@ -33,8 +51,6 @@ public class MessageActivity extends Activity implements View.OnClickListener {
     Button btnSend;
     EditText txtMessage;
     TextView txtWall;
-    //MediaPlayer messagePlayer;
-    //AudioManager audioManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,13 +66,6 @@ public class MessageActivity extends Activity implements View.OnClickListener {
         txtMessage = (EditText)findViewById(R.id.text_message);
         txtMessage.setOnClickListener(this);
 
-        /*
-        // volume control should be by default 'music' which will control the ringing sounds and 'voice call' when within a call
-        setVolumeControlStream(AudioManager.STREAM_MUSIC);
-        messagePlayer = MediaPlayer.create(getApplicationContext(), R.raw.message);
-        messagePlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
-        audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
-        */
     }
 
     // We 've set MessageActivity to be 'singleTop' on the manifest to be able to receive messages while already open, without instantiating
@@ -91,13 +100,6 @@ public class MessageActivity extends Activity implements View.OnClickListener {
             params.put("username", username);
 
             txtWall.append(shortname + ": " + message + "\n\n");
-
-            /*
-            int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
-            if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                messagePlayer.start();
-            }
-            */
         }
     }
 
@@ -109,13 +111,6 @@ public class MessageActivity extends Activity implements View.OnClickListener {
             if (device.sendMessage(txtMessage.getText().toString(), sendParams)) {
                 // also output the message in the wall
                 txtWall.append("Me: " + txtMessage.getText().toString() + "\n\n");
-
-                /*
-                int result = audioManager.requestAudioFocus(this, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
-                if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
-                    messagePlayer.start();
-                }
-                */
                 txtMessage.setText("");
             }
             else {
@@ -146,16 +141,6 @@ public class MessageActivity extends Activity implements View.OnClickListener {
         return super.onOptionsItemSelected(item);
     }
 
-    /*
-    public void handleIncomingMessage(RCDevice device, String message, HashMap<String, String> parameters)
-    {
-        Log.i(TAG, "Message arrived: " + message);
-
-        // put new text on the bottom
-        txtWall.append(parameters.get("username") + ": " + message + "\n");
-    }
-    */
-
     @Override
     protected void onPause() {
         super.onPause();
@@ -175,7 +160,6 @@ public class MessageActivity extends Activity implements View.OnClickListener {
         alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int which) {
                 dialog.dismiss();
-                //finish();
             }
         });
         alertDialog.show();
