@@ -113,7 +113,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
         super.onResume();
 
         if (device.getState() == RCDevice.DeviceState.OFFLINE) {
-            showOkAlert("No Connectivity", "No network connectivity");
+            showOkAlert("No Connectivity", "No Wifi connectivity");
         }
         // The activity has become visible (it is now "resumed").
         Log.i(TAG, "%% onResume");
@@ -176,7 +176,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
         }
         else if (view.getId() == R.id.button_register) {
             if (!device.updateParams(params)) {
-                showOkAlert("RCDevice Error", "No network connectivity");
+                showOkAlert("RCDevice Error", "No Wifi connectivity");
             }
 
         }
@@ -223,7 +223,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
     public void onStopListening(RCDevice device, int errorCode, String errorText)
     {
         if (errorCode == RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal()) {
-            showOkAlert("No Connectivity", errorText);
+            showOkAlert("No Wifi Connectivity", errorText);
         }
         else if (errorCode == RCClient.ErrorCodes.GENERIC_ERROR.ordinal()) {
             showOkAlert("Generic Error", errorText);
@@ -289,7 +289,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
         }
         if (updated) {
             if (!device.updateParams(params)) {
-                showOkAlert("RCDevice Error", "No network connectivity");
+                showOkAlert("RCDevice Error", "No Wifi connectivity");
             }
         }
     }

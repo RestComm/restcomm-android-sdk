@@ -189,7 +189,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
                     if (connection == null) {
                         Log.e(TAG, "Error: error connecting");
-                        showOkAlert("RCDevice Error", "No network connectivity");
+                        showOkAlert("RCDevice Error", "No Wifi connectivity");
                         return;
                     }
                 }

@@ -63,7 +63,7 @@ public class RCClient {
             return "Connection timed out";
         }
         else if (errorCode == ErrorCodes.NO_CONNECTIVITY) {
-            return "No network connectivity";
+            return "No Wifi connectivity";
         }
         else if (errorCode == ErrorCodes.WEBRTC_PEERCONNECTION_ERROR) {
             return "Webrtc Peer Connection error";

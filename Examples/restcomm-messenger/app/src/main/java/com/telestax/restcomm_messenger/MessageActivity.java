@@ -119,7 +119,7 @@ public class MessageActivity extends Activity implements View.OnClickListener {
                 txtMessage.setText("");
             }
             else {
-                showOkAlert("RCDevice Error", "No network connectivity");
+                showOkAlert("RCDevice Error", "No Wifi connectivity");
             }
         }
     }
