@@ -21,6 +21,9 @@ import org.mobicents.restcomm.android.sipua.impl.SipEvent.SipEventType;
 //import org.mobicents.restcomm.android.sdk.ui.NotifyMessage;
 
 import android.content.Context;
+import android.javax.sip.ObjectInUseException;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.Handler;
 import android.util.Log;
 
@@ -40,6 +43,12 @@ public class DeviceImpl implements IDevice,Serializable {
 	// use this handler for registration refreshes
 	Handler registerRefreshHandler = null;
 
+	public enum ReachabilityState {
+		REACHABILITY_WIFI,
+		REACHABILITY_MOBILE,
+		REACHABILITY_NONE,
+	}
+
 	private DeviceImpl(){
 		
 	}
@@ -50,20 +59,34 @@ public class DeviceImpl implements IDevice,Serializable {
 		}
 		return device;
 	}
-    public void Initialize(Context context, SipProfile sipProfile, HashMap<String,String> customHeaders){
-        this.Initialize(context, sipProfile);
+    public void Initialize(Context context, SipProfile sipProfile, boolean connectivity, HashMap<String,String> customHeaders){
+        this.Initialize(context, sipProfile, connectivity);
         sipManager.setCustomHeaders(customHeaders);
     }
-	public void Initialize(Context context, SipProfile sipProfile) {
+	public void Initialize(Context context, SipProfile sipProfile, boolean connectivity) {
 		Log.v(TAG, "Initialize()");
 
 		this.context = context;
 		this.sipProfile = sipProfile;
-		sipManager = new SipManager(sipProfile);
+		sipManager = new SipManager(sipProfile, connectivity);
 		soundManager = new SoundManager(context,sipProfile.getLocalIp());
 		sipManager.addSipListener(this);
 		registerRefreshHandler = new Handler(context.getMainLooper());
 		initialized = true;
+	}
+
+	// release JAIN networking facilities
+	public void unbind()
+	{
+		// disable auto registration refreshes
+		registerRefreshHandler.removeCallbacksAndMessages(null);
+		sipManager.unbind();
+	}
+
+	// setup JAIN networking facilities
+	public void bind()
+	{
+		sipManager.bind();
 	}
 
 	public void Shutdown()
@@ -167,7 +190,12 @@ public class DeviceImpl implements IDevice,Serializable {
 				sipManager.setCustomHeaders(sipHeaders);
 			}
 			*/
-			this.sipManager.CallWebrtc(to, sdp, sipHeaders);
+			if (checkReachability(this.context) != ReachabilityState.REACHABILITY_NONE) {
+				this.sipManager.CallWebrtc(to, sdp, sipHeaders);
+			}
+			else {
+				Log.e(TAG, "No reachability");
+			}
 		} catch (NotInitializedException e) {
 			e.printStackTrace();
 		}
@@ -303,8 +331,29 @@ public class DeviceImpl implements IDevice,Serializable {
 	        } catch(IOException ioe) {  
 	            return null;
 	        } 
-	    } 
-	
-	
+	    }
+
+	static public ReachabilityState checkReachability(Context context)
+	{
+		ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+		NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+		if (null != activeNetwork) {
+			if (activeNetwork.getType() == ConnectivityManager.TYPE_WIFI && activeNetwork.isConnected()) {
+				Log.w(TAG, "Reachability event: WIFI");
+				return ReachabilityState.REACHABILITY_WIFI;
+			}
+
+			if (activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE && activeNetwork.isConnected()) {
+				Log.w(TAG, "Reachability event: MOBILE");
+				return ReachabilityState.REACHABILITY_MOBILE;
+			}
+		}
+		Log.w(TAG, "Reachability event: NONE");
+		return ReachabilityState.REACHABILITY_NONE;
+	}
+
+
+
 
 }

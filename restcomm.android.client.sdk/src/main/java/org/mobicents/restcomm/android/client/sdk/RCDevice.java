@@ -34,6 +34,7 @@ import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.wifi.WifiManager;
 import android.os.Handler;
 import android.util.Log;
 
@@ -106,12 +107,6 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
         CLIENT_NAME,
     }
 
-    public enum ReachabilityState {
-        REACHABILITY_WIFI,
-        REACHABILITY_MOBILE,
-        REACHABILITY_NONE,
-    }
-
     private static final String TAG = "RCDevice";
     //private static boolean online = false;
     public static String OUTGOING_CALL = "ACTION_OUTGOING_CALL";
@@ -129,7 +124,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
     PendingIntent pendingCallIntent;
     PendingIntent pendingMessageIntent;
     private RCConnection incomingConnection;
-    private ReachabilityState reachabilityState = ReachabilityState.REACHABILITY_NONE;
+    private DeviceImpl.ReachabilityState reachabilityState = DeviceImpl.ReachabilityState.REACHABILITY_NONE;
     private SipProfile sipProfile = null;
     //MediaPlayer messagePlayer;
     //AudioManager audioManager;
@@ -156,52 +151,36 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
         // initialize JAIN SIP if we have connectivity
         this.parameters = parameters;
         //RCClient client = RCClient.getInstance();
-        reachabilityState = checkReachability();
+        reachabilityState = DeviceImpl.checkReachability(RCClient.getContext());
 
-        if (reachabilityState == ReachabilityState.REACHABILITY_WIFI ||
-                reachabilityState == ReachabilityState.REACHABILITY_MOBILE) {
-            initializeSignalling();
+        boolean connectivity = false;
+        if (reachabilityState == DeviceImpl.ReachabilityState.REACHABILITY_WIFI ||
+                reachabilityState == DeviceImpl.ReachabilityState.REACHABILITY_MOBILE) {
+            connectivity = true;
         }
+        initializeSignalling(connectivity);
     }
 
     @Override
     public void onReceive(Context context, Intent intent) {
-        onReachabilityChanged(checkReachability());
+        onReachabilityChanged(DeviceImpl.checkReachability(RCClient.getContext()));
     }
 
-    private void initializeSignalling()
+    private void initializeSignalling(boolean connectivity)
     {
         sipProfile = new SipProfile();
         updateSipProfile(parameters);
         DeviceImpl deviceImpl = DeviceImpl.GetInstance();
-        deviceImpl.Initialize(RCClient.getContext(), sipProfile);
+        deviceImpl.Initialize(RCClient.getContext(), sipProfile, connectivity);
         DeviceImpl.GetInstance().sipuaDeviceListener = this;
         // register after initialization
-        DeviceImpl.GetInstance().Register();
-        state = DeviceState.READY;
-    }
-
-    private ReachabilityState checkReachability()
-    {
-        ConnectivityManager cm = (ConnectivityManager) RCClient.getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
-
-        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-        if (null != activeNetwork) {
-            if (activeNetwork.getType() == ConnectivityManager.TYPE_WIFI) {
-                Log.w(TAG, "Reachability event: WIFI");
-                return ReachabilityState.REACHABILITY_WIFI;
-            }
-
-            if (activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE) {
-                Log.w(TAG, "Reachability event: MOBILE");
-                return ReachabilityState.REACHABILITY_MOBILE;
-            }
+        if (connectivity) {
+            DeviceImpl.GetInstance().Register();
+            state = DeviceState.READY;
         }
-        Log.w(TAG, "Reachability event: NONE");
-        return ReachabilityState.REACHABILITY_NONE;
     }
 
-    private void onReachabilityChanged(final ReachabilityState newState)
+    private void onReachabilityChanged(final DeviceImpl.ReachabilityState newState)
     {
         //final RCDevice device = this;
         //final ReachabilityState state = newState;
@@ -215,20 +194,20 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
             public void run() {
             */
 
-        if (newState == ReachabilityState.REACHABILITY_NONE && state != DeviceState.OFFLINE) {
+        if (newState == DeviceImpl.ReachabilityState.REACHABILITY_NONE && state != DeviceState.OFFLINE) {
             Log.w(TAG, "Reachability changed; no connectivity");
             // TODO: here we need to unregister before shutting down, but for that we need to wait for the unREGISTER reply, which complicates things
-            //DeviceImpl.GetInstance().Unregister();
-            DeviceImpl.GetInstance().Shutdown();
-            sipProfile = null;
+            //DeviceImpl.GetInstance().Shutdown();
+            DeviceImpl.GetInstance().unbind();
+            //sipProfile = null;
             state = DeviceState.OFFLINE;
             reachabilityState = newState;
             return;
         }
 
         // old state wifi and new state mobile or the reverse; need to shutdown and restart network facilities
-        if ((reachabilityState == ReachabilityState.REACHABILITY_WIFI && newState == ReachabilityState.REACHABILITY_MOBILE) ||
-                (reachabilityState == ReachabilityState.REACHABILITY_MOBILE && newState == ReachabilityState.REACHABILITY_WIFI)) {
+        if ((reachabilityState == DeviceImpl.ReachabilityState.REACHABILITY_WIFI && newState == DeviceImpl.ReachabilityState.REACHABILITY_MOBILE) ||
+                (reachabilityState == DeviceImpl.ReachabilityState.REACHABILITY_MOBILE && newState == DeviceImpl.ReachabilityState.REACHABILITY_WIFI)) {
             if (state != DeviceState.OFFLINE) {
                 Log.w(TAG, "Reachability action: switch between wifi and mobile. Device state: " + state);
                 // stop JAIN
@@ -244,11 +223,14 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
             }
         }
 
-        if ((newState == ReachabilityState.REACHABILITY_WIFI || newState == ReachabilityState.REACHABILITY_MOBILE)
-                && state != DeviceState.READY) {
+        if ((newState == DeviceImpl.ReachabilityState.REACHABILITY_WIFI || newState == DeviceImpl.ReachabilityState.REACHABILITY_MOBILE)
+                && state == DeviceState.OFFLINE) {
             Log.w(TAG, "Reachability action: wifi/mobile available. Device state: " + state);
-            initializeSignalling();
+            DeviceImpl.GetInstance().bind();
+            DeviceImpl.GetInstance().Register();
+            //initializeSignalling(true);
             reachabilityState = newState;
+            state = DeviceState.READY;
         }
 
         /*
@@ -258,27 +240,34 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
         */
     }
 
-    public ReachabilityState getReachability()
+    public DeviceImpl.ReachabilityState getReachability()
     {
         return reachabilityState;
     }
 
-    public void shutdown() {
+    public void shutdown()
+    {
         this.listener = null;
 
         if (DeviceImpl.isInitialized()) {
-            DeviceImpl.GetInstance().Unregister();
-            // allow for the unregister to be serviced before we shut down the stack (delay 2 secs)
-            // TODO: a better way to do this would be to wait for the response to the unregistration
-            // before we shutdown
-            Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
-            Runnable myRunnable = new Runnable() {
-                @Override
-                public void run() {
-                    DeviceImpl.GetInstance().Shutdown();
-                }
-            };
-            mainHandler.postDelayed(myRunnable, 500);
+            if (state != DeviceState.OFFLINE) {
+                DeviceImpl.GetInstance().Unregister();
+                // allow for the unregister to be serviced before we shut down the stack (delay 2 secs)
+                // TODO: a better way to do this would be to wait for the response to the unregistration
+                // before we shutdown
+                Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+                Runnable myRunnable = new Runnable() {
+                    @Override
+                    public void run() {
+                        DeviceImpl.GetInstance().Shutdown();
+                    }
+                };
+                mainHandler.postDelayed(myRunnable, 500);
+            }
+            else {
+                // we are offline, no need for unregister
+                DeviceImpl.GetInstance().Shutdown();
+            }
         }
         state = DeviceState.OFFLINE;
     }
@@ -361,6 +350,11 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
      */
     public RCConnection connect(Map<String, Object> parameters, RCConnectionListener listener) {
         //Activity activity = (Activity) listener;
+        if (DeviceImpl.checkReachability(RCClient.getContext()) == DeviceImpl.ReachabilityState.REACHABILITY_NONE) {
+            Log.e(TAG, "connect(): No reachability");
+            return null;
+        }
+
         if (state == DeviceState.READY) {
             Log.i(TAG, "RCDevice.connect(), with connectivity");
 
@@ -625,8 +619,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
     // Helpers
     /*
     private boolean haveConnectivity() {
-        RCClient client = RCClient.getInstance();
-        WifiManager wifi = (WifiManager) client.context.getSystemService(client.context.WIFI_SERVICE);
+        Context context = RCClient.getContext();
+        WifiManager wifi = (WifiManager) RCClient.getContext().getSystemService(Context.WIFI_SERVICE);
         if (wifi.isWifiEnabled()) {
             return true;
         } else {

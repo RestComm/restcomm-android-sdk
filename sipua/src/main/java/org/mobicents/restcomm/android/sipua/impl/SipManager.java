@@ -108,17 +108,17 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	private int remoteRtpPort;
 
 	// Constructors/Initializers
-	public SipManager(SipProfile sipProfile) {
+	public SipManager(SipProfile sipProfile, boolean connectivity) {
 		this.sipProfile = sipProfile;
-		initialize();
+		initialize(connectivity);
 	}
 
-	private boolean initialize()
+	private boolean initialize(boolean connectivity)
 	{
 		Log.v(TAG, "initialize()");
 
 		sipManagerState = SipManagerState.REGISTERING;
-		this.sipProfile.setLocalIp(getIPAddress(true));
+		//this.sipProfile.setLocalIp(getIPAddress(true));
 
 		sipFactory = SipFactory.getInstance();
 		sipFactory.resetFactory();
@@ -135,17 +135,25 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				// Binding again
 				sipStack.deleteListeningPoint(udpListeningPoint);
 				sipProvider.removeSipListener(this);
+				udpListeningPoint = null;
 			}
 			sipStack = sipFactory.createSipStack(properties);
 			System.out.println("createSipStack " + sipStack);
 			headerFactory = sipFactory.createHeaderFactory();
 			addressFactory = sipFactory.createAddressFactory();
 			messageFactory = sipFactory.createMessageFactory();
+
+			if (connectivity) {
+				bind();
+			}
+			/*
 			udpListeningPoint = sipStack.createListeningPoint(
 					sipProfile.getLocalIp(), sipProfile.getLocalPort(),
 					sipProfile.getTransport());
 			sipProvider = sipStack.createSipProvider(udpListeningPoint);
 			sipProvider.addSipListener(this);
+			*/
+
 			initialized = true;
 			sipManagerState = SipManagerState.READY;
 		} catch (PeerUnavailableException e) {
@@ -153,7 +161,9 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		} catch (ObjectInUseException e) {
 			e.printStackTrace();
 			return false;
-		} catch (InvalidArgumentException e) {
+		}
+		/*
+		catch (InvalidArgumentException e) {
 			e.printStackTrace();
 			return false;
 		} catch (TransportNotSupportedException e) {
@@ -163,6 +173,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			e.printStackTrace();
 			return false;
 		}
+		*/
 		return true;
 	}
 
@@ -173,63 +184,27 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 		if (sipManagerState != SipManagerState.STACK_STOPPED) {
 			Log.v(TAG, "shutdown while stack is started");
-			try {
+			//try {
+				unbind();
+				/*
 				// during initialization we use this ordering: stack, point, provider, listener
 				sipProvider.removeSipListener(this);
 
 				sipStack.deleteSipProvider(sipProvider);
 				sipStack.deleteListeningPoint(udpListeningPoint);
 				udpListeningPoint = null;
+				*/
 				sipStack.stop();
 				sipManagerState = SipManagerState.STACK_STOPPED;
-
+			/*
 			} catch (ObjectInUseException e) {
 				e.printStackTrace();
 				return false;
 			}
+			*/
 		}
 
 		return true;
-	}
-
-	public void refreshNetworking(int expiry)
-	{
-		// keep the old contact around to use for unregistration
-		Address oldAddress = createContactAddress();
-		if (udpListeningPoint != null) {
-			try {
-				sipProvider.removeSipListener(this);
-				sipStack.deleteSipProvider(sipProvider);
-				sipStack.deleteListeningPoint(udpListeningPoint);
-
-				udpListeningPoint = null;
-			} catch (ObjectInUseException e) {
-				e.printStackTrace();
-			}
-		}
-		if (udpListeningPoint == null) {
-			// new network interface is up, let's retrieve its ip address
-			this.sipProfile.setLocalIp(getIPAddress(true));
-			try {
-				udpListeningPoint = sipStack.createListeningPoint(
-						sipProfile.getLocalIp(), sipProfile.getLocalPort(),
-						sipProfile.getTransport());
-				sipProvider = sipStack.createSipProvider(udpListeningPoint);
-				sipProvider.addSipListener(this);
-			} catch (TransportNotSupportedException e) {
-				e.printStackTrace();
-			} catch (InvalidArgumentException e) {
-				e.printStackTrace();
-			} catch (ObjectInUseException e) {
-				e.printStackTrace();
-			} catch (TooManyListenersException e) {
-				e.printStackTrace();
-			}
-		}
-		// unregister the old contact (keep in mind that the new interface will be used to send this request)
-		Unregister(oldAddress);
-		// register the new contact with the given expiry
-		Register(expiry);
 	}
 
 	// release JAIN networking facilities
@@ -252,6 +227,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	public void bind()
 	{
 		if (udpListeningPoint == null) {
+			// new network interface is up, let's retrieve its ip address
 			this.sipProfile.setLocalIp(getIPAddress(true));
 			try {
 				udpListeningPoint = sipStack.createListeningPoint(
@@ -269,6 +245,52 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				e.printStackTrace();
 			}
 		}
+	}
+
+	public void refreshNetworking(int expiry)
+	{
+		// keep the old contact around to use for unregistration
+		Address oldAddress = createContactAddress();
+		unbind();
+		/*
+		if (udpListeningPoint != null) {
+			try {
+				sipProvider.removeSipListener(this);
+				sipStack.deleteSipProvider(sipProvider);
+				sipStack.deleteListeningPoint(udpListeningPoint);
+
+				udpListeningPoint = null;
+			} catch (ObjectInUseException e) {
+				e.printStackTrace();
+			}
+		}
+		*/
+		bind();
+		/*
+		if (udpListeningPoint == null) {
+			// new network interface is up, let's retrieve its ip address
+			this.sipProfile.setLocalIp(getIPAddress(true));
+			try {
+				udpListeningPoint = sipStack.createListeningPoint(
+						sipProfile.getLocalIp(), sipProfile.getLocalPort(),
+						sipProfile.getTransport());
+				sipProvider = sipStack.createSipProvider(udpListeningPoint);
+				sipProvider.addSipListener(this);
+			} catch (TransportNotSupportedException e) {
+				e.printStackTrace();
+			} catch (InvalidArgumentException e) {
+				e.printStackTrace();
+			} catch (ObjectInUseException e) {
+				e.printStackTrace();
+			} catch (TooManyListenersException e) {
+				e.printStackTrace();
+			}
+		}
+		*/
+		// unregister the old contact (keep in mind that the new interface will be used to send this request)
+		Unregister(oldAddress);
+		// register the new contact with the given expiry
+		Register(expiry);
 	}
 
 	// *** Setters/Getters *** //
@@ -404,10 +426,19 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	@Override
 	public void Register(int expiry) {
+		if (sipProvider == null) {
+			return;
+		}
 		if (!latestProxyIp.equals(sipProfile.getRemoteIp())) {
 			// proxy ip address has been updated, need to re-initialize
-			if (!initialize())
-				return;//If initialization failed, dont proceeds
+			if (initialized) {
+				Log.i(TAG, "Registrar changed, reinitializing stack");
+				shutdown();
+				initialize(true);
+			}
+			else {
+				return;
+			}
 		}
 
 		Register registerRequest = new Register();
@@ -438,10 +469,20 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	public void Unregister(Address contact) {
+		if (sipProvider == null) {
+			return;
+		}
+
 		if (!latestProxyIp.equals(sipProfile.getRemoteIp())) {
 			// proxy ip address has been updated, need to re-initialize
-			if (!initialize())
-				return;//If initialization failed, dont proceeds
+			if (initialized) {
+				Log.i(TAG, "Registrar changed, reinitializing stack");
+				shutdown();
+				initialize(true);
+			}
+			else {
+				return;
+			}
 		}
 
 		Register registerRequest = new Register();
