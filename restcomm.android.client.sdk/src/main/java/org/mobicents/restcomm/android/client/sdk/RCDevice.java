@@ -269,6 +269,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
                 DeviceImpl.GetInstance().Shutdown();
             }
         }
+        // important, otherwise if shutdown and re-initialized the old RCDevice instance will be getting events
+        RCClient.getContext().unregisterReceiver(this);
         state = DeviceState.OFFLINE;
     }
 
