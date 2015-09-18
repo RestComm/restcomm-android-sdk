@@ -303,7 +303,13 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
      */
     public boolean isMuted()
     {
-        return audioManager.getMute();
+        if (audioManager != null) {
+            return audioManager.getMute();
+        }
+        else {
+            Log.e(TAG, "isMuted called on null audioManager -check memory management");
+        }
+        return false;
     }
 
     /**

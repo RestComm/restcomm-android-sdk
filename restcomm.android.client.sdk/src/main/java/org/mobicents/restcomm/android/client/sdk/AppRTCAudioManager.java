@@ -98,14 +98,19 @@ public class AppRTCAudioManager {
         && audioDevices.contains(AppRTCAudioManager.AudioDevice.EARPIECE)
         && audioDevices.contains(
             AppRTCAudioManager.AudioDevice.SPEAKER_PHONE)) {
-      if (proximitySensor.sensorReportsNearState()) {
-        // Sensor reports that a "handset is being held up to a person's ear",
-        // or "something is covering the light sensor".
-        setAudioDevice(AppRTCAudioManager.AudioDevice.EARPIECE);
-      } else {
-        // Sensor reports that a "handset is removed from a person's ear", or
-        // "the light sensor is no longer covered".
-        setAudioDevice(AppRTCAudioManager.AudioDevice.SPEAKER_PHONE);
+      if (proximitySensor != null) {
+        if (proximitySensor.sensorReportsNearState()) {
+          // Sensor reports that a "handset is being held up to a person's ear",
+          // or "something is covering the light sensor".
+          setAudioDevice(AppRTCAudioManager.AudioDevice.EARPIECE);
+        } else {
+          // Sensor reports that a "handset is removed from a person's ear", or
+          // "the light sensor is no longer covered".
+          setAudioDevice(AppRTCAudioManager.AudioDevice.SPEAKER_PHONE);
+        }
+      }
+      else {
+        Log.e(TAG, "onProximitySensorChangedState called on null proximitySensor -check mem management");
       }
     }
   }
