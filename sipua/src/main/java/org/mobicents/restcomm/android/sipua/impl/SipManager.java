@@ -170,9 +170,12 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	// release JAIN networking facilities
 	public void unbind()
 	{
+		Log.w(TAG, "unbind()");
 		if (udpListeningPoint != null) {
 			try {
 				sipProvider.removeSipListener(this);
+				ListeningPoint[] listeningPoints = sipProvider.getListeningPoints();
+				Log.w(TAG, "unbind(): listening point count: " + listeningPoints.length);
 				sipStack.deleteSipProvider(sipProvider);
 				sipStack.deleteListeningPoint(udpListeningPoint);
 
@@ -186,6 +189,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	// setup JAIN networking facilities
 	public void bind()
 	{
+		Log.w(TAG, "bind()");
 		if (udpListeningPoint == null) {
 			// new network interface is up, let's retrieve its ip address
 			this.sipProfile.setLocalIp(getIPAddress(true));
