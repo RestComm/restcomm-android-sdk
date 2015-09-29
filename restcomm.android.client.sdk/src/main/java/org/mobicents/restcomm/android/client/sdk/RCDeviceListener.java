@@ -59,7 +59,7 @@ public interface RCDeviceListener {
      *  @param device     Device of interest
      *  @param connection Newly established connection
      */
-    //public abstract void onIncomingConnection(RCDevice device, RCConnection connection);
+    public abstract void onIncomingConnection(RCDevice device, RCConnection connection);
 
     /**
      * Text message received
@@ -67,7 +67,7 @@ public interface RCDeviceListener {
      * @param message  Tex message
      * @param parameters  Parameters, such as 'username' designating the username who sent the message
      */
-    //public abstract void onIncomingMessage(RCDevice device, String message, HashMap<String, String> parameters);
+    public abstract void onIncomingMessage(RCDevice device, String message, HashMap<String, String> parameters);
 
     /**
      *  Called to query whether the application wants to retrieve presence events. Return false to indicate that the application isn't interested (<b>Not implemented yet</b>)
