@@ -1,9 +1,0 @@
-<component name="libraryTable">
-  <library name="concurrent">
-    <CLASSES>
-      <root url="jar://$PROJECT_DIR$/../../sipua/libs/concurrent.jar!/" />
-    </CLASSES>
-    <JAVADOC />
-    <SOURCES />
-  </library>
-</component>
