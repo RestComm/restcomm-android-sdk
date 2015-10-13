@@ -13,7 +13,7 @@ http://docs.telestax.com/restcomm-client-android-sdk-quick-start/
 Reference Documentation
 ================
 
-Appledoc style reference documentation can be found at:
+Javadoc style reference documentation can be found at:
 
 http://mobicents.github.io/restcomm-android-sdk/doc/
 
