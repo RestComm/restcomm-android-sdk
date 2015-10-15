@@ -318,7 +318,8 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
      */
     public void sendDigits(String digits)
     {
-
+        Log.i(TAG, "sendDigits(): " + digits);
+        DeviceImpl.GetInstance().SendDTMF(digits);
     }
 
     /**

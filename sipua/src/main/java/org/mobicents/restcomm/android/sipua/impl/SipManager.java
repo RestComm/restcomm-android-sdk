@@ -551,6 +551,62 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	public void SendDTMF(String digit) throws NotInitializedException {
 		if (!initialized)
 			throw new NotInitializedException("Sip Stack not initialized");
+
+		Transaction transaction = null;
+		if (direction == CallDirection.OUTGOING) {
+			if (currentClientTransaction != null) {
+				transaction = currentClientTransaction;
+			}
+		}
+		else if (direction == CallDirection.INCOMING) {
+			if (currentServerTransaction != null) {
+				transaction = currentServerTransaction;
+			}
+		}
+
+		if (transaction == null) {
+			Log.e(TAG, "Transaction is null");
+			return;
+		}
+
+		final Dialog dialog = transaction.getDialog();
+		if (dialog == null) {
+			Log.e(TAG, "Dialog is already terminated");
+		}
+		else {
+			Request request = null;
+			try {
+				request = dialog.createRequest(Request.INFO);
+				request.setContent("Signal=" + digit + "\r\nDuration=100\r\n",
+						headerFactory.createContentTypeHeader("application","dtmf-relay"));
+			} catch (SipException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ParseException e) {
+				e.printStackTrace();
+			}
+
+			final Request r = request;
+
+			Thread thread = new Thread() {
+				public void run() {
+					try {
+						ClientTransaction ct = sipProvider.getNewClientTransaction(r);
+						dialog.sendRequest(ct);
+					} catch (TransactionUnavailableException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (TransactionDoesNotExistException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (SipException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			};
+			thread.start();
+		}
 	}
 
 	// *** JAIN SIP: Incoming request *** //

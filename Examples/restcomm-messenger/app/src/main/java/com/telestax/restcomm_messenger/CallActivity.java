@@ -24,10 +24,12 @@ package com.telestax.restcomm_messenger;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.FragmentTransaction;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
+import android.net.Uri;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -40,6 +42,8 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
+import android.widget.ImageButton;
+
 import java.util.HashMap;
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
@@ -52,7 +56,7 @@ import org.webrtc.VideoRendererGui;
 import org.webrtc.VideoTrack;
 
 public class CallActivity extends Activity implements RCConnectionListener, View.OnClickListener,
-        CompoundButton.OnCheckedChangeListener {
+        CompoundButton.OnCheckedChangeListener, KeypadFragment.OnFragmentInteractionListener {
 
     private GLSurfaceView videoView;
     private VideoRenderer.Callbacks localRender = null;
@@ -87,6 +91,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     CheckBox cbMuted;
     Button btnHangup;
     Button btnAnswer, btnAnswerAudio;
+    ImageButton btnKeypad;
+    KeypadFragment keypadFragment;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -116,6 +122,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         cbMuted = (CheckBox)findViewById(R.id.checkbox_muted);
         cbMuted.setOnCheckedChangeListener(this);
         cbMuted.setEnabled(false);
+        btnKeypad = (ImageButton)findViewById(R.id.button_keypad);
+        btnKeypad.setOnClickListener(this);
 
         device = RCClient.listDevices().get(0);
 
@@ -148,6 +156,15 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         localRender = VideoRendererGui.create(
                 LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING,
                 LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING, scalingType, true);
+
+        keypadFragment = new KeypadFragment();
+
+        // open keypad
+        FragmentTransaction ft = getFragmentManager().beginTransaction();
+        ft.add(R.id.keypad_fragment_container, keypadFragment);
+        ft.hide(keypadFragment);
+        ft.commit();
+
     }
 
     @Override
@@ -256,6 +273,14 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 connection = this.pendingConnection;
                 pendingConnection = null;
             }
+        } else if (view.getId() == R.id.button_keypad) {
+            //keypadFragment = new KeypadFragment();
+            keypadFragment.setConnection(connection);
+
+            // show keypad
+            FragmentTransaction ft = getFragmentManager().beginTransaction();
+            ft.show(keypadFragment);
+            ft.commit();
         }
     }
 
@@ -383,4 +408,13 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     }
 
 
+    @Override
+    public void onFragmentInteraction(String action) {
+        if (action == "cancel") {
+            FragmentTransaction ft = getFragmentManager().beginTransaction();
+            ft.hide(keypadFragment);
+            ft.commit();
+
+        }
+    }
 }

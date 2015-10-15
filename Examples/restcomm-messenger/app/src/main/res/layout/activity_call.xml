@@ -54,4 +54,25 @@
         android:layout_alignParentEnd="true"
         android:minWidth="100dp" />
 
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/button_keypad"
+        android:layout_gravity="center_horizontal|bottom"
+        android:background="@android:color/transparent"
+        android:src="@drawable/keypad"
+        android:layout_above="@+id/button_answer_audio"
+        android:layout_centerHorizontal="true" />
+
+    <!-- placeholder for keypad fragment -->
+    <!-- -->
+    <FrameLayout
+        android:id="@+id/keypad_fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+    </FrameLayout>
+    <!-- -->
+
+
 </RelativeLayout>
