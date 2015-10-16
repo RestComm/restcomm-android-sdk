@@ -119,8 +119,10 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		sipFactory.setPathName("android.gov.nist");
 
 		Properties properties = new Properties();
-		properties.setProperty("android.javax.sip.OUTBOUND_PROXY",
-				sipProfile.getRemoteEndpoint() + "/" + sipProfile.getTransport());
+		if (!sipProfile.getRemoteIp().isEmpty()) {
+			properties.setProperty("android.javax.sip.OUTBOUND_PROXY",
+					sipProfile.getRemoteEndpoint() + "/" + sipProfile.getTransport());
+		}
 		properties.setProperty("android.javax.sip.STACK_NAME", "androidSip");
 		latestProxyIp = sipProfile.getRemoteIp();
 

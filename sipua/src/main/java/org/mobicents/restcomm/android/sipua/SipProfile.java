@@ -27,7 +27,7 @@ public class SipProfile {
 	private  int localPort = 5080;
 	private  String transport = "udp";
 
-	private  String remoteIp = "23.23.228.238";
+	private  String remoteIp = "";
 	private  int remotePort = 5060;
 	private  String sipUserName;
 	private  String sipPassword;

@@ -263,8 +263,14 @@ public class DeviceImpl implements IDevice,Serializable {
 	}
 
 	public void Unregister() {
+		if (registerRefreshHandler != null) {
+			// we are unregistering, stop future registrations
+			registerRefreshHandler.removeCallbacksAndMessages(null);
+		}
+
 		this.sipManager.Unregister(null);
 	}
+
 	@Override
 	public SipManager GetSipManager() {
 		// TODO Auto-generated method stub

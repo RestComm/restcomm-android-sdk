@@ -145,7 +145,7 @@ public class Invite  {
 			//fromNameAddress.setDisplayName(sipUsername);
 			FromHeader fromHeader = sipManager.headerFactory.createFromHeader(fromNameAddress,
 					"Tzt0ZEP92");
-			URI toAddress = sipManager.addressFactory.createURI(to);
+			SipURI toAddress = (SipURI)sipManager.addressFactory.createURI(to);
 			Address toNameAddress = sipManager.addressFactory.createAddress(toAddress);
 			// toNameAddress.setDisplayName(username);
 			ToHeader toHeader = sipManager.headerFactory.createToHeader(toNameAddress, null);
@@ -171,10 +171,24 @@ public class Invite  {
 			callRequest.addHeader(supportedHeader);
 			addCustomHeaders(callRequest, sipManager, sipHeaders);
 
-			SipURI routeUri = sipManager.addressFactory.createSipURI(null, sipManager.getSipProfile().getRemoteIp());
+			// TODO: this could be simplified if we expose one field for registrar and use SIP URI directly
+			String remoteIp = sipManager.getSipProfile().getRemoteIp();
+			String remoteHost;
+			int remotePort = 0;
+			if (remoteIp.isEmpty()) {
+				// registraless, get remote ip/port from 'to'
+				remoteHost = toAddress.getHost();
+				remotePort = toAddress.getPort();
+			}
+			else {
+				remoteHost = remoteIp;
+				remotePort = sipManager.getSipProfile().getRemotePort();
+			}
+
+			SipURI routeUri = sipManager.addressFactory.createSipURI(null, remoteHost);
 			routeUri.setTransportParam(sipManager.getSipProfile().getTransport());
 			routeUri.setLrParam();
-			routeUri.setPort(sipManager.getSipProfile().getRemotePort());
+			routeUri.setPort(remotePort);
 
 			Address routeAddress = sipManager.addressFactory.createAddress(routeUri);
 			RouteHeader route = sipManager.headerFactory.createRouteHeader(routeAddress);
@@ -196,28 +210,6 @@ public class Invite  {
 			ContactHeader contactHeader = sipManager.headerFactory.createContactHeader(contactAddress);
 			callRequest.addHeader(contactHeader);
 
-			// You can add extension headers of your own making
-			// to the outgoing SIP request.
-			// Add the extension header.
-			//Header extensionHeader = sipManager.headerFactory.createHeader("My-Header",
-			//		"my header value");
-			//callRequest.addHeader(extensionHeader);
-
-			/*
-			String sdpData= "v=0\r\n" +
-					"o=- 13760799956958020 13760799956958020" + " IN IP4 " + sipManager.getSipProfile().getLocalIp() +"\r\n" +
-					//"s=mysession session\r\n" +
-					"s=-\r\n" +
-					//"p=+46 8 52018010\r\n" +
-					"c=IN IP4 " + sipManager.getSipProfile().getLocalIp()+"\r\n" +
-					"t=0 0\r\n" +
-					"m=audio " + port + " RTP/AVP 0\r\n" +
-					//"m=audio " + port + " RTP/AVP 0 4 18\r\n" +
-					"a=rtpmap:0 PCMU/8000\r\n" +
-					//"a=rtpmap:4 G723/8000\r\n" +
-					//"a=rtpmap:18 G729A/8000\r\n" +
-					"a=ptime:20\r\n";
-					*/
 			byte[] contents = sdp.getBytes();
 
 			callRequest.setContent(contents, contentTypeHeader);
