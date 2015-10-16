@@ -59,6 +59,8 @@ public class Register {
 		request.addHeader(headerFactory.createContactHeader(contactAddress));
 		ExpiresHeader eh = headerFactory.createExpiresHeader(expires);
 		request.addHeader(eh);
+		request.addHeader(sipManager.generateUserAgentHeader());
+
 		// Print the request
 		System.out.println(request.toString());
 		return request;

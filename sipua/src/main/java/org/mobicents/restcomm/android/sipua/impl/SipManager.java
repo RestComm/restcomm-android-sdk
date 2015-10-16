@@ -8,6 +8,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Properties;
 import java.util.TooManyListenersException;
@@ -62,6 +63,7 @@ import android.javax.sip.header.ContactHeader;
 import android.javax.sip.header.ContentTypeHeader;
 import android.javax.sip.header.HeaderFactory;
 import android.javax.sip.header.ToHeader;
+import android.javax.sip.header.UserAgentHeader;
 import android.javax.sip.header.ViaHeader;
 import android.javax.sip.message.MessageFactory;
 import android.javax.sip.message.Request;
@@ -76,6 +78,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	};
 
 	private static SipStack sipStack;
+	public static String USERAGENT_STRING = "TelScale Restcomm Android Client 1.0.0 BETA3";
 	public SipProvider sipProvider;
 	public HeaderFactory headerFactory;
 	public AddressFactory addressFactory;
@@ -1119,6 +1122,20 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		if (sipEventListenerList.contains(listener)) {
 			sipEventListenerList.remove(listener);
 		}
+	}
+
+	public UserAgentHeader generateUserAgentHeader()
+	{
+		List<String> userAgentTokens = new LinkedList<String>();
+ 		UserAgentHeader header = null;
+		userAgentTokens.add(USERAGENT_STRING);
+		try {
+			header = this.headerFactory.createUserAgentHeader(userAgentTokens);
+		} catch (ParseException e) {
+			e.printStackTrace();
+		}
+
+		return header;
 	}
 
 }

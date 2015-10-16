@@ -223,6 +223,7 @@ public class Invite  {
 			Header callInfoHeader = sipManager.headerFactory.createHeader("Call-Info",
 					"<http://www.antd.nist.gov>");
 			callRequest.addHeader(callInfoHeader);
+			callRequest.addHeader(sipManager.generateUserAgentHeader());
 			return callRequest;
 			// Create the client transaction.
 			//inviteTid = sipManager.sipProvider.getNewClientTransaction(callRequest);

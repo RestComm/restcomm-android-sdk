@@ -65,6 +65,8 @@ public class Message {
 		Address routeAddress = sipManager.addressFactory.createAddress(routeUri);
 		RouteHeader route = sipManager.headerFactory.createRouteHeader(routeAddress);
 		request.addHeader(route);
+		request.addHeader(sipManager.generateUserAgentHeader());
+
 		ContentTypeHeader contentTypeHeader = sipManager.headerFactory
 				.createContentTypeHeader("text", "plain");
 		request.setContent(message, contentTypeHeader);
