@@ -425,7 +425,7 @@ public class PeerConnectionClient {
             audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
                     AUDIO_HIGH_PASS_FILTER_CONSTRAINT, "false"));
             audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
-                    AUDIO_NOISE_SUPPRESSION_CONSTRAINT , "false"));
+                    AUDIO_NOISE_SUPPRESSION_CONSTRAINT, "false"));
         }
         // Create SDP constraints.
         sdpMediaConstraints = new MediaConstraints();
@@ -603,6 +603,36 @@ public class PeerConnectionClient {
                 }
             }
         });
+    }
+
+    public void setLocalVideoEnabled(final boolean enable) {
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                renderVideo = enable;
+                if (localVideoTrack != null) {
+                    localVideoTrack.setEnabled(renderVideo);
+                }
+            }
+        });
+    }
+
+    public boolean getLocalVideoEnabled() {
+        /*
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+            */
+        //renderVideo = enable;
+        if (localVideoTrack != null) {
+           return localVideoTrack.enabled();
+        }
+
+        return false;
+        /*
+            }
+        });
+            */
     }
 
     public void createOffer() {

@@ -56,7 +56,7 @@ import org.webrtc.VideoRendererGui;
 import org.webrtc.VideoTrack;
 
 public class CallActivity extends Activity implements RCConnectionListener, View.OnClickListener,
-        CompoundButton.OnCheckedChangeListener, KeypadFragment.OnFragmentInteractionListener {
+        KeypadFragment.OnFragmentInteractionListener {
 
     private GLSurfaceView videoView;
     private VideoRenderer.Callbacks localRender = null;
@@ -87,8 +87,11 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     private RCDevice device;
     private boolean pendingError = false;
     private boolean activityVisible = false;
+    private boolean muteAudio = false;
+    private boolean muteVideo = false;
 
-    CheckBox cbMuted;
+    //CheckBox cbMuted;
+    Button btnMuteAudio, btnMuteVideo;
     Button btnHangup;
     Button btnAnswer, btnAnswerAudio;
     ImageButton btnKeypad;
@@ -119,9 +122,13 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         btnAnswer.setOnClickListener(this);
         btnAnswerAudio = (Button)findViewById(R.id.button_answer_audio);
         btnAnswerAudio.setOnClickListener(this);
-        cbMuted = (CheckBox)findViewById(R.id.checkbox_muted);
-        cbMuted.setOnCheckedChangeListener(this);
-        cbMuted.setEnabled(false);
+        //cbMuted = (CheckBox)findViewById(R.id.checkbox_muted);
+        //cbMuted.setOnCheckedChangeListener(this);
+        //cbMuted.setEnabled(false);
+        btnMuteAudio = (Button)findViewById(R.id.button_mute_audio);
+        btnMuteAudio.setOnClickListener(this);
+        btnMuteVideo = (Button)findViewById(R.id.button_mute_video);
+        btnMuteVideo.setOnClickListener(this);
         btnKeypad = (ImageButton)findViewById(R.id.button_keypad);
         btnKeypad.setOnClickListener(this);
 
@@ -281,7 +288,18 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             FragmentTransaction ft = getFragmentManager().beginTransaction();
             ft.show(keypadFragment);
             ft.commit();
+        } else if (view.getId() == R.id.button_mute_audio) {
+            if (connection != null) {
+                muteAudio = !muteAudio;
+                connection.setAudioMuted(muteAudio);
+            }
+        } else if (view.getId() == R.id.button_mute_video) {
+            if (connection != null) {
+                muteVideo = !muteVideo;
+                connection.setVideoMuted(muteVideo);
+            }
         }
+
     }
 
     @Override
@@ -314,13 +332,22 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
     public void onConnected(RCConnection connection) {
         Log.i(TAG, "RCConnection connected");
-        cbMuted.setEnabled(true);
+        //cbMuted.setEnabled(true);
+        btnMuteAudio.setVisibility(View.VISIBLE);
+        btnMuteVideo.setVisibility(View.VISIBLE);
+
+        // reset to no mute at beggining of new call
+        muteAudio = false;
+        muteVideo = false;
+
         setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
     }
 
     public void onDisconnected(RCConnection connection) {
         Log.i(TAG, "RCConnection disconnected");
-        cbMuted.setEnabled(false);
+        //cbMuted.setEnabled(false);
+        btnMuteAudio.setVisibility(View.INVISIBLE);
+        btnMuteVideo.setVisibility(View.INVISIBLE);
 
         this.connection = null;
         pendingConnection = null;
@@ -358,6 +385,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         pendingConnection = null;
     }
 
+    /*
     public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
     {
         if (buttonView.getId() == R.id.checkbox_muted) {
@@ -366,6 +394,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             }
         }
     }
+    */
 
     public void onReceiveLocalVideo(RCConnection connection, VideoTrack videoTrack) {
         if (videoTrack != null) {

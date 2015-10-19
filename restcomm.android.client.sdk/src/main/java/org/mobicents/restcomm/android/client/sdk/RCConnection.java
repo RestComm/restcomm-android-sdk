@@ -297,12 +297,12 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     }
 
     /**
-     * Mute connection so that the other party cannot local audio
+     * Mute connection so that the other party cannot hear local audio
      * @param muted True to mute and false in order to unmute
      */
-    public void setMuted(boolean muted)
+    public void setAudioMuted(boolean muted)
     {
-        RCLogger.i(TAG, "setMuted(): " + muted);
+        RCLogger.i(TAG, "setAudioMuted(): " + muted);
 
         if (audioManager != null) {
             audioManager.setMute(muted);
@@ -310,16 +310,41 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     }
 
     /**
-     * Retrieve whether connection is muted or not
+     * Retrieve whether connection audio is muted or not
      * @return True connection is muted and false otherwise
      */
-    public boolean isMuted()
+    public boolean isAudioMuted()
     {
         if (audioManager != null) {
             return audioManager.getMute();
         }
         else {
             RCLogger.e(TAG, "isMuted called on null audioManager -check memory management");
+        }
+        return false;
+    }
+
+    /**
+     * Mute connection so that the other party cannot see local video
+     * @param muted True to mute and false in order to unmute
+     */
+    public void setVideoMuted(boolean muted)
+    {
+        RCLogger.i(TAG, "setVideoMuted(): " + muted);
+
+        if (this.peerConnectionClient != null) {
+            this.peerConnectionClient.setLocalVideoEnabled(!muted);
+        }
+    }
+
+    /**
+     * Retrieve whether connection video is muted or not
+     * @return True connection is muted and false otherwise
+     */
+    public boolean isVideoMuted()
+    {
+        if (this.peerConnectionClient != null) {
+            return !this.peerConnectionClient.getLocalVideoEnabled();
         }
         return false;
     }
