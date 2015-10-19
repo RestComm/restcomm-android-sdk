@@ -23,6 +23,7 @@ import org.mobicents.restcomm.android.sipua.impl.sipmessages.Invite;
 import org.mobicents.restcomm.android.sipua.impl.sipmessages.Message;
 import org.mobicents.restcomm.android.sipua.impl.sipmessages.*;
 import org.mobicents.restcomm.android.sipua.SipProfile;
+import org.mobicents.restcomm.android.sipua.RCLogger;
 
 import android.gov.nist.javax.sdp.SessionDescriptionImpl;
 import android.gov.nist.javax.sdp.parser.SDPAnnounceParser;
@@ -113,7 +114,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	private boolean initialize(boolean connectivity)
 	{
-		Log.v(TAG, "initialize()");
+		RCLogger.v(TAG, "initialize()");
 
 		sipManagerState = SipManagerState.REGISTERING;
 
@@ -137,7 +138,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				udpListeningPoint = null;
 			}
 			sipStack = sipFactory.createSipStack(properties);
-			System.out.println("createSipStack " + sipStack);
+			RCLogger.i(TAG, "createSipStack " + sipStack);
 			headerFactory = sipFactory.createHeaderFactory();
 			addressFactory = sipFactory.createAddressFactory();
 			messageFactory = sipFactory.createMessageFactory();
@@ -160,10 +161,10 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	// shutdown SIP stack
 	public boolean shutdown()
 	{
-		Log.v(TAG, "shutdown");
+		RCLogger.v(TAG, "shutdown");
 
 		if (sipManagerState != SipManagerState.STACK_STOPPED) {
-			Log.v(TAG, "shutdown while stack is started");
+			RCLogger.v(TAG, "shutdown while stack is started");
 			unbind();
 			sipStack.stop();
 			sipManagerState = SipManagerState.STACK_STOPPED;
@@ -175,12 +176,12 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	// release JAIN networking facilities
 	public void unbind()
 	{
-		Log.w(TAG, "unbind()");
+		RCLogger.w(TAG, "unbind()");
 		if (udpListeningPoint != null) {
 			try {
 				sipProvider.removeSipListener(this);
 				ListeningPoint[] listeningPoints = sipProvider.getListeningPoints();
-				Log.w(TAG, "unbind(): listening point count: " + listeningPoints.length);
+				RCLogger.w(TAG, "unbind(): listening point count: " + listeningPoints.length);
 				sipStack.deleteSipProvider(sipProvider);
 				sipStack.deleteListeningPoint(udpListeningPoint);
 
@@ -194,7 +195,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	// setup JAIN networking facilities
 	public void bind()
 	{
-		Log.w(TAG, "bind()");
+		RCLogger.w(TAG, "bind()");
 		if (udpListeningPoint == null) {
 			// new network interface is up, let's retrieve its ip address
 			this.sipProfile.setLocalIp(getIPAddress(true));
@@ -369,7 +370,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		if (!latestProxyIp.equals(sipProfile.getRemoteIp())) {
 			// proxy ip address has been updated, need to re-initialize
 			if (initialized) {
-				Log.i(TAG, "Registrar changed, reinitializing stack");
+				RCLogger.i(TAG, "Registrar changed, reinitializing stack");
 				shutdown();
 				initialize(true);
 			}
@@ -410,7 +411,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		if (!latestProxyIp.equals(sipProfile.getRemoteIp())) {
 			// proxy ip address has been updated, need to re-initialize
 			if (initialized) {
-				Log.i(TAG, "Registrar changed, reinitializing stack");
+				RCLogger.i(TAG, "Registrar changed, reinitializing stack");
 				shutdown();
 				initialize(true);
 			}
@@ -570,13 +571,13 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		}
 
 		if (transaction == null) {
-			Log.e(TAG, "Transaction is null");
+			RCLogger.e(TAG, "Transaction is null");
 			return;
 		}
 
 		final Dialog dialog = transaction.getDialog();
 		if (dialog == null) {
-			Log.e(TAG, "Dialog is already terminated");
+			RCLogger.e(TAG, "Dialog is already terminated");
 		}
 		else {
 			Request request = null;
@@ -620,7 +621,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		Request request = (Request) arg0.getRequest();
 		ServerTransaction serverTransactionId = arg0.getServerTransaction();
 		SIPMessage sp = (SIPMessage) request;
-		System.out.println(request.getMethod());
+		RCLogger.i(TAG, request.getMethod());
 		if (request.getMethod().equals("MESSAGE")) {
 			sendOk(arg0);
 
@@ -656,7 +657,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	public void processResponse(ResponseEvent arg0) {
 
 		Response response = (Response) arg0.getResponse();
-		System.out.println(response.getStatusCode());
+		RCLogger.i(TAG, "processResponse, status code: " + response.getStatusCode());
 
 		Dialog responseDialog = null;
 		ClientTransaction tid = arg0.getClientTransaction();
@@ -697,11 +698,11 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 		} else if (response.getStatusCode() == Response.OK) {
 			if (cseq.getMethod().equals(Request.INVITE)) {
-				System.out.println("Dialog after 200 OK  " + dialog);
+				RCLogger.i(TAG, "Dialog after 200 OK  " + dialog);
 				try {
 					Request ackRequest = responseDialog.createAck(cseq
 							.getSeqNumber());
-					System.out.println("Sending ACK");
+					RCLogger.i(TAG, "Sending ACK");
 					responseDialog.sendAck(ackRequest);
 					byte[] rawContent = response.getRawContent();
 					String sdpContent = new String(rawContent, "UTF-8");
@@ -737,8 +738,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				if (dialog.getState() == DialogState.CONFIRMED) {
 					// oops cancel went in too late. Need to hang up the
 					// dialog.
-					System.out
-							.println("Sending BYE -- cancel went in too late !!");
+					RCLogger.i(TAG, "Sending BYE -- cancel went in too late !!");
 					Request byeRequest = null;
 					try {
 						byeRequest = dialog.createRequest(Request.BYE);
@@ -767,25 +767,25 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 			} else if (cseq.getMethod().equals(Request.BYE)) {
 				sipManagerState = SipManagerState.IDLE;
-				System.out.println("--- Got 200 OK in UAC outgoing BYE");
+				RCLogger.i(TAG, "--- Got 200 OK in UAC outgoing BYE");
 				dispatchSipEvent(new SipEvent(this, SipEventType.INCOMING_BYE_RESPONSE, "", ""));
 			}
 
 		} else if (response.getStatusCode() == Response.DECLINE || response.getStatusCode() == Response.TEMPORARILY_UNAVAILABLE ||
 				(response.getStatusCode() == Response.BUSY_HERE)) {
-			System.out.println("CALL DECLINED");
+			RCLogger.i(TAG, "CALL DECLINED");
 			sipManagerState = SipManagerState.IDLE;
 			dispatchSipEvent(new SipEvent(this, SipEventType.DECLINED, "", ""));
 		} else if (response.getStatusCode() == Response.NOT_FOUND) {
-			System.out.println("NOT FOUND");
+			RCLogger.i(TAG, "NOT FOUND");
 		} else if (response.getStatusCode() == Response.ACCEPTED) {
-			System.out.println("ACCEPTED");
+			RCLogger.i(TAG, "ACCEPTED");
 		}
 		else if (response.getStatusCode() == Response.RINGING) {
-			System.out.println("RINGING");
+			RCLogger.i(TAG, "RINGING");
 			dispatchSipEvent(new SipEvent(this, SipEventType.REMOTE_RINGING, "", ""));
 		} else if (response.getStatusCode() == Response.SERVICE_UNAVAILABLE) {
-			System.out.println("BUSY");
+			RCLogger.i(TAG, "BUSY");
 			dispatchSipEvent(new SipEvent(this,
 					SipEventType.SERVICE_UNAVAILABLE, "", ""));
 		}
@@ -793,14 +793,14 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	// *** JAIN SIP: Exception *** //
 	public void processIOException(IOExceptionEvent exceptionEvent) {
-		Log.e(TAG, "SipManager.processIOException: " + exceptionEvent.toString() + "\n" +
+		RCLogger.e(TAG, "SipManager.processIOException: " + exceptionEvent.toString() + "\n" +
 				"\thost: " +  exceptionEvent.getHost() + "\n" +
 				"\tport: " + exceptionEvent.getPort());
 	}
 
 	// *** JAIN SIP: Transaction terminated *** //
 	public void processTransactionTerminated(TransactionTerminatedEvent transactionTerminatedEvent) {
-		Log.i(TAG, "SipManager.processTransactionTerminated: " + transactionTerminatedEvent.toString() + "\n" +
+		RCLogger.i(TAG, "SipManager.processTransactionTerminated: " + transactionTerminatedEvent.toString() + "\n" +
 				"\tclient transaction: " + transactionTerminatedEvent.getClientTransaction() + "\n" +
 				"\tserver transaction: " + transactionTerminatedEvent.getServerTransaction() + "\n" +
 				"\tisServerTransaction: " + transactionTerminatedEvent.isServerTransaction());
@@ -808,21 +808,21 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	// *** JAIN SIP: Dialog terminated *** //
 	public void processDialogTerminated(DialogTerminatedEvent dialogTerminatedEvent) {
-		Log.i(TAG, "SipManager.processDialogTerminated: " + dialogTerminatedEvent.toString() + "\n" +
+		RCLogger.i(TAG, "SipManager.processDialogTerminated: " + dialogTerminatedEvent.toString() + "\n" +
 				"\tdialog: " + dialogTerminatedEvent.getDialog());
 	}
 
 	// *** JAIN SIP: Time out *** //
 	public void processTimeout(TimeoutEvent timeoutEvent) {
 
-		System.out.println("Transaction Time out");
+		RCLogger.i(TAG, "Transaction Time out");
 	}
 
 	// *** Request/Response Helpers *** //
 	// Send event to the higher level listener (i.e. DeviceImpl)
 	@SuppressWarnings("unchecked")
 	private void dispatchSipEvent(SipEvent sipEvent) {
-		System.out.println("Dispatching event:" + sipEvent.type);
+		RCLogger.i(TAG, "Dispatching event:" + sipEvent.type);
 		ArrayList<ISipEventListener> tmpSipListenerList;
 
 		synchronized (this) {
@@ -840,17 +840,17 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	private void incomingBye(Request request,
 							 ServerTransaction serverTransactionId) {
 		try {
-			System.out.println("BYE received");
+			RCLogger.i(TAG, "BYE received");
 			if (serverTransactionId == null) {
-				System.out.println("shootist:  null TID.");
+				RCLogger.i(TAG, "shootist:  null TID.");
 				return;
 			}
 			Dialog dialog = serverTransactionId.getDialog();
-			System.out.println("Dialog State = " + dialog.getState());
+			RCLogger.i(TAG, "Dialog State = " + dialog.getState());
 			Response response = messageFactory.createResponse(200, request);
 			serverTransactionId.sendResponse(response);
-			System.out.println("Sending OK");
-			System.out.println("Dialog State = " + dialog.getState());
+			RCLogger.i(TAG, "Sending OK");
+			RCLogger.i(TAG, "Dialog State = " + dialog.getState());
 
 		} catch (Exception ex) {
 			ex.printStackTrace();
@@ -883,12 +883,12 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				return;
 			currentServerTransaction = st;
 
-			//System.out.println("INVITE: with Authorization, sending Trying");
-			System.out.println("INVITE: sending Trying");
+			//RCLogger.i(TAG, "INVITE: with Authorization, sending Trying");
+			RCLogger.i(TAG, "INVITE: sending Trying");
 			Response response = messageFactory.createResponse(Response.TRYING,
 					request);
 			st.sendResponse(response);
-			System.out.println("INVITE:Trying Sent");
+			RCLogger.i(TAG, "INVITE:Trying Sent");
 
 			byte[] rawContent = sm.getRawContent();
 			String sdpContent = new String(rawContent, "UTF-8");
@@ -897,7 +897,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			MediaDescription incomingMediaDescriptor = (MediaDescription) sessiondescription
 					.getMediaDescriptions(false).get(0);
 			remoteRtpPort = incomingMediaDescriptor.getMedia().getMediaPort();
-			System.out.println("Remote RTP port from incoming SDP:"
+			RCLogger.i(TAG, "Remote RTP port from incoming SDP:"
 					+ remoteRtpPort);
 			dispatchSipEvent(new SipEvent(this, SipEventType.LOCAL_RINGING, "",
 					sm.getFrom().getAddress().toString(), 0, sdpContent));
@@ -909,17 +909,17 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	private void incomingCancel(Request request,
 								ServerTransaction serverTransactionId) {
 		try {
-			System.out.println("CANCEL received");
+			RCLogger.i(TAG, "CANCEL received");
 			if (serverTransactionId == null) {
-				System.out.println("shootist:  null TID.");
+				RCLogger.i(TAG, "shootist:  null TID.");
 				return;
 			}
 			Dialog dialog = serverTransactionId.getDialog();
-			System.out.println("Dialog State = " + dialog.getState());
+			RCLogger.i(TAG, "Dialog State = " + dialog.getState());
 			Response response = messageFactory.createResponse(200, request);
 			serverTransactionId.sendResponse(response);
-			System.out.println("Sending 200 Canceled Request");
-			System.out.println("Dialog State = " + dialog.getState());
+			RCLogger.i(TAG, "Sending 200 Canceled Request");
+			RCLogger.i(TAG, "Dialog State = " + dialog.getState());
 
 			if (currentServerTransaction != null) {
 				// also send a 487 Request Terminated response to the original INVITE request
@@ -992,7 +992,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	private void sendByeClient(Transaction transaction) {
 		final Dialog dialog = transaction.getDialog();
 		if (dialog == null) {
-			Log.i(TAG, "Hmm, weird: dialog is already terminated -avoiding BYE");
+			RCLogger.i(TAG, "Hmm, weird: dialog is already terminated -avoiding BYE");
 		}
 		else {
 			Request byeRequest = null;

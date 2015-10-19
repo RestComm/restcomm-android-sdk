@@ -96,6 +96,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
         PreferenceManager.setDefaultValues(this, "preferences.xml", MODE_PRIVATE, R.xml.preferences, false);
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
+        RCClient.setLogLevel(Log.VERBOSE);
         RCClient.initialize(getApplicationContext(), new RCClient.RCInitListener() {
             public void onInitialized() {
                 Log.i(TAG, "RCClient initialized");

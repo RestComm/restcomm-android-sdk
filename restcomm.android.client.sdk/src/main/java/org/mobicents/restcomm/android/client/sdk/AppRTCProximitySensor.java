@@ -33,7 +33,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Build;
-import android.util.Log;
+import org.mobicents.restcomm.android.sipua.RCLogger;
 
 //import org.appspot.apprtc.util.AppRTCUtils;
 //import org.appspot.apprtc.util.AppRTCUtils.NonThreadSafe;
@@ -69,7 +69,7 @@ public class AppRTCProximitySensor implements SensorEventListener {
   }
 
   private AppRTCProximitySensor(Context context, Runnable sensorStateListener) {
-    Log.d(TAG, "AppRTCProximitySensor" + AppRTCUtils.getThreadInfo());
+    RCLogger.d(TAG, "AppRTCProximitySensor" + AppRTCUtils.getThreadInfo());
     onSensorStateListener = sensorStateListener;
     sensorManager = ((SensorManager) context.getSystemService(
         Context.SENSOR_SERVICE));
@@ -81,7 +81,7 @@ public class AppRTCProximitySensor implements SensorEventListener {
    */
   public boolean start() {
     checkIfCalledOnValidThread();
-    Log.d(TAG, "start" + AppRTCUtils.getThreadInfo());
+    RCLogger.d(TAG, "start" + AppRTCUtils.getThreadInfo());
     if (!initDefaultSensor()) {
       // Proximity sensor is not supported on this device.
       return false;
@@ -94,7 +94,7 @@ public class AppRTCProximitySensor implements SensorEventListener {
   /** Deactivate the proximity sensor. */
   public void stop() {
     checkIfCalledOnValidThread();
-    Log.d(TAG, "stop" + AppRTCUtils.getThreadInfo());
+    RCLogger.d(TAG, "stop" + AppRTCUtils.getThreadInfo());
     if (proximitySensor == null) {
       return;
     }
@@ -112,7 +112,7 @@ public class AppRTCProximitySensor implements SensorEventListener {
     checkIfCalledOnValidThread();
     AppRTCUtils.assertIsTrue(sensor.getType() == Sensor.TYPE_PROXIMITY);
     if (accuracy == SensorManager.SENSOR_STATUS_UNRELIABLE) {
-      Log.e(TAG, "The values returned by this sensor cannot be trusted");
+      RCLogger.e(TAG, "The values returned by this sensor cannot be trusted");
     }
   }
 
@@ -124,10 +124,10 @@ public class AppRTCProximitySensor implements SensorEventListener {
     // avoid blocking.
     float distanceInCentimeters = event.values[0];
     if (distanceInCentimeters < proximitySensor.getMaximumRange()) {
-      Log.d(TAG, "Proximity sensor => NEAR state");
+      RCLogger.d(TAG, "Proximity sensor => NEAR state");
       lastStateReportIsNear = true;
     } else {
-      Log.d(TAG, "Proximity sensor => FAR state");
+      RCLogger.d(TAG, "Proximity sensor => FAR state");
       lastStateReportIsNear = false;
     }
 
@@ -137,7 +137,7 @@ public class AppRTCProximitySensor implements SensorEventListener {
       onSensorStateListener.run();
     }
 
-    Log.d(TAG, "onSensorChanged" + AppRTCUtils.getThreadInfo() + ": "
+    RCLogger.d(TAG, "onSensorChanged" + AppRTCUtils.getThreadInfo() + ": "
         + "accuracy=" + event.accuracy
         + ", timestamp=" + event.timestamp + ", distance=" + event.values[0]);
   }
@@ -184,7 +184,7 @@ public class AppRTCProximitySensor implements SensorEventListener {
       info.append(", reporting mode: " + proximitySensor.getReportingMode());
       info.append(", isWakeUpSensor: " + proximitySensor.isWakeUpSensor());
     }
-    Log.d(TAG, info.toString());
+    RCLogger.d(TAG, info.toString());
   }
 
   /**

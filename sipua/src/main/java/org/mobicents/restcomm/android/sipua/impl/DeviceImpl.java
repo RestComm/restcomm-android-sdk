@@ -15,6 +15,7 @@ import org.mobicents.restcomm.android.sipua.SipProfile;
 import org.mobicents.restcomm.android.sipua.SipUAConnectionListener;
 import org.mobicents.restcomm.android.sipua.SipUADeviceListener;
 import org.mobicents.restcomm.android.sipua.impl.SipEvent.SipEventType;
+import org.mobicents.restcomm.android.sipua.RCLogger;
 
 import android.content.Context;
 import android.net.ConnectivityManager;
@@ -49,7 +50,7 @@ public class DeviceImpl implements IDevice,Serializable {
 	}
 	public static DeviceImpl GetInstance(){
 		if (device == null){
-			Log.v(TAG, "Getting allocated");
+			RCLogger.v(TAG, "Getting allocated");
 			device = new DeviceImpl();
 		}
 		return device;
@@ -59,7 +60,7 @@ public class DeviceImpl implements IDevice,Serializable {
         sipManager.setCustomHeaders(customHeaders);
     }
 	public void Initialize(Context context, SipProfile sipProfile, boolean connectivity) {
-		Log.v(TAG, "Initialize()");
+		RCLogger.v(TAG, "Initialize()");
 
 		this.context = context;
 		this.sipProfile = sipProfile;
@@ -86,9 +87,9 @@ public class DeviceImpl implements IDevice,Serializable {
 
 	public void Shutdown()
 	{
-		Log.v(TAG, "Shutdown");
+		RCLogger.v(TAG, "Shutdown");
 		if (initialized) {
-			Log.v(TAG, "Shutdown while initialized");
+			RCLogger.v(TAG, "Shutdown while initialized");
 			sipManager.removeSipListener(this);
 			sipManager.shutdown();
 			sipuaDeviceListener = null;
@@ -109,7 +110,7 @@ public class DeviceImpl implements IDevice,Serializable {
 
 	@Override
 	public void onSipMessage(final SipEvent sipEventObject) {
-		System.out.println("Sip Event fired");
+		RCLogger.i(TAG, "onSipMessage");
 		if (sipEventObject.type == SipEventType.MESSAGE) {
 			if (this.sipuaDeviceListener != null) {
 				this.sipuaDeviceListener.onSipUAMessageArrived(new SipEvent(this, SipEvent.SipEventType.MESSAGE, sipEventObject.content, sipEventObject.from));
@@ -160,6 +161,10 @@ public class DeviceImpl implements IDevice,Serializable {
 
 	@Override
 	public void Call(String to,  HashMap<String, String> sipHeaders) {
+		RCLogger.i(TAG, "Call(): " + to);
+		if (sipHeaders != null) {
+			RCLogger.i(TAG, "Call(): " + sipHeaders.toString());
+		}
 		try {
 			this.sipManager.Call(to, 0, sipHeaders);
 		} catch (NotInitializedException e) {
@@ -168,12 +173,16 @@ public class DeviceImpl implements IDevice,Serializable {
 	}
 
 	public void CallWebrtc(String to, String sdp, HashMap<String, String> sipHeaders) {
+		RCLogger.i(TAG, "CallWebrtc(): " + to);
+		if (sipHeaders != null) {
+			RCLogger.i(TAG, "CallWebrtc(): " + sipHeaders.toString());
+		}
 		try {
 			if (checkReachability(this.context) != ReachabilityState.REACHABILITY_NONE) {
 				this.sipManager.CallWebrtc(to, sdp, sipHeaders);
 			}
 			else {
-				Log.e(TAG, "No reachability");
+				RCLogger.e(TAG, "No reachability");
 			}
 		} catch (NotInitializedException e) {
 			e.printStackTrace();
@@ -182,23 +191,31 @@ public class DeviceImpl implements IDevice,Serializable {
 
 	@Override
 	public void Accept() {
+		RCLogger.i(TAG, "Accept()");
+
 		sipManager.AcceptCall(0);
 		soundManager.stopRinging();
 	}
 
 	public void AcceptWebrtc(final String sdp) {
+		RCLogger.i(TAG, "AcceptWebrtc()");
+
 		sipManager.AcceptCallWebrtc(sdp);
 		soundManager.stopRinging();
 	}
 
 	@Override
 	public void Reject() {
+		RCLogger.i(TAG, "Reject()");
+
 		sipManager.RejectCall();
 		soundManager.stopRinging();
 	}
 
 	@Override
 	public void Cancel() {
+		RCLogger.i(TAG, "Cancel()");
+
 		try {
 			sipManager.Cancel();
 		} catch (NotInitializedException e) {
@@ -209,6 +226,8 @@ public class DeviceImpl implements IDevice,Serializable {
 
 	@Override
 	public void Hangup() {
+		RCLogger.i(TAG, "Hangup()");
+
 		if (this.sipManager.direction == this.sipManager.direction.OUTGOING ||
 				this.sipManager.direction == this.sipManager.direction.INCOMING) {
 			try {
@@ -221,6 +240,8 @@ public class DeviceImpl implements IDevice,Serializable {
 
 	@Override
 	public void SendMessage(String to, String message) {
+		RCLogger.i(TAG, "SendMessage(): " + to + "\nmessage: " + message);
+
 		try {
 			this.sipManager.SendMessage(to, message);
 		} catch (NotInitializedException e) {
@@ -230,6 +251,7 @@ public class DeviceImpl implements IDevice,Serializable {
 	}
 	@Override
 	public void SendDTMF(String digit) {
+		RCLogger.i(TAG, "SendDTMF(): " + digit);
 		try {
 			this.sipManager.SendDTMF(digit);
 		} catch (NotInitializedException e) {
@@ -238,7 +260,7 @@ public class DeviceImpl implements IDevice,Serializable {
 	}
 	@Override
 	public void Register() {
-		Log.v(TAG, "Register");
+		RCLogger.v(TAG, "Register");
 		this.sipManager.Register(registrationExpiry);
 		if (registerRefreshHandler != null) {
 			// if this is an on-demand registration (as opposed to scheduled) we need
@@ -259,10 +281,14 @@ public class DeviceImpl implements IDevice,Serializable {
 
 	public void RefreshNetworking()
 	{
+		RCLogger.v(TAG, "RefreshNetworking");
+
 		this.sipManager.refreshNetworking(registrationExpiry);
 	}
 
 	public void Unregister() {
+		RCLogger.v(TAG, "Unregister");
+
 		if (registerRefreshHandler != null) {
 			// we are unregistering, stop future registrations
 			registerRefreshHandler.removeCallbacksAndMessages(null);
@@ -322,7 +348,7 @@ public class DeviceImpl implements IDevice,Serializable {
 		NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
 		if (null != activeNetwork) {
 			if (activeNetwork.getType() == ConnectivityManager.TYPE_WIFI && activeNetwork.isConnected()) {
-				Log.w(TAG, "Reachability event: WIFI");
+				RCLogger.w(TAG, "Reachability event: WIFI");
 				return ReachabilityState.REACHABILITY_WIFI;
 			}
 
@@ -334,7 +360,7 @@ public class DeviceImpl implements IDevice,Serializable {
 			}
 			*/
 		}
-		Log.w(TAG, "Reachability event: NONE");
+		RCLogger.w(TAG, "Reachability event: NONE");
 		return ReachabilityState.REACHABILITY_NONE;
 	}
 

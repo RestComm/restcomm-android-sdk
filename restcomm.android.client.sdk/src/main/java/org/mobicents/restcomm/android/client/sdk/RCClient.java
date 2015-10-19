@@ -24,15 +24,10 @@ package org.mobicents.restcomm.android.client.sdk;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.opengl.GLSurfaceView;
-import android.os.Handler;
-import android.util.Log;
-import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
-import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
+import android.content.Context;
+
+import org.mobicents.restcomm.android.sipua.RCLogger;
 
 
 /**
@@ -148,7 +143,7 @@ public class RCClient {
             device.release();
         }
         else {
-            Log.e(TAG, "shutdown(): Warning Restcomm Client already shut down, skipping");
+            RCLogger.e(TAG, "shutdown(): Warning Restcomm Client already shut down, skipping");
         }
         // allow the singleton to be GC'd
         instance = null;
@@ -174,7 +169,7 @@ public class RCClient {
     public static RCDevice createDevice(HashMap<String, Object> parameters, RCDeviceListener deviceListener)
     {
         if (!initialized) {
-            Log.i(TAG, "Attempting to create RCDevice without first initializing RCClient");
+            RCLogger.i(TAG, "Attempting to create RCDevice without first initializing RCClient");
             return null;
         }
 
@@ -183,7 +178,7 @@ public class RCClient {
             list.add(device);
         }
         else {
-            Log.e(TAG, "Device already exists, so we 're returning this one");
+            RCLogger.e(TAG, "Device already exists, so we 're returning this one");
         }
 
         return list.get(0);
@@ -196,11 +191,11 @@ public class RCClient {
     public static ArrayList<RCDevice> listDevices()
     {
         if (!initialized) {
-            Log.w(TAG, "RCClient uninitialized");
+            RCLogger.w(TAG, "RCClient uninitialized");
             return null;
         }
         if (list.size() == 0) {
-            Log.e(TAG, "Warning: RCDevice list size is 0");
+            RCLogger.e(TAG, "Warning: RCDevice list size is 0");
         }
 
         return list;

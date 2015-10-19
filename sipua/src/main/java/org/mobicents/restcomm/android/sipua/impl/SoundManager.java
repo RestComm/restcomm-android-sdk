@@ -18,6 +18,7 @@ import android.net.rtp.RtpStream;
 import android.os.Handler;
 import android.util.Log;
 
+import org.mobicents.restcomm.android.sipua.RCLogger;
 import org.mobicents.restcomm.android.sipua.R;
 
 public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
@@ -87,7 +88,7 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 				int result = audioManager.requestAudioFocus(sm, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
 				if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
 					ringingPlayer.start();
-					Log.i(TAG, "startRinging start()");
+					RCLogger.i(TAG, "startRinging start()");
 				}
 			}
 		};
@@ -105,7 +106,7 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 					ringingPlayer.pause();
 					// Abandon audio focus when playback complete
 					audioManager.abandonAudioFocus(sm);
-					Log.i(TAG, "stopRinging pause()");
+					RCLogger.i(TAG, "stopRinging pause()");
 				}
 			}
 		};
@@ -126,7 +127,7 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 				int result = audioManager.requestAudioFocus(sm, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
 				if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
 					callingPlayer.start();
-					Log.i(TAG, "startCalling start()");
+					RCLogger.i(TAG, "startCalling start()");
 				}
 			}
 		};
@@ -144,7 +145,7 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 					callingPlayer.pause();
 					// Abandon audio focus when playback complete
 					audioManager.abandonAudioFocus(sm);
-					Log.i(TAG, "stopCalling pause()");
+					RCLogger.i(TAG, "stopCalling pause()");
 				}
 			}
 		};
@@ -165,7 +166,7 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 				int result = audioManager.requestAudioFocus(sm, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
 				if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
 					messagePlayer.start();
-					Log.i(TAG, "incomingMessage start()");
+					RCLogger.i(TAG, "incomingMessage start()");
 				}
 			}
 		};
@@ -187,7 +188,7 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 				int result = audioManager.requestAudioFocus(sm, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
 				if (result == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
 					messagePlayer.start();
-					Log.i(TAG, "outgoingMessage start()");
+					RCLogger.i(TAG, "outgoingMessage start()");
 				}
 			}
 		};
@@ -197,7 +198,7 @@ public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 	// Callbacks for auio focus change events
 	public void onAudioFocusChange(int focusChange)
 	{
-		Log.i(TAG, "onAudioFocusChange: " + focusChange);
+		RCLogger.i(TAG, "onAudioFocusChange: " + focusChange);
 		/*
 		if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
 			// Pause playback

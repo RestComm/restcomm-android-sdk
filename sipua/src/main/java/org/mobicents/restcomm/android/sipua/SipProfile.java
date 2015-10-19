@@ -23,6 +23,7 @@
 package org.mobicents.restcomm.android.sipua;
 
 public class SipProfile {
+	private static final String TAG = "SipProfile";
 	private  String localIp;
 	private  int localPort = 5080;
 	private  String transport = "udp";
@@ -37,7 +38,7 @@ public class SipProfile {
 	}
 
 	public  void setLocalIp(String localIp) {
-		System.out.println("Setting localIp:" + localIp);
+		RCLogger.i(TAG, "Setting localIp:" + localIp);
 		this.localIp = localIp;
 	}
 
@@ -46,7 +47,7 @@ public class SipProfile {
 	}
 
 	public  void setLocalPort(int localPort) {
-		System.out.println("Setting localPort:" + localPort);
+		RCLogger.i(TAG, "Setting localPort:" + localPort);
 		this.localPort = localPort;
 	}
 
@@ -59,7 +60,7 @@ public class SipProfile {
 	}
 
 	public  void setRemoteIp(String remoteIp) {
-		System.out.println("Setting remoteIp:" + remoteIp);
+		RCLogger.i(TAG, "Setting remoteIp:" + remoteIp);
 		this.remoteIp = remoteIp;
 	}
 
@@ -68,7 +69,7 @@ public class SipProfile {
 	}
 
 	public  void setRemotePort(int remotePort) {
-		System.out.println("Setting remotePort:" + remotePort);
+		RCLogger.i(TAG, "Setting remotePort:" + remotePort);
 		this.remotePort = remotePort;
 	}
 
@@ -81,7 +82,7 @@ public class SipProfile {
 	}
 
 	public void setSipUserName(String sipUserName) {
-		System.out.println("Setting sipUserName:" + sipUserName);
+		RCLogger.i(TAG, "Setting sipUserName:" + sipUserName);
 		this.sipUserName = sipUserName;
 	}
 
@@ -90,7 +91,7 @@ public class SipProfile {
 	}
 
 	public void setSipPassword(String sipPassword) {
-		System.out.println("Setting sipPassword:" + sipPassword);
+		RCLogger.i(TAG, "Setting sipPassword:" + sipPassword);
 		this.sipPassword = sipPassword;
 	}
 
@@ -99,7 +100,7 @@ public class SipProfile {
 	}
 
 	public void setTransport(String transport) {
-		System.out.println("Setting transport:" + transport);
+		RCLogger.i(TAG, "Setting transport:" + transport);
 		this.transport = transport;
 	}
 

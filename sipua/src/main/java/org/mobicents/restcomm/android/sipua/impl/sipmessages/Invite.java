@@ -7,6 +7,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import org.mobicents.restcomm.android.sipua.RCLogger;
 import org.mobicents.restcomm.android.sipua.impl.SipManager;
 
 import android.javax.sip.address.Address;
@@ -26,6 +27,7 @@ import android.javax.sip.header.ViaHeader;
 import android.javax.sip.message.Request;
 
 public class Invite  {
+	private static final String TAG = "Invite";
 
     public Request MakeRequest(SipManager sipManager,String to, int port, HashMap<String, String> sipHeaders) {
     	
@@ -130,7 +132,7 @@ public class Invite  {
 			//dialog = inviteTid.getDialog();
 
 		} catch (Exception ex) {
-			System.out.println(ex.getMessage());
+			RCLogger.i(TAG, ex.getMessage());
 			ex.printStackTrace();
 		
 		}
@@ -213,31 +215,16 @@ public class Invite  {
 			byte[] contents = sdp.getBytes();
 
 			callRequest.setContent(contents, contentTypeHeader);
-			// You can add as many extension headers as you
-			// want.
-
-			//extensionHeader = sipManager.headerFactory.createHeader("My-Other-Header",
-			//		"my new header value ");
-			//callRequest.addHeader(extensionHeader);
-
 			Header callInfoHeader = sipManager.headerFactory.createHeader("Call-Info",
 					"<http://www.antd.nist.gov>");
 			callRequest.addHeader(callInfoHeader);
 			callRequest.addHeader(sipManager.generateUserAgentHeader());
+			RCLogger.v(TAG, callRequest.toString());
+
 			return callRequest;
-			// Create the client transaction.
-			//inviteTid = sipManager.sipProvider.getNewClientTransaction(callRequest);
-
-			//System.out.println("inviteTid = " + inviteTid);
-
-			// send the request out.
-
-			//	inviteTid.sendRequest();
-
-			//dialog = inviteTid.getDialog();
 
 		} catch (Exception ex) {
-			System.out.println(ex.getMessage());
+			RCLogger.i(TAG, ex.getMessage());
 			ex.printStackTrace();
 
 		}

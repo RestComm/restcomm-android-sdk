@@ -17,8 +17,10 @@ import android.javax.sip.message.MessageFactory;
 import android.javax.sip.message.Request;
 import android.os.AsyncTask;
 
-public class Register {
+import org.mobicents.restcomm.android.sipua.RCLogger;
 
+public class Register {
+	private static final String TAG = "Register";
 	public Request MakeRequest(org.mobicents.restcomm.android.sipua.impl.SipManager sipManager, int expires, final Address contact) throws ParseException,
 			InvalidArgumentException {
 
@@ -62,7 +64,7 @@ public class Register {
 		request.addHeader(sipManager.generateUserAgentHeader());
 
 		// Print the request
-		System.out.println(request.toString());
+		RCLogger.v(TAG, request.toString());
 		return request;
 		// Send the request --- triggers an IOException
 		// sipProvider.sendRequest(request);

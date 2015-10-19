@@ -3,6 +3,7 @@ package org.mobicents.restcomm.android.sipua.impl.sipmessages;
 import java.text.ParseException;
 import java.util.*;
 
+import org.mobicents.restcomm.android.sipua.RCLogger;
 import org.mobicents.restcomm.android.sipua.impl.SipManager;
 
 import android.javax.sip.ClientTransaction;
@@ -24,7 +25,7 @@ import android.javax.sip.message.Request;
 import android.os.AsyncTask;
 
 public class Message {
-
+	private static final String TAG = "Message";
 	public Request MakeRequest(SipManager sipManager, String to, String message) throws ParseException, InvalidArgumentException {
 		SipURI from = sipManager.addressFactory.createSipURI(sipManager.getSipProfile().getSipUserName(), sipManager.getSipProfile().getLocalEndpoint());
 		Address fromNameAddress = sipManager.addressFactory.createAddress(from);
@@ -70,7 +71,7 @@ public class Message {
 		ContentTypeHeader contentTypeHeader = sipManager.headerFactory
 				.createContentTypeHeader("text", "plain");
 		request.setContent(message, contentTypeHeader);
-		System.out.println(request);
+		RCLogger.v(TAG, request.toString());
 		return request;
 		//ClientTransaction transaction = sipManager.sipProvider
 		//		.getNewClientTransaction(request);
