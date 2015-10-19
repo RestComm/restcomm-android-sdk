@@ -19,7 +19,7 @@ import android.os.Handler;
 import android.util.Log;
 
 import org.mobicents.restcomm.android.sipua.RCLogger;
-import org.mobicents.restcomm.android.sipua.R;
+import org.mobicents.restcomm.android.client.sdk.R;
 
 public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 	Context appContext;

@@ -12,7 +12,6 @@
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
             <option value="$PROJECT_DIR$/../../restcomm.android.client.sdk" />
-            <option value="$PROJECT_DIR$/../../sipua" />
           </set>
         </option>
       </GradleProjectSettings>
