@@ -30,6 +30,7 @@ import android.content.SharedPreferences;
 import android.opengl.GLSurfaceView;
 import android.os.Handler;
 import android.util.Log;
+import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
 import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
 
@@ -205,13 +206,12 @@ public class RCClient {
         return list;
     }
 
-    /*
-    // TODO: implement
     public static void setLogLevel(int level)
     {
-
+        RCLogger.setLogLevel(level);
     }
 
+    /*
     // TODO: implement
     public static String getVersion()
     {
