@@ -62,6 +62,7 @@ public class ContactsController {
         }
         else {
             Log.w(TAG, "addContact(): contact already exists: " + username + ", " + sipuri);
+            return;
         }
 
         list.add(createEntry(sipuri, username));
@@ -76,13 +77,28 @@ public class ContactsController {
             prefEdit.commit();
         }
         else {
+            // TODO: we could add some error reporting at some point
             Log.w(TAG, "addContact(): contact not found: " + username + ", " + sipuri);
+            return;
         }
 
-        HashMap<String, String> map = new HashMap<String, String>();
-        map.put("sipuri", sipuri);
-        map.put("username", username);
+        int index = 0;
+        boolean found = false;
+        for (Map<String, String> item : list) {
+            if (item.containsValue(sipuri)) {
+                found = true;
+                break;
+            }
+            index++;
+        }
 
+        if (found) {
+            HashMap<String, String> map = new HashMap<String, String>();
+            map.put("sipuri", sipuri);
+            map.put("username", username);
+            list.set(index, map);
+        }
+        /*
         int index = 0;
         if ((index = list.indexOf(map)) != -1) {
             list.set(index, map);
@@ -90,6 +106,7 @@ public class ContactsController {
         else {
             Log.w(TAG, "addContact(): contact not found in ListView adapter list: " + username + ", " + sipuri);
         }
+        */
     }
 
     // Removes a contact from a. the preferences data store and b. to the given list
@@ -101,7 +118,7 @@ public class ContactsController {
             prefEdit.commit();
         }
         else {
-            Log.w(TAG, "addContact(): contact not found in ListView adapter list: " + username + ", " + sipuri);
+            Log.w(TAG, "removeContact(): contact not found in ListView adapter list: " + username + ", " + sipuri);
             return;
         }
 
@@ -114,7 +131,7 @@ public class ContactsController {
             list.remove(index);
         }
         else {
-            Log.w(TAG, "addContact(): contact not found in ListView adapter list: " + username + ", " + sipuri);
+            Log.w(TAG, "removeContact(): contact not found in ListView adapter list: " + username + ", " + sipuri);
             return;
         }
     }

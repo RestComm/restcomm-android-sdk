@@ -88,17 +88,22 @@ public class AddUserDialogFragment extends DialogFragment {
     // custom view when using alert we need to use builder.setView() as seen below
     @Override
     public Dialog onCreateDialog(Bundle savedInstanceState) {
+        // Get the layout inflater
+        View view = getActivity().getLayoutInflater().inflate(R.layout.fragment_dialog_add_contact, null);
+        txtUsername = (EditText)view.findViewById(R.id.editText_username);
+        txtSipuri = (EditText)view.findViewById(R.id.editText_sipuri);
+
         String title = "Add Contact";
         String positiveText = "Add";
         if (getArguments().getInt("type") == DIALOG_TYPE_UPDATE_CONTACT) {
             title = "Update Contact";
             positiveText = "Update";
-        }
 
-        // Get the layout inflater
-        View view = getActivity().getLayoutInflater().inflate(R.layout.fragment_dialog_add_contact, null);
-        txtUsername = (EditText)view.findViewById(R.id.editText_username);
-        txtSipuri = (EditText)view.findViewById(R.id.editText_sipuri);
+            txtUsername.setText(getArguments().getString("username", ""));
+            txtSipuri.setText(getArguments().getString("sipuri", ""));
+            // sipuri is not modifiable
+            txtSipuri.setEnabled(false);
+        }
 
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 

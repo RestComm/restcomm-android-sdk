@@ -335,7 +335,13 @@ public class ContactsActivity extends ListActivity implements RCDeviceListener,
     public void onDialogPositiveClick(int type, String username, String sipuri)
     {
         if (type == AddUserDialogFragment.DIALOG_TYPE_ADD_CONTACT) {
-            this.contactsController.addContact(contactList, username, sipuri);
+            if (username.isEmpty() || sipuri.isEmpty()) {
+                showOkAlert("Addition Cancelled", "Both Username and SIP URI fields must be provided");
+                return;
+            }
+            else {
+                this.contactsController.addContact(contactList, username, sipuri);
+            }
         }
         else {
             this.contactsController.updateContact(contactList, username, sipuri);
