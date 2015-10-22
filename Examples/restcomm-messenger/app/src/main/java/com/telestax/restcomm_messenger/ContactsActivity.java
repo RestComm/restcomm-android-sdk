@@ -1,76 +1,74 @@
-/*
- * TeleStax, Open Source Cloud Communications
- * Copyright 2011-2015, Telestax Inc and individual contributors
- * by the @authors tag.
- *
- * This program is free software: you can redistribute it and/or modify
- * under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation; either version 3 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- *
- * For questions related to commercial use licensing, please contact sales@telestax.com.
- *
- */
-
 package com.telestax.restcomm_messenger;
 
-import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.DialogFragment;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
-import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.util.Log;
-import android.widget.Button;
-import android.widget.EditText;
 import android.view.View.OnClickListener;
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
 import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
 import org.mobicents.restcomm.android.client.sdk.RCPresenceEvent;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
+import android.app.ListActivity;
+import android.widget.AdapterView;
+import android.widget.ImageButton;
+import android.widget.ListView;
+import android.widget.SimpleAdapter;
 
-public class MainActivity extends Activity implements RCDeviceListener,
-        OnClickListener, SharedPreferences.OnSharedPreferenceChangeListener {
-
-    SharedPreferences prefs;
-    private RCDevice device;
-    private HashMap<String, Object> params;
-    private static final String TAG = "MainActivity";
-
-    // UI elements
-    Button btnRegister, btnMessage;
-    Button btnDial, btnDialAudio;
-    EditText txtUri;
-    // debug
-    Button btnListen, btnUnlisten, btnInit, btnShutdown;
-
-    // #webrtc
+public class ContactsActivity extends ListActivity implements RCDeviceListener,
+        OnClickListener, SharedPreferences.OnSharedPreferenceChangeListener,
+        AddUserDialogFragment.ContactDialogListener {
+    //private static final String PREFS_CONTACTS_NAME = "contacts.xml";
+    //private static final String PREFS_CONTACTS_INIT_KEY = "prefs-initialized";
+    private static final String TAG = "ContactsActivity";
+    // webrtc
     private static final int CONNECTION_REQUEST = 1;
 
-    // Activity lifetime methods
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-        Log.i(TAG, "%% onCreate");
+    SharedPreferences prefs;
+    //SharedPreferences prefsContacts;
+    private RCDevice device;
+    private HashMap<String, Object> params;
+    private ContactsController contactsController;
+    private SimpleAdapter listViewAdapter;
+    private ArrayList<Map<String, String>> contactList;
 
+    ImageButton btnAdd;
+
+    protected void onCreate(Bundle savedInstanceState)
+    {
+        Log.i(TAG, "%% onCreate");
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_contacts);
+
+        btnAdd = (ImageButton)findViewById(R.id.imageButton_add);
+        btnAdd.setOnClickListener(this);
+
+        contactsController = new ContactsController(getApplicationContext());
+        contactList = contactsController.initializeContacts(); //populateContacts();
+        String[] from = { "username", "sipuri" };
+        int[] to = { android.R.id.text1, android.R.id.text2 };
+
+        listViewAdapter = new SimpleAdapter(this, contactList,
+                android.R.layout.simple_list_item_2, from, to);
+        setListAdapter(listViewAdapter);
+        registerForContextMenu(getListView());
+
+
+        /*
         // initialize UI
         btnRegister = (Button)findViewById(R.id.button_register);
         btnRegister.setOnClickListener(this);
@@ -81,16 +79,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
         txtUri = (EditText)findViewById(R.id.text_uri);
         btnMessage = (Button)findViewById(R.id.button_message);
         btnMessage.setOnClickListener(this);
-
-        // debug
-        btnListen = (Button)findViewById(R.id.button_listen);
-        btnListen.setOnClickListener(this);
-        btnUnlisten = (Button)findViewById(R.id.button_unlisten);
-        btnUnlisten.setOnClickListener(this);
-        btnInit = (Button)findViewById(R.id.button_init);
-        btnInit.setOnClickListener(this);
-        btnShutdown = (Button)findViewById(R.id.button_shutdown);
-        btnShutdown.setOnClickListener(this);
+        */
 
         PreferenceManager.setDefaultValues(this, "preferences.xml", MODE_PRIVATE, R.xml.preferences, false);
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -118,8 +107,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
         // preferences
         prefs.registerOnSharedPreferenceChangeListener(this);
 
-        txtUri.setText("sip:1235@23.23.228.238:5080");
-        //txtUri.setText("sip:alice@192.168.2.32:5080");
+        //txtUri.setText("sip:1235@23.23.228.238:5080");
     }
 
     @Override
@@ -168,8 +156,27 @@ public class MainActivity extends Activity implements RCDeviceListener,
         setIntent(intent);
     }
 
+    @Override
+    public void onListItemClick(ListView l, View v, int position, long id)
+    {
+        // Do something when a list item is clicked
+        HashMap item = (HashMap)getListView().getItemAtPosition(position);
+
+        Intent intent = new Intent(this, CallActivity.class);
+        intent.setAction(RCDevice.OUTGOING_CALL);
+        intent.putExtra(RCDevice.EXTRA_DID, (String) item.get("sipuri"));  //txtUri.getText().toString());
+        intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, true);
+        startActivityForResult(intent, CONNECTION_REQUEST);
+    }
+
     // UI Events
     public void onClick(View view) {
+        if (view.getId() == R.id.imageButton_add) {
+            DialogFragment newFragment = AddUserDialogFragment.newInstance(AddUserDialogFragment.DIALOG_TYPE_ADD_CONTACT, "", "");
+            newFragment.show(getFragmentManager(), "dialog");
+        }
+
+        /*
         if (view.getId() == R.id.button_dial || view.getId() == R.id.button_dial_audio) {
             Intent intent = new Intent(this, CallActivity.class);
             intent.setAction(RCDevice.OUTGOING_CALL);
@@ -208,6 +215,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
             RCClient.shutdown();
             device = null;
         }
+        */
     }
 
     // RCDevice Listeners
@@ -249,7 +257,7 @@ public class MainActivity extends Activity implements RCDeviceListener,
         super.onConfigurationChanged(newConfig);
     }
 
-    // menu stuff
+    // Settings Menu stuff
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -295,9 +303,55 @@ public class MainActivity extends Activity implements RCDeviceListener,
         }
     }
 
-    // Helpers
+    // Context Menu stuff
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        if (v.getId() == android.R.id.list) {
+            AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)menuInfo;
+            menu.setHeaderTitle("Contact Actions");
+            menu.add("Update Contact");
+            menu.add("Remove Contact");
+        }
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item)
+    {
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
+        HashMap<String, String> contact = (HashMap)contactList.get(info.position);
+
+        if (item.getTitle().toString().equals("Update Contact")) {
+            DialogFragment newFragment = AddUserDialogFragment.newInstance(AddUserDialogFragment.DIALOG_TYPE_UPDATE_CONTACT, contact.get("username"), contact.get("sipuri"));
+            newFragment.show(getFragmentManager(), "dialog");
+        }
+        else {
+            contactsController.removeContact(contactList, contact.get("username"), contact.get("sipuri"));
+            this.listViewAdapter.notifyDataSetChanged();
+        }
+        return true;
+    }
+
+    // Callbacks for contacts dialog fragment
+    public void onDialogPositiveClick(int type, String username, String sipuri)
+    {
+        if (type == AddUserDialogFragment.DIALOG_TYPE_ADD_CONTACT) {
+            this.contactsController.addContact(contactList, username, sipuri);
+        }
+        else {
+            this.contactsController.updateContact(contactList, username, sipuri);
+        }
+        // notify adapter that ListView needs to be updated
+        this.listViewAdapter.notifyDataSetChanged();
+    }
+
+    public void onDialogNegativeClick()
+    {
+
+    }
+
+    // Helper methods
     private void showOkAlert(final String title, final String detail) {
-        AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+        AlertDialog alertDialog = new AlertDialog.Builder(ContactsActivity.this).create();
         alertDialog.setTitle(title);
         alertDialog.setMessage(detail);
         alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
