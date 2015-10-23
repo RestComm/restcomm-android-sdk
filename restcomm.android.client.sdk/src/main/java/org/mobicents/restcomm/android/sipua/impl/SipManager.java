@@ -165,7 +165,14 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				// this currently can only be called as a result of a failed REGISTER unREGISTER due to the fact that the provided
 				// host/port for registrar are invalid. In the future we could use the RuntimeException text to differentiate errors
 				// or use another means of thread communication to convey the error from JAIN thread to main thread.
-				dispatchSipError(RCClient.ErrorCodes.SIGNALLING_DNS_ERROR, "Error resolving destination SIP URI for REGISTER");
+				if (e.getMessage().equals("Register failed")) {
+					dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_NON_CALL, RCClient.ErrorCodes.SIGNALLING_DNS_ERROR,
+							"Error resolving destination SIP URI for REGISTER");
+				}
+				else {
+					dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_CALL, RCClient.ErrorCodes.SIGNALLING_DNS_ERROR,
+							"Error resolving destination SIP URI for REGISTER");
+				}
 			}
 		};
 
@@ -451,7 +458,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 						transaction.sendRequest();
 					} catch (TransactionUnavailableException e) {
 						//throw e;
-						throw new RuntimeException("Unregister failed", e);
+						throw new RuntimeException("Register failed", e);
 					}catch (SipException e) {
 						e.printStackTrace();
 					}
@@ -482,7 +489,10 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					// note: we might need to make this 'syncrhonized' to avoid race at some point
 					currentClientTransaction = transaction;
 					transaction.sendRequest();
-				} catch (SipException e) {
+				} catch (TransactionUnavailableException e) {
+					//throw e;
+					throw new RuntimeException("Call failed", e);
+				}catch (SipException e) {
 					e.printStackTrace();
 				}
 			}
@@ -506,7 +516,10 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					// note: we might need to make this 'syncrhonized' to avoid race at some point
 					currentClientTransaction = transaction;
 					transaction.sendRequest();
-				} catch (SipException e) {
+				} catch (TransactionUnavailableException e) {
+					//throw e;
+					throw new RuntimeException("Call failed", e);
+				}catch (SipException e) {
 					e.printStackTrace();
 				}
 			}
@@ -837,8 +850,22 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	// *** JAIN SIP: Time out *** //
 	public void processTimeout(TimeoutEvent timeoutEvent) {
-
-		RCLogger.i(TAG, "Transaction Time out");
+		Request request;
+		if (timeoutEvent.isServerTransaction()) {
+			request = timeoutEvent.getServerTransaction().getRequest();
+		}
+		else {
+			request = timeoutEvent.getClientTransaction().getRequest();
+		}
+		RCLogger.i(TAG, "processTimeout(): method: " + request.getMethod() + " URI: " + request.getRequestURI());
+		if (request.getMethod() == Request.INVITE) {
+			dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_CALL, RCClient.ErrorCodes.SIGNALLING_TIMEOUT,
+					"Timed out waiting on " + request.getMethod());
+		}
+		else {
+			dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_NON_CALL, RCClient.ErrorCodes.SIGNALLING_TIMEOUT,
+					"Timed out waiting on " + request.getMethod());
+		}
 	}
 
 	// *** Request/Response Helpers *** //
@@ -864,7 +891,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	// caller needs to run on main thread
-	private void dispatchSipError(RCClient.ErrorCodes errorCode, String errorText) {
+	private void dispatchSipError(ISipEventListener.ErrorContext errorContext, RCClient.ErrorCodes errorCode, String errorText) {
 		RCLogger.i(TAG, "Dispatching  error:" + errorText);
 		ArrayList<ISipEventListener> tmpSipListenerList;
 
@@ -876,7 +903,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		}
 
 		for (ISipEventListener listener : tmpSipListenerList) {
-			listener.onSipError(errorCode, errorText);
+			listener.onSipError(errorContext, errorCode, errorText);
 		}
 	}
 

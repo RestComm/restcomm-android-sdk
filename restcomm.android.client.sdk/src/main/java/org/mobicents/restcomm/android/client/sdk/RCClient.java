@@ -51,6 +51,7 @@ public class RCClient {
         SIGNALLING_SIPURI_PARSE_ERROR,
         SIGNALLING_DNS_ERROR,
         SIGNALLING_DESTINATION_NOT_FOUND,
+        SIGNALLING_TIMEOUT,
     }
 
     public static String errorText(ErrorCodes errorCode) {
