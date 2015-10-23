@@ -22,6 +22,7 @@
 
 package org.mobicents.restcomm.android.sipua;
 
+import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.sipua.impl.SipEvent;
 
 public interface SipUAConnectionListener {
@@ -35,4 +36,6 @@ public interface SipUAConnectionListener {
     public abstract void onSipUACancelled(SipEvent event);
     // fires when we get an incoming 'declined' response to our INVITE
     public abstract void onSipUADeclined(SipEvent event);
+    // fires when we get a signalling error
+    public abstract void onSipUAError(final RCClient.ErrorCodes errorCode, final String errorText);
 }

@@ -231,6 +231,8 @@ public class ContactsActivity extends ListActivity implements RCDeviceListener,
 
     public void onStopListening(RCDevice device, int errorCode, String errorText)
     {
+        showOkAlert("RCDevice Error", errorText);
+        /*
         if (errorCode == RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal()) {
             showOkAlert("No Wifi Connectivity", errorText);
         }
@@ -240,6 +242,7 @@ public class ContactsActivity extends ListActivity implements RCDeviceListener,
         else {
             showOkAlert("Unknown Error", "Unknown Restcomm Client error");
         }
+        */
     }
 
     public boolean receivePresenceEvents(RCDevice device)

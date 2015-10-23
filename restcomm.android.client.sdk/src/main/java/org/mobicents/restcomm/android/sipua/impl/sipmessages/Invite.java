@@ -29,7 +29,7 @@ import android.javax.sip.message.Request;
 public class Invite  {
 	private static final String TAG = "Invite";
 
-    public Request MakeRequest(SipManager sipManager,String to, int port, HashMap<String, String> sipHeaders) {
+    public Request MakeRequest(SipManager sipManager,String to, int port, HashMap<String, String> sipHeaders) throws  ParseException {
     	
     	try {
 			SipURI from = sipManager.addressFactory.createSipURI(sipManager.getSipProfile().getSipUserName(), sipManager.getSipProfile().getLocalEndpoint());
@@ -110,28 +110,16 @@ public class Invite  {
 			byte[] contents = sdpData.getBytes();
 
 			callRequest.setContent(contents, contentTypeHeader);
-			// You can add as many extension headers as you
-			// want.
-
-			//extensionHeader = sipManager.headerFactory.createHeader("My-Other-Header", "my new header value ");
-			//callRequest.addHeader(extensionHeader);
-
 			Header callInfoHeader = sipManager.headerFactory.createHeader("Call-Info",
 					"<http://www.antd.nist.gov>");
 			callRequest.addHeader(callInfoHeader);
 			return callRequest;
-			// Create the client transaction.
-			//inviteTid = sipManager.sipProvider.getNewClientTransaction(callRequest);
-
-			//System.out.println("inviteTid = " + inviteTid);
-
-			// send the request out.
-
-		//	inviteTid.sendRequest();
-
-			//dialog = inviteTid.getDialog();
-
-		} catch (Exception ex) {
+		}
+		catch (ParseException e) {
+			// we want to be able to catch the parse exception from upper layers
+			throw e;
+		}
+		catch (Exception ex) {
 			RCLogger.i(TAG, ex.getMessage());
 			ex.printStackTrace();
 		
@@ -139,7 +127,7 @@ public class Invite  {
 		return null;
 	}
 
-	public Request MakeRequestWebrtc(SipManager sipManager, String to, String sdp, HashMap<String, String> sipHeaders) {
+	public Request MakeRequestWebrtc(SipManager sipManager, String to, String sdp, HashMap<String, String> sipHeaders) throws  ParseException {
 
 		try {
 			SipURI from = sipManager.addressFactory.createSipURI(sipManager.getSipProfile().getSipUserName(), sipManager.getSipProfile().getLocalEndpoint());
@@ -147,7 +135,7 @@ public class Invite  {
 			//fromNameAddress.setDisplayName(sipUsername);
 			FromHeader fromHeader = sipManager.headerFactory.createFromHeader(fromNameAddress,
 					"Tzt0ZEP92");
-			SipURI toAddress = (SipURI)sipManager.addressFactory.createURI(to);
+			SipURI toAddress = (SipURI) sipManager.addressFactory.createURI(to);
 			Address toNameAddress = sipManager.addressFactory.createAddress(toAddress);
 			// toNameAddress.setDisplayName(username);
 			ToHeader toHeader = sipManager.headerFactory.createToHeader(toNameAddress, null);
@@ -223,10 +211,14 @@ public class Invite  {
 
 			return callRequest;
 
-		} catch (Exception ex) {
+		}
+		catch (ParseException e) {
+			// we want to be able to catch the parse exception from upper layers
+			throw e;
+		}
+		catch (Exception ex) {
 			RCLogger.i(TAG, ex.getMessage());
 			ex.printStackTrace();
-
 		}
 		return null;
 	}

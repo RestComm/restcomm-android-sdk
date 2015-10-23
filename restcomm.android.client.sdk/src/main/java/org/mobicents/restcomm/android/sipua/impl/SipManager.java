@@ -14,6 +14,7 @@ import java.util.Properties;
 import java.util.TooManyListenersException;
 
 import org.apache.http.conn.util.InetAddressUtils;
+import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.sipua.ISipEventListener;
 import org.mobicents.restcomm.android.sipua.ISipManager;
 import org.mobicents.restcomm.android.sipua.NotInitializedException;
@@ -105,6 +106,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	// could also use dialog.isServer() flag but have found mixed opinions about it)
 	CallDirection direction = CallDirection.NONE;
 	private int remoteRtpPort;
+	private Thread.UncaughtExceptionHandler exceptionHandler;
 
 	// Constructors/Initializers
 	public SipManager(SipProfile sipProfile, boolean connectivity) {
@@ -155,6 +157,18 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			e.printStackTrace();
 			return false;
 		}
+
+		// setup a handler to receive exceptions from other threads
+		// Notice that this only works for RuntimeException type exceptions
+		exceptionHandler = new Thread.UncaughtExceptionHandler() {
+			public void uncaughtException(Thread th, Throwable e) {
+				// this currently can only be called as a result of a failed REGISTER unREGISTER due to the fact that the provided
+				// host/port for registrar are invalid. In the future we could use the RuntimeException text to differentiate errors
+				// or use another means of thread communication to convey the error from JAIN thread to main thread.
+				dispatchSipError(RCClient.ErrorCodes.SIGNALLING_DNS_ERROR, "Error resolving destination SIP URI for REGISTER");
+			}
+		};
+
 		return true;
 	}
 
@@ -217,7 +231,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		}
 	}
 
-	public void refreshNetworking(int expiry)
+	public void refreshNetworking(int expiry) throws ParseException, TransactionUnavailableException
 	{
 		// keep the old contact around to use for unregistration
 		Address oldAddress = createContactAddress();
@@ -363,7 +377,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	@Override
-	public void Register(int expiry) {
+	public void Register(int expiry) throws ParseException, TransactionUnavailableException {
 		if (sipProvider == null) {
 			return;
 		}
@@ -389,21 +403,26 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					try {
 						final ClientTransaction transaction = sipProvider.getNewClientTransaction(r);
 						transaction.sendRequest();
-					} catch (SipException e) {
+					} catch (TransactionUnavailableException e) {
+						//throw e;
+						throw new RuntimeException("Register failed", e);
+					}
+					catch (SipException e) {
 						e.printStackTrace();
 					}
 				}
 			};
+			thread.setUncaughtExceptionHandler(exceptionHandler);
 			thread.start();
 
 		} catch (ParseException e) {
-			e.printStackTrace();
+			throw e;
 		} catch (InvalidArgumentException e) {
 			e.printStackTrace();
 		}
 	}
 
-	public void Unregister(Address contact) {
+	public void Unregister(Address contact) throws ParseException, TransactionUnavailableException {
 		if (sipProvider == null) {
 			return;
 		}
@@ -430,7 +449,10 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					try {
 						final ClientTransaction transaction = sipProvider.getNewClientTransaction(r);
 						transaction.sendRequest();
-					} catch (SipException e) {
+					} catch (TransactionUnavailableException e) {
+						//throw e;
+						throw new RuntimeException("Unregister failed", e);
+					}catch (SipException e) {
 						e.printStackTrace();
 					}
 				}
@@ -446,7 +468,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	@Override
 	public void Call(String to, int localRtpPort, HashMap<String, String> sipHeaders)
-			throws NotInitializedException {
+			throws NotInitializedException, ParseException {
 		if (!initialized)
 			throw new NotInitializedException("Sip Stack not initialized");
 		this.sipManagerState = SipManagerState.CALLING;
@@ -470,7 +492,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	public void CallWebrtc(String to, String sdp, HashMap<String, String> sipHeaders)
-			throws NotInitializedException {
+			throws NotInitializedException, ParseException {
 		if (!initialized)
 			throw new NotInitializedException("Sip Stack not initialized");
 		this.sipManagerState = SipManagerState.CALLING;
@@ -778,6 +800,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			dispatchSipEvent(new SipEvent(this, SipEventType.DECLINED, "", ""));
 		} else if (response.getStatusCode() == Response.NOT_FOUND) {
 			RCLogger.i(TAG, "NOT FOUND");
+			dispatchSipEvent(new SipEvent(this, SipEventType.NOT_FOUND, "Destination not found", response.getHeader(ToHeader.NAME).toString()));
 		} else if (response.getStatusCode() == Response.ACCEPTED) {
 			RCLogger.i(TAG, "ACCEPTED");
 		}
@@ -819,6 +842,9 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	// *** Request/Response Helpers *** //
+	// TODO: revisit dispatchSipEvent and dispatchSipError. Not sure why we need an array of listeners, plus why such synchronization is needed.
+	// We could probably simplify it to one listener and no synchorization (we always take take to only send callbacks to the main application from
+	// the main thread)
 	// Send event to the higher level listener (i.e. DeviceImpl)
 	@SuppressWarnings("unchecked")
 	private void dispatchSipEvent(SipEvent sipEvent) {
@@ -834,6 +860,23 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 		for (ISipEventListener listener : tmpSipListenerList) {
 			listener.onSipMessage(sipEvent);
+		}
+	}
+
+	// caller needs to run on main thread
+	private void dispatchSipError(RCClient.ErrorCodes errorCode, String errorText) {
+		RCLogger.i(TAG, "Dispatching  error:" + errorText);
+		ArrayList<ISipEventListener> tmpSipListenerList;
+
+		synchronized (this) {
+			if (sipEventListenerList.size() == 0)
+				return;
+			tmpSipListenerList = (ArrayList<ISipEventListener>) sipEventListenerList
+					.clone();
+		}
+
+		for (ISipEventListener listener : tmpSipListenerList) {
+			listener.onSipError(errorCode, errorText);
 		}
 	}
 

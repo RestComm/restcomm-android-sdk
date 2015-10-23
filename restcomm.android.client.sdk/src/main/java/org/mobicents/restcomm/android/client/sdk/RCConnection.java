@@ -495,6 +495,23 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         this.state = ConnectionState.DISCONNECTED;
     }
 
+    public void onSipUAError(final RCClient.ErrorCodes errorCode, final String errorText)
+    {
+        final RCConnection connection = this;
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                RCLogger.e(TAG, "onSipUAError(): error code: " + errorCode + "error text: " + errorText);
+                disconnect();
+                if (connection.listener != null) {
+                    connection.listener.onDisconnected(connection, errorCode.ordinal(), errorText);
+                }
+            }
+        };
+        mainHandler.post(myRunnable);
+    }
+
     // Helpers
     private boolean haveConnectivity()
     {

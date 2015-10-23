@@ -48,6 +48,9 @@ public class RCClient {
         CONNECTION_TIMEOUT,
         NO_CONNECTIVITY,
         WEBRTC_PEERCONNECTION_ERROR,
+        SIGNALLING_SIPURI_PARSE_ERROR,
+        SIGNALLING_DNS_ERROR,
+        SIGNALLING_DESTINATION_NOT_FOUND,
     }
 
     public static String errorText(ErrorCodes errorCode) {
@@ -63,6 +66,12 @@ public class RCClient {
         }
         else if (errorCode == ErrorCodes.WEBRTC_PEERCONNECTION_ERROR) {
             return "Webrtc Peer Connection error";
+        }
+        else if (errorCode == ErrorCodes.SIGNALLING_SIPURI_PARSE_ERROR) {
+            return "Error parsing SIP URI";
+        }
+        else if (errorCode == ErrorCodes.SIGNALLING_SIPURI_PARSE_ERROR) {
+            return "Error in DNS resolving";
         }
         return "Generic Restcomm Client error";
     }

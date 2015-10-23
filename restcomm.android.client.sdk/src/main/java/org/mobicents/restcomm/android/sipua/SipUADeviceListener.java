@@ -22,9 +22,13 @@
 
 package org.mobicents.restcomm.android.sipua;
 
+import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.sipua.impl.SipEvent;
 
 public interface SipUADeviceListener {
     public abstract void onSipUAConnectionArrived(SipEvent event);
     public abstract void onSipUAMessageArrived(SipEvent event);
+    // fires when we get a signalling error
+    public abstract void onSipUAError(final RCClient.ErrorCodes errorCode, final String errorText);
+
 }

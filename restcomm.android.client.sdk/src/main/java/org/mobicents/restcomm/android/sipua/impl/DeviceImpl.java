@@ -7,8 +7,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
+import java.text.ParseException;
 import java.util.HashMap;
 
+import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.sipua.IDevice;
 import org.mobicents.restcomm.android.sipua.NotInitializedException;
 import org.mobicents.restcomm.android.sipua.SipProfile;
@@ -18,6 +20,7 @@ import org.mobicents.restcomm.android.sipua.impl.SipEvent.SipEventType;
 import org.mobicents.restcomm.android.sipua.RCLogger;
 
 import android.content.Context;
+import android.javax.sip.TransactionUnavailableException;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
@@ -156,6 +159,19 @@ public class DeviceImpl implements IDevice,Serializable {
 				this.sipuaDeviceListener.onSipUAConnectionArrived(sipEventObject);
 				soundManager.startRinging();
 			}
+		} else if (sipEventObject.type == SipEventType.NOT_FOUND) {
+			if (this.sipuaConnectionListener != null) {
+				// notify our listener that we are connecting
+				this.sipuaConnectionListener.onSipUAError(RCClient.ErrorCodes.SIGNALLING_DESTINATION_NOT_FOUND, "Destination not found");
+			}
+		}
+	}
+
+	public void onSipError(RCClient.ErrorCodes errorCode, String errorText)
+	{
+		if (this.sipuaDeviceListener != null) {
+			// notify our listener that we are connecting
+			this.sipuaDeviceListener.onSipUAError(errorCode, errorText);
 		}
 	}
 
@@ -169,6 +185,11 @@ public class DeviceImpl implements IDevice,Serializable {
 			this.sipManager.Call(to, 0, sipHeaders);
 		} catch (NotInitializedException e) {
 			e.printStackTrace();
+		} catch (ParseException e) {
+			if (this.sipuaConnectionListener != null) {
+				// notify our listener that we are connecting
+				this.sipuaConnectionListener.onSipUAError(RCClient.ErrorCodes.SIGNALLING_SIPURI_PARSE_ERROR, "Error parsing SIP URI");
+			}
 		}
 	}
 
@@ -186,6 +207,11 @@ public class DeviceImpl implements IDevice,Serializable {
 			}
 		} catch (NotInitializedException e) {
 			e.printStackTrace();
+		} catch (ParseException e) {
+			if (this.sipuaConnectionListener != null) {
+				// notify our listener that we are connecting
+				this.sipuaConnectionListener.onSipUAError(RCClient.ErrorCodes.SIGNALLING_SIPURI_PARSE_ERROR, "Error parsing SIP URI");
+			}
 		}
 	}
 
@@ -261,7 +287,20 @@ public class DeviceImpl implements IDevice,Serializable {
 	@Override
 	public void Register() {
 		RCLogger.v(TAG, "Register");
-		this.sipManager.Register(registrationExpiry);
+		try {
+			this.sipManager.Register(registrationExpiry);
+		} catch (TransactionUnavailableException e) {
+			if (this.sipuaConnectionListener != null) {
+				// notify our listener that we are connecting
+				this.sipuaConnectionListener.onSipUAError(RCClient.ErrorCodes.SIGNALLING_SIPURI_PARSE_ERROR, "Error parsing SIP URI");
+			}
+		} catch (ParseException e) {
+			if (this.sipuaConnectionListener != null) {
+				// notify our listener that we are connecting
+				this.sipuaConnectionListener.onSipUAError(RCClient.ErrorCodes.SIGNALLING_SIPURI_PARSE_ERROR, "Error parsing SIP URI");
+			}
+		}
+
 		if (registerRefreshHandler != null) {
 			// if this is an on-demand registration (as opposed to scheduled) we need
 			// to cancel any pending scheduled registrations
@@ -275,7 +314,7 @@ public class DeviceImpl implements IDevice,Serializable {
 				Register();
 			}
 		};
-		registerRefreshHandler.postDelayed(myRunnable, registrationRefresh*1000);
+		registerRefreshHandler.postDelayed(myRunnable, registrationRefresh * 1000);
 
 	}
 
@@ -283,7 +322,19 @@ public class DeviceImpl implements IDevice,Serializable {
 	{
 		RCLogger.v(TAG, "RefreshNetworking");
 
-		this.sipManager.refreshNetworking(registrationExpiry);
+		try {
+			this.sipManager.refreshNetworking(registrationExpiry);
+		} catch (TransactionUnavailableException e) {
+			if (this.sipuaConnectionListener != null) {
+				// notify our listener that we are connecting
+				this.sipuaConnectionListener.onSipUAError(RCClient.ErrorCodes.SIGNALLING_SIPURI_PARSE_ERROR, "Error parsing SIP URI");
+			}
+		} catch (ParseException e) {
+			if (this.sipuaConnectionListener != null) {
+				// notify our listener that we are connecting
+				this.sipuaConnectionListener.onSipUAError(RCClient.ErrorCodes.SIGNALLING_SIPURI_PARSE_ERROR, "Error parsing SIP URI");
+			}
+		}
 	}
 
 	public void Unregister() {
@@ -294,7 +345,19 @@ public class DeviceImpl implements IDevice,Serializable {
 			registerRefreshHandler.removeCallbacksAndMessages(null);
 		}
 
-		this.sipManager.Unregister(null);
+		try {
+			this.sipManager.Unregister(null);
+		} catch (TransactionUnavailableException e) {
+			if (this.sipuaConnectionListener != null) {
+				// notify our listener that we are connecting
+				this.sipuaConnectionListener.onSipUAError(RCClient.ErrorCodes.SIGNALLING_SIPURI_PARSE_ERROR, "Error parsing SIP URI");
+			}
+		} catch (ParseException e) {
+			if (this.sipuaConnectionListener != null) {
+				// notify our listener that we are connecting
+				this.sipuaConnectionListener.onSipUAError(RCClient.ErrorCodes.SIGNALLING_SIPURI_PARSE_ERROR, "Error parsing SIP URI");
+			}
+		}
 	}
 
 	@Override

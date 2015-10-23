@@ -583,5 +583,24 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         mainHandler.post(myRunnable);
     }
 
+    public void onSipUAError(final RCClient.ErrorCodes errorCode, final String errorText)
+    {
+        RCLogger.i(TAG, "onSipUAError()");
+
+        final RCDevice device = this;
+        // Important: need to fire the event in UI context cause currently we might be in JAIN SIP thread
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (device.listener != null) {
+                    device.listener.onStopListening(device, errorCode.ordinal(), errorText);
+                }
+            }
+        };
+        mainHandler.post(myRunnable);
+
+    }
+
     // Helpers
 }
