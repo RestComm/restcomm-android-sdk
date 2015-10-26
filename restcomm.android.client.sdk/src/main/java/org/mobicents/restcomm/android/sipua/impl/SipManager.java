@@ -106,7 +106,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	// could also use dialog.isServer() flag but have found mixed opinions about it)
 	CallDirection direction = CallDirection.NONE;
 	private int remoteRtpPort;
-	private Thread.UncaughtExceptionHandler exceptionHandler;
+	//private Thread.UncaughtExceptionHandler exceptionHandler;
 
 	// Constructors/Initializers
 	public SipManager(SipProfile sipProfile, boolean connectivity) {
@@ -158,6 +158,12 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			return false;
 		}
 
+		// This is not needed afterall since all error reporting ends up on the main thread. So we can freely call dispatchError from a background thread's
+		// catch block without issues. I'm keeping it as a comment cause it's an interesting pattern we might need to use in the future.
+		// Keep in mind that for this to work the background thread needs to throw a RuntimeException (doesn't work for other)
+		// Also, part from the code below we need to call thread.setUncaughtExceptionHandler(exceptionHandler) in the background thread prior to
+		// running it
+		/*
 		// setup a handler to receive exceptions from other threads
 		// Notice that this only works for RuntimeException type exceptions
 		exceptionHandler = new Thread.UncaughtExceptionHandler() {
@@ -175,6 +181,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				}
 			}
 		};
+		*/
 
 		return true;
 	}
@@ -410,16 +417,18 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					try {
 						final ClientTransaction transaction = sipProvider.getNewClientTransaction(r);
 						transaction.sendRequest();
-					} catch (TransactionUnavailableException e) {
-						//throw e;
-						throw new RuntimeException("Register failed", e);
+					} catch (Exception e) {
+						// DNS error (error resolving registrar URI)
+						dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_NON_CALL, RCClient.ErrorCodes.SIGNALLING_REGISTER_ERROR,
+								e.getMessage());
 					}
+					/*
 					catch (SipException e) {
 						e.printStackTrace();
 					}
+					*/
 				}
 			};
-			thread.setUncaughtExceptionHandler(exceptionHandler);
 			thread.start();
 
 		} catch (ParseException e) {
@@ -456,12 +465,16 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					try {
 						final ClientTransaction transaction = sipProvider.getNewClientTransaction(r);
 						transaction.sendRequest();
-					} catch (TransactionUnavailableException e) {
-						//throw e;
-						throw new RuntimeException("Register failed", e);
-					}catch (SipException e) {
+					} catch (Exception e) {
+						// DNS error (error resolving registrar URI)
+						dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_NON_CALL, RCClient.ErrorCodes.SIGNALLING_REGISTER_ERROR,
+								e.getMessage());
+					}
+					/*
+					catch (SipException e) {
 						e.printStackTrace();
 					}
+					*/
 				}
 			};
 			thread.start();
@@ -489,12 +502,18 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					// note: we might need to make this 'syncrhonized' to avoid race at some point
 					currentClientTransaction = transaction;
 					transaction.sendRequest();
-				} catch (TransactionUnavailableException e) {
-					//throw e;
-					throw new RuntimeException("Call failed", e);
-				}catch (SipException e) {
-					e.printStackTrace();
+				} catch (Exception e) {
+					// DNS error (error resolving registrar URI)
+					dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_CALL, RCClient.ErrorCodes.SIGNALLING_CALL_ERROR,
+							e.getMessage());
 				}
+				/*
+				catch (SipException e) {
+					//e.printStackTrace();
+					dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_CALL, RCClient.ErrorCodes.SIGNALLING_TIMEOUT,
+							e.getMessage());
+				}
+				*/
 			}
 		};
 		thread.start();
@@ -516,12 +535,18 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					// note: we might need to make this 'syncrhonized' to avoid race at some point
 					currentClientTransaction = transaction;
 					transaction.sendRequest();
-				} catch (TransactionUnavailableException e) {
-					//throw e;
-					throw new RuntimeException("Call failed", e);
-				}catch (SipException e) {
-					e.printStackTrace();
+				} catch (Exception e) {
+					// DNS error (error resolving registrar URI)
+					dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_CALL, RCClient.ErrorCodes.SIGNALLING_CALL_ERROR,
+							e.getMessage());
 				}
+				/*
+				catch (SipException e) {
+					//e.printStackTrace();
+					dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_CALL, RCClient.ErrorCodes.SIGNALLING_TIMEOUT,
+							e.getMessage());
+				}
+				*/
 			}
 		};
 		thread.start();
@@ -544,7 +569,9 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 						ClientTransaction transaction = sipProvider.getNewClientTransaction(r);
 						transaction.sendRequest();
 					} catch (SipException e) {
-						e.printStackTrace();
+						// DNS error (error resolving registrar URI)
+						dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_NON_CALL, RCClient.ErrorCodes.SIGNALLING_INSTANT_MESSAGE_ERROR,
+								e.getMessage());
 					}
 				}
 			};

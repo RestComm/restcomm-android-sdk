@@ -52,6 +52,9 @@ public class RCClient {
         SIGNALLING_DNS_ERROR,
         SIGNALLING_DESTINATION_NOT_FOUND,
         SIGNALLING_TIMEOUT,
+        SIGNALLING_REGISTER_ERROR,
+        SIGNALLING_CALL_ERROR,
+        SIGNALLING_INSTANT_MESSAGE_ERROR,
     }
 
     public static String errorText(ErrorCodes errorCode) {
