@@ -311,7 +311,11 @@ public class ContactsActivity extends ListActivity implements RCDeviceListener,
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
         if (v.getId() == android.R.id.list) {
             AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)menuInfo;
-            menu.setHeaderTitle("Contact Actions");
+
+            menu.setHeaderTitle(contactList.get(info.position).get("username"));
+            menu.add("Video Call");
+            menu.add("Audio Call");
+            menu.add("Send Text Message");
             menu.add("Update Contact");
             menu.add("Remove Contact");
         }
@@ -323,14 +327,35 @@ public class ContactsActivity extends ListActivity implements RCDeviceListener,
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
         HashMap<String, String> contact = (HashMap)contactList.get(info.position);
 
+        if (item.getTitle().toString().equals("Video Call")) {
+            Intent intent = new Intent(this, CallActivity.class);
+            intent.setAction(RCDevice.OUTGOING_CALL);
+            intent.putExtra(RCDevice.EXTRA_DID, contact.get("sipuri"));
+            intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, true);
+            startActivityForResult(intent, CONNECTION_REQUEST);
+        }
+        if (item.getTitle().toString().equals("Audio Call")) {
+            Intent intent = new Intent(this, CallActivity.class);
+            intent.setAction(RCDevice.OUTGOING_CALL);
+            intent.putExtra(RCDevice.EXTRA_DID, contact.get("sipuri"));
+            intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, false);
+            startActivityForResult(intent, CONNECTION_REQUEST);
+        }
+        if (item.getTitle().toString().equals("Send Text Message")) {
+            Intent intent = new Intent(this, MessageActivity.class);
+            intent.setAction(RCDevice.OPEN_MESSAGE_SCREEN);
+            intent.putExtra(RCDevice.EXTRA_DID, contact.get("sipuri"));
+            startActivity(intent);
+        }
         if (item.getTitle().toString().equals("Update Contact")) {
             DialogFragment newFragment = AddUserDialogFragment.newInstance(AddUserDialogFragment.DIALOG_TYPE_UPDATE_CONTACT, contact.get("username"), contact.get("sipuri"));
             newFragment.show(getFragmentManager(), "dialog");
         }
-        else {
+        if (item.getTitle().toString().equals("Remove Contact")) {
             contactsController.removeContact(contactList, contact.get("username"), contact.get("sipuri"));
             this.listViewAdapter.notifyDataSetChanged();
         }
+
         return true;
     }
 
