@@ -259,12 +259,12 @@ public class ContactsActivity extends ListActivity implements RCDeviceListener,
 
     }
 
+    // Settings Menu stuff
     @Override
     public void onConfigurationChanged(Configuration newConfig) {
         super.onConfigurationChanged(newConfig);
     }
 
-    // Settings Menu stuff
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.

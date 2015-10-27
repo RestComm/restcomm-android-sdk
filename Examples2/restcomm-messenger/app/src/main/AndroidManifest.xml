@@ -17,6 +17,21 @@
         android:label="@string/app_name"
         android:supportsRtl="true"
         android:theme="@style/AppTheme" >
+
+        <activity
+            android:name=".MainActivity"
+            android:label="@string/app_name"
+            android:theme="@style/AppTheme.NoActionBar"
+            android:launchMode="singleTask"
+            android:screenOrientation="portrait" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
         <activity android:name=".ContactsActivity"
             android:label="@string/app_name"
             android:launchMode="singleTask"
@@ -27,7 +42,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        -->
 
+
+        <!--
         <activity
             android:name=".MainActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
@@ -35,6 +53,7 @@
             android:launchMode="singleTask"
             android:screenOrientation="portrait" >
         </activity>
+        -->
         <activity
             android:name=".SettingsActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
@@ -58,15 +77,7 @@
             android:screenOrientation="portrait" >
         </activity>
         <!--
-        <activity
-            android:name=".MainActivity"
-            android:label="@string/app_name"
-            android:theme="@style/AppTheme.NoActionBar" >
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
+        <activity android:name=".MainFragment" >
         </activity>
         -->
     </application>
