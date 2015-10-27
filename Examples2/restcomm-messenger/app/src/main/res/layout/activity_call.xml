@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout
+    android:id="@+id/layout_video_call"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <android.opengl.GLSurfaceView
+        android:id="@+id/glview_call"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hang up"
+        android:id="@+id/button_hangup"
+        android:minWidth="100dp"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Video"
+        android:id="@+id/button_answer"
+        android:minWidth="100dp"
+        android:layout_above="@+id/button_hangup"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Audio"
+        android:id="@+id/button_answer_audio"
+        android:layout_above="@+id/button_hangup"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:minWidth="100dp" />
+
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/button_keypad"
+        android:layout_gravity="center_horizontal|bottom"
+        android:background="@android:color/transparent"
+        android:src="@drawable/keypad"
+        android:layout_above="@+id/button_answer_audio"
+        android:layout_centerHorizontal="true" />
+
+    <!-- placeholder for keypad fragment -->
+    <!-- -->
+    <FrameLayout
+        android:id="@+id/keypad_fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mute V"
+            android:id="@+id/button_mute_video"
+            android:layout_gravity="right|center_vertical" />
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mute A"
+            android:id="@+id/button_mute_audio"
+            android:layout_gravity="left|center_vertical" />
+    </FrameLayout>
+    <!-- -->
+
+
+</RelativeLayout>

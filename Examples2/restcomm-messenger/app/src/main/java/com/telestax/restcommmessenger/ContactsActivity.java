@@ -8,6 +8,7 @@ import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.design.widget.FloatingActionButton;
 import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -54,8 +55,11 @@ public class ContactsActivity extends ListActivity implements RCDeviceListener,
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_contacts);
 
-        btnAdd = (ImageButton)findViewById(R.id.imageButton_add);
-        btnAdd.setOnClickListener(this);
+        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab.setOnClickListener(this);
+
+        //btnAdd = (ImageButton)findViewById(R.id.imageButton_add);
+        //btnAdd.setOnClickListener(this);
 
         contactsController = new ContactsController(getApplicationContext());
         contactList = contactsController.initializeContacts(); //populateContacts();
@@ -171,7 +175,7 @@ public class ContactsActivity extends ListActivity implements RCDeviceListener,
 
     // UI Events
     public void onClick(View view) {
-        if (view.getId() == R.id.imageButton_add) {
+        if (view.getId() == R.id.fab) {
             DialogFragment newFragment = AddUserDialogFragment.newInstance(AddUserDialogFragment.DIALOG_TYPE_ADD_CONTACT, "", "");
             newFragment.show(getFragmentManager(), "dialog");
         }
