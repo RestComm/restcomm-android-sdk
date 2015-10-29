@@ -9,9 +9,9 @@
         <option name="gradleJvm" value="1.7" />
         <option name="modules">
           <set>
+            <option value="$PROJECT_DIR$/../../restcomm.android.client.sdk" />
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/app" />
-            <option value="$PROJECT_DIR$/../../restcomm.android.client.sdk" />
           </set>
         </option>
       </GradleProjectSettings>
