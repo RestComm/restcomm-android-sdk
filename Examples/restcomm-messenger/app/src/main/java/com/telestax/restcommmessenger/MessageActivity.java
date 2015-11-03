@@ -75,7 +75,7 @@ public class MessageActivity extends AppCompatActivity
     HashMap<String, Object> params = new HashMap<String, Object>();
     private static final String TAG = "MessageActivity";
 
-    Button btnSend;
+    ImageButton btnSend;
     EditText txtMessage;
 
 
@@ -108,7 +108,7 @@ public class MessageActivity extends AppCompatActivity
         //btnAdd.setOnClickListener(this);
         //FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         //fab.setOnClickListener(this);
-        btnSend = (Button)findViewById(R.id.button_send);
+        btnSend = (ImageButton)findViewById(R.id.button_send);
         btnSend.setOnClickListener(this);
         //txtWall = (TextView) findViewById(R.id.text_wall);
         //txtWall.setOnClickListener(this);
@@ -135,6 +135,8 @@ public class MessageActivity extends AppCompatActivity
         final Intent finalIntent = getIntent();
         if (finalIntent.getAction().equals(RCDevice.OPEN_MESSAGE_SCREEN)) {
             params.put("username", finalIntent.getStringExtra(RCDevice.EXTRA_DID));
+            String shortname = finalIntent.getStringExtra(RCDevice.EXTRA_DID).replaceAll("^sip:", "").replaceAll("@.*$", "");
+            setTitle(shortname);
         }
         if (finalIntent.getAction().equals(RCDevice.INCOMING_MESSAGE)) {
             String message = finalIntent.getStringExtra(RCDevice.INCOMING_MESSAGE_TEXT);
@@ -143,8 +145,8 @@ public class MessageActivity extends AppCompatActivity
             String shortname = username.replaceAll("^sip:", "").replaceAll("@.*$", "");
             params.put("username", username);
 
-            listFragment.addRemoteMessage(message, username);
-            //txtWall.append(shortname + ": " + message + "\n\n");
+            listFragment.addRemoteMessage(message, shortname);
+            setTitle(shortname);
         }
     }
 
@@ -241,8 +243,8 @@ public class MessageActivity extends AppCompatActivity
             if (device.sendMessage(txtMessage.getText().toString(), sendParams)) {
                 // also output the message in the wall
                 listFragment.addLocalMessage(txtMessage.getText().toString());
+                txtMessage.setText("");
                 //txtWall.append("Me: " + txtMessage.getText().toString() + "\n\n");
-                //txtMessage.setText("");
             }
             else {
                 showOkAlert("RCDevice Error", "No Wifi connectivity");

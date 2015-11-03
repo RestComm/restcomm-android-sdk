@@ -39,22 +39,31 @@
         android:layout_marginRight="@dimen/activity_horizontal_margin"
         />
 
-    <Button
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="#cdcdcd"
+        android:layout_above="@+id/button_send"
+        />
+
+    <ImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Send"
+        android:src="@drawable/message_send"
+        android:background="@android:color/transparent"
+        android:padding="10dp"
         android:id="@+id/button_send"
         android:layout_alignParentBottom="true"
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"
-        android:paddingRight="@dimen/activity_horizontal_margin"
         />
 
     <EditText
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:textAppearance="?android:attr/textAppearanceLarge"
         android:id="@+id/text_message"
+        android:hint="Enter a message"
+        android:background="@android:color/transparent"
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
@@ -64,5 +73,8 @@
         android:paddingLeft="@dimen/activity_horizontal_margin"
         />
 
-
 </RelativeLayout>
+<!--
+        android:textAppearance="?android:attr/textAppearanceLarge"
+
+-->
