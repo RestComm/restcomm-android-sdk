@@ -237,6 +237,7 @@ public class MessageFragment extends ListFragment {
         item.put("message-text", message);
         contactList.add(item);
         this.listViewAdapter.notifyDataSetChanged();
+        getListView().setSelection(listViewAdapter.getCount() - 1);
     }
 
     // Called by Activity when when new message is sent
@@ -247,6 +248,7 @@ public class MessageFragment extends ListFragment {
         item.put("message-text", message);
         contactList.add(item);
         this.listViewAdapter.notifyDataSetChanged();
+        getListView().setSelection(listViewAdapter.getCount() - 1);
     }
 
     // Helper methods
