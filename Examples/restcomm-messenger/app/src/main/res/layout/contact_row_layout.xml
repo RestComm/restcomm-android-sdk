@@ -6,13 +6,14 @@
 
     <TextView android:id="@+id/contact_username"
         android:textSize="20sp"
-        android:textColor="#6d6d6d"
+        android:textColor="@color/colorTextPrimary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingTop="7dp"/>
 
     <TextView android:id="@+id/contact_sipuri"
         android:textSize="16sp"
+        android:textColor="@color/colorTextSecondary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingBottom="7dp"/>
