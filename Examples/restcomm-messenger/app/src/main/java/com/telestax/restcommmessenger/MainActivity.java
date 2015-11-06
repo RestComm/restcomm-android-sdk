@@ -296,6 +296,10 @@ public class MainActivity extends AppCompatActivity
             Intent i = new Intent(this, SettingsActivity.class);
             startActivity(i);
         }
+        if (id == R.id.action_about) {
+            DialogFragment newFragment = AboutFragment.newInstance();
+            newFragment.show(getFragmentManager(), "dialog-about");
+        }
         return super.onOptionsItemSelected(item);
     }
 
