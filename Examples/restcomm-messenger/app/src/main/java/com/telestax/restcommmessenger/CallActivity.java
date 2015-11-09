@@ -29,9 +29,9 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
-import android.net.Uri;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.util.Log;
 import android.view.Menu;
@@ -39,10 +39,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
-import android.widget.Button;
-import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.ImageButton;
+import android.widget.TextView;
 
 import java.util.HashMap;
 
@@ -89,13 +87,17 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     private boolean activityVisible = false;
     private boolean muteAudio = false;
     private boolean muteVideo = false;
+    // handler for the timer
+    private Handler timerHandler = new Handler();
+    int secondsElapsed = 0;
 
     //CheckBox cbMuted;
-    Button btnMuteAudio, btnMuteVideo;
-    Button btnHangup;
-    Button btnAnswer, btnAnswerAudio;
+    ImageButton btnMuteAudio, btnMuteVideo;
+    ImageButton btnHangup;
+    ImageButton btnAnswer, btnAnswerAudio;
     ImageButton btnKeypad;
     KeypadFragment keypadFragment;
+    TextView lblCall, lblStatus, lblTimer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -116,21 +118,21 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         setContentView(R.layout.activity_call);
 
         // Initialize UI
-        btnHangup = (Button)findViewById(R.id.button_hangup);
+        btnHangup = (ImageButton)findViewById(R.id.button_hangup);
         btnHangup.setOnClickListener(this);
-        btnAnswer = (Button)findViewById(R.id.button_answer);
+        btnAnswer = (ImageButton)findViewById(R.id.button_answer);
         btnAnswer.setOnClickListener(this);
-        btnAnswerAudio = (Button)findViewById(R.id.button_answer_audio);
+        btnAnswerAudio = (ImageButton)findViewById(R.id.button_answer_audio);
         btnAnswerAudio.setOnClickListener(this);
-        //cbMuted = (CheckBox)findViewById(R.id.checkbox_muted);
-        //cbMuted.setOnCheckedChangeListener(this);
-        //cbMuted.setEnabled(false);
-        btnMuteAudio = (Button)findViewById(R.id.button_mute_audio);
+        btnMuteAudio = (ImageButton)findViewById(R.id.button_mute_audio);
         btnMuteAudio.setOnClickListener(this);
-        btnMuteVideo = (Button)findViewById(R.id.button_mute_video);
+        btnMuteVideo = (ImageButton)findViewById(R.id.button_mute_video);
         btnMuteVideo.setOnClickListener(this);
         btnKeypad = (ImageButton)findViewById(R.id.button_keypad);
         btnKeypad.setOnClickListener(this);
+        lblCall = (TextView)findViewById(R.id.label_call);
+        lblStatus = (TextView)findViewById(R.id.label_status);
+        lblTimer = (TextView)findViewById(R.id.label_timer);
 
         device = RCClient.listDevices().get(0);
 
@@ -165,6 +167,12 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING, scalingType, true);
 
         keypadFragment = new KeypadFragment();
+
+        lblTimer.setVisibility(View.INVISIBLE);
+        // these might need to be moved to Resume()
+        btnMuteAudio.setVisibility(View.INVISIBLE);
+        btnMuteVideo.setVisibility(View.INVISIBLE);
+        btnKeypad.setVisibility(View.INVISIBLE);
 
         // open keypad
         FragmentTransaction ft = getFragmentManager().beginTransaction();
@@ -216,7 +224,14 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             @Override
             public void run() {
 
+                // Important note: I used to set visibility in Create(), to avoid the flashing of the GL view when it gets added and then removed right away.
+                // But if I make the video view invisibe when VideoRendererGui.create() is called, then videoContextReady is never called. Need to figure
+                // out a way to work around this
+                videoView.setVisibility(View.INVISIBLE);
                 if (finalIntent.getAction().equals(RCDevice.OUTGOING_CALL)) {
+                    lblCall.setText("Calling " + finalIntent.getStringExtra(RCDevice.EXTRA_DID).replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
+                    lblStatus.setText("Initiating Call...");
+
                     connectParams.put("username", finalIntent.getStringExtra(RCDevice.EXTRA_DID));
                     connectParams.put("video-enabled", finalIntent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
 
@@ -234,6 +249,9 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                     }
                 }
                 if (finalIntent.getAction().equals(RCDevice.INCOMING_CALL)) {
+                    lblCall.setText("Call from " + finalIntent.getStringExtra(RCDevice.EXTRA_DID).replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
+                    lblStatus.setText("Call Received...");
+
                     pendingConnection = device.getPendingConnection();
                     pendingConnection.setConnectionListener(finalActivity);
 
@@ -251,11 +269,13 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         if (view.getId() == R.id.button_hangup) {
             if (pendingConnection != null) {
                 // incoming ringing
+                lblStatus.setText("Rejecting Call...");
                 pendingConnection.reject();
                 pendingConnection = null;
             } else {
                 if (connection != null) {
                     // incoming established or outgoing any state (pending, connecting, connected)
+                    lblStatus.setText("Disconnecting Call...");
                     connection.disconnect();
                     connection = null;
                     pendingConnection = null;
@@ -266,6 +286,9 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             finish();
         } else if (view.getId() == R.id.button_answer) {
             if (pendingConnection != null) {
+                lblStatus.setText("Answering Call...");
+                btnAnswer.setVisibility(View.INVISIBLE);
+                btnAnswerAudio.setVisibility(View.INVISIBLE);
                 HashMap<String, Object> params = new HashMap<String, Object>();
                 params.put("video-enabled", true);
                 pendingConnection.accept(params);
@@ -274,6 +297,9 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             }
         } else if (view.getId() == R.id.button_answer_audio) {
             if (pendingConnection != null) {
+                lblStatus.setText("Answering Call...");
+                btnAnswer.setVisibility(View.INVISIBLE);
+                btnAnswerAudio.setVisibility(View.INVISIBLE);
                 HashMap<String, Object> params = new HashMap<String, Object>();
                 params.put("video-enabled", false);
                 pendingConnection.accept(params);
@@ -290,11 +316,24 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             ft.commit();
         } else if (view.getId() == R.id.button_mute_audio) {
             if (connection != null) {
+                if (!muteAudio) {
+                    btnMuteAudio.setImageResource(R.drawable.audio_muted_50x50);
+                }
+                else {
+                    btnMuteAudio.setImageResource(R.drawable.audio_active_50x50);
+                }
                 muteAudio = !muteAudio;
                 connection.setAudioMuted(muteAudio);
             }
         } else if (view.getId() == R.id.button_mute_video) {
             if (connection != null) {
+                if (!muteVideo) {
+                    btnMuteVideo.setImageResource(R.drawable.video_muted_50x50);
+                }
+                else {
+                    btnMuteVideo.setImageResource(R.drawable.video_active_50x50);
+                }
+
                 muteVideo = !muteVideo;
                 connection.setVideoMuted(muteVideo);
             }
@@ -328,13 +367,19 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     public void onConnecting(RCConnection connection)
     {
         Log.i(TAG, "RCConnection connecting");
+        lblStatus.setText("Started Connecting...");
     }
 
     public void onConnected(RCConnection connection) {
         Log.i(TAG, "RCConnection connected");
-        //cbMuted.setEnabled(true);
+        lblStatus.setText("Connected");
+
         btnMuteAudio.setVisibility(View.VISIBLE);
         btnMuteVideo.setVisibility(View.VISIBLE);
+        btnKeypad.setVisibility(View.VISIBLE);
+
+        lblTimer.setVisibility(View.VISIBLE);
+        startTimer();
 
         // reset to no mute at beggining of new call
         muteAudio = false;
@@ -345,7 +390,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
     public void onDisconnected(RCConnection connection) {
         Log.i(TAG, "RCConnection disconnected");
-        //cbMuted.setEnabled(false);
+        lblStatus.setText("Disconnected");
+
         btnMuteAudio.setVisibility(View.INVISIBLE);
         btnMuteVideo.setVisibility(View.INVISIBLE);
 
@@ -363,6 +409,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
     public void onCancelled(RCConnection connection) {
         Log.i(TAG, "RCConnection cancelled");
+        lblStatus.setText("Cancelled");
+
         this.connection = null;
         pendingConnection = null;
 
@@ -371,6 +419,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
     public void onDeclined(RCConnection connection) {
         Log.i(TAG, "RCConnection declined");
+        lblStatus.setText("Declined");
 
         this.connection = null;
         pendingConnection = null;
@@ -384,17 +433,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         this.connection = null;
         pendingConnection = null;
     }
-
-    /*
-    public void onCheckedChanged(CompoundButton buttonView, boolean isChecked)
-    {
-        if (buttonView.getId() == R.id.checkbox_muted) {
-            if (connection != null) {
-                connection.setMuted(isChecked);
-            }
-        }
-    }
-    */
 
     public void onReceiveLocalVideo(RCConnection connection, VideoTrack videoTrack) {
         if (videoTrack != null) {
@@ -417,6 +455,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                     LOCAL_X_CONNECTED, LOCAL_Y_CONNECTED,
                     LOCAL_WIDTH_CONNECTED, LOCAL_HEIGHT_CONNECTED,
                     VideoRendererGui.ScalingType.SCALE_ASPECT_FIT, true);
+            videoView.setVisibility(View.VISIBLE);
         }
     }
 
@@ -436,7 +475,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         }
     }
 
-
     @Override
     public void onFragmentInteraction(String action) {
         if (action == "cancel") {
@@ -445,5 +483,21 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             ft.commit();
 
         }
+    }
+
+    public void startTimer()
+    {
+        String time = String.format("%02d:%02d:%02d", secondsElapsed / 3600, (secondsElapsed % 3600) / 60, secondsElapsed % 60);
+        lblTimer.setText(time);
+        secondsElapsed++;
+
+        // schedule a registration update after 'registrationRefresh' seconds
+        Runnable timerRunnable = new Runnable() {
+            @Override
+            public void run() {
+                startTimer();
+            }
+        };
+        timerHandler.postDelayed(timerRunnable, 1000);
     }
 }

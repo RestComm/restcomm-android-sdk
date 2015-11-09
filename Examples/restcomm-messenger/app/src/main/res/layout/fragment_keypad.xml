@@ -146,7 +146,8 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Cancel"
+            android:text="Close"
+            android:background="@android:color/transparent"
             android:id="@+id/button_cancel"
             android:layout_alignParentBottom="true"
             android:layout_alignParentRight="true"

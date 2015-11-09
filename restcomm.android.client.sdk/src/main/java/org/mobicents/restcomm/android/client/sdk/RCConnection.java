@@ -148,6 +148,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     private boolean isError;
     private long callStartedTimeMs = 0;
     private GLSurfaceView videoView;
+    private static boolean DO_TOAST = false;
 
     // List of mandatory application permissions.
     private static final String[] MANDATORY_PERMISSIONS = {
@@ -666,12 +667,14 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     // Log |msg| and Toast about it.
     private void logAndToast(String msg) {
         RCLogger.d(TAG, msg);
-        if (logToast != null) {
-            logToast.cancel();
+        if (DO_TOAST) {
+            if (logToast != null) {
+                logToast.cancel();
+            }
+            logToast = Toast.makeText(RCClient.getContext(), msg, Toast.LENGTH_SHORT);
+            logToast.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.CENTER_VERTICAL, 0, 0);
+            logToast.show();
         }
-        logToast = Toast.makeText(RCClient.getContext(), msg, Toast.LENGTH_SHORT);
-        logToast.setGravity(Gravity.CENTER_HORIZONTAL|Gravity.CENTER_VERTICAL, 0, 0);
-        logToast.show();
     }
 
     // -----Implementation of PeerConnectionClient.PeerConnectionEvents.---------

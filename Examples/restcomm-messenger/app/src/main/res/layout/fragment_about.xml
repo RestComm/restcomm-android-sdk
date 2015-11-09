@@ -103,8 +103,34 @@ android:layout_height="wrap_content">
         android:layout_marginLeft="@dimen/dialog_left_right_margin"
         android:layout_marginRight="@dimen/dialog_left_right_margin"
         android:layout_marginBottom="4dp"
-        android:text=""
+        android:text="2aafb3389253f6e54774e923ab8ff6ea298e3a0f"
         android:id="@+id/textView_github_hash_name"
+        android:layout_gravity="center_horizontal"
+        android:textSize="20dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginLeft="@dimen/dialog_left_right_margin"
+        android:layout_marginRight="@dimen/dialog_left_right_margin"
+        android:layout_marginBottom="4dp"
+        android:text="Contributors"
+        android:textColor="@android:color/black"
+        android:textStyle="bold"
+        android:id="@+id/textView_contributors_title"
+        android:layout_gravity="center_horizontal"
+        android:textSize="20dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginLeft="@dimen/dialog_left_right_margin"
+        android:layout_marginRight="@dimen/dialog_left_right_margin"
+        android:layout_marginBottom="4dp"
+        android:text="Arslan Mehboob"
+        android:id="@+id/textView_contributors_name1"
         android:layout_gravity="center_horizontal"
         android:textSize="20dp" />
 
