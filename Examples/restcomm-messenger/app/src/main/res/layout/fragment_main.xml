@@ -1,6 +1,26 @@
 <fragment xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools" android:id="@+id/item_list"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/item_list"
     android:name="com.telestax.restcommmessenger.MainFragment"
-    android:layout_width="match_parent" android:layout_height="match_parent"
-    android:layout_marginLeft="16dp" android:layout_marginRight="16dp"
-    tools:context=".MainActivity" tools:layout="@android:layout/list_content" />
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_marginLeft="16dp"
+    android:layout_marginRight="16dp"
+    tools:context=".MainActivity"
+    tools:layout="@android:layout/list_content" />
+
+    <!--
+    <ListView xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/item_list"
+        android:name="com.telestax.restcommmessenger.MainFragment"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentBottom="true"
+        android:divider="#000000"
+        android:dividerHeight="1px"
+        tools:context=".MainActivity"/>
+    -->

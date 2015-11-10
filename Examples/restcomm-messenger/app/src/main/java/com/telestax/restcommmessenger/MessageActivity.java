@@ -74,6 +74,7 @@ public class MessageActivity extends AppCompatActivity
     private RCDevice device;
     HashMap<String, Object> params = new HashMap<String, Object>();
     private static final String TAG = "MessageActivity";
+    private AlertDialog alertDialog;
 
     ImageButton btnSend;
     EditText txtMessage;
@@ -103,6 +104,8 @@ public class MessageActivity extends AppCompatActivity
         }
 
         listFragment = (MessageFragment)getSupportFragmentManager().findFragmentById(R.id.message_list);
+
+        alertDialog = new AlertDialog.Builder(MessageActivity.this).create();
 
         //btnAdd = (ImageButton)findViewById(R.id.imageButton_add);
         //btnAdd.setOnClickListener(this);
@@ -294,7 +297,11 @@ public class MessageActivity extends AppCompatActivity
      * Helpers
      */
     private void showOkAlert(final String title, final String detail) {
-        AlertDialog alertDialog = new AlertDialog.Builder(MessageActivity.this).create();
+        if (alertDialog.isShowing()) {
+            Log.w(TAG, "Alert already showing, hiding to show new alert");
+            alertDialog.hide();
+        }
+
         alertDialog.setTitle(title);
         alertDialog.setMessage(detail);
         alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {

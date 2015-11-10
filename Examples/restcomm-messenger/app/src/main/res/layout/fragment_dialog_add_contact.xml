@@ -46,7 +46,6 @@
         android:layout_marginRight="4dp"
         android:layout_marginBottom="4dp"
         android:text="Enter a username for the contact"
-        android:textColor="#939393"
         android:textStyle="italic"
         android:id="@+id/textView_username"
         android:layout_gravity="center_horizontal" />
@@ -70,7 +69,6 @@
         android:layout_marginRight="4dp"
         android:layout_marginBottom="24dp"
         android:text="Enter a SIP URI for the contact"
-        android:textColor="#939393"
         android:textStyle="italic"
         android:id="@+id/textView_sipuri"
         android:layout_gravity="center_horizontal" />

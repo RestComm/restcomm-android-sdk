@@ -49,6 +49,7 @@ public class MainActivity extends AppCompatActivity
     private RCDevice device;
     private HashMap<String, Object> params;
     private MainFragment listFragment;
+    private AlertDialog alertDialog;
 
     ImageButton btnAdd;
 
@@ -74,6 +75,8 @@ public class MainActivity extends AppCompatActivity
         btnAdd.setOnClickListener(this);
         //FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         //fab.setOnClickListener(this);
+
+        alertDialog = new AlertDialog.Builder(MainActivity.this).create();
 
         PreferenceManager.setDefaultValues(this, "preferences.xml", MODE_PRIVATE, R.xml.preferences, false);
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -331,7 +334,11 @@ public class MainActivity extends AppCompatActivity
      * Helpers
      */
     private void showOkAlert(final String title, final String detail) {
-        AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+        if (alertDialog.isShowing()) {
+            Log.w(TAG, "Alert already showing, hiding to show new alert");
+            alertDialog.hide();
+        }
+
         alertDialog.setTitle(title);
         alertDialog.setMessage(detail);
         alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {

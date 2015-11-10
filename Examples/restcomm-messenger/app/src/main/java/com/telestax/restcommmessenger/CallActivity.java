@@ -90,6 +90,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     // handler for the timer
     private Handler timerHandler = new Handler();
     int secondsElapsed = 0;
+    private AlertDialog alertDialog;
 
     //CheckBox cbMuted;
     ImageButton btnMuteAudio, btnMuteVideo;
@@ -133,6 +134,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         lblCall = (TextView)findViewById(R.id.label_call);
         lblStatus = (TextView)findViewById(R.id.label_status);
         lblTimer = (TextView)findViewById(R.id.label_timer);
+
+        alertDialog = new AlertDialog.Builder(CallActivity.this).create();
 
         device = RCClient.listDevices().get(0);
 
@@ -462,7 +465,11 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     // Helpers
     private void showOkAlert(final String title, final String detail) {
         if (activityVisible) {
-            AlertDialog alertDialog = new AlertDialog.Builder(CallActivity.this).create();
+            if (alertDialog.isShowing()) {
+                Log.w(TAG, "Alert already showing, hiding to show new alert");
+                alertDialog.hide();
+            }
+
             alertDialog.setTitle(title);
             alertDialog.setMessage(detail);
             alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
