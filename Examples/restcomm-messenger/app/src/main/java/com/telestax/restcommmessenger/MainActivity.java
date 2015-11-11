@@ -93,8 +93,8 @@ public class MainActivity extends AppCompatActivity
         });
 
         params = new HashMap<String, Object>();
-        params.put("pref_proxy_ip", prefs.getString("pref_proxy_ip", "23.23.228.238"));
-        params.put("pref_proxy_port", prefs.getString("pref_proxy_port", "5080"));
+        params.put("pref_proxy_domain", prefs.getString("pref_proxy_domain", "sip:23.23.228.238:5080"));
+        //params.put("pref_proxy_port", prefs.getString("pref_proxy_port", "5080"));
         params.put("pref_sip_user", prefs.getString("pref_sip_user", "bob"));
         params.put("pref_sip_password", prefs.getString("pref_sip_password", "1234"));
         device = RCClient.createDevice(params, this);
@@ -310,13 +310,17 @@ public class MainActivity extends AppCompatActivity
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
                                           String key) {
         boolean updated = false;
-        if (key.equals("pref_proxy_ip")) {
-            params.put("pref_proxy_ip", prefs.getString("pref_proxy_ip", "23.23.228.238"));
+        if (key.equals("pref_proxy_domain")) {
+            params.put("pref_proxy_domain", prefs.getString("pref_proxy_domain", "sip:23.23.228.238:5080"));
             updated = true;
-        } else if (key.equals("pref_proxy_port")) {
+        }
+        /*
+        else if (key.equals("pref_proxy_port")) {
             params.put("pref_proxy_port", prefs.getString("pref_proxy_port", "5060"));
             updated = true;
-        } else if (key.equals("pref_sip_user")) {
+        }
+         */
+        else if (key.equals("pref_sip_user")) {
             params.put("pref_sip_user", prefs.getString("pref_sip_user", "bob"));
             updated = true;
         } else if (key.equals("pref_sip_password")) {

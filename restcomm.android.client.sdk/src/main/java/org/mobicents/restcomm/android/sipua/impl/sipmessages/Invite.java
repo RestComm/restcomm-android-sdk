@@ -63,14 +63,20 @@ public class Invite  {
 			callRequest.addHeader(supportedHeader);
             addCustomHeaders(callRequest, sipManager, sipHeaders);
 
-			SipURI routeUri = sipManager.addressFactory.createSipURI(null, sipManager.getSipProfile().getRemoteIp());
+			/*
+			SipURI routeUri = sipManager.addressFactory.createSipURI(null, sipManager.getSipProfile().getRemoteIp(sipManager.addressFactory));
 			routeUri.setTransportParam(sipManager.getSipProfile().getTransport());
 			routeUri.setLrParam();
-			routeUri.setPort(sipManager.getSipProfile().getRemotePort());
+			routeUri.setPort(sipManager.getSipProfile().getRemotePort(sipManager.addressFactory));
+			*/
 
-			Address routeAddress = sipManager.addressFactory.createAddress(routeUri);
-			RouteHeader route = sipManager.headerFactory.createRouteHeader(routeAddress);
-			callRequest.addHeader(route);
+			if (!sipManager.getSipProfile().getRemoteEndpoint().isEmpty()) {
+				// we want to add the ROUTE header only on regular calls (i.e. non-registrarless)
+				Address routeAddress = sipManager.addressFactory.createAddress(sipManager.getSipProfile().getRemoteEndpoint());
+				RouteHeader route = sipManager.headerFactory.createRouteHeader(routeAddress);
+				callRequest.addHeader(route);
+			}
+
 			// Create ContentTypeHeader
 			ContentTypeHeader contentTypeHeader = sipManager.headerFactory
 					.createContentTypeHeader("application", "sdp");
@@ -161,28 +167,13 @@ public class Invite  {
 			callRequest.addHeader(supportedHeader);
 			addCustomHeaders(callRequest, sipManager, sipHeaders);
 
-			// TODO: this could be simplified if we expose one field for registrar and use SIP URI directly
-			String remoteIp = sipManager.getSipProfile().getRemoteIp();
-			String remoteHost;
-			int remotePort = 0;
-			if (remoteIp.isEmpty()) {
-				// registraless, get remote ip/port from 'to'
-				remoteHost = toAddress.getHost();
-				remotePort = toAddress.getPort();
-			}
-			else {
-				remoteHost = remoteIp;
-				remotePort = sipManager.getSipProfile().getRemotePort();
+			if (!sipManager.getSipProfile().getRemoteEndpoint().isEmpty()) {
+				// we want to add the ROUTE header only on regular calls (i.e. non-registrarless)
+				Address routeAddress = sipManager.addressFactory.createAddress(sipManager.getSipProfile().getRemoteEndpoint());
+				RouteHeader route = sipManager.headerFactory.createRouteHeader(routeAddress);
+				callRequest.addHeader(route);
 			}
 
-			SipURI routeUri = sipManager.addressFactory.createSipURI(null, remoteHost);
-			routeUri.setTransportParam(sipManager.getSipProfile().getTransport());
-			routeUri.setLrParam();
-			routeUri.setPort(remotePort);
-
-			Address routeAddress = sipManager.addressFactory.createAddress(routeUri);
-			RouteHeader route = sipManager.headerFactory.createRouteHeader(routeAddress);
-			callRequest.addHeader(route);
 			// Create ContentTypeHeader
 			ContentTypeHeader contentTypeHeader = sipManager.headerFactory
 					.createContentTypeHeader("application", "sdp");

@@ -9,9 +9,11 @@ import android.javax.sip.InvalidArgumentException;
 import android.javax.sip.SipProvider;
 import android.javax.sip.address.Address;
 import android.javax.sip.address.AddressFactory;
+import android.javax.sip.address.SipURI;
 import android.javax.sip.address.URI;
 import android.javax.sip.header.ExpiresHeader;
 import android.javax.sip.header.HeaderFactory;
+import android.javax.sip.header.RouteHeader;
 import android.javax.sip.header.ViaHeader;
 import android.javax.sip.message.MessageFactory;
 import android.javax.sip.message.Request;
@@ -32,11 +34,11 @@ public class Register {
 			// Create addresses and via header for the request
 			Address fromAddress = addressFactory.createAddress("sip:"
 					+ sipManager.getSipProfile().getSipUserName() + "@"
-					+ sipManager.getSipProfile().getRemoteIp());
+					+ sipManager.getSipProfile().getRemoteIp(sipManager.addressFactory));
 			fromAddress.setDisplayName(sipManager.getSipProfile().getSipUserName());
 			Address toAddress = addressFactory.createAddress("sip:"
 					+ sipManager.getSipProfile().getSipUserName() + "@"
-					+ sipManager.getSipProfile().getRemoteIp());
+					+ sipManager.getSipProfile().getRemoteIp(sipManager.addressFactory));
 			toAddress.setDisplayName(sipManager.getSipProfile().getSipUserName());
 
 			Address contactAddress;
@@ -46,9 +48,7 @@ public class Register {
 				contactAddress = contact;
 			}
 			ArrayList<ViaHeader> viaHeaders = sipManager.createViaHeader();
-			URI requestURI = addressFactory.createAddress(
-					"sip:" + sipManager.getSipProfile().getRemoteEndpoint())
-					.getURI();
+			URI requestURI = addressFactory.createAddress(sipManager.getSipProfile().getRemoteEndpoint()).getURI();
 			// Build the request
 			final Request request = messageFactory.createRequest(requestURI,
 					Request.REGISTER, sipProvider.getNewCallId(),
@@ -56,6 +56,11 @@ public class Register {
 					headerFactory.createFromHeader(fromAddress, "c3ff411e"),
 					headerFactory.createToHeader(toAddress, null), viaHeaders,
 					headerFactory.createMaxForwardsHeader(70));
+
+			// Add route header with the proxy first
+			Address routeAddress = addressFactory.createAddress(sipManager.getSipProfile().getRemoteEndpoint());
+			RouteHeader routeHeader = headerFactory.createRouteHeader(routeAddress);
+			request.addFirst(routeHeader);
 
 			// Add the contact header
 			request.addHeader(headerFactory.createContactHeader(contactAddress));

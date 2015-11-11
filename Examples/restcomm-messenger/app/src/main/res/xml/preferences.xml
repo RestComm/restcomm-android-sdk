@@ -13,16 +13,18 @@
         android:key="pref_sip_password"
         android:title="Password" />
     <EditTextPreference
-        android:defaultValue="live.telestax.com"
-        android:key="pref_proxy_ip"
-        android:title="Proxy IP" />
-    <EditTextPreference
-        android:defaultValue="5080"
-        android:key="pref_proxy_port"
-        android:title="Proxy Port" />
+        android:defaultValue="sip:live.telestax.com:5080"
+        android:key="pref_proxy_domain"
+        android:title="Domain" />
 </PreferenceCategory>
 
     <!--
+
+        <EditTextPreference
+        android:defaultValue="5080"
+        android:key="pref_proxy_port"
+        android:title="Proxy Port" />
+
 <PreferenceCategory
     android:key="@string/pref_videosettings_key"
     android:title="@string/pref_videosettings_title">

@@ -58,30 +58,17 @@ public class Message {
 				.createSupportedHeader("replaces, outbound");
 		request.addHeader(supportedHeader);
 
-		SipURI routeUri = sipManager.addressFactory.createSipURI(null, sipManager.getSipProfile().getRemoteIp());
-		routeUri.setTransportParam(sipManager.getSipProfile().getTransport());
-		routeUri.setLrParam();
-		routeUri.setPort(sipManager.getSipProfile().getRemotePort());
-
-		Address routeAddress = sipManager.addressFactory.createAddress(routeUri);
-		RouteHeader route = sipManager.headerFactory.createRouteHeader(routeAddress);
-		request.addHeader(route);
-		request.addHeader(sipManager.generateUserAgentHeader());
+		if (!sipManager.getSipProfile().getRemoteEndpoint().isEmpty()) {
+			// we want to add the ROUTE header only on regular calls (i.e. non-registrarless)
+			Address routeAddress = sipManager.addressFactory.createAddress(sipManager.getSipProfile().getRemoteEndpoint());
+			RouteHeader route = sipManager.headerFactory.createRouteHeader(routeAddress);
+			request.addHeader(route);
+		}
 
 		ContentTypeHeader contentTypeHeader = sipManager.headerFactory
 				.createContentTypeHeader("text", "plain");
 		request.setContent(message, contentTypeHeader);
 		RCLogger.v(TAG, request.toString());
 		return request;
-		//ClientTransaction transaction = sipManager.sipProvider
-		//		.getNewClientTransaction(request);
-		// Send the request statefully, through the client transaction.
-		//transaction.sendRequest();
 	}
-
-
-
-
-
-
 }

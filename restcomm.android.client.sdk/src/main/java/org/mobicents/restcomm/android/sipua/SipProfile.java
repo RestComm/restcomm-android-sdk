@@ -22,14 +22,22 @@
 
 package org.mobicents.restcomm.android.sipua;
 
+import android.javax.sip.address.Address;
+import android.javax.sip.address.AddressFactory;
+import android.javax.sip.address.SipURI;
+import android.javax.sip.address.URI;
+
+import java.text.ParseException;
+
 public class SipProfile {
 	private static final String TAG = "SipProfile";
 	private  String localIp;
 	private  int localPort = 5080;
 	private  String transport = "udp";
 
-	private  String remoteIp = "";
-	private  int remotePort = 5060;
+	private String remoteEndpoint;
+	//private  String remoteIp = "";
+	//private  int remotePort = 5060;
 	private  String sipUserName;
 	private  String sipPassword;
 
@@ -55,26 +63,49 @@ public class SipProfile {
 		return localIp + ":" + localPort;
 	}
 
-	public  String getRemoteIp() {
+	public  void setRemoteEndpoint(String remoteEndpoint) {
+		RCLogger.i(TAG, "Setting remoteEndpoint:" + remoteEndpoint);
+		this.remoteEndpoint = remoteEndpoint;
+	}
+
+	public String getRemoteIp(AddressFactory addressFactory) throws ParseException {
+		if (remoteEndpoint.isEmpty()) {
+			return "";
+		}
+
+		String remoteIp = "";
+		Address address = addressFactory.createAddress(remoteEndpoint);
+		remoteIp = ((SipURI)address.getURI()).getHost();
 		return remoteIp;
 	}
 
+	/*
 	public  void setRemoteIp(String remoteIp) {
 		RCLogger.i(TAG, "Setting remoteIp:" + remoteIp);
 		this.remoteIp = remoteIp;
 	}
+	*/
 
-	public  int getRemotePort() {
+	public  int getRemotePort(AddressFactory addressFactory) throws ParseException {
+		if (remoteEndpoint.isEmpty()) {
+			return 0;
+		}
+
+		int remotePort = 0;
+		Address address = addressFactory.createAddress(remoteEndpoint);
+		remotePort = ((SipURI)address.getURI()).getPort();
 		return remotePort;
 	}
 
+	/*
 	public  void setRemotePort(int remotePort) {
 		RCLogger.i(TAG, "Setting remotePort:" + remotePort);
 		this.remotePort = remotePort;
 	}
+	*/
 
 	public  String getRemoteEndpoint() {
-		return remoteIp + ":" + remotePort;
+		return this.remoteEndpoint;
 	}
 
 	public String getSipUserName() {

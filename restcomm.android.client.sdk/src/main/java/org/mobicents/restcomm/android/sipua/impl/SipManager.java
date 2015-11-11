@@ -28,6 +28,7 @@ import org.mobicents.restcomm.android.sipua.RCLogger;
 
 import android.gov.nist.javax.sdp.SessionDescriptionImpl;
 import android.gov.nist.javax.sdp.parser.SDPAnnounceParser;
+import android.gov.nist.javax.sip.ResponseEventExt;
 import android.gov.nist.javax.sip.SipStackExt;
 import android.gov.nist.javax.sip.clientauthutils.AuthenticationHelper;
 import android.gov.nist.javax.sip.clientauthutils.DigestServerAuthenticationHelper;
@@ -59,6 +60,7 @@ import android.javax.sip.TransactionUnavailableException;
 import android.javax.sip.TransportNotSupportedException;
 import android.javax.sip.address.Address;
 import android.javax.sip.address.AddressFactory;
+import android.javax.sip.address.SipURI;
 import android.javax.sip.header.CSeqHeader;
 import android.javax.sip.header.CallIdHeader;
 import android.javax.sip.header.ContactHeader;
@@ -71,6 +73,8 @@ import android.javax.sip.message.MessageFactory;
 import android.javax.sip.message.Request;
 import android.javax.sip.message.Response;
 import android.util.Log;
+
+import EDU.oswego.cs.dl.util.concurrent.FJTask;
 
 public class SipManager implements SipListener, ISipManager, Serializable {
 	enum CallDirection {
@@ -90,7 +94,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	private ListeningPoint udpListeningPoint;
 	private SipProfile sipProfile;
-	private String latestProxyIp;
+	//private String latestProxyIp;
 	private Dialog dialog;
 
 	private ArrayList<ISipEventListener> sipEventListenerList = new ArrayList<ISipEventListener>();
@@ -125,12 +129,15 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		sipFactory.setPathName("android.gov.nist");
 
 		Properties properties = new Properties();
+		// Using ROUTE instead
+		/*
 		if (!sipProfile.getRemoteIp().isEmpty()) {
 			properties.setProperty("android.javax.sip.OUTBOUND_PROXY",
 					sipProfile.getRemoteEndpoint() + "/" + sipProfile.getTransport());
 		}
+		*/
 		properties.setProperty("android.javax.sip.STACK_NAME", "androidSip");
-		latestProxyIp = sipProfile.getRemoteIp();
+		//latestProxyIp = sipProfile.getRemoteIp();
 
 		try {
 			if (udpListeningPoint != null) {
@@ -395,6 +402,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		if (sipProvider == null) {
 			return;
 		}
+		/*
 		if (!latestProxyIp.equals(sipProfile.getRemoteIp())) {
 			// proxy ip address has been updated, need to re-initialize
 			if (initialized) {
@@ -406,6 +414,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				return;
 			}
 		}
+		*/
 
 		Register registerRequest = new Register();
 		try {
@@ -443,6 +452,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			return;
 		}
 
+		/*
 		if (!latestProxyIp.equals(sipProfile.getRemoteIp())) {
 			// proxy ip address has been updated, need to re-initialize
 			if (initialized) {
@@ -454,6 +464,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				return;
 			}
 		}
+		*/
 
 		Register registerRequest = new Register();
 		try {
@@ -718,6 +729,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	@Override
 	public void processResponse(ResponseEvent arg0) {
 
+		ResponseEventExt responseEvent = (ResponseEventExt)arg0;
 		Response response = (Response) arg0.getResponse();
 		RCLogger.i(TAG, "processResponse, status code: " + response.getStatusCode());
 
@@ -731,12 +743,15 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		CSeqHeader cseq = (CSeqHeader) response.getHeader(CSeqHeader.NAME);
 		if (response.getStatusCode() == Response.PROXY_AUTHENTICATION_REQUIRED
 				|| response.getStatusCode() == Response.UNAUTHORIZED) {
-			AuthenticationHelper authenticationHelper = ((SipStackExt) sipStack)
-					.getAuthenticationHelper(
-							new AccountManagerImpl(sipProfile.getSipUserName(),
-									sipProfile.getRemoteIp(), sipProfile
-									.getSipPassword()), headerFactory);
 			try {
+				//Address remoteParty = responseDialog.getRemoteParty();
+				//SipURI remoteUri = (SipURI)remoteParty.getURI();
+				AuthenticationHelper authenticationHelper = ((SipStackExt) sipStack)
+						.getAuthenticationHelper(
+								new AccountManagerImpl(sipProfile.getSipUserName(),
+										responseEvent.getRemoteIpAddress(), sipProfile
+										//sipProfile.getRemoteIp(addressFactory), sipProfile
+										.getSipPassword()), headerFactory);
 				CallIdHeader callId = (CallIdHeader)response.getHeader("Call-ID");  //responseDialog.getCallId();
 				int attempts = 0;
 				if (registerAuthenticationMap.containsKey(callId.toString())) {
@@ -757,6 +772,12 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			} catch (SipException e) {
 				e.printStackTrace();
 			}
+			/*
+			catch (ParseException e) {
+				e.printStackTrace();
+			}
+			 */
+
 
 		} else if (response.getStatusCode() == Response.OK) {
 			if (cseq.getMethod().equals(Request.INVITE)) {
@@ -1203,7 +1224,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			return this.addressFactory.createAddress("sip:"
 					+ getSipProfile().getSipUserName() + "@"
 					+ getSipProfile().getLocalEndpoint() + ";transport=udp"
-					+ ";registering_acc=" + getSipProfile().getRemoteIp());
+					+ ";registering_acc=" + getSipProfile().getRemoteIp(addressFactory));
 		} catch (ParseException e) {
 			return null;
 		}

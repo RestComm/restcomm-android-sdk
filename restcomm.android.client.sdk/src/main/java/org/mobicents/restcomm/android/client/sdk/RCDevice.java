@@ -501,11 +501,15 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
     public void updateSipProfile(HashMap<String, Object> params) {
         if (params != null) {
             for (String key : params.keySet()) {
-                if (key.equals("pref_proxy_ip")) {
-                    sipProfile.setRemoteIp((String) params.get(key));
-                } else if (key.equals("pref_proxy_port")) {
+                if (key.equals("pref_proxy_domain")) {
+                    sipProfile.setRemoteEndpoint((String) params.get(key));
+                }
+                /*
+                else if (key.equals("pref_proxy_port")) {
                     sipProfile.setRemotePort(Integer.parseInt((String) params.get(key)));
-                } else if (key.equals("pref_sip_user")) {
+                }
+                */
+                else if (key.equals("pref_sip_user")) {
                     sipProfile.setSipUserName((String) params.get(key));
                 } else if (key.equals("pref_sip_password")) {
                     sipProfile.setSipPassword((String) params.get(key));

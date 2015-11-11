@@ -291,7 +291,7 @@ public class DeviceImpl implements IDevice,Serializable {
 	@Override
 	public void Register() {
 		RCLogger.v(TAG, "Register");
-		if (sipProfile.getRemoteIp().isEmpty()) {
+		if (sipProfile.getRemoteEndpoint().isEmpty()) {
 			// registrarless mode, skip registration
 			return;
 		}
@@ -349,7 +349,7 @@ public class DeviceImpl implements IDevice,Serializable {
 	public void Unregister() {
 		RCLogger.v(TAG, "Unregister");
 
-		if (sipProfile.getRemoteIp().isEmpty()) {
+		if (sipProfile.getRemoteEndpoint().isEmpty()) {
 			// registrarless mode, skip unregistration
 			return;
 		}
