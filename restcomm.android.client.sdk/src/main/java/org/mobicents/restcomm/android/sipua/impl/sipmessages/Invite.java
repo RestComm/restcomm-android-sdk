@@ -168,10 +168,12 @@ public class Invite  {
 			addCustomHeaders(callRequest, sipManager, sipHeaders);
 
 			if (!sipManager.getSipProfile().getRemoteEndpoint().isEmpty()) {
-				// we want to add the ROUTE header only on regular calls (i.e. non-registrarless)
-				Address routeAddress = sipManager.addressFactory.createAddress(sipManager.getSipProfile().getRemoteEndpoint());
-				RouteHeader route = sipManager.headerFactory.createRouteHeader(routeAddress);
-				callRequest.addHeader(route);
+				// Add route header with the proxy first
+				SipURI routeUri = (SipURI) sipManager.addressFactory.createURI(sipManager.getSipProfile().getRemoteEndpoint());
+				routeUri.setLrParam();
+				Address routeAddress = sipManager.addressFactory.createAddress(routeUri);
+				RouteHeader routeHeader = sipManager.headerFactory.createRouteHeader(routeAddress);
+				callRequest.addFirst(routeHeader);
 			}
 
 			// Create ContentTypeHeader

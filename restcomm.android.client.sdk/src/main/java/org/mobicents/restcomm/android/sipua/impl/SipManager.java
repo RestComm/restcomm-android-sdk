@@ -776,7 +776,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			catch (ParseException e) {
 				e.printStackTrace();
 			}
-			 */
+			*/
 
 
 		} else if (response.getStatusCode() == Response.OK) {
