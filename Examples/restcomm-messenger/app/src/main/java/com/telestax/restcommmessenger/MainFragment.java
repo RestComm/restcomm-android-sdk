@@ -3,17 +3,23 @@ package com.telestax.restcommmessenger;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DialogFragment;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.view.ContextMenu;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
+import android.widget.BaseAdapter;
+import android.widget.ImageButton;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
+import android.widget.TextView;
 
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
 
@@ -32,9 +38,10 @@ import java.util.Map;
  * Activities containing this fragment MUST implement the {@link Callbacks}
  * interface.
  */
-public class MainFragment extends ListFragment {
+public class MainFragment extends ListFragment implements ContactAdapterListener{
     private ContactsController contactsController;
-    private SimpleAdapter listViewAdapter;
+    //private SimpleAdapter listViewAdapter;
+    private ContactAdapter listViewAdapter;
     private ArrayList<Map<String, String>> contactList;
 
     enum ContactSelectionType {
@@ -74,18 +81,6 @@ public class MainFragment extends ListFragment {
     }
 
     /**
-     * A dummy implementation of the {@link Callbacks} interface that does
-     * nothing. Used only when this fragment is not attached to an activity.
-     */
-    /*
-    private static Callbacks sDummyCallbacks = new Callbacks() {
-        @Override
-        public void onItemSelected(String id) {
-        }
-    };
-    */
-
-    /**
      * Mandatory empty constructor for the fragment manager to instantiate the
      * fragment (e.g. upon screen orientation changes).
      */
@@ -98,11 +93,16 @@ public class MainFragment extends ListFragment {
 
         contactsController = new ContactsController(getActivity().getApplicationContext());
         contactList = contactsController.initializeContacts();
+        /*
         String[] from = { "username", "sipuri" };
         int[] to = { R.id.contact_username, R.id.contact_sipuri };
+        */
 
+        listViewAdapter = new ContactAdapter(getActivity().getApplicationContext(), contactList, this);
+        /*
         listViewAdapter = new SimpleAdapter(getActivity().getApplicationContext(), contactList,
                 R.layout.contact_row_layout, from, to);
+                */
         setListAdapter(listViewAdapter);
     }
 
@@ -251,6 +251,81 @@ public class MainFragment extends ListFragment {
             }
         });
         alertDialog.show();
+    }
+
+    public void onAccessoryClick(int position)
+    {
+        HashMap<String, String> contact = (HashMap)contactList.get(position);
+
+        mCallbacks.onItemSelected(contact, ContactSelectionType.AUDIO_CALL);
+    }
+
+    public class ContactAdapter extends BaseAdapter {
+        private LayoutInflater mInflater;
+        //private List<Person> mPeople;
+        private ArrayList<Map<String, String>> contactList;
+        private ContactAdapterListener listener;
+
+        public ContactAdapter(Context context, ArrayList<Map<String, String>> contactList, ContactAdapterListener listener) {
+            mInflater = LayoutInflater.from(context);
+            this.contactList = contactList;
+            this.listener = listener;
+        }
+
+        @Override
+        public int getCount() {
+            return contactList.size();
+        }
+
+        @Override
+        public Object getItem(int position) {
+            return contactList.get(position);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return position;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            View view;
+            ViewHolder holder;
+            if(convertView == null) {
+                view = mInflater.inflate(R.layout.contact_row_layout, parent, false);
+                holder = new ViewHolder();
+                holder.username = (TextView)view.findViewById(R.id.contact_username);
+                holder.sipuri = (TextView)view.findViewById(R.id.contact_sipuri);
+                //holder.action = (ImageButton)view.findViewById(R.id.btn_accessory);
+                ((ImageButton) view.findViewById(R.id.btn_accessory)).setOnClickListener(ContactButtonClickListener);
+                view.setTag(holder);
+            } else {
+                view = convertView;
+                holder = (ViewHolder)view.getTag();
+            }
+
+            Map<String, String> contact = contactList.get(position);
+            holder.username.setText(contact.get("username"));
+            holder.sipuri.setText(contact.get("sipuri"));
+            //holder.action.setImageResource();
+
+            return view;
+        }
+
+        private View.OnClickListener ContactButtonClickListener = new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                final int position = getListView().getPositionForView(v);
+                if (position != ListView.INVALID_POSITION) {
+                    listener.onAccessoryClick(position);
+                }
+            }
+        };
+
+        private class ViewHolder {
+            public TextView username, sipuri;
+            public ImageButton action;
+        }
     }
 
 }

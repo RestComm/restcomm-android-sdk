@@ -1,20 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical">
-
-    <TextView android:id="@+id/contact_username"
-        android:textSize="20sp"
-        android:textColor="@color/colorTextPrimary"
-        android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:padding="6dp"
+    android:descendantFocusability="blocksDescendants">
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:paddingTop="7dp"/>
+        android:orientation="vertical">
 
-    <TextView android:id="@+id/contact_sipuri"
-        android:textSize="16sp"
-        android:textColor="@color/colorTextSecondary"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:paddingBottom="7dp"/>
-</LinearLayout>
+        <TextView android:id="@+id/contact_username"
+            android:textSize="20sp"
+            android:textColor="@color/colorTextPrimary"
+            android:text="Test Name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="7dp"/>
+
+        <TextView android:id="@+id/contact_sipuri"
+            android:textSize="16sp"
+            android:text="sip:1235@telestax.com"
+            android:textColor="@color/colorTextSecondary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingBottom="7dp"/>
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/btn_accessory"
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:layout_gravity="center_vertical"
+        android:text="actions"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
+
+</RelativeLayout>

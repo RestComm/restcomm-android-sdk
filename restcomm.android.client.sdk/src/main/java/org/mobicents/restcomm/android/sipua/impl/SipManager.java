@@ -1108,6 +1108,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	// introduced separate sendByeClient method because the client initiated BYE
 	// is different -at some point we should merge those methods
 	private void sendByeClient(Transaction transaction) {
+		RCLogger.i(TAG, "Sending BYE request");
 		final Dialog dialog = transaction.getDialog();
 		if (dialog == null) {
 			RCLogger.i(TAG, "Hmm, weird: dialog is already terminated -avoiding BYE");
