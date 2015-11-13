@@ -1,9 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- using blockDescendants to allow touches both on the list item and its button -->
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="horizontal"
-    android:padding="6dp"
+    android:padding="16dp"
     android:descendantFocusability="blocksDescendants">
     <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="wrap_content"
@@ -16,7 +17,7 @@
             android:text="Test Name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingTop="7dp"/>
+            />
 
         <TextView android:id="@+id/contact_sipuri"
             android:textSize="16sp"
@@ -24,17 +25,18 @@
             android:textColor="@color/colorTextSecondary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingBottom="7dp"/>
+            />
     </LinearLayout>
 
     <ImageButton
         android:id="@+id/btn_accessory"
-        android:layout_width="50dp"
-        android:layout_height="50dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
         android:layout_gravity="center_vertical"
-        android:text="actions"
-        android:layout_alignParentTop="true"
+        android:src="@drawable/ic_info_black_24dp"
+        android:tint="@color/colorTextSecondary"
         android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
+        android:layout_centerInParent="true" />
 
 </RelativeLayout>

@@ -42,7 +42,7 @@ import java.util.HashMap;
 public class MainActivity extends AppCompatActivity
         implements MainFragment.Callbacks, RCDeviceListener,
         View.OnClickListener, SharedPreferences.OnSharedPreferenceChangeListener,
-        AddUserDialogFragment.ContactDialogListener {
+        AddUserDialogFragment.ContactDialogListener, ActionFragment.ActionListener {
 
     private static final String TAG = "MainActivity";
     SharedPreferences prefs;
@@ -183,6 +183,9 @@ public class MainActivity extends AppCompatActivity
      */
     @Override
     public void onItemSelected(HashMap<String, String> contact, MainFragment.ContactSelectionType type) {
+        // forward to onActionClicked
+        onActionClicked(ActionFragment.ActionType.ACTION_TYPE_VIDEO_CALL, contact.get("username"), contact.get("sipuri"));
+        /*
         if (type == MainFragment.ContactSelectionType.VIDEO_CALL) {
             Intent intent = new Intent(this, CallActivity.class);
             intent.setAction(RCDevice.OUTGOING_CALL);
@@ -203,6 +206,7 @@ public class MainActivity extends AppCompatActivity
             intent.putExtra(RCDevice.EXTRA_DID, contact.get("sipuri"));
             startActivity(intent);
         }
+        */
     }
 
     public void onContactUpdate(HashMap<String, String> contact, int type)
@@ -210,6 +214,13 @@ public class MainActivity extends AppCompatActivity
         DialogFragment newFragment = AddUserDialogFragment.newInstance(AddUserDialogFragment.DIALOG_TYPE_UPDATE_CONTACT, contact.get("username"), contact.get("sipuri"));
         newFragment.show(getFragmentManager(), "dialog");
     }
+
+    public void onAccessoryClicked(HashMap<String, String> contact)
+    {
+        DialogFragment actionFragment = ActionFragment.newInstance(contact.get("username"), contact.get("sipuri"));
+        actionFragment.show(getFragmentManager(), "dialog-accessory");
+    }
+
 
     /**
      * Callbacks for AddUserDialogFragment
@@ -222,6 +233,33 @@ public class MainActivity extends AppCompatActivity
     public void onDialogNegativeClick()
     {
 
+    }
+
+    /**
+     * Callbacks for ActionFragment
+     */
+    public void onActionClicked(ActionFragment.ActionType action, String username, String sipuri)
+    {
+        if (action == ActionFragment.ActionType.ACTION_TYPE_VIDEO_CALL) {
+            Intent intent = new Intent(this, CallActivity.class);
+            intent.setAction(RCDevice.OUTGOING_CALL);
+            intent.putExtra(RCDevice.EXTRA_DID, sipuri);
+            intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, true);
+            startActivityForResult(intent, CONNECTION_REQUEST);
+        }
+        if (action == ActionFragment.ActionType.ACTION_TYPE_AUDIO_CALL) {
+            Intent intent = new Intent(this, CallActivity.class);
+            intent.setAction(RCDevice.OUTGOING_CALL);
+            intent.putExtra(RCDevice.EXTRA_DID, sipuri);
+            intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, false);
+            startActivityForResult(intent, CONNECTION_REQUEST);
+        }
+        if (action == ActionFragment.ActionType.ACTION_TYPE_TEXT_MESSAGE) {
+            Intent intent = new Intent(this, MessageActivity.class);
+            intent.setAction(RCDevice.OPEN_MESSAGE_SCREEN);
+            intent.putExtra(RCDevice.EXTRA_DID, sipuri);
+            startActivity(intent);
+        }
     }
 
     /**

@@ -3,16 +3,19 @@ package com.telestax.restcommmessenger;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DialogFragment;
+import android.app.Notification;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
+import android.util.TypedValue;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
@@ -78,6 +81,7 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
          */
         public void onItemSelected(HashMap<String, String> contact, ContactSelectionType type);
         public void onContactUpdate(HashMap<String, String> contact, int type);
+        public void onAccessoryClicked(HashMap<String, String> contact);
     }
 
     /**
@@ -117,6 +121,14 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
         }
 
         registerForContextMenu(getListView());
+
+        // add footer so that floating action button doesn't hide last list entry
+        View footer = new View(getActivity());
+        // floating action button is 56dp, let's add another 10 to give it some more space
+        // convert dp to pixels
+        float pixels = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 66, getResources().getDisplayMetrics());
+        footer.setLayoutParams( new AbsListView.LayoutParams(AbsListView.LayoutParams.MATCH_PARENT, (int)pixels));
+        getListView().addFooterView(footer);
     }
 
     @Override
@@ -186,10 +198,12 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
         if (v.getId() == android.R.id.list) {
             AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)menuInfo;
 
-            menu.setHeaderTitle(contactList.get(info.position).get("username"));
+            menu.setHeaderTitle("Edit '" + contactList.get(info.position).get("username") + "'");
+            /*
             menu.add("Video Call");
             menu.add("Audio Call");
             menu.add("Send Text Message");
+            */
             menu.add("Update Contact");
             menu.add("Remove Contact");
         }
@@ -201,6 +215,7 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
         HashMap<String, String> contact = (HashMap)contactList.get(info.position);
 
+        /*
         if (item.getTitle().toString().equals("Video Call")) {
             mCallbacks.onItemSelected(contact, ContactSelectionType.VIDEO_CALL);
         }
@@ -210,6 +225,7 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
         if (item.getTitle().toString().equals("Send Text Message")) {
             mCallbacks.onItemSelected(contact, ContactSelectionType.TEXT_MESSAGE);
         }
+        */
         if (item.getTitle().toString().equals("Update Contact")) {
             mCallbacks.onContactUpdate(contact, AddUserDialogFragment.DIALOG_TYPE_UPDATE_CONTACT);
         }
@@ -240,6 +256,14 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
         this.listViewAdapter.notifyDataSetChanged();
     }
 
+    public void onAccessoryClick(int position)
+    {
+        HashMap<String, String> contact = (HashMap)contactList.get(position);
+
+        //mCallbacks.onItemSelected(contact, ContactSelectionType.AUDIO_CALL);
+        mCallbacks.onAccessoryClicked(contact);
+    }
+
     // Helper methods
     private void showOkAlert(final String title, final String detail) {
         AlertDialog alertDialog = new AlertDialog.Builder(getActivity()).create();
@@ -251,13 +275,6 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
             }
         });
         alertDialog.show();
-    }
-
-    public void onAccessoryClick(int position)
-    {
-        HashMap<String, String> contact = (HashMap)contactList.get(position);
-
-        mCallbacks.onItemSelected(contact, ContactSelectionType.AUDIO_CALL);
     }
 
     public class ContactAdapter extends BaseAdapter {

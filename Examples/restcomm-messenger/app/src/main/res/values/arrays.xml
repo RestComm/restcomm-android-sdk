@@ -1,5 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string-array name="actions_array">
+        <item>Make Video Call</item>
+        <item>Make Audio Call</item>
+        <item>Send Text Message</item>
+    </string-array>
     <!--
     <string-array name="videoResolutions">
         <item>Default</item>
