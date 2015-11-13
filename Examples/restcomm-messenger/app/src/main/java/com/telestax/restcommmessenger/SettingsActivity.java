@@ -1,6 +1,7 @@
 package com.telestax.restcommmessenger;
 
 import android.app.Activity;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBar;
@@ -8,6 +9,9 @@ import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
+
+import org.mobicents.restcomm.android.client.sdk.RCClient;
+import org.mobicents.restcomm.android.client.sdk.RCDevice;
 
 public class SettingsActivity extends AppCompatActivity {
     @Override
@@ -27,6 +31,19 @@ public class SettingsActivity extends AppCompatActivity {
 
         // Display the fragment as the main content.
         getFragmentManager().beginTransaction().replace(R.id.content_frame, new SettingsFragment()).commit();
+    }
+
+    protected void onResume() {
+        super.onResume();
+
+        // retrieve the device
+        RCDevice device = RCClient.listDevices().get(0);
+
+        if (device.getState() == RCDevice.DeviceState.OFFLINE) {
+            getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorTextSecondary)));
+        } else {
+            getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
+        }
     }
 
     @Override

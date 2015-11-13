@@ -816,6 +816,9 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			else if (cseq.getMethod().equals(Request.REGISTER)) {
 				// we got 200 OK to register request, clear the map
 				registerAuthenticationMap.clear();
+				dispatchSipEvent(new SipEvent(this,
+						SipEventType.REGISTER_SUCCESS, "", ""));
+
 			}
 			else if (cseq.getMethod().equals(Request.CANCEL)) {
 				if (dialog.getState() == DialogState.CONFIRMED) {

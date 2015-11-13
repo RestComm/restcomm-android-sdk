@@ -29,6 +29,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
@@ -134,6 +135,12 @@ public class MessageActivity extends AppCompatActivity
         // retrieve the device
         device = RCClient.listDevices().get(0);
 
+        if (device.getState() == RCDevice.DeviceState.OFFLINE) {
+            getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorTextSecondary)));
+        }
+        else {
+            getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
+        }
         // Get Intent parameters.
         final Intent finalIntent = getIntent();
         if (finalIntent.getAction().equals(RCDevice.OPEN_MESSAGE_SCREEN)) {
@@ -281,6 +288,11 @@ public class MessageActivity extends AppCompatActivity
             showOkAlert("Unknown Error", "Unknown Restcomm Client error");
         }
         */
+    }
+
+    public void onConnectivityUpdate(RCDevice device, RCConnectivityStatus connectivityStatus)
+    {
+        
     }
 
     public boolean receivePresenceEvents(RCDevice device)

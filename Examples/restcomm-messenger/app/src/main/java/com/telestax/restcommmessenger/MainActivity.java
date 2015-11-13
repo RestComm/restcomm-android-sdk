@@ -6,6 +6,8 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
@@ -50,6 +52,7 @@ public class MainActivity extends AppCompatActivity
     private HashMap<String, Object> params;
     private MainFragment listFragment;
     private AlertDialog alertDialog;
+    private RCConnectivityStatus previousConnectivityStatus = RCConnectivityStatus.RCConnectivityStatusWiFi;
 
     ImageButton btnAdd;
 
@@ -299,6 +302,33 @@ public class MainActivity extends AppCompatActivity
             showOkAlert("Unknown Error", "Unknown Restcomm Client error");
         }
         */
+    }
+
+    public void onConnectivityUpdate(RCDevice device, RCConnectivityStatus connectivityStatus)
+    {
+        String text = "";
+        if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusNone) {
+            text = "Lost connectivity";
+        }
+        if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusWiFi) {
+            text = "Reestablished connectivity (Wifi)";
+        }
+        if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusCellular) {
+            text = "Reestablished connectivity (Cellular)";
+        }
+
+        if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusNone) {
+            //getSupportActionBar().setBackgroundDrawable(new ColorDrawable(Color.rgb(109, 109, 109)));
+            getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorTextSecondary)));
+        }
+        else {
+            getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
+        }
+
+        if (connectivityStatus != this.previousConnectivityStatus) {
+            showOkAlert("RCDevice connectivity change", text);
+            this.previousConnectivityStatus = connectivityStatus;
+        }
     }
 
     public boolean receivePresenceEvents(RCDevice device)

@@ -522,10 +522,10 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         }
 
         // get reachability state from RCDevice
-        DeviceImpl.ReachabilityState state = device.getReachability();
+        RCDeviceListener.RCConnectivityStatus state = device.getReachability();
 
-        if (state == DeviceImpl.ReachabilityState.REACHABILITY_WIFI ||
-                state == DeviceImpl.ReachabilityState.REACHABILITY_MOBILE) {
+        if (state == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi ||
+                state == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular) {
             return true;
         }
         else {

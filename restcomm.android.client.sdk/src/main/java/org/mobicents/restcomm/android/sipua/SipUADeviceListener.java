@@ -30,5 +30,6 @@ public interface SipUADeviceListener {
     public abstract void onSipUAMessageArrived(SipEvent event);
     // fires when we get a signalling error
     public abstract void onSipUAError(final RCClient.ErrorCodes errorCode, final String errorText);
+    public abstract void onSipUARegisterSuccess(SipEvent event);
 
 }

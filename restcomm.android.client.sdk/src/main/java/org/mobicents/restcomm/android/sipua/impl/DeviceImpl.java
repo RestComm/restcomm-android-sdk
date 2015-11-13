@@ -11,6 +11,7 @@ import java.text.ParseException;
 import java.util.HashMap;
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
+import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
 import org.mobicents.restcomm.android.sipua.IDevice;
 import org.mobicents.restcomm.android.sipua.NotInitializedException;
 import org.mobicents.restcomm.android.sipua.SipProfile;
@@ -42,11 +43,13 @@ public class DeviceImpl implements IDevice,Serializable {
 	// use this handler for registration refreshes
 	Handler registerRefreshHandler = null;
 
+	/*
 	public enum ReachabilityState {
 		REACHABILITY_WIFI,
 		REACHABILITY_MOBILE,
 		REACHABILITY_NONE,
 	}
+	*/
 
 	private DeviceImpl(){
 		
@@ -164,6 +167,8 @@ public class DeviceImpl implements IDevice,Serializable {
 				// notify our listener that we are connecting
 				this.sipuaConnectionListener.onSipUAError(RCClient.ErrorCodes.SIGNALLING_DESTINATION_NOT_FOUND, "Destination not found");
 			}
+		} else if (sipEventObject.type == SipEventType.REGISTER_SUCCESS) {
+			this.sipuaDeviceListener.onSipUARegisterSuccess(sipEventObject);
 		}
 	}
 
@@ -203,7 +208,7 @@ public class DeviceImpl implements IDevice,Serializable {
 			RCLogger.i(TAG, "CallWebrtc(): " + sipHeaders.toString());
 		}
 		try {
-			if (checkReachability(this.context) != ReachabilityState.REACHABILITY_NONE) {
+			if (checkReachability(this.context) != RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
 				this.sipManager.CallWebrtc(to, sdp, sipHeaders);
 			}
 			else {
@@ -418,7 +423,7 @@ public class DeviceImpl implements IDevice,Serializable {
 	        } 
 	    }
 
-	static public ReachabilityState checkReachability(Context context)
+	static public RCDeviceListener.RCConnectivityStatus checkReachability(Context context)
 	{
 		ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 
@@ -426,19 +431,19 @@ public class DeviceImpl implements IDevice,Serializable {
 		if (null != activeNetwork) {
 			if (activeNetwork.getType() == ConnectivityManager.TYPE_WIFI && activeNetwork.isConnected()) {
 				RCLogger.w(TAG, "Reachability event: WIFI");
-				return ReachabilityState.REACHABILITY_WIFI;
+				return RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi;
 			}
 
 			// TODO: leave mobile internet out until we fix some issues that came up; check https://github.com/Mobicents/restcomm-android-sdk/issues/172
 			/*
 			if (activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE && activeNetwork.isConnected()) {
 				Log.w(TAG, "Reachability event: MOBILE");
-				return ReachabilityState.REACHABILITY_MOBILE;
+				return RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular;
 			}
 			*/
 		}
 		RCLogger.w(TAG, "Reachability event: NONE");
-		return ReachabilityState.REACHABILITY_NONE;
+		return RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone;
 	}
 
 

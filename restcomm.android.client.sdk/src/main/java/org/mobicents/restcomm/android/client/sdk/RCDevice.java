@@ -120,7 +120,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
     PendingIntent pendingCallIntent;
     PendingIntent pendingMessageIntent;
     private RCConnection incomingConnection;
-    private DeviceImpl.ReachabilityState reachabilityState = DeviceImpl.ReachabilityState.REACHABILITY_NONE;
+    private RCDeviceListener.RCConnectivityStatus reachabilityState = RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone;
     private SipProfile sipProfile = null;
 
     /**
@@ -148,8 +148,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         reachabilityState = DeviceImpl.checkReachability(RCClient.getContext());
 
         boolean connectivity = false;
-        if (reachabilityState == DeviceImpl.ReachabilityState.REACHABILITY_WIFI ||
-                reachabilityState == DeviceImpl.ReachabilityState.REACHABILITY_MOBILE) {
+        if (reachabilityState != RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
             connectivity = true;
         }
         initializeSignalling(connectivity);
@@ -170,44 +169,62 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         DeviceImpl.GetInstance().sipuaDeviceListener = this;
         // register after initialization
         if (connectivity) {
-            DeviceImpl.GetInstance().Register();
-            state = DeviceState.READY;
+            if (!parameters.containsKey("registrar") ||
+                    parameters.containsKey("registrar") && parameters.get("registrar").equals("")) {
+                // registrarless; we can transition to ready right away (i.e. without waiting for Restcomm to reply to REGISTER)
+                state = DeviceState.READY;
+            }
+            else {
+                DeviceImpl.GetInstance().Register();
+            }
+            //state = DeviceState.READY;
         }
     }
 
-    private void onReachabilityChanged(final DeviceImpl.ReachabilityState newState)
+    private void onReachabilityChanged(final RCDeviceListener.RCConnectivityStatus newState)
     {
-        if (newState == DeviceImpl.ReachabilityState.REACHABILITY_NONE && state != DeviceState.OFFLINE) {
+        if (newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone && state != DeviceState.OFFLINE) {
             RCLogger.w(TAG, "Reachability changed; no connectivity");
             DeviceImpl.GetInstance().unbind();
             state = DeviceState.OFFLINE;
             reachabilityState = newState;
+            this.listener.onConnectivityUpdate(this, newState);
             return;
         }
 
         // old state wifi and new state mobile or the reverse; need to shutdown and restart network facilities
-        if ((reachabilityState == DeviceImpl.ReachabilityState.REACHABILITY_WIFI && newState == DeviceImpl.ReachabilityState.REACHABILITY_MOBILE) ||
-                (reachabilityState == DeviceImpl.ReachabilityState.REACHABILITY_MOBILE && newState == DeviceImpl.ReachabilityState.REACHABILITY_WIFI)) {
+        if ((reachabilityState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi && newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular) ||
+                (reachabilityState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular && newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi)) {
             if (state != DeviceState.OFFLINE) {
                 RCLogger.w(TAG, "Reachability action: switch between wifi and mobile. Device state: " + state);
                 // refresh JAIN networking facilities so that we use the new available interface
                 DeviceImpl.GetInstance().RefreshNetworking();
                 reachabilityState = newState;
+                this.listener.onConnectivityUpdate(this, newState);
                 return;
             }
         }
 
-        if ((newState == DeviceImpl.ReachabilityState.REACHABILITY_WIFI || newState == DeviceImpl.ReachabilityState.REACHABILITY_MOBILE)
+        if ((newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi || newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular)
                 && state == DeviceState.OFFLINE) {
             RCLogger.w(TAG, "Reachability action: wifi/mobile available. Device state: " + state);
             DeviceImpl.GetInstance().bind();
-            DeviceImpl.GetInstance().Register();
             reachabilityState = newState;
+            if (!parameters.containsKey("registrar") ||
+                    parameters.containsKey("registrar") && parameters.get("registrar").equals("")) {
+                // registrarless; we can transition to ready right away (i.e. without waiting for Restcomm to reply to REGISTER)
+                state = DeviceState.READY;
+                this.listener.onConnectivityUpdate(this, newState);
+            }
+            else {
+                DeviceImpl.GetInstance().Register();
+            }
+
             state = DeviceState.READY;
         }
     }
 
-    public DeviceImpl.ReachabilityState getReachability()
+    public RCDeviceListener.RCConnectivityStatus getReachability()
     {
         return reachabilityState;
     }
@@ -321,7 +338,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
     public RCConnection connect(Map<String, Object> parameters, RCConnectionListener listener) {
         RCLogger.i(TAG, "connect(): " + parameters.toString());
 
-        if (DeviceImpl.checkReachability(RCClient.getContext()) == DeviceImpl.ReachabilityState.REACHABILITY_NONE) {
+        if (DeviceImpl.checkReachability(RCClient.getContext()) == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
             RCLogger.e(TAG, "connect(): No reachability");
             return null;
         }
@@ -604,6 +621,14 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         };
         mainHandler.post(myRunnable);
 
+    }
+
+    public void onSipUARegisterSuccess(SipEvent event)
+    {
+        if (state == DeviceState.OFFLINE) {
+            state = DeviceState.READY;
+            this.listener.onConnectivityUpdate(this, this.reachabilityState);
+        }
     }
 
     // Helpers

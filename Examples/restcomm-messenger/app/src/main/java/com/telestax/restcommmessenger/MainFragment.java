@@ -128,7 +128,8 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
         // convert dp to pixels
         float pixels = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 66, getResources().getDisplayMetrics());
         footer.setLayoutParams( new AbsListView.LayoutParams(AbsListView.LayoutParams.MATCH_PARENT, (int)pixels));
-        getListView().addFooterView(footer);
+        // also make it unselectable
+        getListView().addFooterView(footer, null, false);
     }
 
     @Override

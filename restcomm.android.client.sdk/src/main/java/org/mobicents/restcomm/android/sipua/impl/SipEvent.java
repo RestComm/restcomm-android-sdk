@@ -23,6 +23,7 @@ public class SipEvent extends EventObject {
 		REMOTE_RINGING,
 		REMOTE_CANCEL,
 		NOT_FOUND,
+		REGISTER_SUCCESS,
 	}
 
 	public SipEvent(Object source, SipEventType type, String content,
