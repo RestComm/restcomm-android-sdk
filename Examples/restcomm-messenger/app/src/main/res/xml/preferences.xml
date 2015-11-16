@@ -13,7 +13,7 @@
         android:key="pref_sip_password"
         android:title="Password" />
     <EditTextPreference
-        android:defaultValue="sip:live.telestax.com:5080"
+        android:defaultValue="sip:cloud.restcomm.com:5060"
         android:key="pref_proxy_domain"
         android:title="Domain" />
 </PreferenceCategory>

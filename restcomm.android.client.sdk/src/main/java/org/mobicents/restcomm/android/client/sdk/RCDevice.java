@@ -169,8 +169,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         DeviceImpl.GetInstance().sipuaDeviceListener = this;
         // register after initialization
         if (connectivity) {
-            if (!parameters.containsKey("registrar") ||
-                    parameters.containsKey("registrar") && parameters.get("registrar").equals("")) {
+            if (!parameters.containsKey("pref_proxy_domain") ||
+                    parameters.containsKey("pref_proxy_domain") && parameters.get("pref_proxy_domain").equals("")) {
                 // registrarless; we can transition to ready right away (i.e. without waiting for Restcomm to reply to REGISTER)
                 state = DeviceState.READY;
             }
@@ -210,8 +210,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
             RCLogger.w(TAG, "Reachability action: wifi/mobile available. Device state: " + state);
             DeviceImpl.GetInstance().bind();
             reachabilityState = newState;
-            if (!parameters.containsKey("registrar") ||
-                    parameters.containsKey("registrar") && parameters.get("registrar").equals("")) {
+            if (!parameters.containsKey("pref_proxy_domain") ||
+                    parameters.containsKey("pref_proxy_domain") && parameters.get("pref_proxy_domain").equals("")) {
                 // registrarless; we can transition to ready right away (i.e. without waiting for Restcomm to reply to REGISTER)
                 state = DeviceState.READY;
                 this.listener.onConnectivityUpdate(this, newState);
@@ -219,8 +219,6 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
             else {
                 DeviceImpl.GetInstance().Register();
             }
-
-            state = DeviceState.READY;
         }
     }
 
@@ -505,8 +503,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
      */
     public boolean updateParams(HashMap<String, Object> params) {
         RCLogger.i(TAG, "updateParams(): " + params.toString());
-        if (state == DeviceState.READY) {
-            updateSipProfile(params);
+        updateSipProfile(params);
+        if (reachabilityState != RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
             DeviceImpl.GetInstance().Register();
             return true;
         }
@@ -615,20 +613,39 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
             @Override
             public void run() {
                 if (device.listener != null) {
+                    if (errorCode == RCClient.ErrorCodes.SIGNALLING_REGISTER_AUTH_ERROR ||
+                            errorCode == RCClient.ErrorCodes.SIGNALLING_REGISTER_ERROR) {
+                        state = DeviceState.OFFLINE;
+                        device.listener.onConnectivityUpdate(device, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone);
+                    }
                     device.listener.onStopListening(device, errorCode.ordinal(), errorText);
                 }
             }
         };
         mainHandler.post(myRunnable);
-
     }
 
     public void onSipUARegisterSuccess(SipEvent event)
     {
-        if (state == DeviceState.OFFLINE) {
-            state = DeviceState.READY;
-            this.listener.onConnectivityUpdate(this, this.reachabilityState);
-        }
+        RCLogger.i(TAG, "onSipUARegisterSuccess()");
+
+        final RCDevice device = this;
+        final RCDeviceListener.RCConnectivityStatus state = this.reachabilityState;
+
+        // Important: need to fire the event in UI context cause currently we might be in JAIN SIP thread
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (device.listener != null) {
+                    if (device.state == DeviceState.OFFLINE) {
+                        device.state = DeviceState.READY;
+                        device.listener.onConnectivityUpdate(device, state);
+                    }
+                }
+            }
+        };
+        mainHandler.post(myRunnable);
     }
 
     // Helpers

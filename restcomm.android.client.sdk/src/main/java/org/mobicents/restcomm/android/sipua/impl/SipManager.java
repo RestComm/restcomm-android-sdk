@@ -767,6 +767,10 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					inviteTid.sendRequest();
 					registerAuthenticationMap.put(callId.toString(), attempts + 1);
 				}
+				else {
+					dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_NON_CALL, RCClient.ErrorCodes.SIGNALLING_REGISTER_AUTH_ERROR,
+							"Error authenticating REGISTER");
+				}
 			} catch (NullPointerException e) {
 				e.printStackTrace();
 			} catch (SipException e) {
