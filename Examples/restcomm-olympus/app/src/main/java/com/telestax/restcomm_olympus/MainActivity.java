@@ -106,35 +106,8 @@ public class MainActivity extends AppCompatActivity
         // preferences
         prefs.registerOnSharedPreferenceChangeListener(this);
 
-        // set it to wifi by default to avoit the status message when starting with wifi
+        // set it to wifi by default to avoid the status message when starting with wifi
         previousConnectivityStatus = RCConnectivityStatus.RCConnectivityStatusWiFi;
-
-        /* ... new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
-        */
-
-        /*
-        if (findViewById(R.id.item_detail_container) != null) {
-            // The detail container view will be present only in the
-            // large-screen layouts (res/values-large and
-            // res/values-sw600dp). If this view is present, then the
-            // activity should be in two-pane mode.
-            mTwoPane = true;
-
-            // In two-pane mode, list items should be given the
-            // 'activated' state when touched.
-            ((MainFragment) getSupportFragmentManager()
-                    .findFragmentById(R.id.item_list))
-                    .setActivateOnItemClick(true);
-        }
-        */
-
-        // TODO: If exposing deep links into your app, handle intents here.
     }
 
     @Override
@@ -148,11 +121,19 @@ public class MainActivity extends AppCompatActivity
     protected void onResume() {
         super.onResume();
 
+        if (device.getState() == RCDevice.DeviceState.OFFLINE) {
+            getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorTextSecondary)));
+        }
+        else {
+            getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
+        }
+
         /*
         if (device.getState() == RCDevice.DeviceState.OFFLINE) {
             showOkAlert("No Connectivity", "No Wifi connectivity");
         }
         */
+
         // The activity has become visible (it is now "resumed").
         Log.i(TAG, "%% onResume");
     }
@@ -192,28 +173,6 @@ public class MainActivity extends AppCompatActivity
     public void onItemSelected(HashMap<String, String> contact, MainFragment.ContactSelectionType type) {
         // forward to onActionClicked
         onActionClicked(ActionFragment.ActionType.ACTION_TYPE_VIDEO_CALL, contact.get("username"), contact.get("sipuri"));
-        /*
-        if (type == MainFragment.ContactSelectionType.VIDEO_CALL) {
-            Intent intent = new Intent(this, CallActivity.class);
-            intent.setAction(RCDevice.OUTGOING_CALL);
-            intent.putExtra(RCDevice.EXTRA_DID, contact.get("sipuri"));
-            intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, true);
-            startActivityForResult(intent, CONNECTION_REQUEST);
-        }
-        if (type == MainFragment.ContactSelectionType.AUDIO_CALL) {
-            Intent intent = new Intent(this, CallActivity.class);
-            intent.setAction(RCDevice.OUTGOING_CALL);
-            intent.putExtra(RCDevice.EXTRA_DID, contact.get("sipuri"));
-            intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, false);
-            startActivityForResult(intent, CONNECTION_REQUEST);
-        }
-        if (type == MainFragment.ContactSelectionType.TEXT_MESSAGE) {
-            Intent intent = new Intent(this, MessageActivity.class);
-            intent.setAction(RCDevice.OPEN_MESSAGE_SCREEN);
-            intent.putExtra(RCDevice.EXTRA_DID, contact.get("sipuri"));
-            startActivity(intent);
-        }
-        */
     }
 
     public void onContactUpdate(HashMap<String, String> contact, int type)
