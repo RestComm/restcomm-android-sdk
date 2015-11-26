@@ -114,6 +114,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	// Constructors/Initializers
 	public SipManager(SipProfile sipProfile, boolean connectivity) {
+		RCLogger.v(TAG, "SipManager()");
+
 		this.sipProfile = sipProfile;
 		initialize(connectivity);
 	}
@@ -137,6 +139,11 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		}
 		*/
 		properties.setProperty("android.javax.sip.STACK_NAME", "androidSip");
+		// You need 16 for logging traces. 32 for debug + traces.
+		// Your code will limp at 32 but it is best for debugging.
+		properties.setProperty("android.gov.nist.javax.sip.TRACE_LEVEL", "32");
+		properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", "/storage/emulated/legacy/Download/debug.log");
+		properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", "/storage/emulated/legacy/Download/server.log");
 		//latestProxyIp = sipProfile.getRemoteIp();
 
 		try {
@@ -254,6 +261,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	public void refreshNetworking(int expiry) throws ParseException, TransactionUnavailableException
 	{
+		RCLogger.v(TAG, "refreshNetworking()");
+
 		// keep the old contact around to use for unregistration
 		Address oldAddress = createContactAddress();
 
@@ -295,6 +304,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	// *** Client API (used by DeviceImpl) *** //
 	// Accept incoming call
 	public void AcceptCall(final int port) {
+		RCLogger.v(TAG, "AcceptCall()");
+
 		if (currentServerTransaction == null)
 			return;
 		Thread thread = new Thread() {
@@ -350,6 +361,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	public void AcceptCallWebrtc(final String sdp) {
+		RCLogger.v(TAG, "AcceptCallWebrtc()");
+
 		if (currentServerTransaction == null)
 			return;
 		Thread thread = new Thread() {
@@ -393,12 +406,15 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	public void RejectCall() {
+		RCLogger.v(TAG, "RejectCall()");
+
 		sendDecline(currentServerTransaction.getRequest());
 		sipManagerState = SipManagerState.IDLE;
 	}
 
 	@Override
 	public void Register(int expiry) throws ParseException, TransactionUnavailableException {
+		RCLogger.v(TAG, "Register()");
 		if (sipProvider == null) {
 			return;
 		}
@@ -448,6 +464,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	public void Unregister(Address contact) throws ParseException, TransactionUnavailableException {
+		RCLogger.v(TAG, "Unregister()");
 		if (sipProvider == null) {
 			return;
 		}
@@ -500,6 +517,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	@Override
 	public void Call(String to, int localRtpPort, HashMap<String, String> sipHeaders)
 			throws NotInitializedException, ParseException {
+		RCLogger.v(TAG, "Call()");
 		if (!initialized)
 			throw new NotInitializedException("Sip Stack not initialized");
 		this.sipManagerState = SipManagerState.CALLING;
@@ -513,6 +531,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					// note: we might need to make this 'syncrhonized' to avoid race at some point
 					currentClientTransaction = transaction;
 					transaction.sendRequest();
+					dialog = transaction.getDialog();
 				} catch (Exception e) {
 					// DNS error (error resolving registrar URI)
 					dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_CALL, RCClient.ErrorCodes.SIGNALLING_CALL_ERROR,
@@ -533,6 +552,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	public void CallWebrtc(String to, String sdp, HashMap<String, String> sipHeaders)
 			throws NotInitializedException, ParseException {
+		RCLogger.v(TAG, "CallWebrtc()");
 		if (!initialized)
 			throw new NotInitializedException("Sip Stack not initialized");
 		this.sipManagerState = SipManagerState.CALLING;
@@ -546,6 +566,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					// note: we might need to make this 'syncrhonized' to avoid race at some point
 					currentClientTransaction = transaction;
 					transaction.sendRequest();
+					dialog = transaction.getDialog();
 				} catch (Exception e) {
 					// DNS error (error resolving registrar URI)
 					dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_CALL, RCClient.ErrorCodes.SIGNALLING_CALL_ERROR,
@@ -567,6 +588,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	@Override
 	public void SendMessage(String to, String message)
 			throws NotInitializedException {
+		RCLogger.v(TAG, "SendMessage()");
 		if (!initialized)
 			throw new NotInitializedException("Sip Stack not initialized");
 		Message inviteRequest = new Message();
@@ -598,6 +620,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	@Override
 	public void Hangup() throws NotInitializedException
 	{
+		RCLogger.v(TAG, "Hangup()");
 		if (!initialized)
 			throw new NotInitializedException("Sip Stack not initialized");
 
@@ -615,6 +638,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	public void Cancel() throws NotInitializedException
 	{
+		RCLogger.v(TAG, "Cancel");
 		if (!initialized)
 			throw new NotInitializedException("Sip Stack not initialized");
 
@@ -628,6 +652,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	@Override
 	public void SendDTMF(String digit) throws NotInitializedException {
+		RCLogger.v(TAG, "SendDTMF()");
 		if (!initialized)
 			throw new NotInitializedException("Sip Stack not initialized");
 
@@ -691,6 +716,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	// *** JAIN SIP: Incoming request *** //
 	@Override
 	public void processRequest(RequestEvent arg0) {
+		RCLogger.v(TAG, "processRequest()");
 		Request request = (Request) arg0.getRequest();
 		ServerTransaction serverTransactionId = arg0.getServerTransaction();
 		SIPMessage sp = (SIPMessage) request;
@@ -728,17 +754,16 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	// *** JAIN SIP: Incoming response *** //
 	@Override
 	public void processResponse(ResponseEvent arg0) {
-
 		ResponseEventExt responseEvent = (ResponseEventExt)arg0;
 		Response response = (Response) arg0.getResponse();
-		RCLogger.i(TAG, "processResponse, status code: " + response.getStatusCode());
+		RCLogger.i(TAG, "processResponse(), status code: " + response.getStatusCode());
 
-		Dialog responseDialog = null;
+		//Dialog responseDialog = null;
 		ClientTransaction tid = arg0.getClientTransaction();
 		if (tid != null) {
-			responseDialog = tid.getDialog();
+			//responseDialog = tid.getDialog();
 		} else {
-			responseDialog = arg0.getDialog();
+			//responseDialog = arg0.getDialog();
 		}
 		CSeqHeader cseq = (CSeqHeader) response.getHeader(CSeqHeader.NAME);
 		if (response.getStatusCode() == Response.PROXY_AUTHENTICATION_REQUIRED
@@ -765,6 +790,10 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 							.handleChallenge(response, tid, sipProvider, 5, true);
 					currentClientTransaction = inviteTid;
 					inviteTid.sendRequest();
+					if (cseq.getMethod().equals(Request.INVITE)) {
+						// only update the dialog if we are responding to INVITE with new invite
+						dialog = inviteTid.getDialog();
+					}
 					registerAuthenticationMap.put(callId.toString(), attempts + 1);
 				}
 				else {
@@ -787,10 +816,10 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			if (cseq.getMethod().equals(Request.INVITE)) {
 				RCLogger.i(TAG, "Dialog after 200 OK  " + dialog);
 				try {
-					Request ackRequest = responseDialog.createAck(cseq
-							.getSeqNumber());
 					RCLogger.i(TAG, "Sending ACK");
-					responseDialog.sendAck(ackRequest);
+					//Request ackRequest = dialog.createAck(cseq.getSeqNumber());
+					Request ackRequest = dialog.createAck(((CSeqHeader)response.getHeader(CSeqHeader.NAME)).getSeqNumber());
+					dialog.sendAck(ackRequest);
 					byte[] rawContent = response.getRawContent();
 					String sdpContent = new String(rawContent, "UTF-8");
 					SDPAnnounceParser parser = new SDPAnnounceParser(sdpContent);
@@ -900,7 +929,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	// *** JAIN SIP: Dialog terminated *** //
 	public void processDialogTerminated(DialogTerminatedEvent dialogTerminatedEvent) {
 		RCLogger.i(TAG, "SipManager.processDialogTerminated: " + dialogTerminatedEvent.toString() + "\n" +
-				"\tdialog: " + dialogTerminatedEvent.getDialog());
+				"\tdialog: " + dialogTerminatedEvent.getDialog().toString());
 	}
 
 	// *** JAIN SIP: Time out *** //
@@ -930,7 +959,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	// Send event to the higher level listener (i.e. DeviceImpl)
 	@SuppressWarnings("unchecked")
 	private void dispatchSipEvent(SipEvent sipEvent) {
-		RCLogger.i(TAG, "Dispatching event:" + sipEvent.type);
+		RCLogger.i(TAG, "dispatchSipEvent():" + sipEvent.type);
 		ArrayList<ISipEventListener> tmpSipListenerList;
 
 		synchronized (this) {
@@ -947,7 +976,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	// caller needs to run on main thread
 	private void dispatchSipError(ISipEventListener.ErrorContext errorContext, RCClient.ErrorCodes errorCode, String errorText) {
-		RCLogger.i(TAG, "Dispatching  error:" + errorText);
+		RCLogger.i(TAG, "dispatchSipError():" + errorText);
 		ArrayList<ISipEventListener> tmpSipListenerList;
 
 		synchronized (this) {
@@ -964,8 +993,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	private void incomingBye(Request request,
 							 ServerTransaction serverTransactionId) {
+		RCLogger.i(TAG, "incomingBye()");
 		try {
-			RCLogger.i(TAG, "BYE received");
 			if (serverTransactionId == null) {
 				RCLogger.i(TAG, "shootist:  null TID.");
 				return;
@@ -986,6 +1015,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	private void incomingInvite(RequestEvent requestEvent,
 								ServerTransaction serverTransaction) {
+		RCLogger.i(TAG, "incomingInvite()");
+
 		if (sipManagerState != SipManagerState.IDLE
 				&& sipManagerState != SipManagerState.READY
 				&& sipManagerState != SipManagerState.INCOMING
@@ -996,6 +1027,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		sipManagerState = SipManagerState.INCOMING;
 		Request request = requestEvent.getRequest();
 		SIPMessage sm = (SIPMessage) request;
+		dialog = serverTransaction.getDialog();
 
 		try {
 			ServerTransaction st = requestEvent.getServerTransaction();
@@ -1033,6 +1065,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	private void incomingCancel(Request request,
 								ServerTransaction serverTransactionId) {
+		RCLogger.i(TAG, "incomingCancel()");
+
 		try {
 			RCLogger.i(TAG, "CANCEL received");
 			if (serverTransactionId == null) {
@@ -1061,6 +1095,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	private void sendDecline(Request request) {
+		RCLogger.i(TAG, "sendDecline()");
+
 		Thread thread = new Thread() {
 			public void run() {
 
@@ -1088,6 +1124,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	private void sendOk(RequestEvent requestEvt) {
+		RCLogger.i(TAG, "sendOk()");
+
 		Response response;
 		try {
 			response = messageFactory.createResponse(200,
@@ -1115,8 +1153,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	// introduced separate sendByeClient method because the client initiated BYE
 	// is different -at some point we should merge those methods
 	private void sendByeClient(Transaction transaction) {
-		RCLogger.i(TAG, "Sending BYE request");
-		final Dialog dialog = transaction.getDialog();
+		RCLogger.i(TAG, "sendByeClient()");
+		//final Dialog dialog = transaction.getDialog();
 		if (dialog == null) {
 			RCLogger.i(TAG, "Hmm, weird: dialog is already terminated -avoiding BYE");
 		}
@@ -1155,6 +1193,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	private void sendCancel(ClientTransaction transaction) {
+		RCLogger.i(TAG, "sendCancel()");
 		try {
 			final Request request = transaction.createCancel();
 
@@ -1180,6 +1219,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	// *** Various Helpers *** //
 	public static String getIPAddress(boolean useIPv4) {
+		RCLogger.i(TAG, "getIPAddress()");
 		try {
 			List<NetworkInterface> interfaces = Collections
 					.list(NetworkInterface.getNetworkInterfaces());
@@ -1211,6 +1251,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	public ArrayList<ViaHeader> createViaHeader() {
+		RCLogger.i(TAG, "createViaHeader()");
 		ArrayList<ViaHeader> viaHeaders = new ArrayList<ViaHeader>();
 		ViaHeader myViaHeader;
 		try {
@@ -1228,6 +1269,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	public Address createContactAddress() {
+		RCLogger.i(TAG, "createContactAddress()");
 		try {
 			return this.addressFactory.createAddress("sip:"
 					+ getSipProfile().getSipUserName() + "@"
@@ -1239,12 +1281,14 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	public synchronized void addSipListener(ISipEventListener listener) {
+		RCLogger.i(TAG, "addSipListener()");
 		if (!sipEventListenerList.contains(listener)) {
 			sipEventListenerList.add(listener);
 		}
 	}
 
 	public synchronized void removeSipListener(ISipEventListener listener) {
+		RCLogger.i(TAG, "createContactAddress()");
 		if (sipEventListenerList.contains(listener)) {
 			sipEventListenerList.remove(listener);
 		}
@@ -1252,6 +1296,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	public UserAgentHeader generateUserAgentHeader()
 	{
+		RCLogger.i(TAG, "generateUserAgentHeader()");
 		List<String> userAgentTokens = new LinkedList<String>();
  		UserAgentHeader header = null;
 		userAgentTokens.add(USERAGENT_STRING);
