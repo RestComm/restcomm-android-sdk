@@ -183,6 +183,11 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
 
     private void onReachabilityChanged(final RCDeviceListener.RCConnectivityStatus newState)
     {
+        if (newState == reachabilityState) {
+            RCLogger.w(TAG, "Reachability event, but remained the same: " + newState);
+            return;
+        }
+
         if (newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone && state != DeviceState.OFFLINE) {
             RCLogger.w(TAG, "Reachability changed; no connectivity");
             DeviceImpl.GetInstance().unbind();
