@@ -25,7 +25,7 @@ RestComm Client SDK for Android has been tested to work on Android API level 16 
 Latest Messenger .apk
 =============================
 
-Here's the .apk for the Messenger Restcomm Client SDK sample application: https://community.testfairy.com/join/zr937dgQ
+Here's the .apk for the Messenger Restcomm Client SDK sample application: https://tsfr.io/qksja4
 
 Want to Contribute ? 
 ========
