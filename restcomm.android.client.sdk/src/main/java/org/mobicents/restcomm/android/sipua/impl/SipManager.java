@@ -141,10 +141,9 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		properties.setProperty("android.javax.sip.STACK_NAME", "androidSip");
 		// You need 16 for logging traces. 32 for debug + traces.
 		// Your code will limp at 32 but it is best for debugging.
-		properties.setProperty("android.gov.nist.javax.sip.TRACE_LEVEL", "32");
-		properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", "/storage/emulated/legacy/Download/debug.log");
-		properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", "/storage/emulated/legacy/Download/server.log");
-		//latestProxyIp = sipProfile.getRemoteIp();
+		//properties.setProperty("android.gov.nist.javax.sip.TRACE_LEVEL", "32");
+		//properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", "/storage/emulated/legacy/Download/debug.log");
+		//properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", "/storage/emulated/legacy/Download/server.log");
 
 		try {
 			if (udpListeningPoint != null) {
@@ -914,7 +913,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	// *** JAIN SIP: Exception *** //
 	public void processIOException(IOExceptionEvent exceptionEvent) {
 		RCLogger.e(TAG, "SipManager.processIOException: " + exceptionEvent.toString() + "\n" +
-				"\thost: " +  exceptionEvent.getHost() + "\n" +
+				"\thost: " + exceptionEvent.getHost() + "\n" +
 				"\tport: " + exceptionEvent.getPort());
 	}
 
@@ -1027,7 +1026,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		sipManagerState = SipManagerState.INCOMING;
 		Request request = requestEvent.getRequest();
 		SIPMessage sm = (SIPMessage) request;
-		dialog = serverTransaction.getDialog();
 
 		try {
 			ServerTransaction st = requestEvent.getServerTransaction();
@@ -1036,8 +1034,10 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				st = sipProvider.getNewServerTransaction(request);
 
 			}
-			if (st == null)
+			if (st == null) {
 				return;
+			}
+			dialog = st.getDialog();
 			currentServerTransaction = st;
 
 			//RCLogger.i(TAG, "INVITE: with Authorization, sending Trying");
