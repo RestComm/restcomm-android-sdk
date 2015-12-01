@@ -97,9 +97,8 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
 
         params = new HashMap<String, Object>();
         // CHANGEME: update the IP address to your Restcomm instance
-        params.put("pref_proxy_ip", "23.23.228.238");
-        params.put("pref_proxy_port", "5080");
-        params.put("pref_sip_user", "bob");
+        params.put("pref_proxy_domain", "sip:cloud.restcomm.com:5060");
+        params.put("pref_sip_user", "antonis");
         params.put("pref_sip_password", "1234");
         device = RCClient.createDevice(params, this);
         Intent intent = new Intent(getApplicationContext(), MainActivity.class);
@@ -171,7 +170,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
             HashMap<String, Object> connectParams = new HashMap<String, Object>();
             // CHANGEME: update the IP address to your Restcomm instance. Also, you can update the number
             // from '1235' to any Restcomm application you wish to reach
-            connectParams.put("username", "sip:1235@23.23.228.238:5080");
+            connectParams.put("username", "sip:1235@cloud.restcomm.com");
             connectParams.put("video-enabled", true);
 
             // if you want to add custom SIP headers, please uncomment this
@@ -242,6 +241,11 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
                 Log.i(TAG, "Message arrived: " + newText);
             }
         });
+    }
+
+    public void onConnectivityUpdate(RCDevice device, RCConnectivityStatus connectivityStatus)
+    {
+
     }
 
     // RCConnection Listeners
