@@ -508,14 +508,28 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
      */
     public boolean updateParams(HashMap<String, Object> params) {
         RCLogger.i(TAG, "updateParams(): " + params.toString());
-        updateSipProfile(params);
-        if (reachabilityState != RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
-            DeviceImpl.GetInstance().Register();
-            return true;
+        boolean status = false;
+
+        if (params.containsKey("pref_proxy_domain") && !params.get("pref_proxy_domain").equals("")) {
+            // we have a new (non empty) domain, need to register
+            updateSipProfile(params);
+            if (reachabilityState != RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
+                DeviceImpl.GetInstance().Register();
+                status = true;
+            }
         }
         else {
-            return false;
+            // we have an empty domain
+            if (!sipProfile.getRemoteEndpoint().equals("")) {
+                // previously we had a registrar setup, need to unregister (important: we call updateSipProfile afterwards cause if we do no
+                // unregister will check the SipProfile, find that domain is empty and skip unregistration
+                DeviceImpl.GetInstance().Unregister();
+            }
+            // previously we didn't have a registrar setup, no need to do anything
+            updateSipProfile(params);
+            status = true;
         }
+        return status;
     }
 
     public void updateSipProfile(HashMap<String, Object> params) {

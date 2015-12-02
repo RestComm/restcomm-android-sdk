@@ -66,6 +66,7 @@ import android.javax.sip.header.CallIdHeader;
 import android.javax.sip.header.ContactHeader;
 import android.javax.sip.header.ContentTypeHeader;
 import android.javax.sip.header.HeaderFactory;
+import android.javax.sip.header.RouteHeader;
 import android.javax.sip.header.ToHeader;
 import android.javax.sip.header.UserAgentHeader;
 import android.javax.sip.header.ViaHeader;
@@ -1020,6 +1021,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				&& sipManagerState != SipManagerState.READY
 				&& sipManagerState != SipManagerState.INCOMING
 				) {
+			RCLogger.i(TAG, "incomingInvite(): invalid state: " + sipManagerState + " -bailing");
 			// sendDecline(requestEvent.getRequest());// Already in a call
 			return;
 		}
@@ -1035,6 +1037,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 			}
 			if (st == null) {
+				RCLogger.i(TAG, "incomingInvite(): server transaction still null");
 				return;
 			}
 			dialog = st.getDialog();
@@ -1162,7 +1165,20 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			Request byeRequest = null;
 			try {
 				byeRequest = dialog.createRequest(Request.BYE);
+				if (!getSipProfile().getRemoteEndpoint().isEmpty()) {
+					// we only need this for non-registrarless calls since the problem is only for incoming calls,
+					// and when working in registrarless mode there are no incoming calls
+					SipURI routeUri = (SipURI) addressFactory.createURI(getSipProfile().getRemoteEndpoint());
+					routeUri.setLrParam();
+					Address routeAddress = addressFactory.createAddress(routeUri);
+					RouteHeader routeHeader = headerFactory.createRouteHeader(routeAddress);
+					byeRequest.addFirst(routeHeader);
+				}
+
 			} catch (SipException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (ParseException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
