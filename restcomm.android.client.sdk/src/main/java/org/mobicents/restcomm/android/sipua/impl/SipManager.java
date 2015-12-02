@@ -775,9 +775,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 						.getAuthenticationHelper(
 								new AccountManagerImpl(sipProfile.getSipUserName(),
 										responseEvent.getRemoteIpAddress(), sipProfile
-										//sipProfile.getRemoteIp(addressFactory), sipProfile
 										.getSipPassword()), headerFactory);
-				CallIdHeader callId = (CallIdHeader)response.getHeader("Call-ID");  //responseDialog.getCallId();
+				CallIdHeader callId = (CallIdHeader)response.getHeader("Call-ID");
 				int attempts = 0;
 				if (registerAuthenticationMap.containsKey(callId.toString())) {
 					attempts = registerAuthenticationMap.get(callId.toString()).intValue();
