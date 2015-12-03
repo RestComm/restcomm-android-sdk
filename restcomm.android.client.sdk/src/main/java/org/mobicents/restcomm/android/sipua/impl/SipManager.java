@@ -95,7 +95,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	private ListeningPoint udpListeningPoint;
 	private SipProfile sipProfile;
-	//private String latestProxyIp;
 	private Dialog dialog;
 
 	private ArrayList<ISipEventListener> sipEventListenerList = new ArrayList<ISipEventListener>();
@@ -111,7 +110,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	// could also use dialog.isServer() flag but have found mixed opinions about it)
 	CallDirection direction = CallDirection.NONE;
 	private int remoteRtpPort;
-	//private Thread.UncaughtExceptionHandler exceptionHandler;
 
 	// Constructors/Initializers
 	public SipManager(SipProfile sipProfile, boolean connectivity) {
@@ -143,8 +141,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		// You need 16 for logging traces. 32 for debug + traces.
 		// Your code will limp at 32 but it is best for debugging.
 		//properties.setProperty("android.gov.nist.javax.sip.TRACE_LEVEL", "32");
-		//properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", "/storage/emulated/legacy/Download/debug.log");
-		//properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", "/storage/emulated/legacy/Download/server.log");
+		//properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", "/storage/emulated/legacy/Download/debug-1.log");
+		//properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", "/storage/emulated/legacy/Download/server-1.log");
 
 		try {
 			if (udpListeningPoint != null) {
@@ -418,20 +416,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		if (sipProvider == null) {
 			return;
 		}
-		/*
-		if (!latestProxyIp.equals(sipProfile.getRemoteIp())) {
-			// proxy ip address has been updated, need to re-initialize
-			if (initialized) {
-				RCLogger.i(TAG, "Registrar changed, reinitializing stack");
-				shutdown();
-				initialize(true);
-			}
-			else {
-				return;
-			}
-		}
-		*/
-
 		Register registerRequest = new Register();
 		try {
 			final Request r = registerRequest.MakeRequest(this, expiry, null);
@@ -447,11 +431,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 						dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_NON_CALL, RCClient.ErrorCodes.SIGNALLING_REGISTER_ERROR,
 								e.getMessage());
 					}
-					/*
-					catch (SipException e) {
-						e.printStackTrace();
-					}
-					*/
 				}
 			};
 			thread.start();
@@ -469,20 +448,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			return;
 		}
 
-		/*
-		if (!latestProxyIp.equals(sipProfile.getRemoteIp())) {
-			// proxy ip address has been updated, need to re-initialize
-			if (initialized) {
-				RCLogger.i(TAG, "Registrar changed, reinitializing stack");
-				shutdown();
-				initialize(true);
-			}
-			else {
-				return;
-			}
-		}
-		*/
-
 		Register registerRequest = new Register();
 		try {
 			final Request r = registerRequest.MakeRequest(this, 0, contact);
@@ -498,11 +463,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 						dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_NON_CALL, RCClient.ErrorCodes.SIGNALLING_REGISTER_ERROR,
 								e.getMessage());
 					}
-					/*
-					catch (SipException e) {
-						e.printStackTrace();
-					}
-					*/
 				}
 			};
 			thread.start();
@@ -537,13 +497,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_CALL, RCClient.ErrorCodes.SIGNALLING_CALL_ERROR,
 							e.getMessage());
 				}
-				/*
-				catch (SipException e) {
-					//e.printStackTrace();
-					dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_CALL, RCClient.ErrorCodes.SIGNALLING_TIMEOUT,
-							e.getMessage());
-				}
-				*/
 			}
 		};
 		thread.start();
@@ -572,13 +525,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_CALL, RCClient.ErrorCodes.SIGNALLING_CALL_ERROR,
 							e.getMessage());
 				}
-				/*
-				catch (SipException e) {
-					//e.printStackTrace();
-					dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_CALL, RCClient.ErrorCodes.SIGNALLING_TIMEOUT,
-							e.getMessage());
-				}
-				*/
 			}
 		};
 		thread.start();
@@ -758,19 +704,11 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		Response response = (Response) arg0.getResponse();
 		RCLogger.i(TAG, "processResponse(), status code: " + response.getStatusCode());
 
-		//Dialog responseDialog = null;
 		ClientTransaction tid = arg0.getClientTransaction();
-		if (tid != null) {
-			//responseDialog = tid.getDialog();
-		} else {
-			//responseDialog = arg0.getDialog();
-		}
 		CSeqHeader cseq = (CSeqHeader) response.getHeader(CSeqHeader.NAME);
 		if (response.getStatusCode() == Response.PROXY_AUTHENTICATION_REQUIRED
 				|| response.getStatusCode() == Response.UNAUTHORIZED) {
 			try {
-				//Address remoteParty = responseDialog.getRemoteParty();
-				//SipURI remoteUri = (SipURI)remoteParty.getURI();
 				AuthenticationHelper authenticationHelper = ((SipStackExt) sipStack)
 						.getAuthenticationHelper(
 								new AccountManagerImpl(sipProfile.getSipUserName(),
@@ -804,19 +742,11 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			} catch (SipException e) {
 				e.printStackTrace();
 			}
-			/*
-			catch (ParseException e) {
-				e.printStackTrace();
-			}
-			*/
-
-
 		} else if (response.getStatusCode() == Response.OK) {
 			if (cseq.getMethod().equals(Request.INVITE)) {
 				RCLogger.i(TAG, "Dialog after 200 OK  " + dialog);
 				try {
 					RCLogger.i(TAG, "Sending ACK");
-					//Request ackRequest = dialog.createAck(cseq.getSeqNumber());
 					Request ackRequest = dialog.createAck(((CSeqHeader)response.getHeader(CSeqHeader.NAME)).getSeqNumber());
 					dialog.sendAck(ackRequest);
 					byte[] rawContent = response.getRawContent();
@@ -1156,7 +1086,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	// is different -at some point we should merge those methods
 	private void sendByeClient(Transaction transaction) {
 		RCLogger.i(TAG, "sendByeClient()");
-		//final Dialog dialog = transaction.getDialog();
 		if (dialog == null) {
 			RCLogger.i(TAG, "Hmm, weird: dialog is already terminated -avoiding BYE");
 		}

@@ -44,7 +44,7 @@ public interface RCDeviceListener {
     public abstract void onStartListening(RCDevice device);
 
     /**
-     *  RCDevice stopped listening for incoming connections (<b>Not Implemented yet</b>)
+     *  RCDevice stopped listening for incoming connections
      *
      *  @param device Device of interest
      */

@@ -177,7 +177,6 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
             else {
                 DeviceImpl.GetInstance().Register();
             }
-            //state = DeviceState.READY;
         }
     }
 
@@ -538,11 +537,6 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
                 if (key.equals("pref_proxy_domain")) {
                     sipProfile.setRemoteEndpoint((String) params.get(key));
                 }
-                /*
-                else if (key.equals("pref_proxy_port")) {
-                    sipProfile.setRemotePort(Integer.parseInt((String) params.get(key)));
-                }
-                */
                 else if (key.equals("pref_sip_user")) {
                     sipProfile.setSipUserName((String) params.get(key));
                 } else if (key.equals("pref_sip_password")) {

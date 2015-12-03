@@ -36,8 +36,6 @@ public class SipProfile {
 	private  String transport = "udp";
 
 	private String remoteEndpoint;
-	//private  String remoteIp = "";
-	//private  int remotePort = 5060;
 	private  String sipUserName;
 	private  String sipPassword;
 
@@ -79,13 +77,6 @@ public class SipProfile {
 		return remoteIp;
 	}
 
-	/*
-	public  void setRemoteIp(String remoteIp) {
-		RCLogger.i(TAG, "Setting remoteIp:" + remoteIp);
-		this.remoteIp = remoteIp;
-	}
-	*/
-
 	public  int getRemotePort(AddressFactory addressFactory) throws ParseException {
 		if (remoteEndpoint.isEmpty()) {
 			return 0;
@@ -96,13 +87,6 @@ public class SipProfile {
 		remotePort = ((SipURI)address.getURI()).getPort();
 		return remotePort;
 	}
-
-	/*
-	public  void setRemotePort(int remotePort) {
-		RCLogger.i(TAG, "Setting remotePort:" + remotePort);
-		this.remotePort = remotePort;
-	}
-	*/
 
 	public  String getRemoteEndpoint() {
 		return this.remoteEndpoint;
@@ -134,6 +118,4 @@ public class SipProfile {
 		RCLogger.i(TAG, "Setting transport:" + transport);
 		this.transport = transport;
 	}
-
-	
 }
