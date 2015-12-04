@@ -89,7 +89,7 @@ import org.webrtc.VideoTrack;
  *  transitions to RCConnectionStateConnecting. When the remote party answers it, the RCConnection state transitions to RCConnectionStateConnected.
  *
  *  Once an RCConnection (either incoming or outgoing) is established (i.e. RCConnectionStateConnected) media can start flowing over it. DTMF digits can be sent over to
- *  the remote party using RCConnection.sendDigits() (<b>Not implemented yet</b>). When done with the RCConnection you can disconnect it with RCConnection.disconnect().
+ *  the remote party using RCConnection.sendDigits(). When done with the RCConnection you can disconnect it with RCConnection.disconnect().
  */
 public class RCConnection implements SipUAConnectionListener, PeerConnectionClient.PeerConnectionEvents {
     /**
@@ -200,7 +200,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     }
 
     /**
-     * Retrieves the set of application parameters associated with this connection <b>Not Implemented yet</b>
+     * Retrieves the set of application parameters associated with this connection (<b>Not Implemented yet</b>)
      * @return Connection parameters
      */
     public Map<String, String> getParameters()
@@ -351,13 +351,11 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     }
 
     /**
-     * Send DTMF digits over the connection (<b>Not Implemented yet</b>)
+     * Send DTMF digits over the connection
      * @param digits A string of DTMF digits to be sent
      */
     public void sendDigits(String digits)
     {
-        RCLogger.i(TAG, "sendDigits(): " + digits);
-
         RCLogger.i(TAG, "sendDigits(): " + digits);
         DeviceImpl.GetInstance().SendDTMF(digits);
     }

@@ -320,7 +320,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
     }
 
     /**
-     * Updates the capability token (<b>Not implemented yet</b>
+     * Updates the capability token (<b>Not implemented yet</b>)
      */
     public void updateCapabilityToken(String token) {
 
