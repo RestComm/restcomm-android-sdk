@@ -1,3 +1,25 @@
+/*
+ * TeleStax, Open Source Cloud Communications
+ * Copyright 2011-2015, Telestax Inc and individual contributors
+ * by the @authors tag.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation; either version 3 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ *
+ * For questions related to commercial use licensing, please contact sales@telestax.com.
+ *
+ */
+
 package com.telestax.restcomm_olympus;
 
 import android.app.Activity;
@@ -23,20 +45,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-//import com.example.anomatos.myapplication.dummy.DummyContent;
-
-/**
- * A list fragment representing a list of Items. This fragment
- * also supports tablet devices by allowing list items to be given an
- * 'activated' state upon selection. This helps indicate which item is
- * currently being viewed in a ItemDetailFragment}.
- * <p/>
- * Activities containing this fragment MUST implement the {@link Callbacks}
- * interface.
- */
 public class MainFragment extends ListFragment implements ContactAdapterListener{
     private ContactsController contactsController;
-    //private SimpleAdapter listViewAdapter;
     private ContactAdapter listViewAdapter;
     private ArrayList<Map<String, String>> contactList;
 
@@ -90,16 +100,8 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
 
         contactsController = new ContactsController(getActivity().getApplicationContext());
         contactList = contactsController.initializeContacts();
-        /*
-        String[] from = { "username", "sipuri" };
-        int[] to = { R.id.contact_username, R.id.contact_sipuri };
-        */
 
         listViewAdapter = new ContactAdapter(getActivity().getApplicationContext(), contactList, this);
-        /*
-        listViewAdapter = new SimpleAdapter(getActivity().getApplicationContext(), contactList,
-                R.layout.contact_row_layout, from, to);
-                */
         setListAdapter(listViewAdapter);
     }
 
@@ -193,11 +195,6 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
             AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)menuInfo;
 
             menu.setHeaderTitle("Edit '" + contactList.get(info.position).get("username") + "'");
-            /*
-            menu.add("Video Call");
-            menu.add("Audio Call");
-            menu.add("Send Text Message");
-            */
             menu.add("Update Contact");
             menu.add("Remove Contact");
         }
@@ -209,17 +206,6 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
         AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
         HashMap<String, String> contact = (HashMap)contactList.get(info.position);
 
-        /*
-        if (item.getTitle().toString().equals("Video Call")) {
-            mCallbacks.onItemSelected(contact, ContactSelectionType.VIDEO_CALL);
-        }
-        if (item.getTitle().toString().equals("Audio Call")) {
-            mCallbacks.onItemSelected(contact, ContactSelectionType.AUDIO_CALL);
-        }
-        if (item.getTitle().toString().equals("Send Text Message")) {
-            mCallbacks.onItemSelected(contact, ContactSelectionType.TEXT_MESSAGE);
-        }
-        */
         if (item.getTitle().toString().equals("Update Contact")) {
             mCallbacks.onContactUpdate(contact, AddUserDialogFragment.DIALOG_TYPE_UPDATE_CONTACT);
         }
@@ -254,7 +240,6 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
     {
         HashMap<String, String> contact = (HashMap)contactList.get(position);
 
-        //mCallbacks.onItemSelected(contact, ContactSelectionType.AUDIO_CALL);
         mCallbacks.onAccessoryClicked(contact);
     }
 
@@ -273,7 +258,6 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
 
     public class ContactAdapter extends BaseAdapter {
         private LayoutInflater mInflater;
-        //private List<Person> mPeople;
         private ArrayList<Map<String, String>> contactList;
         private ContactAdapterListener listener;
 
@@ -307,7 +291,6 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
                 holder = new ViewHolder();
                 holder.username = (TextView)view.findViewById(R.id.contact_username);
                 holder.sipuri = (TextView)view.findViewById(R.id.contact_sipuri);
-                //holder.action = (ImageButton)view.findViewById(R.id.btn_accessory);
                 ((ImageButton) view.findViewById(R.id.btn_accessory)).setOnClickListener(ContactButtonClickListener);
                 view.setTag(holder);
             } else {
@@ -318,7 +301,6 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
             Map<String, String> contact = contactList.get(position);
             holder.username.setText(contact.get("username"));
             holder.sipuri.setText(contact.get("sipuri"));
-            //holder.action.setImageResource();
 
             return view;
         }

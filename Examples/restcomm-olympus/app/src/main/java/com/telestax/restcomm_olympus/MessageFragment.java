@@ -1,3 +1,25 @@
+/*
+ * TeleStax, Open Source Cloud Communications
+ * Copyright 2011-2015, Telestax Inc and individual contributors
+ * by the @authors tag.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation; either version 3 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ *
+ * For questions related to commercial use licensing, please contact sales@telestax.com.
+ *
+ */
+
 package com.telestax.restcomm_olympus;
 
 import android.app.Activity;
@@ -14,27 +36,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 
-/**
- * A list fragment representing a list of Items. This fragment
- * also supports tablet devices by allowing list items to be given an
- * 'activated' state upon selection. This helps indicate which item is
- * currently being viewed in a ItemDetailFragment}.
- * <p/>
- * Activities containing this fragment MUST implement the {@link Callbacks}
- * interface.
- */
 public class MessageFragment extends ListFragment {
-    //private ContactsController contactsController;
     private SimpleAdapter listViewAdapter;
     private ArrayList<Map<String, String>> contactList;
-
-    /*
-    enum ContactSelectionType {
-        VIDEO_CALL,
-        AUDIO_CALL,
-        TEXT_MESSAGE,
-    }
-    */
 
     /**
      * The serialization (saved instance state) Bundle key representing the
@@ -66,17 +70,6 @@ public class MessageFragment extends ListFragment {
         //public void onContactUpdate(HashMap<String, String> contact, int type);
     }
 
-    /**
-     * A dummy implementation of the {@link Callbacks} interface that does
-     * nothing. Used only when this fragment is not attached to an activity.
-     */
-    /*
-    private static Callbacks sDummyCallbacks = new Callbacks() {
-        @Override
-        public void onItemSelected(String id) {
-        }
-    };
-    */
 
     /**
      * Mandatory empty constructor for the fragment manager to instantiate the
@@ -89,8 +82,6 @@ public class MessageFragment extends ListFragment {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        //contactsController = new ContactsController(getActivity().getApplicationContext());
-        //contactList = contactsController.initializeContacts();
         contactList = new ArrayList<Map<String, String>>();
 
         String[] from = { "username", "message-text" };
@@ -177,49 +168,6 @@ public class MessageFragment extends ListFragment {
 
         mActivatedPosition = position;
     }
-
-    // Context Menu stuff
-    /*
-    @Override
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
-        if (v.getId() == android.R.id.list) {
-            AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)menuInfo;
-
-            menu.setHeaderTitle(contactList.get(info.position).get("username"));
-            menu.add("Video Call");
-            menu.add("Audio Call");
-            menu.add("Send Text Message");
-            menu.add("Update Contact");
-            menu.add("Remove Contact");
-        }
-    }
-
-    @Override
-    public boolean onContextItemSelected(MenuItem item)
-    {
-        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
-        HashMap<String, String> contact = (HashMap)contactList.get(info.position);
-
-        if (item.getTitle().toString().equals("Video Call")) {
-            mCallbacks.onItemSelected(contact, ContactSelectionType.VIDEO_CALL);
-        }
-        if (item.getTitle().toString().equals("Audio Call")) {
-            mCallbacks.onItemSelected(contact, ContactSelectionType.AUDIO_CALL);
-        }
-        if (item.getTitle().toString().equals("Send Text Message")) {
-            mCallbacks.onItemSelected(contact, ContactSelectionType.TEXT_MESSAGE);
-        }
-        if (item.getTitle().toString().equals("Update Contact")) {
-            mCallbacks.onContactUpdate(contact, AddUserDialogFragment.DIALOG_TYPE_UPDATE_CONTACT);
-        }
-        if (item.getTitle().toString().equals("Remove Contact")) {
-            contactsController.removeContact(contactList, contact.get("username"), contact.get("sipuri"));
-            this.listViewAdapter.notifyDataSetChanged();
-        }
-
-        return true;
-    }
-    */
 
     // Called by Activity when when new message is sent
     public void addLocalMessage(String message)

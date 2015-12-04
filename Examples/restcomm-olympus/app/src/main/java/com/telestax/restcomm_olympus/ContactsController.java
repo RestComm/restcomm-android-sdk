@@ -1,3 +1,25 @@
+/*
+ * TeleStax, Open Source Cloud Communications
+ * Copyright 2011-2015, Telestax Inc and individual contributors
+ * by the @authors tag.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation; either version 3 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ *
+ * For questions related to commercial use licensing, please contact sales@telestax.com.
+ *
+ */
+
 package com.telestax.restcomm_olympus;
 
 import android.content.Context;
@@ -33,11 +55,14 @@ public class ContactsController {
         // initialize data store if not already populated
         if (!initialized) {
             SharedPreferences.Editor prefEdit = prefsContacts.edit();
-            prefEdit.putString("sip:alice@telestax.com", "Alice");
-            prefEdit.putString("sip:bob@telestax.com", "Bob");
-            prefEdit.putString("sip:1235@telestax.com", "Hello World App");
-            prefEdit.putString("sip:1311@telestax.com", "Conference App");
-            prefEdit.putString("sip:+15126001502@telestax.com", "Team Call");
+            //prefEdit.putString("sip:alice@cloud.restcomm.com", "Alice");
+            //prefEdit.putString("sip:bob@cloud.restcomm.com", "Bob");
+            prefEdit.putString("sip:+1234@cloud.restcomm.com", "Play App");
+            prefEdit.putString("sip:+1235@cloud.restcomm.com", "Say App");
+            prefEdit.putString("sip:+1236@cloud.restcomm.com", "Gather App");
+            prefEdit.putString("sip:+1310@cloud.restcomm.com", "Conference App");
+            prefEdit.putString("sip:+1311@cloud.restcomm.com", "Conference Admin App");
+
             prefEdit.putBoolean(PREFS_CONTACTS_INIT_KEY, true);
             prefEdit.commit();
         }
@@ -98,15 +123,6 @@ public class ContactsController {
             map.put("username", username);
             list.set(index, map);
         }
-        /*
-        int index = 0;
-        if ((index = list.indexOf(map)) != -1) {
-            list.set(index, map);
-        }
-        else {
-            Log.w(TAG, "addContact(): contact not found in ListView adapter list: " + username + ", " + sipuri);
-        }
-        */
     }
 
     // Removes a contact from a. the preferences data store and b. to the given list

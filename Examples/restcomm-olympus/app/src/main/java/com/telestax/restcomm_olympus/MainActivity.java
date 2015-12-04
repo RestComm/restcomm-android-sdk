@@ -1,3 +1,25 @@
+/*
+ * TeleStax, Open Source Cloud Communications
+ * Copyright 2011-2015, Telestax Inc and individual contributors
+ * by the @authors tag.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation; either version 3 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ *
+ * For questions related to commercial use licensing, please contact sales@telestax.com.
+ *
+ */
+
 package com.telestax.restcomm_olympus;
 
 import android.app.AlertDialog;
@@ -24,22 +46,6 @@ import org.mobicents.restcomm.android.client.sdk.RCPresenceEvent;
 
 import java.util.HashMap;
 
-/**
- * An activity representing a list of Items. This activity
- * has different presentations for handset and tablet-size devices. On
- * handsets, the activity presents a list of items, which when touched,
- * lead to a ItemDetailActivity representing
- * item details. On tablets, the activity presents the list of items and
- * item details side-by-side using two vertical panes.
- * <p/>
- * The activity makes heavy use of fragments. The list of items is a
- * {@link MainFragment} and the item details
- * (if present) is a ItemDetailFragment.
- * <p/>
- * This activity also implements the required
- * {@link MainFragment.Callbacks} interface
- * to listen for item selections.
- */
 public class MainActivity extends AppCompatActivity
         implements MainFragment.Callbacks, RCDeviceListener,
         View.OnClickListener, SharedPreferences.OnSharedPreferenceChangeListener,
@@ -56,11 +62,6 @@ public class MainActivity extends AppCompatActivity
     ImageButton btnAdd;
 
     private static final int CONNECTION_REQUEST = 1;
-    /**
-     * Whether or not the activity is in two-pane mode, i.e. running on a tablet
-     * device.
-     */
-    private boolean mTwoPane;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -75,8 +76,6 @@ public class MainActivity extends AppCompatActivity
 
         btnAdd = (ImageButton)findViewById(R.id.imageButton_add);
         btnAdd.setOnClickListener(this);
-        //FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        //fab.setOnClickListener(this);
 
         alertDialog = new AlertDialog.Builder(MainActivity.this).create();
 
@@ -95,8 +94,7 @@ public class MainActivity extends AppCompatActivity
         });
 
         params = new HashMap<String, Object>();
-        params.put("pref_proxy_domain", prefs.getString("pref_proxy_domain", "sip:cloud.restcomm.com:5060"));
-        //params.put("pref_proxy_port", prefs.getString("pref_proxy_port", "5080"));
+        params.put("pref_proxy_domain", prefs.getString("pref_proxy_domain", ""));
         params.put("pref_sip_user", prefs.getString("pref_sip_user", "bob"));
         params.put("pref_sip_password", prefs.getString("pref_sip_password", "1234"));
         device = RCClient.createDevice(params, this);
@@ -127,12 +125,6 @@ public class MainActivity extends AppCompatActivity
         else {
             getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
         }
-
-        /*
-        if (device.getState() == RCDevice.DeviceState.OFFLINE) {
-            showOkAlert("No Connectivity", "No Wifi connectivity");
-        }
-        */
 
         // The activity has become visible (it is now "resumed").
         Log.i(TAG, "%% onResume");
@@ -281,7 +273,6 @@ public class MainActivity extends AppCompatActivity
         }
 
         if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusNone) {
-            //getSupportActionBar().setBackgroundDrawable(new ColorDrawable(Color.rgb(109, 109, 109)));
             getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorTextSecondary)));
         }
         else {
@@ -345,12 +336,6 @@ public class MainActivity extends AppCompatActivity
             params.put("pref_proxy_domain", prefs.getString("pref_proxy_domain", "sip:cloud.restcomm.com:5060"));
             updated = true;
         }
-        /*
-        else if (key.equals("pref_proxy_port")) {
-            params.put("pref_proxy_port", prefs.getString("pref_proxy_port", "5060"));
-            updated = true;
-        }
-         */
         else if (key.equals("pref_sip_user")) {
             params.put("pref_sip_user", prefs.getString("pref_sip_user", "bob"));
             updated = true;

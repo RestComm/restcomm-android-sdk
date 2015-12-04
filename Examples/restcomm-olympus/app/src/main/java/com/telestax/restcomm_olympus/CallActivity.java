@@ -238,7 +238,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                     connectParams.put("username", finalIntent.getStringExtra(RCDevice.EXTRA_DID));
                     connectParams.put("video-enabled", finalIntent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
 
-                    // if you want to add custom SIP headers, please uncomment this
+                    // *** if you want to add custom SIP headers, please uncomment this
                     //HashMap<String, String> sipHeaders = new HashMap<>();
                     //sipHeaders.put("X-SIP-Header1", "Value1");
                     //connectParams.put("sip-headers", sipHeaders);
