@@ -98,8 +98,8 @@
     <orderEntry type="library" exported="" name="support-annotations-22.2.0" level="project" />
     <orderEntry type="library" exported="" name="appcompat-v7-22.2.0" level="project" />
     <orderEntry type="library" exported="" name="autobanh" level="project" />
-    <orderEntry type="library" exported="" name="log4j-1.2.15" level="project" />
     <orderEntry type="library" exported="" name="libjingle_peerconnection_java" level="project" />
+    <orderEntry type="library" exported="" name="log4j-1.2.15" level="project" />
     <orderEntry type="library" exported="" name="android-jain-sip-ri-1.2.228" level="project" />
   </component>
 </module>

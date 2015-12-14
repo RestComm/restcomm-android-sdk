@@ -57,8 +57,11 @@ public class Register {
 					headerFactory.createToHeader(toAddress, null), viaHeaders,
 					headerFactory.createMaxForwardsHeader(70));
 
+
 			// Add route header with the proxy first
-			Address routeAddress = addressFactory.createAddress(sipManager.getSipProfile().getRemoteEndpoint());
+			SipURI routeUri = (SipURI) sipManager.addressFactory.createURI(sipManager.getSipProfile().getRemoteEndpoint());
+			routeUri.setLrParam();
+			Address routeAddress = addressFactory.createAddress(routeUri);
 			RouteHeader routeHeader = headerFactory.createRouteHeader(routeAddress);
 			request.addFirst(routeHeader);
 
