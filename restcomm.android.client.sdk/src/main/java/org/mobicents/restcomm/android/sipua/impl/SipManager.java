@@ -103,8 +103,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
     private HashMap<String,String> customHeaders;
 	private ClientTransaction currentClientTransaction = null;
 	private ServerTransaction currentServerTransaction;
-	private static final int MAX_REGISTER_ATTEMPTS = 3;
-	HashMap<String, Integer> registerAuthenticationMap = new HashMap<>();
+	private static final int MAX_AUTH_ATTEMPTS = 3;
+	HashMap<String, Integer> authenticationMap = new HashMap<>();
 	// Is it an outgoing call or incoming call. We're using this so that when we hit
 	// hangup we know which transaction to use, the client or the server (maybe we
 	// could also use dialog.isServer() flag but have found mixed opinions about it)
@@ -140,11 +140,11 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		properties.setProperty("android.javax.sip.STACK_NAME", "androidSip");
 		// You need 16 for logging traces. 32 for debug + traces.
 		// Your code will limp at 32 but it is best for debugging.
-		//properties.setProperty("android.gov.nist.javax.sip.TRACE_LEVEL", "32");
+		properties.setProperty("android.gov.nist.javax.sip.TRACE_LEVEL", "32");
 		//properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", "/storage/emulated/legacy/Download/debug-jain.log");
 		//properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", "/storage/emulated/legacy/Download/server-jain.log");
-		//properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", "/mnt/sdcard/Download/debug-jain.log");
-		//properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", "/mnt/sdcard/Download/server-jain.log");
+		properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", "/mnt/sdcard/Download/debug-jain.log");
+		properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", "/mnt/sdcard/Download/server-jain.log");
 
 		try {
 			if (udpListeningPoint != null) {
@@ -718,13 +718,13 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 										.getSipPassword()), headerFactory);
 				CallIdHeader callId = (CallIdHeader)response.getHeader("Call-ID");
 				int attempts = 0;
-				if (registerAuthenticationMap.containsKey(callId.toString())) {
-					attempts = registerAuthenticationMap.get(callId.toString()).intValue();
+				if (authenticationMap.containsKey(callId.toString())) {
+					attempts = authenticationMap.get(callId.toString()).intValue();
 				}
 
 				// we 're subtracting one since the first attempt has already taken place
-				// (that way we are enforcing MAX_REGISTER_ATTEMPTS at most)
-				if (attempts < MAX_REGISTER_ATTEMPTS - 1) {
+				// (that way we are enforcing MAX_AUTH_ATTEMPTS at most)
+				if (attempts < MAX_AUTH_ATTEMPTS - 1) {
 					ClientTransaction inviteTid = authenticationHelper
 							.handleChallenge(response, tid, sipProvider, 5, true);
 					currentClientTransaction = inviteTid;
@@ -733,11 +733,13 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 						// only update the dialog if we are responding to INVITE with new invite
 						dialog = inviteTid.getDialog();
 					}
-					registerAuthenticationMap.put(callId.toString(), attempts + 1);
+					authenticationMap.put(callId.toString(), attempts + 1);
 				}
 				else {
-					dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_NON_CALL, RCClient.ErrorCodes.SIGNALLING_REGISTER_AUTH_ERROR,
-							"Error authenticating REGISTER");
+					if (tid != null && tid.getRequest() != null) {
+						dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_NON_CALL, RCClient.ErrorCodes.SIGNALLING_REGISTER_AUTH_ERROR,
+								"Error authenticating " + tid.getRequest().getMethod());
+					}
 				}
 			} catch (NullPointerException e) {
 				e.printStackTrace();
@@ -779,7 +781,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			}
 			else if (cseq.getMethod().equals(Request.REGISTER)) {
 				// we got 200 OK to register request, clear the map
-				registerAuthenticationMap.clear();
+				authenticationMap.clear();
 				dispatchSipEvent(new SipEvent(this,
 						SipEventType.REGISTER_SUCCESS, "", ""));
 
