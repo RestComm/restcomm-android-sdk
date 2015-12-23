@@ -5,11 +5,11 @@ android {
     buildToolsVersion "23.0.1"
 
     defaultConfig {
-        applicationId "com.telestax.restcommmessenger"
+        applicationId "com.telestax.restcomm_olympus"
         minSdkVersion 16
         targetSdkVersion 22
         versionCode 1
-        versionName "1.0.0-BETA3#6"
+        versionName "1.0.0-BETA4#2"
     }
     buildTypes {
         release {

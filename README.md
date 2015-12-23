@@ -22,10 +22,10 @@ OS/Hardware requirements
 
 RestComm Client SDK for Android has been tested to work on Android API level 16 and above (Android 4.1 and above)
 
-Latest Messenger .apk
+Latest Olympus .apk
 =============================
 
-Here's the .apk for the Messenger Restcomm Client SDK sample application: https://tsfr.io/qksja4
+Here's the .apk for the Olympus Restcomm Android App utilizing the RestComm Client SDK and providing a simple client application for Restcomm Cloud: https://tsfr.io/qcn3wy
 
 Want to Contribute ? 
 ========

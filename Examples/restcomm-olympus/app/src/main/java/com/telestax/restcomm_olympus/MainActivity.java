@@ -95,7 +95,7 @@ public class MainActivity extends AppCompatActivity
 
         params = new HashMap<String, Object>();
         params.put("pref_proxy_domain", prefs.getString("pref_proxy_domain", ""));
-        params.put("pref_sip_user", prefs.getString("pref_sip_user", "bob"));
+        params.put("pref_sip_user", prefs.getString("pref_sip_user", "android-sdk"));
         params.put("pref_sip_password", prefs.getString("pref_sip_password", "1234"));
         device = RCClient.createDevice(params, this);
         device.setPendingIntents(new Intent(getApplicationContext(), CallActivity.class),
@@ -337,7 +337,7 @@ public class MainActivity extends AppCompatActivity
             updated = true;
         }
         else if (key.equals("pref_sip_user")) {
-            params.put("pref_sip_user", prefs.getString("pref_sip_user", "bob"));
+            params.put("pref_sip_user", prefs.getString("pref_sip_user", "android-sdk"));
             updated = true;
         } else if (key.equals("pref_sip_password")) {
             params.put("pref_sip_password", prefs.getString("pref_sip_password", "1234"));

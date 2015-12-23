@@ -5,7 +5,7 @@
     android:key="sip_proxy_settings"
     android:title="Sip Settings" >
     <EditTextPreference
-        android:defaultValue="bob"
+        android:defaultValue="android-sdk"
         android:key="pref_sip_user"
         android:title="User" />
     <EditTextPreference
