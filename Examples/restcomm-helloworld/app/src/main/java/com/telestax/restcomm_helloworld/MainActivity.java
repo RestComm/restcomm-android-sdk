@@ -85,6 +85,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         btnHangup = (Button)findViewById(R.id.button_hangup);
         btnHangup.setOnClickListener(this);
 
+        RCClient.setLogLevel(Log.VERBOSE);
         RCClient.initialize(getApplicationContext(), new RCClient.RCInitListener() {
             public void onInitialized() {
                 Log.i(TAG, "RCClient initialized");
@@ -98,7 +99,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
         params = new HashMap<String, Object>();
         // update the IP address to your Restcomm instance
         params.put("pref_proxy_domain", "");
-        params.put("pref_sip_user", "bob");
+        params.put("pref_sip_user", "android-sdk");
         params.put("pref_sip_password", "1234");
         device = RCClient.createDevice(params, this);
         Intent intent = new Intent(getApplicationContext(), MainActivity.class);
