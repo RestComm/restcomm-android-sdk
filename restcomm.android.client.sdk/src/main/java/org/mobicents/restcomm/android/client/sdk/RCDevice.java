@@ -32,7 +32,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.os.Handler;
-import android.util.Log;
+import org.mobicents.restcomm.android.sipua.RCLogger;
 
 import org.mobicents.restcomm.android.sipua.SipProfile;
 import org.mobicents.restcomm.android.sipua.SipUADeviceListener;
@@ -120,7 +120,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
     PendingIntent pendingCallIntent;
     PendingIntent pendingMessageIntent;
     private RCConnection incomingConnection;
-    private DeviceImpl.ReachabilityState reachabilityState = DeviceImpl.ReachabilityState.REACHABILITY_NONE;
+    private RCDeviceListener.RCConnectivityStatus reachabilityState = RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone;
     private SipProfile sipProfile = null;
 
     /**
@@ -130,6 +130,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
      * @param deviceListener  Listener of RCDevice
      */
     protected RCDevice(HashMap<String, Object> parameters, RCDeviceListener deviceListener) {
+        RCLogger.i(TAG, "RCDevice(): " + parameters.toString());
         //this.updateCapabilityToken(capabilityToken);
         this.listener = deviceListener;
 
@@ -147,8 +148,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         reachabilityState = DeviceImpl.checkReachability(RCClient.getContext());
 
         boolean connectivity = false;
-        if (reachabilityState == DeviceImpl.ReachabilityState.REACHABILITY_WIFI ||
-                reachabilityState == DeviceImpl.ReachabilityState.REACHABILITY_MOBILE) {
+        if (reachabilityState != RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
             connectivity = true;
         }
         initializeSignalling(connectivity);
@@ -161,6 +161,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
 
     private void initializeSignalling(boolean connectivity)
     {
+        RCLogger.i(TAG, "initializeSignalling()");
         sipProfile = new SipProfile();
         updateSipProfile(parameters);
         DeviceImpl deviceImpl = DeviceImpl.GetInstance();
@@ -168,44 +169,64 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         DeviceImpl.GetInstance().sipuaDeviceListener = this;
         // register after initialization
         if (connectivity) {
-            DeviceImpl.GetInstance().Register();
-            state = DeviceState.READY;
+            if (!parameters.containsKey("pref_proxy_domain") ||
+                    parameters.containsKey("pref_proxy_domain") && parameters.get("pref_proxy_domain").equals("")) {
+                // registrarless; we can transition to ready right away (i.e. without waiting for Restcomm to reply to REGISTER)
+                state = DeviceState.READY;
+            }
+            else {
+                DeviceImpl.GetInstance().Register();
+            }
         }
     }
 
-    private void onReachabilityChanged(final DeviceImpl.ReachabilityState newState)
+    private void onReachabilityChanged(final RCDeviceListener.RCConnectivityStatus newState)
     {
-        if (newState == DeviceImpl.ReachabilityState.REACHABILITY_NONE && state != DeviceState.OFFLINE) {
-            Log.w(TAG, "Reachability changed; no connectivity");
+        if (newState == reachabilityState) {
+            RCLogger.w(TAG, "Reachability event, but remained the same: " + newState);
+            return;
+        }
+
+        if (newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone && state != DeviceState.OFFLINE) {
+            RCLogger.w(TAG, "Reachability changed; no connectivity");
             DeviceImpl.GetInstance().unbind();
             state = DeviceState.OFFLINE;
             reachabilityState = newState;
+            this.listener.onConnectivityUpdate(this, newState);
             return;
         }
 
         // old state wifi and new state mobile or the reverse; need to shutdown and restart network facilities
-        if ((reachabilityState == DeviceImpl.ReachabilityState.REACHABILITY_WIFI && newState == DeviceImpl.ReachabilityState.REACHABILITY_MOBILE) ||
-                (reachabilityState == DeviceImpl.ReachabilityState.REACHABILITY_MOBILE && newState == DeviceImpl.ReachabilityState.REACHABILITY_WIFI)) {
+        if ((reachabilityState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi && newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular) ||
+                (reachabilityState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular && newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi)) {
             if (state != DeviceState.OFFLINE) {
-                Log.w(TAG, "Reachability action: switch between wifi and mobile. Device state: " + state);
+                RCLogger.w(TAG, "Reachability action: switch between wifi and mobile. Device state: " + state);
                 // refresh JAIN networking facilities so that we use the new available interface
                 DeviceImpl.GetInstance().RefreshNetworking();
                 reachabilityState = newState;
+                this.listener.onConnectivityUpdate(this, newState);
                 return;
             }
         }
 
-        if ((newState == DeviceImpl.ReachabilityState.REACHABILITY_WIFI || newState == DeviceImpl.ReachabilityState.REACHABILITY_MOBILE)
+        if ((newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi || newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular)
                 && state == DeviceState.OFFLINE) {
-            Log.w(TAG, "Reachability action: wifi/mobile available. Device state: " + state);
+            RCLogger.w(TAG, "Reachability action: wifi/mobile available. Device state: " + state);
             DeviceImpl.GetInstance().bind();
-            DeviceImpl.GetInstance().Register();
             reachabilityState = newState;
-            state = DeviceState.READY;
+            if (!parameters.containsKey("pref_proxy_domain") ||
+                    parameters.containsKey("pref_proxy_domain") && parameters.get("pref_proxy_domain").equals("")) {
+                // registrarless; we can transition to ready right away (i.e. without waiting for Restcomm to reply to REGISTER)
+                state = DeviceState.READY;
+                this.listener.onConnectivityUpdate(this, newState);
+            }
+            else {
+                DeviceImpl.GetInstance().Register();
+            }
         }
     }
 
-    public DeviceImpl.ReachabilityState getReachability()
+    public RCDeviceListener.RCConnectivityStatus getReachability()
     {
         return reachabilityState;
     }
@@ -225,6 +246,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
      * Shuts down and release the Device
      */
     public void release() {
+        RCLogger.i(TAG, "release()");
         this.listener = null;
 
         if (DeviceImpl.isInitialized()) {
@@ -256,6 +278,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
      * Start listening for incoming connections
      */
     public void listen() {
+        RCLogger.i(TAG, "listen()");
+
         if (state == DeviceState.READY) {
             DeviceImpl.GetInstance().Register();
         }
@@ -265,6 +289,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
      * Stop listeninig for incoming connections
      */
     public void unlisten() {
+        RCLogger.i(TAG, "unlisten()");
+
         if (state == DeviceState.READY) {
             DeviceImpl.GetInstance().Unregister();
         }
@@ -278,6 +304,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
      */
     public void setDeviceListener(RCDeviceListener listener)
     {
+        RCLogger.i(TAG, "setDeviceListener()");
+
         this.listener = listener;
         //DeviceImpl.GetInstance().sipuaConnectionListener = this;
     }
@@ -292,7 +320,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
     }
 
     /**
-     * Updates the capability token (<b>Not implemented yet</b>
+     * Updates the capability token (<b>Not implemented yet</b>)
      */
     public void updateCapabilityToken(String token) {
 
@@ -310,8 +338,10 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
      *                   means that RCDevice.state not ready to make a call (this usually means no WiFi available)
      */
     public RCConnection connect(Map<String, Object> parameters, RCConnectionListener listener) {
-        if (DeviceImpl.checkReachability(RCClient.getContext()) == DeviceImpl.ReachabilityState.REACHABILITY_NONE) {
-            Log.e(TAG, "connect(): No reachability");
+        RCLogger.i(TAG, "connect(): " + parameters.toString());
+
+        if (DeviceImpl.checkReachability(RCClient.getContext()) == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
+            RCLogger.e(TAG, "connect(): No reachability");
             // Phone state Intents to capture connection failed event
             String username = "";
             if (parameters != null && parameters.get("username") != null)
@@ -321,7 +351,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         }
 
         if (state == DeviceState.READY) {
-            Log.i(TAG, "RCDevice.connect(), with connectivity");
+            RCLogger.i(TAG, "RCDevice.connect(), with connectivity");
 
             Boolean enableVideo = (Boolean)parameters.get("video-enabled");
             RCConnection connection = new RCConnection(listener);
@@ -350,6 +380,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
      * @param parameters Parameters used for the message, such as 'username' that holds the recepient for the message
      */
     public boolean sendMessage(String message, Map<String, String> parameters) {
+        RCLogger.i(TAG, "sendMessage(): message:" + message + "\nparameters: " + parameters.toString());
+
         if (state == DeviceState.READY) {
             DeviceImpl.GetInstance().SendMessage(parameters.get("username"), message);
             return true;
@@ -362,6 +394,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
      * Disconnect all connections
      */
     public void disconnectAll() {
+        RCLogger.i(TAG, "disconnectAll()");
+
         if (state == DeviceState.BUSY) {
             // TODO: currently only support one live connection. Maybe would be a better idea to use a separate reference to the active RCConnection
             RCConnection connection = (RCConnection)DeviceImpl.GetInstance().sipuaConnectionListener;
@@ -399,6 +433,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
      * @param messageIntent: an intent that will be sent on an incoming text message
      */
     public void setPendingIntents(Intent callIntent, Intent messageIntent) {
+        RCLogger.i(TAG, "setPendingIntents()");
         pendingCallIntent = PendingIntent.getActivity(RCClient.getContext(), 0, callIntent, PendingIntent.FLAG_UPDATE_CURRENT);
         pendingMessageIntent = PendingIntent.getActivity(RCClient.getContext(), 0, messageIntent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
@@ -417,6 +452,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
      * @param incomingSound Whether or not the sound should be played
      */
     public void setIncomingSoundEnabled(boolean incomingSound) {
+        RCLogger.i(TAG, "setIncomingSoundEnabled()");
+
         DeviceImpl.GetInstance().soundManager.setIncoming(incomingSound);
     }
 
@@ -435,6 +472,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
      * @param outgoingSound Whether or not the sound should be played
      */
     public void setOutgoingSoundEnabled(boolean outgoingSound) {
+        RCLogger.i(TAG, "setOutgoingSoundEnabled()");
         DeviceImpl.GetInstance().soundManager.setOutgoing(outgoingSound);
     }
 
@@ -453,6 +491,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
      * @param disconnectSound Whether or not the sound should be played
      */
     public void setDisconnectSoundEnabled(boolean disconnectSound) {
+        RCLogger.i(TAG, "setDisconnectSoundEnabled()");
         DeviceImpl.GetInstance().soundManager.setDisconnect(disconnectSound);
     }
 
@@ -472,24 +511,38 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
      * @return Whether the update was successful or not
      */
     public boolean updateParams(HashMap<String, Object> params) {
-        if (state == DeviceState.READY) {
+        RCLogger.i(TAG, "updateParams(): " + params.toString());
+        boolean status = false;
+
+        if (params.containsKey("pref_proxy_domain") && !params.get("pref_proxy_domain").equals("")) {
+            // we have a new (non empty) domain, need to register
             updateSipProfile(params);
-            DeviceImpl.GetInstance().Register();
-            return true;
+            if (reachabilityState != RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
+                DeviceImpl.GetInstance().Register();
+                status = true;
+            }
         }
         else {
-            return false;
+            // we have an empty domain
+            if (!sipProfile.getRemoteEndpoint().equals("")) {
+                // previously we had a registrar setup, need to unregister (important: we call updateSipProfile afterwards cause if we do no
+                // unregister will check the SipProfile, find that domain is empty and skip unregistration
+                DeviceImpl.GetInstance().Unregister();
+            }
+            // previously we didn't have a registrar setup, no need to do anything
+            updateSipProfile(params);
+            status = true;
         }
+        return status;
     }
 
     public void updateSipProfile(HashMap<String, Object> params) {
         if (params != null) {
             for (String key : params.keySet()) {
-                if (key.equals("pref_proxy_ip")) {
-                    sipProfile.setRemoteIp((String) params.get(key));
-                } else if (key.equals("pref_proxy_port")) {
-                    sipProfile.setRemotePort(Integer.parseInt((String) params.get(key)));
-                } else if (key.equals("pref_sip_user")) {
+                if (key.equals("pref_proxy_domain")) {
+                    sipProfile.setRemoteEndpoint((String) params.get(key));
+                }
+                else if (key.equals("pref_sip_user")) {
                     sipProfile.setSipUserName((String) params.get(key));
                 } else if (key.equals("pref_sip_password")) {
                     sipProfile.setSipPassword((String) params.get(key));
@@ -502,6 +555,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
      * INTERNAL: not to be used from the Application
      */
     public void onSipUAConnectionArrived(SipEvent event) {
+        RCLogger.i(TAG, "onSipUAConnectionArrived()");
+
         incomingConnection = new RCConnection();
         incomingConnection.incoming = true;
         incomingConnection.state = RCConnection.ConnectionState.CONNECTING;
@@ -541,6 +596,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
      * INTERNAL: not to be used from the Application
      */
     public void onSipUAMessageArrived(SipEvent event) {
+        RCLogger.i(TAG, "onSipUAMessageArrived()");
+
         HashMap<String, String> parameters = new HashMap<String, String>();
         // filter out SIP URI stuff and leave just the name
         String from = event.from.replaceAll("^<", "").replaceAll(">$", "");
@@ -575,6 +632,53 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         mainHandler.post(myRunnable);
     }
 
+    public void onSipUAError(final RCClient.ErrorCodes errorCode, final String errorText)
+    {
+        RCLogger.i(TAG, "onSipUAError()");
+
+        final RCDevice device = this;
+        // Important: need to fire the event in UI context cause currently we might be in JAIN SIP thread
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (device.listener != null) {
+                    if (errorCode == RCClient.ErrorCodes.SIGNALLING_REGISTER_AUTH_ERROR ||
+                            errorCode == RCClient.ErrorCodes.SIGNALLING_REGISTER_ERROR) {
+                        state = DeviceState.OFFLINE;
+                        device.listener.onConnectivityUpdate(device, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone);
+                    }
+                    device.listener.onStopListening(device, errorCode.ordinal(), errorText);
+                }
+            }
+        };
+        mainHandler.post(myRunnable);
+    }
+
+    public void onSipUARegisterSuccess(SipEvent event) {
+        RCLogger.i(TAG, "onSipUARegisterSuccess()");
+
+        final RCDevice device = this;
+        final RCDeviceListener.RCConnectivityStatus state = this.reachabilityState;
+
+        // Important: need to fire the event in UI context cause currently we might be in JAIN SIP thread
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (device.listener != null) {
+                    if (device.state == DeviceState.OFFLINE) {
+                        device.state = DeviceState.READY;
+                        device.listener.onConnectivityUpdate(device, state);
+                    }
+                }
+            }
+        };
+        mainHandler.post(myRunnable);
+    }
+
+    // Helpers
+
     // Phone state Intents to capture incoming call event
     private void sendIncomingConnectionIntent (String user, RCConnection connection)
     {
@@ -586,9 +690,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         context.sendBroadcast(intent);
     }
 
-    private void sendNoConnectionIntent (String user, String message)
-    {
-        Intent intent = new Intent ("org.mobicents.restcomm.android.CONNECT_FAILED");
+    private void sendNoConnectionIntent (String user, String message) {
+        Intent intent = new Intent("org.mobicents.restcomm.android.CONNECT_FAILED");
         intent.putExtra("STATE", "connect failed");
         intent.putExtra("ERRORTEXT", message);
         intent.putExtra("ERROR", RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal());
@@ -597,6 +700,4 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         Context context = RCClient.getContext();
         context.sendBroadcast(intent);
     }
-
-    // Helpers
 }

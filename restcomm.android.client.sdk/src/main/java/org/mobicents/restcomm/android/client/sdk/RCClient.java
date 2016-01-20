@@ -24,14 +24,10 @@ package org.mobicents.restcomm.android.client.sdk;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.opengl.GLSurfaceView;
-import android.os.Handler;
-import android.util.Log;
 
-import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
+import android.content.Context;
+
+import org.mobicents.restcomm.android.sipua.RCLogger;
 
 
 /**
@@ -52,6 +48,14 @@ public class RCClient {
         CONNECTION_TIMEOUT,
         NO_CONNECTIVITY,
         WEBRTC_PEERCONNECTION_ERROR,
+        SIGNALLING_SIPURI_PARSE_ERROR,
+        SIGNALLING_DNS_ERROR,
+        SIGNALLING_DESTINATION_NOT_FOUND,
+        SIGNALLING_TIMEOUT,
+        SIGNALLING_REGISTER_ERROR,
+        SIGNALLING_REGISTER_AUTH_ERROR,
+        SIGNALLING_CALL_ERROR,
+        SIGNALLING_INSTANT_MESSAGE_ERROR,
     }
 
     public static String errorText(ErrorCodes errorCode) {
@@ -67,6 +71,12 @@ public class RCClient {
         }
         else if (errorCode == ErrorCodes.WEBRTC_PEERCONNECTION_ERROR) {
             return "Webrtc Peer Connection error";
+        }
+        else if (errorCode == ErrorCodes.SIGNALLING_SIPURI_PARSE_ERROR) {
+            return "Error parsing SIP URI";
+        }
+        else if (errorCode == ErrorCodes.SIGNALLING_SIPURI_PARSE_ERROR) {
+            return "Error in DNS resolving";
         }
         return "Generic Restcomm Client error";
     }
@@ -147,7 +157,7 @@ public class RCClient {
             device.release();
         }
         else {
-            Log.e(TAG, "shutdown(): Warning Restcomm Client already shut down, skipping");
+            RCLogger.e(TAG, "shutdown(): Warning Restcomm Client already shut down, skipping");
         }
         // allow the singleton to be GC'd
         instance = null;
@@ -173,7 +183,7 @@ public class RCClient {
     public static RCDevice createDevice(HashMap<String, Object> parameters, RCDeviceListener deviceListener)
     {
         if (!initialized) {
-            Log.i(TAG, "Attempting to create RCDevice without first initializing RCClient");
+            RCLogger.i(TAG, "Attempting to create RCDevice without first initializing RCClient");
             return null;
         }
 
@@ -182,7 +192,7 @@ public class RCClient {
             list.add(device);
         }
         else {
-            Log.e(TAG, "Device already exists, so we 're returning this one");
+            RCLogger.e(TAG, "Device already exists, so we 're returning this one");
         }
 
         return list.get(0);
@@ -195,23 +205,22 @@ public class RCClient {
     public static ArrayList<RCDevice> listDevices()
     {
         if (!initialized) {
-            Log.w(TAG, "RCClient uninitialized");
+            RCLogger.w(TAG, "RCClient uninitialized");
             return null;
         }
         if (list.size() == 0) {
-            Log.e(TAG, "Warning: RCDevice list size is 0");
+            RCLogger.e(TAG, "Warning: RCDevice list size is 0");
         }
 
         return list;
     }
 
-    /*
-    // TODO: implement
     public static void setLogLevel(int level)
     {
-
+        RCLogger.setLogLevel(level);
     }
 
+    /*
     // TODO: implement
     public static String getVersion()
     {

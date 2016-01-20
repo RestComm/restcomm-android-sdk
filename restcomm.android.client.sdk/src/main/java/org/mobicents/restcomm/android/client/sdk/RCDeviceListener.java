@@ -30,6 +30,12 @@ import java.util.HashMap;
  *  RCDevice notifies its listener for RCDevice related events defined in this interface
  */
 public interface RCDeviceListener {
+    // map RCConnectivityStatus enum with Reachability.h:NerworkStatus enum 1-1
+     enum RCConnectivityStatus {
+        RCConnectivityStatusWiFi,  // restcomm reachable and online via Wifi (or if in registrarless mode we don't register with restcomm; we just know that we have internet connectivity)
+        RCConnectivityStatusCellular,  // restcomm reachable and online via cellular (same as above for registraless)
+        RCConnectivityStatusNone,  // no restcomm connectivity either we have no internet connectivity or couldn't register to restcomm (or both)
+    }
     /**
      *  RCDevice started listening for incoming connections (<b>Not Implemented yet</b>)
      *
@@ -38,20 +44,28 @@ public interface RCDeviceListener {
     public abstract void onStartListening(RCDevice device);
 
     /**
-     *  RCDevice stopped listening for incoming connections (<b>Not Implemented yet</b>)
+     *  RCDevice stopped listening for incoming connections
      *
      *  @param device Device of interest
      */
     public abstract void onStopListening(RCDevice device);
 
     /**
-     *  RCDevice stopped listening for incoming connections due to error(<b>Not Implemented yet</b>)
+     *  RCDevice stopped listening for incoming connections due to error
      *
      *  @param device Device of interest
      *  @param errorCode  Error code
      *  @param errorText  Error text
      */
     public abstract void onStopListening(RCDevice device, int errorCode, String errorText);
+
+    /**
+     *  RCDevice connectivity status has been updated
+     *
+     *  @param device Device of interest
+     *  @param connectivityStatus  Connectivity status of Device
+     */
+    public abstract void onConnectivityUpdate(RCDevice device, RCConnectivityStatus connectivityStatus);
 
     /**
      *  RCDevice received incoming connection

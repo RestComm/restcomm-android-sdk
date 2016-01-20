@@ -56,6 +56,7 @@ import org.webrtc.VideoTrack;
 //import org.mobicents.restcomm.android.client.sdk.util;
 import org.mobicents.restcomm.android.client.sdk.util.LooperExecutor;
 import org.mobicents.restcomm.android.client.sdk.SignalingParameters;
+import org.mobicents.restcomm.android.sipua.RCLogger;
 
 import java.util.EnumSet;
 import java.util.LinkedList;
@@ -288,7 +289,7 @@ public class PeerConnectionClient {
             final VideoRenderer.Callbacks remoteRender,
             final SignalingParameters signalingParameters) {
         if (peerConnectionParameters == null) {
-            Log.e(TAG, "Creating peer connection without initializing factory.");
+            RCLogger.e(TAG, "Creating peer connection without initializing factory.");
             return;
         }
         this.localRender = localRender;
@@ -318,7 +319,7 @@ public class PeerConnectionClient {
 
     private void createPeerConnectionFactoryInternal(
             Context context, EGLContext renderEGLContext) {
-        Log.d(TAG, "Create peer connection factory with EGLContext "
+        RCLogger.d(TAG, "Create peer connection factory with EGLContext "
                 + renderEGLContext + ". Use video: "
                 + peerConnectionParameters.videoCallEnabled);
         isError = false;
@@ -348,10 +349,10 @@ public class PeerConnectionClient {
         }
         factory = new PeerConnectionFactory();
         if (options != null) {
-            Log.d(TAG, "Factory networkIgnoreMask option: " + options.networkIgnoreMask);
+            RCLogger.d(TAG, "Factory networkIgnoreMask option: " + options.networkIgnoreMask);
             factory.setOptions(options);
         }
-        Log.d(TAG, "Peer connection factory created.");
+        RCLogger.d(TAG, "Peer connection factory created.");
     }
 
     private void createMediaConstraintsInternal() {
@@ -369,7 +370,7 @@ public class PeerConnectionClient {
         // Check if there is a camera on device and disable video call if not.
         numberOfCameras = VideoCapturerAndroid.getDeviceCount();
         if (numberOfCameras == 0) {
-            Log.w(TAG, "No camera on device. Switch to audio only call.");
+            RCLogger.w(TAG, "No camera on device. Switch to audio only call.");
             videoCallEnabled = false;
         }
         // Create video constraints if video call is enabled.
@@ -416,7 +417,7 @@ public class PeerConnectionClient {
         audioConstraints = new MediaConstraints();
         // added for audio performance measurements
         if (peerConnectionParameters.noAudioProcessing) {
-            Log.d(TAG, "Disabling audio processing");
+            RCLogger.d(TAG, "Disabling audio processing");
             audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
                     AUDIO_ECHO_CANCELLATION_CONSTRAINT, "false"));
             audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
@@ -424,7 +425,7 @@ public class PeerConnectionClient {
             audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
                     AUDIO_HIGH_PASS_FILTER_CONSTRAINT, "false"));
             audioConstraints.mandatory.add(new MediaConstraints.KeyValuePair(
-                    AUDIO_NOISE_SUPPRESSION_CONSTRAINT , "false"));
+                    AUDIO_NOISE_SUPPRESSION_CONSTRAINT, "false"));
         }
         // Create SDP constraints.
         sdpMediaConstraints = new MediaConstraints();
@@ -441,13 +442,13 @@ public class PeerConnectionClient {
 
     private void createPeerConnectionInternal() {
         if (factory == null || isError) {
-            Log.e(TAG, "Peerconnection factory is not created");
+            RCLogger.e(TAG, "Peerconnection factory is not created");
             return;
         }
-        Log.d(TAG, "Create peer connection");
-        Log.d(TAG, "PCConstraints: " + pcConstraints.toString());
+        RCLogger.d(TAG, "Create peer connection");
+        RCLogger.d(TAG, "PCConstraints: " + pcConstraints.toString());
         if (videoConstraints != null) {
-            Log.d(TAG, "VideoConstraints: " + videoConstraints.toString());
+            RCLogger.d(TAG, "VideoConstraints: " + videoConstraints.toString());
         }
         queuedRemoteCandidates = new LinkedList<IceCandidate>();
 
@@ -478,7 +479,7 @@ public class PeerConnectionClient {
             if (numberOfCameras > 1 && frontCameraDeviceName != null) {
                 cameraDeviceName = frontCameraDeviceName;
             }
-            Log.d(TAG, "Opening camera: " + cameraDeviceName);
+            RCLogger.d(TAG, "Opening camera: " + cameraDeviceName);
             videoCapturer = VideoCapturerAndroid.create(cameraDeviceName, null);
             if (videoCapturer == null) {
                 reportError("Failed to open camera");
@@ -499,28 +500,28 @@ public class PeerConnectionClient {
                 factory.createAudioSource(audioConstraints)));
         peerConnection.addStream(mediaStream);
 
-        Log.d(TAG, "Peer connection created.");
+        RCLogger.d(TAG, "Peer connection created.");
     }
 
     private void closeInternal() {
-        Log.d(TAG, "Closing peer connection.");
+        RCLogger.d(TAG, "Closing peer connection.");
         statsTimer.cancel();
         if (peerConnection != null) {
             peerConnection.dispose();
             peerConnection = null;
         }
-        Log.d(TAG, "Closing video source.");
+        RCLogger.d(TAG, "Closing video source.");
         if (videoSource != null) {
             videoSource.dispose();
             videoSource = null;
         }
-        Log.d(TAG, "Closing peer connection factory.");
+        RCLogger.d(TAG, "Closing peer connection factory.");
         if (factory != null) {
             factory.dispose();
             factory = null;
         }
         options = null;
-        Log.d(TAG, "Closing peer connection done.");
+        RCLogger.d(TAG, "Closing peer connection done.");
         events.onPeerConnectionClosed();
     }
 
@@ -535,13 +536,13 @@ public class PeerConnectionClient {
                 try {
                     minWidth = Integer.parseInt(keyValuePair.getValue());
                 } catch (NumberFormatException e) {
-                    Log.e(TAG, "Can not parse video width from video constraints");
+                    RCLogger.e(TAG, "Can not parse video width from video constraints");
                 }
             } else if (keyValuePair.getKey().equals("minHeight")) {
                 try {
                     minHeight = Integer.parseInt(keyValuePair.getValue());
                 } catch (NumberFormatException e) {
-                    Log.e(TAG, "Can not parse video height from video constraints");
+                    RCLogger.e(TAG, "Can not parse video height from video constraints");
                 }
             }
         }
@@ -563,7 +564,7 @@ public class PeerConnectionClient {
             }
         }, null);
         if (!success) {
-            Log.e(TAG, "getStats() returns false!");
+            RCLogger.e(TAG, "getStats() returns false!");
         }
     }
 
@@ -582,7 +583,7 @@ public class PeerConnectionClient {
                     }
                 }, 0, periodMs);
             } catch (Exception e) {
-                Log.e(TAG, "Can not schedule statistics timer", e);
+                RCLogger.e(TAG, "Can not schedule statistics timer", e);
             }
         } else {
             statsTimer.cancel();
@@ -604,12 +605,42 @@ public class PeerConnectionClient {
         });
     }
 
+    public void setLocalVideoEnabled(final boolean enable) {
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+                renderVideo = enable;
+                if (localVideoTrack != null) {
+                    localVideoTrack.setEnabled(renderVideo);
+                }
+            }
+        });
+    }
+
+    public boolean getLocalVideoEnabled() {
+        /*
+        executor.execute(new Runnable() {
+            @Override
+            public void run() {
+            */
+        //renderVideo = enable;
+        if (localVideoTrack != null) {
+           return localVideoTrack.enabled();
+        }
+
+        return false;
+        /*
+            }
+        });
+            */
+    }
+
     public void createOffer() {
         executor.execute(new Runnable() {
             @Override
             public void run() {
                 if (peerConnection != null && !isError) {
-                    Log.d(TAG, "PC Create OFFER");
+                    RCLogger.d(TAG, "PC Create OFFER");
                     isInitiator = true;
                     peerConnection.createOffer(sdpObserver, sdpMediaConstraints);
                 }
@@ -622,7 +653,7 @@ public class PeerConnectionClient {
             @Override
             public void run() {
                 if (peerConnection != null && !isError) {
-                    Log.d(TAG, "PC create ANSWER");
+                    RCLogger.d(TAG, "PC create ANSWER");
                     isInitiator = false;
                     peerConnection.createAnswer(sdpObserver, sdpMediaConstraints);
                 }
@@ -671,7 +702,7 @@ public class PeerConnectionClient {
                     sdpDescription = setStartBitrate(AUDIO_CODEC_OPUS, false,
                             sdpDescription, peerConnectionParameters.audioStartBitrate);
                 }
-                Log.d(TAG, "Set remote SDP.");
+                RCLogger.d(TAG, "Set remote SDP.");
                 SessionDescription sdpRemote = new SessionDescription(
                         sdp.type, sdpDescription);
                 peerConnection.setRemoteDescription(sdpObserver, sdpRemote);
@@ -684,7 +715,7 @@ public class PeerConnectionClient {
             @Override
             public void run() {
                 if (videoSource != null && !videoSourceStopped) {
-                    Log.d(TAG, "Stop video source.");
+                    RCLogger.d(TAG, "Stop video source.");
                     videoSource.stop();
                     videoSourceStopped = true;
                 }
@@ -697,7 +728,7 @@ public class PeerConnectionClient {
             @Override
             public void run() {
                 if (videoSource != null && videoSourceStopped) {
-                    Log.d(TAG, "Restart video source.");
+                    RCLogger.d(TAG, "Restart video source.");
                     videoSource.restart();
                     videoSourceStopped = false;
                 }
@@ -706,7 +737,7 @@ public class PeerConnectionClient {
     }
 
     private void reportError(final String errorMessage) {
-        Log.e(TAG, "Peerconnection error: " + errorMessage);
+        RCLogger.e(TAG, "Peerconnection error: " + errorMessage);
         executor.execute(new Runnable() {
             @Override
             public void run() {
@@ -748,10 +779,10 @@ public class PeerConnectionClient {
             }
         }
         if (codecRtpMap == null) {
-            Log.w(TAG, "No rtpmap for " + codec + " codec");
+            RCLogger.w(TAG, "No rtpmap for " + codec + " codec");
             return sdpDescription;
         }
-        Log.d(TAG, "Found " +  codec + " rtpmap " + codecRtpMap
+        RCLogger.d(TAG, "Found " +  codec + " rtpmap " + codecRtpMap
                 + " at " + lines[rtpmapLineIndex]);
 
         // Check if a=fmtp string already exist in remote SDP for this codec and
@@ -761,7 +792,7 @@ public class PeerConnectionClient {
         for (int i = 0; i < lines.length; i++) {
             Matcher codecMatcher = codecPattern.matcher(lines[i]);
             if (codecMatcher.matches()) {
-                Log.d(TAG, "Found " +  codec + " " + lines[i]);
+                RCLogger.d(TAG, "Found " +  codec + " " + lines[i]);
                 if (isVideoCodec) {
                     lines[i] += "; " + VIDEO_CODEC_PARAM_START_BITRATE
                             + "=" + bitrateKbps;
@@ -769,7 +800,7 @@ public class PeerConnectionClient {
                     lines[i] += "; " + AUDIO_CODEC_PARAM_BITRATE
                             + "=" + (bitrateKbps * 1000);
                 }
-                Log.d(TAG, "Update remote SDP line: " + lines[i]);
+                RCLogger.d(TAG, "Update remote SDP line: " + lines[i]);
                 sdpFormatUpdated = true;
                 break;
             }
@@ -788,7 +819,7 @@ public class PeerConnectionClient {
                     bitrateSet = "a=fmtp:" + codecRtpMap + " "
                             + AUDIO_CODEC_PARAM_BITRATE + "=" + (bitrateKbps * 1000);
                 }
-                Log.d(TAG, "Add remote SDP line: " + bitrateSet);
+                RCLogger.d(TAG, "Add remote SDP line: " + bitrateSet);
                 newSdpDescription.append(bitrateSet).append("\r\n");
             }
 
@@ -821,14 +852,14 @@ public class PeerConnectionClient {
             }
         }
         if (mLineIndex == -1) {
-            Log.w(TAG, "No " + mediaDescription + " line, so can't prefer " + codec);
+            RCLogger.w(TAG, "No " + mediaDescription + " line, so can't prefer " + codec);
             return sdpDescription;
         }
         if (codecRtpMap == null) {
-            Log.w(TAG, "No rtpmap for " + codec);
+            RCLogger.w(TAG, "No rtpmap for " + codec);
             return sdpDescription;
         }
-        Log.d(TAG, "Found " +  codec + " rtpmap " + codecRtpMap + ", prefer at "
+        RCLogger.d(TAG, "Found " +  codec + " rtpmap " + codecRtpMap + ", prefer at "
                 + lines[mLineIndex]);
         String[] origMLineParts = lines[mLineIndex].split(" ");
         if (origMLineParts.length > 3) {
@@ -845,9 +876,9 @@ public class PeerConnectionClient {
                 }
             }
             lines[mLineIndex] = newMLine.toString();
-            Log.d(TAG, "Change media description: " + lines[mLineIndex]);
+            RCLogger.d(TAG, "Change media description: " + lines[mLineIndex]);
         } else {
-            Log.e(TAG, "Wrong SDP media description format: " + lines[mLineIndex]);
+            RCLogger.e(TAG, "Wrong SDP media description format: " + lines[mLineIndex]);
         }
         StringBuilder newSdpDescription = new StringBuilder();
         for (String line : lines) {
@@ -858,7 +889,7 @@ public class PeerConnectionClient {
 
     private void drainCandidates() {
         if (queuedRemoteCandidates != null) {
-            Log.d(TAG, "Add " + queuedRemoteCandidates.size() + " remote candidates");
+            RCLogger.d(TAG, "Add " + queuedRemoteCandidates.size() + " remote candidates");
             for (IceCandidate candidate : queuedRemoteCandidates) {
                 peerConnection.addIceCandidate(candidate);
             }
@@ -868,11 +899,11 @@ public class PeerConnectionClient {
 
     private void switchCameraInternal() {
         if (!videoCallEnabled || numberOfCameras < 2 || isError || videoCapturer == null) {
-            Log.e(TAG, "Failed to switch camera. Video: " + videoCallEnabled + ". Error : "
+            RCLogger.e(TAG, "Failed to switch camera. Video: " + videoCallEnabled + ". Error : "
                     + isError + ". Number of cameras: " + numberOfCameras);
             return;  // No video is sent or only one camera is available or error happened.
         }
-        Log.d(TAG, "Switch camera");
+        RCLogger.d(TAG, "Switch camera");
         videoCapturer.switchCamera(null);
     }
 
@@ -900,7 +931,7 @@ public class PeerConnectionClient {
         @Override
         public void onSignalingChange(
                 PeerConnection.SignalingState newState) {
-            Log.d(TAG, "SignalingState: " + newState);
+            RCLogger.d(TAG, "SignalingState: " + newState);
         }
 
         @Override
@@ -909,7 +940,7 @@ public class PeerConnectionClient {
             executor.execute(new Runnable() {
                 @Override
                 public void run() {
-                    Log.d(TAG, "IceConnectionState: " + newState);
+                    RCLogger.d(TAG, "IceConnectionState: " + newState);
                     if (newState == IceConnectionState.CONNECTED) {
                         events.onIceConnected();
                     } else if (newState == IceConnectionState.DISCONNECTED) {
@@ -924,7 +955,7 @@ public class PeerConnectionClient {
         @Override
         public void onIceGatheringChange(
                 PeerConnection.IceGatheringState newState) {
-            Log.d(TAG, "IceGatheringState: " + newState);
+            RCLogger.d(TAG, "IceGatheringState: " + newState);
             if (newState == PeerConnection.IceGatheringState.COMPLETE) {
                 events.onIceGatheringComplete();
             }
@@ -1003,7 +1034,7 @@ public class PeerConnectionClient {
                 @Override
                 public void run() {
                     if (peerConnection != null && !isError) {
-                        Log.d(TAG, "Set local SDP from " + sdp.type);
+                        RCLogger.d(TAG, "Set local SDP from " + sdp.type);
                         peerConnection.setLocalDescription(sdpObserver, sdp);
                     }
                 }
@@ -1023,12 +1054,12 @@ public class PeerConnectionClient {
                         // local SDP, then after receiving answer set remote SDP.
                         if (peerConnection.getRemoteDescription() == null) {
                             // We've just set our local SDP so time to send it.
-                            Log.d(TAG, "Local SDP set succesfully");
+                            RCLogger.d(TAG, "Local SDP set succesfully");
                             events.onLocalDescription(localSdp);
                         } else {
                             // We've just set remote description, so drain remote
                             // and send local ICE candidates.
-                            Log.d(TAG, "Remote SDP set succesfully");
+                            RCLogger.d(TAG, "Remote SDP set succesfully");
                             drainCandidates();
                         }
                     } else {
@@ -1037,13 +1068,13 @@ public class PeerConnectionClient {
                         if (peerConnection.getLocalDescription() != null) {
                             // We've just set our local SDP so time to send it, drain
                             // remote and send local ICE candidates.
-                            Log.d(TAG, "Local SDP set succesfully");
+                            RCLogger.d(TAG, "Local SDP set succesfully");
                             events.onLocalDescription(localSdp);
                             drainCandidates();
                         } else {
                             // We've just set remote SDP - do nothing for now -
                             // answer will be created soon.
-                            Log.d(TAG, "Remote SDP set succesfully");
+                            RCLogger.d(TAG, "Remote SDP set succesfully");
                         }
                     }
                 }

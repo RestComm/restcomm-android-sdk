@@ -1,0 +1,142 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+android:orientation="vertical"
+android:layout_width="wrap_content"
+android:layout_height="wrap_content">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="24dp"
+        android:layout_marginLeft="@dimen/dialog_left_right_margin"
+        android:layout_marginRight="@dimen/dialog_left_right_margin"
+        android:layout_marginBottom="4dp"
+        android:text="Company Name"
+        android:textColor="@color/colorTextPrimary"
+        android:textStyle="bold"
+        android:id="@+id/textView_company_title"
+        android:layout_gravity="center_horizontal"
+        android:textSize="@dimen/about_header_font_size" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginLeft="@dimen/dialog_left_right_margin"
+        android:layout_marginRight="@dimen/dialog_left_right_margin"
+        android:layout_marginBottom="10dp"
+        android:textColor="@color/colorTextSecondary"
+        android:text="Telestax"
+        android:id="@+id/textView_company_name"
+        android:layout_gravity="center_horizontal"
+        android:textSize="@dimen/about_value_font_size" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginLeft="@dimen/dialog_left_right_margin"
+        android:layout_marginRight="@dimen/dialog_left_right_margin"
+        android:layout_marginBottom="4dp"
+        android:text="Lead Developer"
+        android:textColor="@color/colorTextPrimary"
+        android:textStyle="bold"
+        android:id="@+id/textView_developer_title"
+        android:layout_gravity="center_horizontal"
+        android:textIsSelectable="false"
+        android:textSize="@dimen/about_header_font_size" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginLeft="@dimen/dialog_left_right_margin"
+        android:layout_marginRight="@dimen/dialog_left_right_margin"
+        android:layout_marginBottom="10dp"
+        android:textColor="@color/colorTextSecondary"
+        android:text="Antonis Tsakiridis"
+        android:id="@+id/textView_developer_name"
+        android:layout_gravity="center_horizontal"
+        android:textSize="@dimen/about_value_font_size" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginLeft="@dimen/dialog_left_right_margin"
+        android:layout_marginRight="@dimen/dialog_left_right_margin"
+        android:layout_marginBottom="4dp"
+        android:text="Version"
+        android:textColor="@color/colorTextPrimary"
+        android:textStyle="bold"
+        android:id="@+id/textView_version_title"
+        android:layout_gravity="center_horizontal"
+        android:textSize="@dimen/about_header_font_size" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginLeft="@dimen/dialog_left_right_margin"
+        android:layout_marginRight="@dimen/dialog_left_right_margin"
+        android:layout_marginBottom="10dp"
+        android:textColor="@color/colorTextSecondary"
+        android:text="TelScale Restcomm Android Client 1.0.0 BETA4"
+        android:id="@+id/textView_version_name"
+        android:layout_gravity="center_horizontal"
+        android:textSize="@dimen/about_value_font_size" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginLeft="@dimen/dialog_left_right_margin"
+        android:layout_marginRight="@dimen/dialog_left_right_margin"
+        android:layout_marginBottom="4dp"
+        android:text="GitHub #"
+        android:textColor="@color/colorTextPrimary"
+        android:textStyle="bold"
+        android:id="@+id/textView_github_hash_title"
+        android:layout_gravity="center_horizontal"
+        android:textSize="@dimen/about_header_font_size" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginLeft="@dimen/dialog_left_right_margin"
+        android:layout_marginRight="@dimen/dialog_left_right_margin"
+        android:layout_marginBottom="4dp"
+        android:textColor="@color/colorTextSecondary"
+        android:text="2f42afe853560eb69be6d3cadd69f11d037ecf20"
+        android:id="@+id/textView_github_hash_name"
+        android:layout_gravity="center_horizontal"
+        android:textSize="@dimen/about_value_font_size" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginLeft="@dimen/dialog_left_right_margin"
+        android:layout_marginRight="@dimen/dialog_left_right_margin"
+        android:layout_marginBottom="4dp"
+        android:text="Contributors"
+        android:textColor="@color/colorTextPrimary"
+        android:textStyle="bold"
+        android:id="@+id/textView_contributors_title"
+        android:layout_gravity="center_horizontal"
+        android:textSize="@dimen/about_header_font_size" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginLeft="@dimen/dialog_left_right_margin"
+        android:layout_marginRight="@dimen/dialog_left_right_margin"
+        android:layout_marginBottom="4dp"
+        android:textColor="@color/colorTextSecondary"
+        android:text="Arslan Mehboob"
+        android:id="@+id/textView_contributors_name1"
+        android:layout_gravity="center_horizontal"
+        android:textSize="@dimen/about_value_font_size" />
+
+</LinearLayout>

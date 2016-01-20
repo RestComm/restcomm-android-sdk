@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RelativeLayout
+    android:id="@+id/layout_video_call"
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/imageView_logo"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="64dp"
+        android:src="@drawable/restcomm_logo_call_139x54"/>
+
+    <android.opengl.GLSurfaceView
+        android:id="@+id/glview_call"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:id="@+id/label_call"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="132dp"
+        android:textSize="30sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text=""
+        android:id="@+id/label_status"
+        android:layout_below="@+id/label_call"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="26dp"
+        android:textSize="15sp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="00:00"
+        android:id="@+id/label_timer"
+        android:layout_below="@+id/label_status"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"
+        android:textSize="18sp" />
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:src="@drawable/hangup_74x74"
+        android:id="@+id/button_hangup"
+        android:layout_marginBottom="20dp"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true" />
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:src="@drawable/answer_video_50x50"
+        android:id="@+id/button_answer"
+        android:layout_alignBottom="@+id/button_hangup"
+        android:layout_toLeftOf="@+id/button_keypad"
+        android:layout_toStartOf="@+id/button_keypad"
+        android:layout_marginRight="58dp"
+        android:layout_marginEnd="58dp"
+        android:layout_marginBottom="10dp"/>
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/button_answer_audio"
+        android:background="@android:color/transparent"
+        android:src="@drawable/answer_audio_50x50"
+        android:layout_alignBottom="@+id/button_hangup"
+        android:layout_toRightOf="@+id/button_keypad"
+        android:layout_toEndOf="@+id/button_keypad"
+        android:layout_marginLeft="58dp"
+        android:layout_marginStart="58dp"
+        android:layout_marginBottom="10dp"/>
+
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/button_keypad"
+        android:layout_gravity="center_horizontal|bottom"
+        android:background="@android:color/transparent"
+        android:src="@drawable/keypad"
+        android:layout_above="@+id/button_hangup"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="20dp" />
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@android:color/transparent"
+        android:src="@drawable/video_active_50x50"
+        android:id="@+id/button_mute_video"
+        android:layout_alignBottom="@+id/button_hangup"
+        android:layout_toLeftOf="@+id/button_keypad"
+        android:layout_toStartOf="@+id/button_keypad"
+        android:layout_marginRight="58dp"
+        android:layout_marginEnd="58dp"
+        android:layout_marginBottom="10dp"/>
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/button_mute_audio"
+        android:background="@android:color/transparent"
+        android:src="@drawable/audio_active_50x50"
+        android:layout_alignBottom="@+id/button_hangup"
+        android:layout_toRightOf="@+id/button_keypad"
+        android:layout_toEndOf="@+id/button_keypad"
+        android:layout_marginLeft="58dp"
+        android:layout_marginStart="58dp"
+        android:layout_marginBottom="10dp"/>
+
+    <!-- placeholder for keypad fragment -->
+    <FrameLayout
+        android:id="@+id/keypad_fragment_container"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" >
+
+    </FrameLayout>
+
+</RelativeLayout>

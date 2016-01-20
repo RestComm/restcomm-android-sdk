@@ -33,7 +33,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
-import android.util.Log;
+import org.mobicents.restcomm.android.sipua.RCLogger;
 
 //import org.appspot.apprtc.util.AppRTCUtils;
 import org.mobicents.restcomm.android.client.sdk.util.AppRTCUtils;
@@ -110,7 +110,7 @@ public class AppRTCAudioManager {
         }
       }
       else {
-        Log.e(TAG, "onProximitySensorChangedState called on null proximitySensor -check mem management");
+        RCLogger.e(TAG, "onProximitySensorChangedState called on null proximitySensor -check mem management");
       }
     }
   }
@@ -143,7 +143,7 @@ public class AppRTCAudioManager {
   }
 
   public void init() {
-    Log.d(TAG, "init");
+    RCLogger.d(TAG, "init");
     if (initialized) {
       return;
     }
@@ -179,7 +179,7 @@ public class AppRTCAudioManager {
   }
 
   public void close() {
-    Log.d(TAG, "close");
+    RCLogger.d(TAG, "close");
     if (!initialized) {
       return;
     }
@@ -202,7 +202,7 @@ public class AppRTCAudioManager {
 
   /** Changes selection of the currently active audio device. */
   public void setAudioDevice(AudioDevice device) {
-    Log.d(TAG, "setAudioDevice(device=" + device + ")");
+    RCLogger.d(TAG, "setAudioDevice(device=" + device + ")");
     AppRTCUtils.assertIsTrue(audioDevices.contains(device));
 
     switch (device) {
@@ -219,7 +219,7 @@ public class AppRTCAudioManager {
         selectedAudioDevice = AudioDevice.WIRED_HEADSET;
         break;
       default:
-        Log.e(TAG, "Invalid audio device selection");
+        RCLogger.e(TAG, "Invalid audio device selection");
         break;
     }
     onAudioManagerChangedState();
@@ -255,7 +255,7 @@ public class AppRTCAudioManager {
         int state = intent.getIntExtra("state", STATE_UNPLUGGED);
         int microphone = intent.getIntExtra("microphone", HAS_NO_MIC);
         String name = intent.getStringExtra("name");
-        Log.d(TAG, "BroadcastReceiver.onReceive" + AppRTCUtils.getThreadInfo()
+        RCLogger.d(TAG, "BroadcastReceiver.onReceive" + AppRTCUtils.getThreadInfo()
             + ": "
             + "a=" + intent.getAction()
             + ", s=" + (state == STATE_UNPLUGGED ? "unplugged" : "plugged")
@@ -274,7 +274,7 @@ public class AppRTCAudioManager {
             }
             break;
           default:
-            Log.e(TAG, "Invalid state");
+            RCLogger.e(TAG, "Invalid state");
             break;
         }
       }
@@ -348,7 +348,7 @@ public class AppRTCAudioManager {
         audioDevices.add(AudioDevice.EARPIECE);
       }
     }
-    Log.d(TAG, "audioDevices: " + audioDevices);
+    RCLogger.d(TAG, "audioDevices: " + audioDevices);
 
     // Switch to correct audio device given the list of available audio devices.
     if (hasWiredHeadset) {
@@ -360,7 +360,7 @@ public class AppRTCAudioManager {
 
   /** Called each time a new audio device has been added or removed. */
   private void onAudioManagerChangedState() {
-    Log.d(TAG, "onAudioManagerChangedState: devices=" + audioDevices
+    RCLogger.d(TAG, "onAudioManagerChangedState: devices=" + audioDevices
         + ", selected=" + selectedAudioDevice);
 
     // Enable the proximity sensor if there are two available audio devices
@@ -375,7 +375,7 @@ public class AppRTCAudioManager {
       // Stop the proximity sensor since it is no longer needed.
       proximitySensor.stop();
     } else {
-      Log.e(TAG, "Invalid device list");
+      RCLogger.e(TAG, "Invalid device list");
     }
 
     if (onStateChangeListener != null) {

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
+
+<PreferenceCategory
+    android:key="sip_proxy_settings"
+    android:title="Sip Settings" >
+    <EditTextPreference
+        android:defaultValue="android-sdk"
+        android:key="pref_sip_user"
+        android:title="User" />
+    <EditTextPreference
+        android:defaultValue="1234"
+        android:key="pref_sip_password"
+        android:title="Password" />
+    <EditTextPreference
+        android:defaultValue=""
+        android:key="pref_proxy_domain"
+        android:title="Domain" />
+</PreferenceCategory>
+
+</PreferenceScreen>

@@ -29,7 +29,8 @@ package org.mobicents.restcomm.android.client.sdk.util;
 
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
+
+import org.mobicents.restcomm.android.sipua.RCLogger;
 
 import java.util.concurrent.Executor;
 
@@ -49,7 +50,7 @@ public class LooperExecutor extends Thread implements Executor {
   public void run() {
     Looper.prepare();
     synchronized (looperStartedEvent) {
-      Log.d(TAG, "Looper thread started.");
+      RCLogger.d(TAG, "Looper thread started.");
       handler = new Handler();
       threadId = Thread.currentThread().getId();
       looperStartedEvent.notify();
@@ -70,7 +71,7 @@ public class LooperExecutor extends Thread implements Executor {
         try {
           looperStartedEvent.wait();
         } catch (InterruptedException e) {
-          Log.e(TAG, "Can not start looper thread");
+          RCLogger.e(TAG, "Can not start looper thread");
           running = false;
         }
       }
@@ -86,7 +87,7 @@ public class LooperExecutor extends Thread implements Executor {
       @Override
       public void run() {
         Looper.myLooper().quit();
-        Log.d(TAG, "Looper thread finished.");
+        RCLogger.d(TAG, "Looper thread finished.");
       }
     });
   }
@@ -99,7 +100,7 @@ public class LooperExecutor extends Thread implements Executor {
   @Override
   public synchronized void execute(final Runnable runnable) {
     if (!running) {
-      Log.w(TAG, "Running looper executor without calling requestStart()");
+      RCLogger.w(TAG, "Running looper executor without calling requestStart()");
       return;
     }
     if (Thread.currentThread().getId() == threadId) {

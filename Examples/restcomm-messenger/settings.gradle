@@ -1,5 +1,0 @@
-include ':app', 'sipua'
-include ':sipua'
-project(':sipua').projectDir=new File('../../sipua')
-include ':restcomm.android.client.sdk'
-project(':restcomm.android.client.sdk').projectDir=new File('../../restcomm.android.client.sdk')

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent" android:layout_height="match_parent">
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/editText_username"
+        android:layout_alignParentTop="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="30dp"
+        android:hint="Username" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/editText_sipuri"
+        android:layout_below="@+id/editText_username"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="40dp"
+        android:hint="SIP URI, i.e. sip:alice@telestax.com" />
+</RelativeLayout>
+-->
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+    <EditText
+        android:id="@+id/editText_username"
+        android:inputType="textPersonName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginBottom="4dp"
+        android:hint="alice" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginLeft="14dp"
+        android:layout_marginRight="4dp"
+        android:layout_marginBottom="4dp"
+        android:text="Enter a username for the contact"
+        android:textStyle="italic"
+        android:id="@+id/textView_username"
+        android:layout_gravity="center_horizontal" />
+
+    <EditText
+        android:id="@+id/editText_sipuri"
+        android:inputType="textUri"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginLeft="8dp"
+        android:layout_marginRight="8dp"
+        android:layout_marginBottom="4dp"
+        android:hint="sip:alice@telestax.com"/>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:layout_marginLeft="14dp"
+        android:layout_marginRight="4dp"
+        android:layout_marginBottom="24dp"
+        android:text="Enter a SIP URI for the contact"
+        android:textStyle="italic"
+        android:id="@+id/textView_sipuri"
+        android:layout_gravity="center_horizontal" />
+
+</LinearLayout>

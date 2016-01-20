@@ -3,10 +3,29 @@ RestComm Mobile - Android SDK
 
 Android Mobile SDK to easily integrate communication features (messaging, presence, voice, video, screensharing) based on [RestComm](http://restcomm.com/) into native Mobile Applications.
 
-Latest Messenger .apk
+Quick Start guide
+================
+
+For an easy to follow guide on how to get started with RestComm Client SDK for Android, please check:
+
+http://docs.telestax.com/restcomm-client-android-sdk-quick-start/
+
+Reference Documentation
+================
+
+Javadoc style reference documentation can be found at:
+
+http://mobicents.github.io/restcomm-android-sdk/doc/
+
+OS/Hardware requirements
+================
+
+RestComm Client SDK for Android has been tested to work on Android API level 16 and above (Android 4.1 and above)
+
+Latest Olympus .apk
 =============================
 
-Here's the .apk for the Messenger Restcomm Client SDK sample application: https://community.testfairy.com/join/zr937dgQ
+Here's the .apk for the Olympus Restcomm Android App utilizing the RestComm Client SDK and providing a simple client application for Restcomm Cloud: https://tsfr.io/qcn3wy
 
 Want to Contribute ? 
 ========

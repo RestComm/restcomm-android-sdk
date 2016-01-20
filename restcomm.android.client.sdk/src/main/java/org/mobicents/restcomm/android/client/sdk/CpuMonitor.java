@@ -27,7 +27,7 @@
 
 package org.mobicents.restcomm.android.client.sdk;
 
-import android.util.Log;
+import org.mobicents.restcomm.android.sipua.RCLogger;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -114,14 +114,14 @@ class CpuMonitor {
         cpusPresent = 1 + scanner.nextInt();
         scanner.close();
       } catch (Exception e) {
-        Log.e(TAG, "Cannot do CPU stats due to /sys/devices/system/cpu/present parsing problem");
+        RCLogger.e(TAG, "Cannot do CPU stats due to /sys/devices/system/cpu/present parsing problem");
       } finally {
         fin.close();
       }
     } catch (FileNotFoundException e) {
-      Log.e(TAG, "Cannot do CPU stats since /sys/devices/system/cpu/present is missing");
+      RCLogger.e(TAG, "Cannot do CPU stats since /sys/devices/system/cpu/present is missing");
     } catch (IOException e) {
-      Log.e(TAG, "Error closing file");
+      RCLogger.e(TAG, "Error closing file");
     }
 
     cpuFreq = new long [cpusPresent];
@@ -187,7 +187,7 @@ class CpuMonitor {
     }
 
     if (cpufreqMaxSum == 0) {
-      Log.e(TAG, "Could not read max frequency for any CPU");
+      RCLogger.e(TAG, "Could not read max frequency for any CPU");
       return false;
     }
 
@@ -273,7 +273,7 @@ class CpuMonitor {
     } catch (FileNotFoundException e) {
       // CPU is offline, not an error.
     } catch (IOException e) {
-      Log.e(TAG, "Error closing file");
+      RCLogger.e(TAG, "Error closing file");
     }
     return number;
   }
@@ -298,16 +298,16 @@ class CpuMonitor {
         idleTime = scanner.nextLong();
         scanner.close();
       } catch (Exception e) {
-        Log.e(TAG, "Problems parsing /proc/stat");
+        RCLogger.e(TAG, "Problems parsing /proc/stat");
         return null;
       } finally {
         fin.close();
       }
     } catch (FileNotFoundException e) {
-      Log.e(TAG, "Cannot open /proc/stat for reading");
+      RCLogger.e(TAG, "Cannot open /proc/stat for reading");
       return null;
     } catch (IOException e) {
-      Log.e(TAG, "Problems reading /proc/stat");
+      RCLogger.e(TAG, "Problems reading /proc/stat");
       return null;
     }
     return new ProcStat(runTime, idleTime);
