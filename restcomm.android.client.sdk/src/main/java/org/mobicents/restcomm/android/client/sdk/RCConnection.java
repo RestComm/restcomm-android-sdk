@@ -60,6 +60,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import android.content.Intent;
 
 import org.mobicents.restcomm.android.sipua.SipUAConnectionListener;
 import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
@@ -391,6 +392,8 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             }
         };
         mainHandler.post(myRunnable);
+        // Phone state Intents to capture connecting event
+        sendConnectionIntent("connecting");
     }
 
     public void onSipUAConnected(SipEvent event)
@@ -414,6 +417,8 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             }
         };
         mainHandler.post(myRunnable);
+        // Phone state Intents to capture call connected event
+        sendConnectionIntent("connected");
     }
 
     public void onSipUADisconnected(final SipEvent event)
@@ -444,6 +449,8 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         mainHandler.post(myRunnable);
 
         this.state = ConnectionState.DISCONNECTED;
+        // Phone state Intents to capture normal disconnect event
+        sendConnectionIntent("disconnected");
     }
 
     public void onSipUACancelled(SipEvent event)
@@ -469,6 +476,8 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         mainHandler.post(myRunnable);
 
         this.state = ConnectionState.DISCONNECTED;
+        // Phone state Intents to capture cancelled event
+        sendConnectionIntent("cancelled");
     }
 
     public void onSipUADeclined(SipEvent event)
@@ -492,6 +501,8 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         mainHandler.post(myRunnable);
 
         this.state = ConnectionState.DISCONNECTED;
+        // Phone state Intents to capture declined event
+        sendConnectionIntent("declined");
     }
 
     public void onSipUAError(final RCClient.ErrorCodes errorCode, final String errorText)
@@ -530,6 +541,8 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             if (this.listener != null) {
                 this.listener.onDisconnected(this, RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal(), RCClient.errorText(RCClient.ErrorCodes.NO_CONNECTIVITY));
             }
+            // Phone state Intents to capture dropped call due to no connectivity
+            sendDisconnectErrorIntent (RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal(), RCClient.errorText(RCClient.ErrorCodes.NO_CONNECTIVITY));
             return false;
         }
     }
@@ -816,6 +829,8 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                 if (connection.listener != null) {
                     connection.listener.onDisconnected(connection, RCClient.ErrorCodes.WEBRTC_PEERCONNECTION_ERROR.ordinal(), description);
                 }
+                // Phone state Intents to capture dropped call event
+                sendDisconnectErrorIntent(RCClient.ErrorCodes.WEBRTC_PEERCONNECTION_ERROR.ordinal(), description);
             }
         };
         mainHandler.post(myRunnable);
@@ -866,6 +881,11 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             }
         };
         mainHandler.post(myRunnable);
+        // Phone state Intents to capture dialing or answering event
+        if (signalingParameters.initiator)
+            sendConnectionIntent("dialing");
+        else
+            sendConnectionIntent("answering");
     }
 
     private void onConnectedToRoomInternal(final SignalingParameters params) {
@@ -947,5 +967,38 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         for (IceCandidate candidate : candidates) {
             peerConnectionClient.addRemoteIceCandidate(candidate);
         }
+    }
+
+
+    // Phone state Intents to capture events
+    private void sendConnectionIntent (String state)
+    {
+        SignalingParameters params = this.signalingParameters;
+        Intent intent = new Intent ("org.mobicents.restcomm.android.CALL_STATE");
+        intent.putExtra("STATE", state);
+        intent.putExtra("INCOMING", this.isIncoming());
+        if (params != null)
+        {
+            intent.putExtra("VIDEO", params.videoEnabled);
+        }
+        if (this.getState() != null)
+            intent.putExtra("CONNECTIONSTATE", this.getState().toString());
+
+        Context context = RCClient.getContext();
+        context.sendBroadcast(intent);
+    }
+
+    // Phone state Intents to capture dropped call event with reason
+    private void sendDisconnectErrorIntent (int error, String errorText)
+    {
+        Intent intent = new Intent ("org.mobicents.restcomm.android.DISCONNECT_ERROR");
+        intent.putExtra("STATE", "disconnect error");
+        if (errorText != null)
+            intent.putExtra("ERRORTEXT", errorText);
+        intent.putExtra("ERROR", error);
+        intent.putExtra("INCOMING", this.isIncoming());
+
+        Context context = RCClient.getContext();
+        context.sendBroadcast(intent);
     }
 }
