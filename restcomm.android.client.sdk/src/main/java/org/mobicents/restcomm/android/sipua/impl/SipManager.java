@@ -1,5 +1,6 @@
 package org.mobicents.restcomm.android.sipua.impl;
 
+import java.io.File;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
@@ -73,6 +74,12 @@ import android.javax.sip.header.ViaHeader;
 import android.javax.sip.message.MessageFactory;
 import android.javax.sip.message.Request;
 import android.javax.sip.message.Response;
+import android.net.wifi.WifiInfo;
+import android.net.wifi.WifiManager;
+import android.os.Environment;
+import android.text.format.Formatter;
+import android.content.Context;
+
 import android.util.Log;
 
 import EDU.oswego.cs.dl.util.concurrent.FJTask;
@@ -83,6 +90,14 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		INCOMING,
 		OUTGOING,
 	};
+
+	/**
+	 * Device capability (<b>Not Implemented yet</b>)
+	 */
+	public enum NetworkInterfaceType {
+		NetworkInterfaceTypeWifi,
+		NetworkInterfaceTypeCellularData,
+	}
 
 	private static SipStack sipStack;
 	public static String USERAGENT_STRING = "TelScale Restcomm Android Client 1.0.0 BETA3";
@@ -110,19 +125,21 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	// could also use dialog.isServer() flag but have found mixed opinions about it)
 	CallDirection direction = CallDirection.NONE;
 	private int remoteRtpPort;
+	static private Context androidContext;
 
 	// Constructors/Initializers
-	public SipManager(SipProfile sipProfile, boolean connectivity) {
+	public SipManager(SipProfile sipProfile, boolean connectivity, NetworkInterfaceType networkInterfaceType, Context context) {
 		RCLogger.v(TAG, "SipManager()");
 
 		this.sipProfile = sipProfile;
-		initialize(connectivity);
+		initialize(connectivity, networkInterfaceType, context);
 	}
 
-	private boolean initialize(boolean connectivity)
+	private boolean initialize(boolean connectivity, NetworkInterfaceType networkInterfaceType, Context context)
 	{
 		RCLogger.v(TAG, "initialize()");
 
+		androidContext = context;
 		sipManagerState = SipManagerState.REGISTERING;
 
 		sipFactory = SipFactory.getInstance();
@@ -141,8 +158,11 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		// You need 16 for logging traces. 32 for debug + traces.
 		// Your code will limp at 32 but it is best for debugging.
 		//properties.setProperty("android.gov.nist.javax.sip.TRACE_LEVEL", "32");
-		//properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", "/storage/emulated/legacy/Download/debug-jain.log");
-		//properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", "/storage/emulated/legacy/Download/server-jain.log");
+		//File downloadPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+		//properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", downloadPath.getAbsolutePath() + "/debug-jain.log");
+		//properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", downloadPath.getAbsolutePath() + "/server-jain.log");
+
+		// old code, just in case we need the path
 		//properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", "/mnt/sdcard/Download/debug-jain.log");
 		//properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", "/mnt/sdcard/Download/server-jain.log");
 
@@ -160,7 +180,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			messageFactory = sipFactory.createMessageFactory();
 
 			if (connectivity) {
-				bind();
+				bind(networkInterfaceType);
 			}
 
 			initialized = true;
@@ -235,12 +255,12 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	// setup JAIN networking facilities
-	public void bind()
+	public void bind(NetworkInterfaceType networkInterfaceType)
 	{
 		RCLogger.w(TAG, "bind()");
 		if (udpListeningPoint == null) {
 			// new network interface is up, let's retrieve its ip address
-			this.sipProfile.setLocalIp(getIPAddress(true));
+			this.sipProfile.setLocalIp(getIPAddress(true, networkInterfaceType));
 			try {
 				udpListeningPoint = sipStack.createListeningPoint(
 						sipProfile.getLocalIp(), sipProfile.getLocalPort(),
@@ -259,7 +279,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		}
 	}
 
-	public void refreshNetworking(int expiry) throws ParseException, TransactionUnavailableException
+	public void refreshNetworking(int expiry, NetworkInterfaceType networkInterfaceType) throws ParseException, TransactionUnavailableException
 	{
 		RCLogger.v(TAG, "refreshNetworking()");
 
@@ -267,7 +287,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		Address oldAddress = createContactAddress();
 
 		unbind();
-		bind();
+		bind(networkInterfaceType);
 
 		// unregister the old contact (keep in mind that the new interface will be used to send this request)
 		Unregister(oldAddress);
@@ -1166,27 +1186,36 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	// *** Various Helpers *** //
-	public static String getIPAddress(boolean useIPv4) {
+	public static String getIPAddress(boolean useIPv4, NetworkInterfaceType networkInterfaceType) {
 		RCLogger.i(TAG, "getIPAddress()");
 		try {
-			List<NetworkInterface> interfaces = Collections
-					.list(NetworkInterface.getNetworkInterfaces());
-			for (NetworkInterface intf : interfaces) {
-				List<InetAddress> addrs = Collections.list(intf
-						.getInetAddresses());
-				for (InetAddress addr : addrs) {
-					if (!addr.isLoopbackAddress()) {
-						String sAddr = addr.getHostAddress().toUpperCase();
-						boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr);
-						if (useIPv4) {
-							if (isIPv4)
-								return sAddr;
-						} else {
-							if (!isIPv4) {
-								int delim = sAddr.indexOf('%'); // drop ip6 port
-								// suffix
-								return delim < 0 ? sAddr : sAddr.substring(0,
-										delim);
+			if (networkInterfaceType == NetworkInterfaceType.NetworkInterfaceTypeWifi) {
+				WifiManager wifiMgr = (WifiManager) androidContext.getSystemService(Context.WIFI_SERVICE);
+				WifiInfo wifiInfo = wifiMgr.getConnectionInfo();
+				int ip = wifiInfo.getIpAddress();
+				return Formatter.formatIpAddress(ip);
+			}
+
+			if (networkInterfaceType == NetworkInterfaceType.NetworkInterfaceTypeCellularData) {
+				List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+				for (NetworkInterface intf : interfaces) {
+					if (!intf.getName().matches("wlan.*")) {
+						List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
+						for (InetAddress addr : addrs) {
+							if (!addr.isLoopbackAddress()) {
+								String sAddr = addr.getHostAddress().toUpperCase();
+								boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr);
+								if (useIPv4) {
+									if (isIPv4)
+										return sAddr;
+								} else {
+									if (!isIPv4) {
+										int delim = sAddr.indexOf('%'); // drop ip6 port
+										// suffix
+										return delim < 0 ? sAddr : sAddr.substring(0,
+												delim);
+									}
+								}
 							}
 						}
 					}
