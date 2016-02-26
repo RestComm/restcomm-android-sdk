@@ -78,13 +78,24 @@ public class RCLogger {
     public static void v(String tag, String msg)
     {
         if (RCLogger.isVerboseEnabled()) {
-            Log.v(tag, msg);
+            /*
+            if (!Log.isLoggable(tag, Log.VERBOSE)) {
+                RCLogger.i(tag, msg);
+            }
+            */
+            Log.v(tag, RCLogger.escape(msg));
         }
     }
 
     public static void d(String tag, String msg, Throwable t)
     {
         if (RCLogger.isDebugEnabled()) {
+            /*
+            if (!Log.isLoggable(tag, Log.DEBUG)) {
+                Log.i(tag, msg);
+            }
+            */
+
             Log.d(tag, msg, t);
         }
     }
@@ -150,6 +161,16 @@ public class RCLogger {
         if (RCLogger.isAssertEnabled()) {
             Log.wtf(tag, msg);
         }
+    }
+
+    private static String escape(String msg)
+    {
+        //return msg.replaceAll("\"", "").replaceAll("\\r", "").replaceAll("", "");
+        // Remove special carriage return characters that seem to not be allowed to be written in logcat.
+        // WARNING: Also another VERY weird issue is that if we are logging full INVITE requests (together with SDP)
+        // there is no SDP shown in logcat. And turns out there's an logcat issue when dealing with two consecutive new line characters
+        // So to work around that we replace two new lines with one
+        return msg.replaceAll("\\r", "").replaceAll("\\n\\n", "\n");
     }
 
 }

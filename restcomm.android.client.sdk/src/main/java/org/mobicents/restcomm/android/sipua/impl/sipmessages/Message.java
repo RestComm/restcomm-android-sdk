@@ -70,7 +70,7 @@ public class Message {
 		ContentTypeHeader contentTypeHeader = sipManager.headerFactory
 				.createContentTypeHeader("text", "plain");
 		request.setContent(message, contentTypeHeader);
-		RCLogger.v(TAG, request.toString());
+		//RCLogger.v(TAG, request.toString());
 		return request;
 	}
 }

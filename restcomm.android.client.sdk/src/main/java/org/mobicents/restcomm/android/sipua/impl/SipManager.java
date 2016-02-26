@@ -108,7 +108,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	public SipFactory sipFactory;
 	private static final String TAG = "SipManager";
 
-	private ListeningPoint udpListeningPoint;
+	private ListeningPoint listeningPoint;
 	private SipProfile sipProfile;
 	private Dialog dialog;
 
@@ -167,11 +167,11 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		//properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", "/mnt/sdcard/Download/server-jain.log");
 
 		try {
-			if (udpListeningPoint != null) {
+			if (listeningPoint != null) {
 				// Binding again
-				sipStack.deleteListeningPoint(udpListeningPoint);
+				sipStack.deleteListeningPoint(listeningPoint);
 				sipProvider.removeSipListener(this);
-				udpListeningPoint = null;
+				listeningPoint = null;
 			}
 			sipStack = sipFactory.createSipStack(properties);
 			RCLogger.i(TAG, "createSipStack " + sipStack);
@@ -239,15 +239,15 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	public void unbind()
 	{
 		RCLogger.w(TAG, "unbind()");
-		if (udpListeningPoint != null) {
+		if (listeningPoint != null) {
 			try {
 				sipProvider.removeSipListener(this);
 				ListeningPoint[] listeningPoints = sipProvider.getListeningPoints();
 				RCLogger.w(TAG, "unbind(): listening point count: " + listeningPoints.length);
 				sipStack.deleteSipProvider(sipProvider);
-				sipStack.deleteListeningPoint(udpListeningPoint);
+				sipStack.deleteListeningPoint(listeningPoint);
 
-				udpListeningPoint = null;
+				listeningPoint = null;
 			} catch (ObjectInUseException e) {
 				e.printStackTrace();
 			}
@@ -258,14 +258,14 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	public void bind(NetworkInterfaceType networkInterfaceType)
 	{
 		RCLogger.w(TAG, "bind()");
-		if (udpListeningPoint == null) {
+		if (listeningPoint == null) {
 			// new network interface is up, let's retrieve its ip address
 			this.sipProfile.setLocalIp(getIPAddress(true, networkInterfaceType));
 			try {
-				udpListeningPoint = sipStack.createListeningPoint(
+				listeningPoint = sipStack.createListeningPoint(
 						sipProfile.getLocalIp(), sipProfile.getLocalPort(),
 						sipProfile.getTransport());
-				sipProvider = sipStack.createSipProvider(udpListeningPoint);
+				sipProvider = sipStack.createSipProvider(listeningPoint);
 				sipProvider.addSipListener(this);
 			} catch (TransportNotSupportedException e) {
 				e.printStackTrace();
@@ -362,6 +362,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 							.createContentTypeHeader("application", "sdp");
 					responseOK.setContent(contents, contentTypeHeader);
 
+					RCLogger.v(TAG, "Sending SIP response: \n" + responseOK.toString());
 					currentServerTransaction.sendResponse(responseOK);
 					dispatchSipEvent(new SipEvent(this,
 							SipEventType.CALL_CONNECTED, "", sm.getFrom()
@@ -407,6 +408,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 							.createContentTypeHeader("application", "sdp");
 					responseOK.setContent(contents, contentTypeHeader);
 
+					RCLogger.v(TAG, "Sending SIP response: \n" + responseOK.toString());
 					currentServerTransaction.sendResponse(responseOK);
 					dispatchSipEvent(new SipEvent(this,
 							SipEventType.CALL_CONNECTED, "", sm.getFrom()
@@ -441,6 +443,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		Register registerRequest = new Register();
 		try {
 			final Request r = registerRequest.MakeRequest(this, expiry, null);
+			RCLogger.v(TAG, "Sending SIP request: \n" + r.toString());
+
 			final SipProvider sipProvider = this.sipProvider;
 			// Send the request statefully, through the client transaction.
 			Thread thread = new Thread() {
@@ -473,6 +477,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		Register registerRequest = new Register();
 		try {
 			final Request r = registerRequest.MakeRequest(this, 0, contact);
+			RCLogger.v(TAG, "Sending SIP request: \n" + r.toString());
 			final SipProvider sipProvider = this.sipProvider;
 			// Send the request statefully, through the client transaction.
 			Thread thread = new Thread() {
@@ -505,6 +510,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		this.sipManagerState = SipManagerState.CALLING;
 		Invite inviteRequest = new Invite();
 		final Request r = inviteRequest.MakeRequest(this, to, localRtpPort, sipHeaders);
+		RCLogger.v(TAG, "Sending SIP request: \n" + r.toString());
 		final SipProvider sipProvider = this.sipProvider;
 		Thread thread = new Thread() {
 			public void run() {
@@ -533,6 +539,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		this.sipManagerState = SipManagerState.CALLING;
 		Invite inviteRequest = new Invite();
 		final Request r = inviteRequest.MakeRequestWebrtc(this, to, sdp, sipHeaders);
+		RCLogger.v(TAG, "Sending SIP request: \n" + r.toString());
 		final SipProvider sipProvider = this.sipProvider;
 		Thread thread = new Thread() {
 			public void run() {
@@ -562,6 +569,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		Message inviteRequest = new Message();
 		try {
 			final Request r = inviteRequest.MakeRequest(this, to, message);
+			RCLogger.v(TAG, "Sending SIP request: \n" + r.toString());
 			final SipProvider sipProvider = this.sipProvider;
 			Thread thread = new Thread() {
 				public void run() {
@@ -651,6 +659,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				request = dialog.createRequest(Request.INFO);
 				request.setContent("Signal=" + digit + "\r\nDuration=100\r\n",
 						headerFactory.createContentTypeHeader("application","dtmf-relay"));
+				RCLogger.v(TAG, "Sending SIP request: \n" + request.toString());
 			} catch (SipException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
@@ -683,14 +692,15 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	// *** JAIN SIP: Incoming request *** //
 	@Override
-	public void processRequest(RequestEvent arg0) {
-		RCLogger.v(TAG, "processRequest()");
-		Request request = (Request) arg0.getRequest();
-		ServerTransaction serverTransactionId = arg0.getServerTransaction();
+	public void processRequest(RequestEvent requestEvent) {
+		//RCLogger.v(TAG, "processRequest()");
+		Request request = requestEvent.getRequest();
+		RCLogger.v(TAG, "Received SIP request: \n" + request.toString());
+		ServerTransaction serverTransactionId = requestEvent.getServerTransaction();
 		SIPMessage sp = (SIPMessage) request;
 		RCLogger.i(TAG, request.getMethod());
 		if (request.getMethod().equals("MESSAGE")) {
-			sendOk(arg0);
+			sendOk(requestEvent);
 
 			try {
 				String message = sp.getMessageContent();
@@ -708,7 +718,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		}
 		if (request.getMethod().equals("INVITE")) {
 			direction = CallDirection.INCOMING;
-			incomingInvite(arg0, serverTransactionId);
+			incomingInvite(requestEvent, serverTransactionId);
 		}
 		if (request.getMethod().equals("CANCEL")) {
 			sipManagerState = SipManagerState.IDLE;
@@ -721,12 +731,14 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	// *** JAIN SIP: Incoming response *** //
 	@Override
-	public void processResponse(ResponseEvent arg0) {
-		ResponseEventExt responseEvent = (ResponseEventExt)arg0;
-		Response response = (Response) arg0.getResponse();
-		RCLogger.i(TAG, "processResponse(), status code: " + response.getStatusCode());
+	public void processResponse(ResponseEvent responseEvent) {
+		ResponseEventExt responseEventExt = (ResponseEventExt)responseEvent;
+		Response response = (Response) responseEvent.getResponse();
+		RCLogger.v(TAG, "Received SIP response: \n" + response.toString());
 
-		ClientTransaction tid = arg0.getClientTransaction();
+		//RCLogger.i(TAG, "processResponse(), status code: " + response.getStatusCode());
+
+		ClientTransaction tid = responseEvent.getClientTransaction();
 		CSeqHeader cseq = (CSeqHeader) response.getHeader(CSeqHeader.NAME);
 		if (response.getStatusCode() == Response.PROXY_AUTHENTICATION_REQUIRED
 				|| response.getStatusCode() == Response.UNAUTHORIZED) {
@@ -734,7 +746,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				AuthenticationHelper authenticationHelper = ((SipStackExt) sipStack)
 						.getAuthenticationHelper(
 								new AccountManagerImpl(sipProfile.getSipUserName(),
-										responseEvent.getRemoteIpAddress(), sipProfile
+										responseEventExt.getRemoteIpAddress(), sipProfile
 										.getSipPassword()), headerFactory);
 				CallIdHeader callId = (CallIdHeader)response.getHeader("Call-ID");
 				int attempts = 0;
@@ -748,6 +760,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					ClientTransaction inviteTid = authenticationHelper
 							.handleChallenge(response, tid, sipProvider, 5, true);
 					currentClientTransaction = inviteTid;
+					RCLogger.v(TAG, "Sending SIP request: \n" + inviteTid.getRequest().toString());
+
 					inviteTid.sendRequest();
 					if (cseq.getMethod().equals(Request.INVITE)) {
 						// only update the dialog if we are responding to INVITE with new invite
@@ -768,10 +782,11 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			}
 		} else if (response.getStatusCode() == Response.OK) {
 			if (cseq.getMethod().equals(Request.INVITE)) {
-				RCLogger.i(TAG, "Dialog after 200 OK  " + dialog);
+				//RCLogger.i(TAG, "Dialog after 200 OK  " + dialog);
 				try {
-					RCLogger.i(TAG, "Sending ACK");
+					//RCLogger.i(TAG, "Sending ACK");
 					Request ackRequest = dialog.createAck(((CSeqHeader)response.getHeader(CSeqHeader.NAME)).getSeqNumber());
+					RCLogger.v(TAG, "Sending SIP request: \n" + ackRequest.toString());
 					dialog.sendAck(ackRequest);
 					byte[] rawContent = response.getRawContent();
 					String sdpContent = new String(rawContent, "UTF-8");
@@ -810,10 +825,11 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				if (dialog.getState() == DialogState.CONFIRMED) {
 					// oops cancel went in too late. Need to hang up the
 					// dialog.
-					RCLogger.i(TAG, "Sending BYE -- cancel went in too late !!");
+					RCLogger.i(TAG, "Sending BYE; CANCEL went in too late");
 					Request byeRequest = null;
 					try {
 						byeRequest = dialog.createRequest(Request.BYE);
+
 					} catch (SipException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -826,6 +842,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 						e.printStackTrace();
 					}
 					try {
+						RCLogger.v(TAG, "Sending SIP request: \n" + ct.getRequest().toString());
 						dialog.sendRequest(ct);
 					} catch (TransactionDoesNotExistException e) {
 						// TODO Auto-generated catch block
@@ -839,26 +856,26 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 			} else if (cseq.getMethod().equals(Request.BYE)) {
 				sipManagerState = SipManagerState.IDLE;
-				RCLogger.i(TAG, "--- Got 200 OK in UAC outgoing BYE");
+				//RCLogger.i(TAG, "--- Got 200 OK in UAC outgoing BYE");
 				dispatchSipEvent(new SipEvent(this, SipEventType.INCOMING_BYE_RESPONSE, "", ""));
 			}
 
 		} else if (response.getStatusCode() == Response.DECLINE || response.getStatusCode() == Response.TEMPORARILY_UNAVAILABLE ||
 				(response.getStatusCode() == Response.BUSY_HERE)) {
-			RCLogger.i(TAG, "CALL DECLINED");
+			//RCLogger.i(TAG, "CALL DECLINED");
 			sipManagerState = SipManagerState.IDLE;
 			dispatchSipEvent(new SipEvent(this, SipEventType.DECLINED, "", ""));
 		} else if (response.getStatusCode() == Response.NOT_FOUND) {
-			RCLogger.i(TAG, "NOT FOUND");
+			//RCLogger.i(TAG, "NOT FOUND");
 			dispatchSipEvent(new SipEvent(this, SipEventType.NOT_FOUND, "Destination not found", response.getHeader(ToHeader.NAME).toString()));
 		} else if (response.getStatusCode() == Response.ACCEPTED) {
-			RCLogger.i(TAG, "ACCEPTED");
+			//RCLogger.i(TAG, "ACCEPTED");
 		}
 		else if (response.getStatusCode() == Response.RINGING) {
-			RCLogger.i(TAG, "RINGING");
+			//RCLogger.i(TAG, "RINGING");
 			dispatchSipEvent(new SipEvent(this, SipEventType.REMOTE_RINGING, "", ""));
 		} else if (response.getStatusCode() == Response.SERVICE_UNAVAILABLE) {
-			RCLogger.i(TAG, "BUSY");
+			//RCLogger.i(TAG, "BUSY");
 			dispatchSipEvent(new SipEvent(this,
 					SipEventType.SERVICE_UNAVAILABLE, "", ""));
 		}
@@ -955,8 +972,9 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			Dialog dialog = serverTransactionId.getDialog();
 			RCLogger.i(TAG, "Dialog State = " + dialog.getState());
 			Response response = messageFactory.createResponse(200, request);
+			RCLogger.v(TAG, "Sending SIP response: \n" + response.toString());
 			serverTransactionId.sendResponse(response);
-			RCLogger.i(TAG, "Sending OK");
+			//RCLogger.i(TAG, "Sending OK");
 			RCLogger.i(TAG, "Dialog State = " + dialog.getState());
 
 		} catch (Exception ex) {
@@ -996,12 +1014,12 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			dialog = st.getDialog();
 			currentServerTransaction = st;
 
-			//RCLogger.i(TAG, "INVITE: with Authorization, sending Trying");
-			RCLogger.i(TAG, "INVITE: sending Trying");
+			//RCLogger.i(TAG, "INVITE: sending Trying");
 			Response response = messageFactory.createResponse(Response.TRYING,
 					request);
+			RCLogger.v(TAG, "Sending SIP response: \n" + response.toString());
 			st.sendResponse(response);
-			RCLogger.i(TAG, "INVITE:Trying Sent");
+			//RCLogger.i(TAG, "INVITE:Trying Sent");
 
 			byte[] rawContent = sm.getRawContent();
 			String sdpContent = new String(rawContent, "UTF-8");
@@ -1030,10 +1048,11 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				return;
 			}
 			Dialog dialog = serverTransactionId.getDialog();
-			RCLogger.i(TAG, "Dialog State = " + dialog.getState());
+			//RCLogger.i(TAG, "Dialog State = " + dialog.getState());
 			Response response = messageFactory.createResponse(200, request);
+			RCLogger.v(TAG, "Sending SIP response: \n" + response.toString());
 			serverTransactionId.sendResponse(response);
-			RCLogger.i(TAG, "Sending 200 Canceled Request");
+			//RCLogger.i(TAG, "Sending 200 Canceled Request");
 			RCLogger.i(TAG, "Dialog State = " + dialog.getState());
 
 			if (currentServerTransaction != null) {
@@ -1061,6 +1080,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					responseBye = messageFactory.createResponse(
 							Response.DECLINE,
 							currentServerTransaction.getRequest());
+					// TODO: we are logging in a secondary thread, maybe dangerous?
+					RCLogger.v(TAG, "Sending SIP response: \n" + responseBye.toString());
 					currentServerTransaction.sendResponse(responseBye);
 
 				} catch (ParseException e) {
@@ -1092,6 +1113,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 				serverTransaction = sipProvider
 						.getNewServerTransaction(requestEvt.getRequest());
 			}
+			RCLogger.v(TAG, "Sending SIP response: \n" + response.toString());
 			serverTransaction.sendResponse(response);
 
 		} catch (ParseException e) {
@@ -1126,6 +1148,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					RouteHeader routeHeader = headerFactory.createRouteHeader(routeAddress);
 					byeRequest.addFirst(routeHeader);
 				}
+				RCLogger.v(TAG, "Sending SIP request: \n" + byeRequest.toString());
 
 			} catch (SipException e) {
 				// TODO Auto-generated catch block
@@ -1164,6 +1187,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		RCLogger.i(TAG, "sendCancel()");
 		try {
 			final Request request = transaction.createCancel();
+			RCLogger.v(TAG, "Sending SIP response: \n" + request.toString());
 
 			Thread thread = new Thread() {
 				public void run() {
@@ -1250,7 +1274,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		try {
 			return this.addressFactory.createAddress("sip:"
 					+ getSipProfile().getSipUserName() + "@"
-					+ getSipProfile().getLocalEndpoint() + ";transport=udp"
+					+ getSipProfile().getLocalEndpoint() + ";transport=" + getSipProfile().getTransport()
 					+ ";registering_acc=" + getSipProfile().getRemoteIp(addressFactory));
 		} catch (ParseException e) {
 			return null;
