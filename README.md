@@ -29,11 +29,11 @@ Here's the .apk for the Olympus Restcomm Android App utilizing the RestComm Clie
 
 Want to Contribute ? 
 ========
-[See our Contributors Guide](https://github.com/Mobicents/RestComm/wiki/Contribute-to-RestComm)
+[See our Contributors Guide](https://github.com/Restcomm/RestComm-Core/wiki/Contribute-to-RestComm)
 
 Issue Tracking and Roadmap
 ========
-[Issue Tracker](https://github.com/Mobicents/restcomm-ios-sdk/issues)
+[Issue Tracker](https://github.com/Restcomm/restcomm-android-sdk/issues)
 
 Questions ?
 ========

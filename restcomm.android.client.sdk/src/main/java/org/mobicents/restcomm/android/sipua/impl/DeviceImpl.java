@@ -61,16 +61,17 @@ public class DeviceImpl implements IDevice,Serializable {
 		}
 		return device;
 	}
-    public void Initialize(Context context, SipProfile sipProfile, boolean connectivity, HashMap<String,String> customHeaders){
-        this.Initialize(context, sipProfile, connectivity);
+    public void Initialize(Context context, SipProfile sipProfile, boolean connectivity, HashMap<String,String> customHeaders,
+						   SipManager.NetworkInterfaceType networkInterfaceType) {
+        this.Initialize(context, sipProfile, connectivity, networkInterfaceType);
         sipManager.setCustomHeaders(customHeaders);
     }
-	public void Initialize(Context context, SipProfile sipProfile, boolean connectivity) {
+	public void Initialize(Context context, SipProfile sipProfile, boolean connectivity, SipManager.NetworkInterfaceType networkInterfaceType) {
 		RCLogger.v(TAG, "Initialize()");
 
 		this.context = context;
 		this.sipProfile = sipProfile;
-		sipManager = new SipManager(sipProfile, connectivity);
+		sipManager = new SipManager(sipProfile, connectivity, networkInterfaceType, this.context);
 		soundManager = new SoundManager(context,sipProfile.getLocalIp());
 		sipManager.addSipListener(this);
 		registerRefreshHandler = new Handler(context.getMainLooper());
@@ -86,9 +87,9 @@ public class DeviceImpl implements IDevice,Serializable {
 	}
 
 	// setup JAIN networking facilities
-	public void bind()
+	public void bind(SipManager.NetworkInterfaceType networkInterfaceType)
 	{
-		sipManager.bind();
+		sipManager.bind(networkInterfaceType);
 	}
 
 	public void Shutdown()
@@ -360,12 +361,12 @@ public class DeviceImpl implements IDevice,Serializable {
 		}
 	}
 
-	public void RefreshNetworking()
+	public void RefreshNetworking(SipManager.NetworkInterfaceType networkInterfaceType)
 	{
 		RCLogger.v(TAG, "RefreshNetworking");
 
 		try {
-			this.sipManager.refreshNetworking(registrationExpiry);
+			this.sipManager.refreshNetworking(registrationExpiry, networkInterfaceType);
 		} catch (TransactionUnavailableException e) {
 			if (this.sipuaDeviceListener != null) {
 				// notify our listener that we are connecting

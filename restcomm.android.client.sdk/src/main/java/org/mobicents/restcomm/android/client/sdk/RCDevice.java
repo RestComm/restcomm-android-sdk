@@ -38,6 +38,7 @@ import org.mobicents.restcomm.android.sipua.SipProfile;
 import org.mobicents.restcomm.android.sipua.SipUADeviceListener;
 import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
 import org.mobicents.restcomm.android.sipua.impl.SipEvent;
+import org.mobicents.restcomm.android.sipua.impl.SipManager;
 
 /**
  *  RCDevice Represents an abstraction of a communications device able to make and receive calls, send and receive messages etc. Remember that
@@ -165,7 +166,12 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         sipProfile = new SipProfile();
         updateSipProfile(parameters);
         DeviceImpl deviceImpl = DeviceImpl.GetInstance();
-        deviceImpl.Initialize(RCClient.getContext(), sipProfile, connectivity);
+        if (reachabilityState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi) {
+            deviceImpl.Initialize(RCClient.getContext(), sipProfile, connectivity, SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi);
+        }
+        else {
+            deviceImpl.Initialize(RCClient.getContext(), sipProfile, connectivity, SipManager.NetworkInterfaceType.NetworkInterfaceTypeCellularData);
+        }
         DeviceImpl.GetInstance().sipuaDeviceListener = this;
         // register after initialization
         if (connectivity) {
@@ -202,7 +208,12 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
             if (state != DeviceState.OFFLINE) {
                 RCLogger.w(TAG, "Reachability action: switch between wifi and mobile. Device state: " + state);
                 // refresh JAIN networking facilities so that we use the new available interface
-                DeviceImpl.GetInstance().RefreshNetworking();
+                if (newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi) {
+                    DeviceImpl.GetInstance().RefreshNetworking(SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi);
+                }
+                else {
+                    DeviceImpl.GetInstance().RefreshNetworking(SipManager.NetworkInterfaceType.NetworkInterfaceTypeCellularData);
+                }
                 reachabilityState = newState;
                 this.listener.onConnectivityUpdate(this, newState);
                 return;
@@ -212,7 +223,12 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         if ((newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi || newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular)
                 && state == DeviceState.OFFLINE) {
             RCLogger.w(TAG, "Reachability action: wifi/mobile available. Device state: " + state);
-            DeviceImpl.GetInstance().bind();
+            if (newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi) {
+                DeviceImpl.GetInstance().bind(SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi);
+            }
+            else {
+                DeviceImpl.GetInstance().bind(SipManager.NetworkInterfaceType.NetworkInterfaceTypeCellularData);
+            }
             reachabilityState = newState;
             if (!parameters.containsKey("pref_proxy_domain") ||
                     parameters.containsKey("pref_proxy_domain") && parameters.get("pref_proxy_domain").equals("")) {

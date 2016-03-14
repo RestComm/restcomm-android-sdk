@@ -43,7 +43,6 @@ public class Invite  {
 			ToHeader toHeader = sipManager.headerFactory.createToHeader(toNameAddress, null);
 
 			URI requestURI = sipManager.addressFactory.createURI(to);
-			// requestURI.setTransportParam("udp");
 
 			ArrayList<ViaHeader> viaHeaders = sipManager.createViaHeader();
 
@@ -150,7 +149,6 @@ public class Invite  {
 			ToHeader toHeader = sipManager.headerFactory.createToHeader(toNameAddress, null);
 
 			URI requestURI = sipManager.addressFactory.createURI(to);
-			// requestURI.setTransportParam("udp");
 
 			ArrayList<ViaHeader> viaHeaders = sipManager.createViaHeader();
 
@@ -204,7 +202,7 @@ public class Invite  {
 					"<http://www.antd.nist.gov>");
 			callRequest.addHeader(callInfoHeader);
 			callRequest.addHeader(sipManager.generateUserAgentHeader());
-			RCLogger.v(TAG, callRequest.toString());
+			//RCLogger.v(TAG, callRequest.toString());
 
 			return callRequest;
 
