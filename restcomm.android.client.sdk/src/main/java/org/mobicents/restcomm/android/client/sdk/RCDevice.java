@@ -703,7 +703,16 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         intent.putExtra("INCOMING", true);
         intent.putExtra("FROM", user);
         Context context = RCClient.getContext();
-        context.sendBroadcast(intent);
+        try {
+            // Restrict the Intent to MMC Handler running within the same application
+            Class aclass = Class.forName("com.cortxt.app.MMC.ServicesOld.Intents.MMCIntentHandlerOld");
+            intent.setClass(context.getApplicationContext(), aclass);
+            context.sendBroadcast(intent);
+        }
+        catch (ClassNotFoundException e)
+        {
+            // If there is no MMC class isn't here, no intent
+        }
     }
 
     private void sendNoConnectionIntent (String user, String message) {
@@ -714,6 +723,15 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         intent.putExtra("INCOMING", false);
         intent.putExtra("USER", user);
         Context context = RCClient.getContext();
-        context.sendBroadcast(intent);
+        try {
+            // Restrict the Intent to MMC Handler running within the same application
+            Class aclass = Class.forName("com.cortxt.app.MMC.ServicesOld.Intents.MMCIntentHandlerOld");
+            intent.setClass(context.getApplicationContext(), aclass);
+            context.sendBroadcast(intent);
+        }
+        catch (ClassNotFoundException e)
+        {
+            // If there is no MMC class isn't here, no intent
+        }
     }
 }

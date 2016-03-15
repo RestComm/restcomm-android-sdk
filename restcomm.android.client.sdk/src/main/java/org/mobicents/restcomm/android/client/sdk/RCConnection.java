@@ -974,6 +974,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     {
         SignalingParameters params = this.signalingParameters;
         Intent intent = new Intent ("org.mobicents.restcomm.android.CALL_STATE");
+
         intent.putExtra("STATE", state);
         intent.putExtra("INCOMING", this.isIncoming());
         if (params != null)
@@ -985,7 +986,16 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             intent.putExtra("CONNECTIONSTATE", this.getState().toString());
 
         Context context = RCClient.getContext();
-        context.sendBroadcast(intent);
+        try {
+            // Restrict the Intent to MMC Handler running within the same application
+            Class aclass = Class.forName("com.cortxt.app.MMC.ServicesOld.Intents.MMCIntentHandlerOld");
+            intent.setClass(context.getApplicationContext(), aclass);
+            context.sendBroadcast(intent);
+        }
+        catch (ClassNotFoundException e)
+        {
+            // If the MMC class isn't here, no intent
+        }
     }
 
     // Phone state Intents to capture dropped call event with reason
@@ -999,6 +1009,15 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         intent.putExtra("INCOMING", this.isIncoming());
 
         Context context = RCClient.getContext();
-        context.sendBroadcast(intent);
+        try {
+            // Restrict the Intent to MMC Handler running within the same application
+            Class aclass = Class.forName("com.cortxt.app.MMC.ServicesOld.Intents.MMCIntentHandlerOld");
+            intent.setClass(context.getApplicationContext(), aclass);
+            context.sendBroadcast(intent);
+        }
+        catch (ClassNotFoundException e)
+        {
+            // If the MMC class isn't here, no intent
+        }
     }
 }
