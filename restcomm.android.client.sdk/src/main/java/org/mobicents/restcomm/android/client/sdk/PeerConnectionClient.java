@@ -457,7 +457,7 @@ public class PeerConnectionClient {
         // TCP candidates are only useful when connecting to a server that supports
         // ICE-TCP.
         rtcConfig.tcpCandidatePolicy = PeerConnection.TcpCandidatePolicy.DISABLED;
-        rtcConfig.bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE;
+        //rtcConfig.bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE;
         rtcConfig.rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE;
 
         peerConnection = factory.createPeerConnection(

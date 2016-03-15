@@ -50,6 +50,7 @@
 package org.mobicents.restcomm.android.client.sdk;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.opengl.GLSurfaceView;
 import android.os.Handler;
@@ -60,7 +61,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import android.content.Intent;
 
 import org.mobicents.restcomm.android.sipua.SipUAConnectionListener;
 import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
@@ -969,23 +969,33 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         }
     }
 
-
     // Phone state Intents to capture events
     private void sendConnectionIntent (String state)
     {
         SignalingParameters params = this.signalingParameters;
         Intent intent = new Intent ("org.mobicents.restcomm.android.CALL_STATE");
+
         intent.putExtra("STATE", state);
         intent.putExtra("INCOMING", this.isIncoming());
         if (params != null)
         {
             intent.putExtra("VIDEO", params.videoEnabled);
+            intent.putExtra("REQUEST", params.sipUrl);
         }
         if (this.getState() != null)
             intent.putExtra("CONNECTIONSTATE", this.getState().toString());
 
         Context context = RCClient.getContext();
-        context.sendBroadcast(intent);
+        try {
+            // Restrict the Intent to MMC Handler running within the same application
+            Class aclass = Class.forName("com.cortxt.app.MMC.ServicesOld.Intents.MMCIntentHandlerOld");
+            intent.setClass(context.getApplicationContext(), aclass);
+            context.sendBroadcast(intent);
+        }
+        catch (ClassNotFoundException e)
+        {
+            // If the MMC class isn't here, no intent
+        }
     }
 
     // Phone state Intents to capture dropped call event with reason
@@ -999,6 +1009,15 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         intent.putExtra("INCOMING", this.isIncoming());
 
         Context context = RCClient.getContext();
-        context.sendBroadcast(intent);
+        try {
+            // Restrict the Intent to MMC Handler running within the same application
+            Class aclass = Class.forName("com.cortxt.app.MMC.ServicesOld.Intents.MMCIntentHandlerOld");
+            intent.setClass(context.getApplicationContext(), aclass);
+            context.sendBroadcast(intent);
+        }
+        catch (ClassNotFoundException e)
+        {
+            // If the MMC class isn't here, no intent
+        }
     }
 }

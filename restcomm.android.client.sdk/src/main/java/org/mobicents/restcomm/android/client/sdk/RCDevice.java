@@ -38,6 +38,7 @@ import org.mobicents.restcomm.android.sipua.SipProfile;
 import org.mobicents.restcomm.android.sipua.SipUADeviceListener;
 import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
 import org.mobicents.restcomm.android.sipua.impl.SipEvent;
+import org.mobicents.restcomm.android.sipua.impl.SipManager;
 
 /**
  *  RCDevice Represents an abstraction of a communications device able to make and receive calls, send and receive messages etc. Remember that
@@ -165,7 +166,12 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         sipProfile = new SipProfile();
         updateSipProfile(parameters);
         DeviceImpl deviceImpl = DeviceImpl.GetInstance();
-        deviceImpl.Initialize(RCClient.getContext(), sipProfile, connectivity);
+        if (reachabilityState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi) {
+            deviceImpl.Initialize(RCClient.getContext(), sipProfile, connectivity, SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi);
+        }
+        else {
+            deviceImpl.Initialize(RCClient.getContext(), sipProfile, connectivity, SipManager.NetworkInterfaceType.NetworkInterfaceTypeCellularData);
+        }
         DeviceImpl.GetInstance().sipuaDeviceListener = this;
         // register after initialization
         if (connectivity) {
@@ -202,7 +208,12 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
             if (state != DeviceState.OFFLINE) {
                 RCLogger.w(TAG, "Reachability action: switch between wifi and mobile. Device state: " + state);
                 // refresh JAIN networking facilities so that we use the new available interface
-                DeviceImpl.GetInstance().RefreshNetworking();
+                if (newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi) {
+                    DeviceImpl.GetInstance().RefreshNetworking(SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi);
+                }
+                else {
+                    DeviceImpl.GetInstance().RefreshNetworking(SipManager.NetworkInterfaceType.NetworkInterfaceTypeCellularData);
+                }
                 reachabilityState = newState;
                 this.listener.onConnectivityUpdate(this, newState);
                 return;
@@ -212,7 +223,12 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         if ((newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi || newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular)
                 && state == DeviceState.OFFLINE) {
             RCLogger.w(TAG, "Reachability action: wifi/mobile available. Device state: " + state);
-            DeviceImpl.GetInstance().bind();
+            if (newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi) {
+                DeviceImpl.GetInstance().bind(SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi);
+            }
+            else {
+                DeviceImpl.GetInstance().bind(SipManager.NetworkInterfaceType.NetworkInterfaceTypeCellularData);
+            }
             reachabilityState = newState;
             if (!parameters.containsKey("pref_proxy_domain") ||
                     parameters.containsKey("pref_proxy_domain") && parameters.get("pref_proxy_domain").equals("")) {
@@ -343,7 +359,10 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         if (DeviceImpl.checkReachability(RCClient.getContext()) == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
             RCLogger.e(TAG, "connect(): No reachability");
             // Phone state Intents to capture connection failed event
-            sendNoConnectionIntent(this.getReachability().toString());
+            String username = "";
+            if (parameters != null && parameters.get("username") != null)
+                username = parameters.get("username").toString();
+            sendNoConnectionIntent(username, this.getReachability().toString());
             return null;
         }
 
@@ -575,7 +594,12 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
                     pendingCallIntent.send(RCClient.getContext(), 0, dataIntent);
 
                     // Phone state Intents to capture incoming phone call event
-                    sendIncomingConnectionIntent(incomingConnection);
+                    sendIncomingConnectionIntent(from, incomingConnection);
+                    // I re-enabled this listener for incoming connections, it was disabled in RCDeviceListener
+                    if (listener != null) {
+                        listener.onIncomingConnection(RCDevice.this, incomingConnection);
+                    }
+
                 } catch (PendingIntent.CanceledException e) {
                     e.printStackTrace();
                 }
@@ -611,6 +635,11 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
                     dataIntent.putExtra(INCOMING_MESSAGE_PARAMS, finalParameters);
                     dataIntent.putExtra(INCOMING_MESSAGE_TEXT, finalContent);
                     pendingMessageIntent.send(RCClient.getContext(), 0, dataIntent);
+
+                    // I re-enabled this listener for incoming message, it was disabled in RCDeviceListener
+                    if (listener != null) {
+                        listener.onIncomingMessage(RCDevice.this, finalContent, finalParameters);
+                    }
                 } catch (PendingIntent.CanceledException e) {
                     e.printStackTrace();
                 }
@@ -642,8 +671,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         mainHandler.post(myRunnable);
     }
 
-    public void onSipUARegisterSuccess(SipEvent event)
-    {
+    public void onSipUARegisterSuccess(SipEvent event) {
         RCLogger.i(TAG, "onSipUARegisterSuccess()");
 
         final RCDevice device = this;
@@ -668,23 +696,42 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
     // Helpers
 
     // Phone state Intents to capture incoming call event
-    private void sendIncomingConnectionIntent (RCConnection connection)
+    private void sendIncomingConnectionIntent (String user, RCConnection connection)
     {
         Intent intent = new Intent ("org.mobicents.restcomm.android.CALL_STATE");
         intent.putExtra("STATE", "ringing");
         intent.putExtra("INCOMING", true);
+        intent.putExtra("FROM", user);
         Context context = RCClient.getContext();
-        context.sendBroadcast(intent);
+        try {
+            // Restrict the Intent to MMC Handler running within the same application
+            Class aclass = Class.forName("com.cortxt.app.MMC.ServicesOld.Intents.MMCIntentHandlerOld");
+            intent.setClass(context.getApplicationContext(), aclass);
+            context.sendBroadcast(intent);
+        }
+        catch (ClassNotFoundException e)
+        {
+            // If there is no MMC class isn't here, no intent
+        }
     }
 
-    private void sendNoConnectionIntent (String message)
-    {
-        Intent intent = new Intent ("org.mobicents.restcomm.android.CONNECT_FAILED");
+    private void sendNoConnectionIntent (String user, String message) {
+        Intent intent = new Intent("org.mobicents.restcomm.android.CONNECT_FAILED");
         intent.putExtra("STATE", "connect failed");
         intent.putExtra("ERRORTEXT", message);
         intent.putExtra("ERROR", RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal());
         intent.putExtra("INCOMING", false);
+        intent.putExtra("USER", user);
         Context context = RCClient.getContext();
-        context.sendBroadcast(intent);
+        try {
+            // Restrict the Intent to MMC Handler running within the same application
+            Class aclass = Class.forName("com.cortxt.app.MMC.ServicesOld.Intents.MMCIntentHandlerOld");
+            intent.setClass(context.getApplicationContext(), aclass);
+            context.sendBroadcast(intent);
+        }
+        catch (ClassNotFoundException e)
+        {
+            // If there is no MMC class isn't here, no intent
+        }
     }
 }
