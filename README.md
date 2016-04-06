@@ -15,7 +15,7 @@ Reference Documentation
 
 Javadoc style reference documentation can be found at:
 
-http://mobicents.github.io/restcomm-android-sdk/doc/
+http://restcomm.github.io/restcomm-android-sdk/doc/
 
 OS/Hardware requirements
 ================
