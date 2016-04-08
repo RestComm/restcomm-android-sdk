@@ -370,6 +370,10 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
             connection.state = RCConnection.ConnectionState.PENDING;
             DeviceImpl.GetInstance().sipuaConnectionListener = connection;
 
+            if (enableVideo == null) {
+                enableVideo = false;
+            }
+
             // create a new hash map
             HashMap<String, String> sipHeaders = null;
             if (parameters.containsKey("sip-headers")) {
