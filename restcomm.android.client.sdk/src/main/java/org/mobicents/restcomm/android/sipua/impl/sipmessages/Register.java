@@ -72,7 +72,7 @@ public class Register {
 			request.addHeader(sipManager.generateUserAgentHeader());
 
 			// Print the request
-			//RCLogger.v(TAG, request.toString());
+			RCLogger.v(TAG, request.toString());
 			return request;
 
 		} catch (ParseException e) {

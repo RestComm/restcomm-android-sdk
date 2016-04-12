@@ -878,6 +878,11 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			//RCLogger.i(TAG, "BUSY");
 			dispatchSipEvent(new SipEvent(this,
 					SipEventType.SERVICE_UNAVAILABLE, "", ""));
+		} else if (response.getStatusCode() == Response.FORBIDDEN) {
+			if (tid != null && tid.getRequest() != null) {
+				dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_NON_CALL, RCClient.ErrorCodes.SIGNALLING_REGISTER_AUTH_ERROR,
+						"Error authenticating " + tid.getRequest().getMethod());
+			}
 		}
 	}
 
@@ -924,7 +929,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	// *** Request/Response Helpers *** //
 	// TODO: revisit dispatchSipEvent and dispatchSipError. Not sure why we need an array of listeners, plus why such synchronization is needed.
-	// We could probably simplify it to one listener and no synchorization (we always take take to only send callbacks to the main application from
+	// We could probably simplify it to one listener and no synchronization (we always take take to only send callbacks to the main application from
 	// the main thread)
 	// Send event to the higher level listener (i.e. DeviceImpl)
 	@SuppressWarnings("unchecked")
