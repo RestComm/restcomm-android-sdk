@@ -33,11 +33,13 @@ public class SipProfile {
 	private static final String TAG = "SipProfile";
 	private  String localIp;
 	private  int localPort = 5080;
-	private  String transport = "tcp";
+	private  String transport = "udp";
 
 	private String remoteEndpoint;
-	private  String sipUserName;
-	private  String sipPassword;
+	private String sipUserName;
+	private String sipPassword;
+	private String sipAuthUserName;
+	private String sipDomain;
 
 	public  String getLocalIp() {
 		return localIp;
@@ -117,5 +119,19 @@ public class SipProfile {
 	public void setTransport(String transport) {
 		RCLogger.i(TAG, "Setting transport:" + transport);
 		this.transport = transport;
+	}
+
+	public String getSipAuthUserName() { return sipAuthUserName; }
+
+	public void setSipAuthUserName(String sipAuthUserName) {
+		RCLogger.i(TAG, "Setting sipAuthUserName: " + sipAuthUserName);
+		this.sipAuthUserName = sipAuthUserName;
+	}
+
+	public String getSipDomain() { return sipDomain; }
+
+	public void setSipDomain(String sipDomain) {
+		RCLogger.i(TAG, "Setting sipDomain: " + sipDomain);
+		this.sipDomain = sipDomain;
 	}
 }

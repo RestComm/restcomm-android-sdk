@@ -262,6 +262,10 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			// new network interface is up, let's retrieve its ip address
 			this.sipProfile.setLocalIp(getIPAddress(true, networkInterfaceType));
 			try {
+				RCLogger.v(TAG, "Binding to: " +
+						sipProfile.getTransport() + ":" +
+						sipProfile.getLocalIp() + ":" +
+						sipProfile.getLocalPort());
 				listeningPoint = sipStack.createListeningPoint(
 						sipProfile.getLocalIp(), sipProfile.getLocalPort(),
 						sipProfile.getTransport());
@@ -745,7 +749,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			try {
 				AuthenticationHelper authenticationHelper = ((SipStackExt) sipStack)
 						.getAuthenticationHelper(
-								new AccountManagerImpl(sipProfile.getSipUserName(),
+								new AccountManagerImpl(sipProfile.getSipAuthUserName(),
 										responseEventExt.getRemoteIpAddress(), sipProfile
 										.getSipPassword()), headerFactory);
 				CallIdHeader callId = (CallIdHeader)response.getHeader("Call-ID");

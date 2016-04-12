@@ -23,7 +23,6 @@
 package org.mobicents.restcomm.android.client.sdk;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 import android.content.Context;
 
@@ -175,12 +174,12 @@ public class RCClient {
 
     /**
      * Create an initialize a new Device object
-     * @param parameters  Restcomm Client parameters
+     * @param profileConfig  Restcomm Client parameters
      * @param deviceListener  The listener for upcoming RCDevice events
      * @return The newly created RCDevice
      * @see RCDevice
      */
-    public static RCDevice createDevice(HashMap<String, Object> parameters, RCDeviceListener deviceListener)
+    public static RCDevice createDevice(RCDevice.SIPProfileConfig profileConfig, RCDeviceListener deviceListener)
     {
         if (!initialized) {
             RCLogger.i(TAG, "Attempting to create RCDevice without first initializing RCClient");
@@ -188,7 +187,7 @@ public class RCClient {
         }
 
         if (list.size() == 0) {
-            RCDevice device = new RCDevice(parameters, deviceListener);
+            RCDevice device = new RCDevice(profileConfig, deviceListener);
             list.add(device);
         }
         else {
