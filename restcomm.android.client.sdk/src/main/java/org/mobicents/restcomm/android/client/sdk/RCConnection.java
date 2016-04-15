@@ -156,6 +156,9 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             "android.permission.RECORD_AUDIO",
             "android.permission.INTERNET"
     };
+    private static final String[] MANDATORY_PERMISSIONS_VIDEO = {
+            "android.permission.CAMERA"
+    };
     private static final String TAG = "RCConnection";
 
     /**
@@ -560,8 +563,17 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         for (String permission : MANDATORY_PERMISSIONS) {
             if (context.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
                 logAndToast("Permission " + permission + " is not granted");
-                // TODO: return error to RCConnection listener
+                listener.onPermissionNotGranted(this, permission);
                 return;
+            }
+        }
+        if (videoEnabled) {
+            for (String permission : MANDATORY_PERMISSIONS_VIDEO) {
+                if (context.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
+                    logAndToast("Permission " + permission + " is not granted");
+                    listener.onPermissionNotGranted(this, permission);
+                    return;
+                }
             }
         }
 
