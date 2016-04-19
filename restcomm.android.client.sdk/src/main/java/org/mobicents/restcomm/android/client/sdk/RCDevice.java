@@ -105,25 +105,14 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
     }
 
     /**
-     * SIP profile configuration.
+     * Configuration preferences.
      */
-    public static class SIPProfileConfig {
-        public String userName;
-        public String password;
-        public String domain;
-        public String authUserName;
-        public String outboundProxy;
-
-        @Override
-        public String toString() {
-            return "SIPProfileConfig{" +
-                    "userName='" + userName + '\'' +
-                    ", password='" + password + '\'' +
-                    ", domain='" + domain + '\'' +
-                    ", authUserName='" + authUserName + '\'' +
-                    ", outboundProxy='" + outboundProxy + '\'' +
-                    '}';
-        }
+    public static class Prefs {
+        public static final String USER_NAME = "pref_sip_user";
+        public static final String DOMAIN = "pref_proxy_domain";
+        public static final String AUTH_USER_NAME = "pref_sip_auth_user";
+        public static final String PASSWORD = "pref_sip_password";
+        public static final String PROXY = "pref_sip_proxy";
     }
 
     private static final String TAG = "RCDevice";
@@ -139,7 +128,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
     public static String EXTRA_SDP = "com.telestax.restcomm_messenger.SDP";
     //public static String EXTRA_DEVICE = "com.telestax.restcomm.android.client.sdk.extra-device";
     //public static String EXTRA_CONNECTION = "com.telestax.restcomm.android.client.sdk.extra-connection";
-    SIPProfileConfig sipProfileConfig;
+    HashMap<String, Object> parameters;
     PendingIntent pendingCallIntent;
     PendingIntent pendingMessageIntent;
     private RCConnection incomingConnection;
@@ -149,11 +138,11 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
     /**
      * Initialize a new RCDevice object
      *
-     * @param sipProfileConfig RCDevice parameters
+     * @param parameters RCDevice parameters
      * @param deviceListener  Listener of RCDevice
      */
-    protected RCDevice(SIPProfileConfig sipProfileConfig, RCDeviceListener deviceListener) {
-//        RCLogger.i(TAG, "RCDevice(): " + parameters.toString());
+    protected RCDevice(HashMap<String, Object> parameters, RCDeviceListener deviceListener) {
+        RCLogger.i(TAG, "RCDevice(): " + parameters.toString());
         //this.updateCapabilityToken(capabilityToken);
         this.listener = deviceListener;
 
@@ -167,7 +156,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         context.registerReceiver(this, filter);
 
         // initialize JAIN SIP if we have connectivity
-        this.sipProfileConfig = sipProfileConfig;
+        this.parameters = parameters;
         reachabilityState = DeviceImpl.checkReachability(RCClient.getContext());
 
         boolean connectivity = false;
@@ -186,7 +175,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
     {
         RCLogger.i(TAG, "initializeSignalling()");
         sipProfile = new SipProfile();
-        updateSipProfile(sipProfileConfig);
+        updateSipProfile(parameters);
         DeviceImpl deviceImpl = DeviceImpl.GetInstance();
         if (reachabilityState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi) {
             deviceImpl.Initialize(RCClient.getContext(), sipProfile, connectivity, SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi);
@@ -197,7 +186,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         DeviceImpl.GetInstance().sipuaDeviceListener = this;
         // register after initialization
         if (connectivity) {
-            if (sipProfileConfig.domain == null || sipProfileConfig.domain.isEmpty()) {
+            if (!parameters.containsKey(Prefs.DOMAIN) ||
+                    parameters.containsKey(Prefs.DOMAIN) && parameters.get(Prefs.DOMAIN).equals("")) {
                 // registrarless; we can transition to ready right away (i.e. without waiting for Restcomm to reply to REGISTER)
                 state = DeviceState.READY;
             }
@@ -251,7 +241,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
                 DeviceImpl.GetInstance().bind(SipManager.NetworkInterfaceType.NetworkInterfaceTypeCellularData);
             }
             reachabilityState = newState;
-            if (sipProfileConfig.domain == null || sipProfileConfig.domain.isEmpty()) {
+            if (!parameters.containsKey(Prefs.DOMAIN) ||
+                    parameters.containsKey(Prefs.DOMAIN) && parameters.get(Prefs.DOMAIN).equals("")) {
                 // registrarless; we can transition to ready right away (i.e. without waiting for Restcomm to reply to REGISTER)
                 state = DeviceState.READY;
                 this.listener.onConnectivityUpdate(this, newState);
@@ -542,16 +533,16 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
     /**
      * Update prefernce parameters such as username/password
      *
-     * @param profileConfig The params to be updated
+     * @param params The params to be updated
      * @return Whether the update was successful or not
      */
-    public boolean updateParams(SIPProfileConfig profileConfig) {
-        RCLogger.i(TAG, "updateParams(): " + profileConfig.toString());
+    public boolean updateParams(HashMap<String, Object> params) {
+        RCLogger.i(TAG, "updateParams(): " + params.toString());
         boolean status = false;
 
-        if (profileConfig.domain != null && !profileConfig.domain.isEmpty()) {
+        if (params.containsKey(Prefs.DOMAIN) && !params.get(Prefs.DOMAIN).equals("")) {
             // we have a new (non empty) domain, need to register
-            updateSipProfile(profileConfig);
+            updateSipProfile(params);
             if (reachabilityState != RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
                 DeviceImpl.GetInstance().Register();
                 status = true;
@@ -565,46 +556,49 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
                 DeviceImpl.GetInstance().Unregister();
             }
             // previously we didn't have a registrar setup, no need to do anything
-            updateSipProfile(profileConfig);
+            updateSipProfile(params);
             status = true;
         }
         return status;
     }
 
-    public void updateSipProfile(SIPProfileConfig profileConfig) {
-        RCLogger.i(TAG, "updateSipProfile(): " + profileConfig.toString());
+    public void updateSipProfile(HashMap<String, Object> params) {
+        if (params == null) {
+			return;
+		}
 
-        if (profileConfig != null) {
-            if (profileConfig.domain != null &&
-                    !profileConfig.domain.isEmpty()) {
-                sipProfile.setSipDomain(profileConfig.domain);
-            }
+		String domain = (String)params.get(Prefs.DOMAIN);
+		if (domain != null && !domain.isEmpty()) {
+			sipProfile.setSipDomain(domain);
+		}
 
-            if (profileConfig.userName != null &&
-                    !profileConfig.userName.isEmpty()) {
-                sipProfile.setSipUserName(profileConfig.userName);
+		String userName = (String)params.get(Prefs.USER_NAME);
+		String authUserName = (String)params.get(Prefs.AUTH_USER_NAME);
 
-                if (profileConfig.authUserName != null &&
-                        !profileConfig.authUserName.isEmpty()) {
-                    sipProfile.setSipAuthUserName(profileConfig.authUserName);
-                } else {
-                    sipProfile.setSipAuthUserName(profileConfig.userName);
-                }
-            }
+		if (userName != null && !userName.isEmpty()) {
+			sipProfile.setSipUserName(userName);
 
-            if (profileConfig.password != null &&
-                    !profileConfig.password.isEmpty()) {
-                sipProfile.setSipPassword(profileConfig.password);
-            }
+			if (authUserName != null && !authUserName.isEmpty()) {
+				sipProfile.setSipAuthUserName(authUserName);
+			} else {
+				sipProfile.setSipAuthUserName(userName);
+			}
+		}
 
-            if (profileConfig.outboundProxy != null &&
-                    !profileConfig.outboundProxy.isEmpty()) {
-                sipProfile.setRemoteEndpoint("sip:" + profileConfig.outboundProxy);
-            }
-            else {
-                sipProfile.setRemoteEndpoint("sip:" + profileConfig.domain);
-            }
-        }
+		String password = (String)params.get(Prefs.PASSWORD);
+
+		if (password != null && !password.isEmpty()) {
+			sipProfile.setSipPassword(password);
+		}
+
+		String outboundProxy = (String)params.get(Prefs.PROXY);
+
+		if (outboundProxy != null && !outboundProxy.isEmpty()) {
+			sipProfile.setRemoteEndpoint("sip:" + outboundProxy);
+		}
+		else if (domain != null && !domain.isEmpty()) {
+			sipProfile.setRemoteEndpoint("sip:" + domain);
+		}
     }
 
     /**

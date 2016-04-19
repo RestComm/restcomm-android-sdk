@@ -33,7 +33,7 @@ public class SipProfile {
 	private static final String TAG = "SipProfile";
 	private  String localIp;
 	private  int localPort = 5080;
-	private  String transport = "udp";
+	private  String transport = "tcp";
 
 	private String remoteEndpoint;
 	private String sipUserName;
