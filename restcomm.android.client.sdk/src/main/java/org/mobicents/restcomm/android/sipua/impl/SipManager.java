@@ -884,8 +884,27 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					SipEventType.SERVICE_UNAVAILABLE, "", ""));
 		} else if (response.getStatusCode() == Response.FORBIDDEN) {
 			if (tid != null && tid.getRequest() != null) {
-				dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_NON_CALL, RCClient.ErrorCodes.SIGNALLING_REGISTER_AUTH_ERROR,
-						"Error authenticating " + tid.getRequest().getMethod());
+				String method;
+
+				if (tid.getRequest().getMethod() != null) {
+					method = tid.getRequest().getMethod();
+				}
+				else {
+					method = "";
+				}
+
+				if (method.equals(Request.REGISTER)) {
+					dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_NON_CALL, RCClient.ErrorCodes.SIGNALLING_REGISTER_AUTH_ERROR,
+							"Error authenticating " + tid.getRequest().getMethod());
+				}
+				else if (method.equals(Request.MESSAGE)) {
+					dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_NON_CALL, RCClient.ErrorCodes.SIGNALLING_INSTANT_MESSAGE_ERROR,
+							"Error authenticating " + tid.getRequest().getMethod());
+				}
+				else if (method.equals(Request.INVITE)) {
+					dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_CALL, RCClient.ErrorCodes.SIGNALLING_CALL_ERROR,
+							"Error authenticating " + tid.getRequest().getMethod());
+				}
 			}
 		}
 	}
