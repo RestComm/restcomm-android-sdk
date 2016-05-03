@@ -562,16 +562,18 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         // Check for mandatory permissions.
         for (String permission : MANDATORY_PERMISSIONS) {
             if (context.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
-                logAndToast("Permission " + permission + " is not granted");
-                listener.onPermissionNotGranted(this, permission);
+                String errorText = "Permission " + permission + " is not granted";
+                logAndToast(errorText);
+                listener.onDisconnected(this, RCClient.ErrorCodes.PERMISSION_NOT_GRANTED_ERROR.ordinal(), errorText);
                 return;
             }
         }
         if (videoEnabled) {
             for (String permission : MANDATORY_PERMISSIONS_VIDEO) {
                 if (context.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
-                    logAndToast("Permission " + permission + " is not granted");
-                    listener.onPermissionNotGranted(this, permission);
+                    String errorText = "Permission " + permission + " is not granted";
+                    logAndToast(errorText);
+                    listener.onDisconnected(this, RCClient.ErrorCodes.PERMISSION_NOT_GRANTED_ERROR.ordinal(), errorText);
                     return;
                 }
             }

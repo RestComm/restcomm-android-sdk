@@ -113,6 +113,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         public static final String AUTH_USER_NAME = "pref_sip_auth_user";
         public static final String PASSWORD = "pref_sip_password";
         public static final String PROXY = "pref_sip_proxy";
+        public static final String VIDEO_ENABLED = "video-enabled";
+        public static final String SIP_HEADERS = "sip-headers";
     }
 
     private static final String TAG = "RCDevice";
@@ -375,7 +377,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         if (state == DeviceState.READY) {
             RCLogger.i(TAG, "RCDevice.connect(), with connectivity");
 
-            Boolean enableVideo = (Boolean)parameters.get("video-enabled");
+            Boolean enableVideo = (Boolean)parameters.get(Prefs.VIDEO_ENABLED);
             RCConnection connection = new RCConnection(listener);
             connection.incoming = false;
             connection.state = RCConnection.ConnectionState.PENDING;
@@ -387,10 +389,10 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
 
             // create a new hash map
             HashMap<String, String> sipHeaders = null;
-            if (parameters.containsKey("sip-headers")) {
-                sipHeaders = (HashMap<String, String>)parameters.get("sip-headers");
+            if (parameters.containsKey(Prefs.SIP_HEADERS)) {
+                sipHeaders = (HashMap<String, String>)parameters.get(Prefs.SIP_HEADERS);
             }
-            connection.setupWebrtcAndCall((String)parameters.get("username"), sipHeaders, enableVideo.booleanValue());
+            connection.setupWebrtcAndCall((String)parameters.get("username"), sipHeaders, enableVideo);
             state = DeviceState.BUSY;
 
             return connection;
