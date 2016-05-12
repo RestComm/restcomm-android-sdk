@@ -102,6 +102,14 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         DISCONNECTED,  /** Connection is in state disconnected */
     };
 
+    /**
+     * General status.
+     */
+    public enum Status {
+        FAIL,
+        PASS
+    }
+
     String IncomingParameterFromKey = "RCConnectionIncomingParameterFromKey";
     String IncomingParameterToKey = "RCConnectionIncomingParameterToKey";
     String IncomingParameterAccountSIDKey ="RCConnectionIncomingParameterAccountSIDKey";
@@ -538,19 +546,22 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     }
 
     // -- WebRTC stuff:
-    public void setupWebrtcAndCall(String sipUri, HashMap<String, String> sipHeaders, boolean videoEnabled)
+    public Status setupWebrtcAndCall(String sipUri, HashMap<String, String> sipHeaders, boolean videoEnabled)
     {
-        initializeWebrtc(videoEnabled);
+        if (Status.FAIL == initializeWebrtc(videoEnabled)) {
+            return Status.FAIL;
+        }
 
         LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
         iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
         this.signalingParameters = new SignalingParameters(iceServers, true, "", sipUri, "", null, null, sipHeaders, videoEnabled);
 
         startCall(this.signalingParameters);
+        return Status.PASS;
     }
 
     // initialize webrtc facilities for the call
-    void initializeWebrtc(boolean videoEnabled)
+    Status initializeWebrtc(boolean videoEnabled)
     {
         RCLogger.i(TAG, "initializeWebrtc  ");
         Context context = RCClient.getContext();
@@ -565,7 +576,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                 String errorText = "Permission " + permission + " is not granted";
                 logAndToast(errorText);
                 listener.onDisconnected(this, RCClient.ErrorCodes.PERMISSION_NOT_GRANTED_ERROR.ordinal(), errorText);
-                return;
+                return Status.FAIL;
             }
         }
         if (videoEnabled) {
@@ -574,7 +585,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                     String errorText = "Permission " + permission + " is not granted";
                     logAndToast(errorText);
                     listener.onDisconnected(this, RCClient.ErrorCodes.PERMISSION_NOT_GRANTED_ERROR.ordinal(), errorText);
-                    return;
+                    return Status.FAIL;
                 }
             }
         }
@@ -594,6 +605,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                 true);
 
         createPeerConnectionFactory();
+        return Status.PASS;
     }
 
     private void startCall(SignalingParameters signalingParameters)
