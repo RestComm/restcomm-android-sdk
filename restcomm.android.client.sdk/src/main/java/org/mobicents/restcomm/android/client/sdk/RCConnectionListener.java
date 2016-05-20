@@ -78,12 +78,5 @@ public interface RCConnectionListener {
      * @param videoTrack Video track hosting the remote video
      */
     public void onReceiveRemoteVideo(RCConnection connection, VideoTrack videoTrack);
-
-    /**
-     * Called in case of Android permission error.
-     * @param connection  Connection
-     * @param permission The permission that is not granted.
-     */
-    public void onPermissionNotGranted(RCConnection connection, String permission);
 }
 
