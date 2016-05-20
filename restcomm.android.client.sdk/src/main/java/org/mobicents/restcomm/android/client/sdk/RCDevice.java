@@ -375,7 +375,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
             if (parameters.containsKey("sip-headers")) {
                 sipHeaders = (HashMap<String, String>)parameters.get("sip-headers");
             }
-            connection.setupWebrtcAndCall((String)parameters.get("username"), sipHeaders, enableVideo.booleanValue());
+            //connection.setupWebrtcAndCall((String)parameters.get("username"), sipHeaders, enableVideo.booleanValue());
+            connection.setupWebrtcAndCall(parameters);
             state = DeviceState.BUSY;
 
             return connection;

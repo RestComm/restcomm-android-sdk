@@ -60,7 +60,9 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
+import org.mobicents.restcomm.android.client.sdk.util.IceServerFetcher;
 import org.mobicents.restcomm.android.sipua.SipUAConnectionListener;
 import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
 import org.mobicents.restcomm.android.sipua.impl.SipEvent;
@@ -91,7 +93,7 @@ import org.webrtc.VideoTrack;
  *  Once an RCConnection (either incoming or outgoing) is established (i.e. RCConnectionStateConnected) media can start flowing over it. DTMF digits can be sent over to
  *  the remote party using RCConnection.sendDigits(). When done with the RCConnection you can disconnect it with RCConnection.disconnect().
  */
-public class RCConnection implements SipUAConnectionListener, PeerConnectionClient.PeerConnectionEvents {
+public class RCConnection implements SipUAConnectionListener, PeerConnectionClient.PeerConnectionEvents, IceServerFetcher.IceServerFetcherEvents {
     /**
      * Connection State
      */
@@ -145,7 +147,8 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     private Toast logToast;
     private PeerConnectionClient.PeerConnectionParameters peerConnectionParameters;
     private boolean iceConnected;
-    private boolean isError;
+    HashMap<String, Object> callParams = null;
+    //private Boolean isVideo = false;
     private long callStartedTimeMs = 0;
     private GLSurfaceView videoView;
     private static boolean DO_TOAST = false;
@@ -225,18 +228,73 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         RCLogger.i(TAG, "accept(): " + parameters.toString());
 
         if (haveConnectivity()) {
-            //  DeviceImpl.GetInstance().Accept(
-            Boolean enableVideo = (Boolean)parameters.get("video-enabled");
-            initializeWebrtc(enableVideo.booleanValue());
+            this.callParams = (HashMap<String, Object>)parameters;
+            initializeWebrtc((Boolean)this.callParams.get("video-enabled"));
 
-            LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
-            iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
-            this.signalingParameters = new SignalingParameters(iceServers, false, "", "", "", null, null, null, enableVideo.booleanValue());
-            SignalingParameters params = SignalingParameters.extractCandidates(new SessionDescription(SessionDescription.Type.OFFER, incomingCallSdp));
-            this.signalingParameters.offerSdp = params.offerSdp;
-            this.signalingParameters.iceCandidates = params.iceCandidates;
-            startCall(this.signalingParameters);
+            String url = "https://service.xirsys.com/ice?ident=atsakiridis&secret=4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7&domain=cloud.restcomm.com&application=default&room=default&secure=1";
+            new IceServerFetcher(url, this).makeRequest();
         }
+    }
+
+    // IceServerFetcher callbacks
+    @Override
+    public void onIceServersReady(final LinkedList<PeerConnection.IceServer> iceServers) {
+        // Important: need to fire the event in UI context to make sure no races will arise
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (!RCConnection.this.incoming) {
+                    // we are the initiator
+
+                    // create a new hash map
+                    HashMap<String, String> sipHeaders = null;
+                    if (parameters.containsKey("sip-headers")) {
+                        sipHeaders = (HashMap<String, String>)RCConnection.this.callParams.get("sip-headers");
+                    }
+
+                    LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
+                    iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
+                    RCConnection.this.signalingParameters = new SignalingParameters(iceServers, true, "", (String)RCConnection.this.callParams.get("username"), "", null, null, sipHeaders, (Boolean)RCConnection.this.callParams.get("video-enabled"));
+                }
+                else {
+                    // we are not the initiator
+                    LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
+                    iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
+                    RCConnection.this.signalingParameters = new SignalingParameters(iceServers, false, "", "", "", null, null, null, (Boolean) RCConnection.this.callParams.get("video-enabled"));
+                    SignalingParameters params = SignalingParameters.extractCandidates(new SessionDescription(SessionDescription.Type.OFFER, incomingCallSdp));
+                    RCConnection.this.signalingParameters.offerSdp = params.offerSdp;
+                    RCConnection.this.signalingParameters.iceCandidates = params.iceCandidates;
+                }
+                startCall(RCConnection.this.signalingParameters);
+            }
+        };
+        mainHandler.post(myRunnable);
+                    /*
+                    WebSocketRTCClient.this.executor.execute(new Runnable() {
+                        @Override
+                        public void run() {
+                            WebSocketRTCClient.this.signalingParametersReady(params);
+                        }
+                    });
+                    */
+    }
+
+    @Override
+    public void onIceServersError(final String description) {
+        // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                RCConnection.this.listener.onDisconnected(RCConnection.this, RCClient.ErrorCodes.WEBRTC_TURN_ERROR.ordinal(), RCClient.errorText(RCClient.ErrorCodes.WEBRTC_TURN_ERROR));
+            }
+        };
+        mainHandler.post(myRunnable);
+
+                    /*
+                    WebSocketRTCClient.this.reportError(description);
+                    */
     }
 
     private void acceptWebrtc(final String sdp)
@@ -535,15 +593,14 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     }
 
     // -- WebRTC stuff:
-    public void setupWebrtcAndCall(String sipUri, HashMap<String, String> sipHeaders, boolean videoEnabled)
+    public void setupWebrtcAndCall(Map<String, Object> parameters)
+    //public void setupWebrtcAndCall(String sipUri, HashMap<String, String> sipHeaders, boolean videoEnabled)
     {
-        initializeWebrtc(videoEnabled);
+        this.callParams = (HashMap<String, Object>)parameters;
+        initializeWebrtc((Boolean)this.callParams.get("video-enabled"));
 
-        LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
-        iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
-        this.signalingParameters = new SignalingParameters(iceServers, true, "", sipUri, "", null, null, sipHeaders, videoEnabled);
-
-        startCall(this.signalingParameters);
+        String url = "https://service.xirsys.com/ice?ident=atsakiridis&secret=4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7&domain=cloud.restcomm.com&application=default&room=default&secure=1";
+        new IceServerFetcher(url, this).makeRequest();
     }
 
     // initialize webrtc facilities for the call
@@ -795,7 +852,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
-                if (!isError && iceConnected) {
+                if (iceConnected) {
                     //hudFragment.updateEncoderStatistics(reports);
                 }
             }
