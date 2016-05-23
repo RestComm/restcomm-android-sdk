@@ -368,6 +368,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
             RCConnection connection = new RCConnection(listener);
             connection.incoming = false;
             connection.state = RCConnection.ConnectionState.PENDING;
+            connection.device = this;
             DeviceImpl.GetInstance().sipuaConnectionListener = connection;
 
             // create a new hash map
@@ -517,7 +518,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
     }
 
     /**
-     * Update prefernce parameters such as username/password
+     * Update preference parameters such as username/password
      *
      * @param params The params to be updated
      * @return Whether the update was successful or not
@@ -549,6 +550,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
     }
 
     public void updateSipProfile(HashMap<String, Object> params) {
+        sipProfile.setSipProfile(params);
+        /*
         if (params != null) {
             for (String key : params.keySet()) {
                 if (key.equals("pref_proxy_domain")) {
@@ -556,11 +559,25 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
                 }
                 else if (key.equals("pref_sip_user")) {
                     sipProfile.setSipUserName((String) params.get(key));
-                } else if (key.equals("pref_sip_password")) {
+                }
+                else if (key.equals("pref_sip_password")) {
                     sipProfile.setSipPassword((String) params.get(key));
+                }
+                else if (key.equals("turn-enabled")) {
+                    sipProfile.setTurnEnabled((Boolean) params.get(key));
+                }
+                else if (key.equals("turn-url")) {
+                    sipProfile.setTurnUrl((String) params.get(key));
+                }
+                else if (key.equals("turn-username")) {
+                    sipProfile.setTurnUsername((String) params.get(key));
+                }
+                else if (key.equals("turn-password")) {
+                    sipProfile.setTurnPassword((String) params.get(key));
                 }
             }
         }
+        */
     }
 
     /**
@@ -573,6 +590,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         incomingConnection.incoming = true;
         incomingConnection.state = RCConnection.ConnectionState.CONNECTING;
         incomingConnection.incomingCallSdp = event.sdp;
+        incomingConnection.device = this;
         DeviceImpl.GetInstance().sipuaConnectionListener = incomingConnection;
         state = DeviceState.BUSY;
 
@@ -677,6 +695,10 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         };
         mainHandler.post(myRunnable);
     }
-
     // Helpers
+
+    public SipProfile getSipProfile()
+    {
+        return sipProfile;
+    }
 }

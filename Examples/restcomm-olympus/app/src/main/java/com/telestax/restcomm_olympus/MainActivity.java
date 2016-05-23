@@ -97,6 +97,10 @@ public class MainActivity extends AppCompatActivity
         params.put("pref_proxy_domain", prefs.getString("pref_proxy_domain", ""));
         params.put("pref_sip_user", prefs.getString("pref_sip_user", "android-sdk"));
         params.put("pref_sip_password", prefs.getString("pref_sip_password", "1234"));
+        params.put("turn-enabled", prefs.getBoolean("turn-enabled", true));
+        params.put("turn-url", prefs.getString("turn-url", ""));
+        params.put("turn-username", prefs.getString("turn-username", ""));
+        params.put("turn-password", prefs.getString("turn-password", ""));
         device = RCClient.createDevice(params, this);
         device.setPendingIntents(new Intent(getApplicationContext(), CallActivity.class),
                 new Intent(getApplicationContext(), MessageActivity.class));
@@ -339,10 +343,28 @@ public class MainActivity extends AppCompatActivity
         else if (key.equals("pref_sip_user")) {
             params.put("pref_sip_user", prefs.getString("pref_sip_user", "android-sdk"));
             updated = true;
-        } else if (key.equals("pref_sip_password")) {
+        }
+        else if (key.equals("pref_sip_password")) {
             params.put("pref_sip_password", prefs.getString("pref_sip_password", "1234"));
             updated = true;
         }
+        else if (key.equals("turn-enabled")) {
+            params.put("turn-enabled", prefs.getBoolean("turn-enabled", true));
+            updated = true;
+        }
+        else if (key.equals("turn-url")) {
+            params.put("turn-url", prefs.getString("turn-url", ""));
+            updated = true;
+        }
+        else if (key.equals("turn-username")) {
+            params.put("turn-username", prefs.getString("turn-username", ""));
+            updated = true;
+        }
+        else if (key.equals("turn-password")) {
+            params.put("turn-password", prefs.getString("turn-password", ""));
+            updated = true;
+        }
+
         if (updated) {
             if (!device.updateParams(params)) {
                 showOkAlert("RCDevice Error", "No Wifi connectivity");

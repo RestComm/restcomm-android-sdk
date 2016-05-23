@@ -63,6 +63,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import org.mobicents.restcomm.android.client.sdk.util.IceServerFetcher;
+import org.mobicents.restcomm.android.sipua.SipProfile;
 import org.mobicents.restcomm.android.sipua.SipUAConnectionListener;
 import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
 import org.mobicents.restcomm.android.sipua.impl.SipEvent;
@@ -137,6 +138,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
      */
     boolean muted;
 
+    public RCDevice device = null;
     public String incomingCallSdp = "";
     private PeerConnectionClient peerConnectionClient = null;
     private SignalingParameters signalingParameters;
@@ -231,8 +233,12 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             this.callParams = (HashMap<String, Object>)parameters;
             initializeWebrtc((Boolean)this.callParams.get("video-enabled"));
 
-            String url = "https://service.xirsys.com/ice?ident=atsakiridis&secret=4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7&domain=cloud.restcomm.com&application=default&room=default&secure=1";
-            new IceServerFetcher(url, this).makeRequest();
+            RCDevice device = RCClient.listDevices().get(0);
+            SipProfile sipProfile = device.getSipProfile();
+            String url = sipProfile.getTurnUrl() + "?ident=" + sipProfile.getTurnUsername() + "&secret=" + sipProfile.getTurnPassword() + "&domain=cloud.restcomm.com&application=default&room=default&secure=1";
+
+            //String url = "https://service.xirsys.com/ice?ident=atsakiridis&secret=4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7&domain=cloud.restcomm.com&application=default&room=default&secure=1";
+            new IceServerFetcher(url, sipProfile.getTurnEnabled(), this).makeRequest();
         }
     }
 
@@ -249,18 +255,18 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
                     // create a new hash map
                     HashMap<String, String> sipHeaders = null;
-                    if (parameters.containsKey("sip-headers")) {
+                    if (RCConnection.this.callParams.containsKey("sip-headers")) {
                         sipHeaders = (HashMap<String, String>)RCConnection.this.callParams.get("sip-headers");
                     }
 
-                    LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
-                    iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
+                    //LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
+                    //iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
                     RCConnection.this.signalingParameters = new SignalingParameters(iceServers, true, "", (String)RCConnection.this.callParams.get("username"), "", null, null, sipHeaders, (Boolean)RCConnection.this.callParams.get("video-enabled"));
                 }
                 else {
                     // we are not the initiator
-                    LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
-                    iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
+                    //LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
+                    //iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
                     RCConnection.this.signalingParameters = new SignalingParameters(iceServers, false, "", "", "", null, null, null, (Boolean) RCConnection.this.callParams.get("video-enabled"));
                     SignalingParameters params = SignalingParameters.extractCandidates(new SessionDescription(SessionDescription.Type.OFFER, incomingCallSdp));
                     RCConnection.this.signalingParameters.offerSdp = params.offerSdp;
@@ -270,14 +276,6 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             }
         };
         mainHandler.post(myRunnable);
-                    /*
-                    WebSocketRTCClient.this.executor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            WebSocketRTCClient.this.signalingParametersReady(params);
-                        }
-                    });
-                    */
     }
 
     @Override
@@ -287,7 +285,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
-                RCConnection.this.listener.onDisconnected(RCConnection.this, RCClient.ErrorCodes.WEBRTC_TURN_ERROR.ordinal(), RCClient.errorText(RCClient.ErrorCodes.WEBRTC_TURN_ERROR));
+                RCConnection.this.listener.onDisconnected(RCConnection.this, RCClient.ErrorCodes.WEBRTC_TURN_ERROR.ordinal(), description);
             }
         };
         mainHandler.post(myRunnable);
@@ -599,8 +597,12 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         this.callParams = (HashMap<String, Object>)parameters;
         initializeWebrtc((Boolean)this.callParams.get("video-enabled"));
 
-        String url = "https://service.xirsys.com/ice?ident=atsakiridis&secret=4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7&domain=cloud.restcomm.com&application=default&room=default&secure=1";
-        new IceServerFetcher(url, this).makeRequest();
+        //String url = "https://service.xirsys.com/ice?ident=atsakiridis&secret=4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7&domain=cloud.restcomm.com&application=default&room=default&secure=1";
+        RCDevice device = RCClient.listDevices().get(0);
+        SipProfile sipProfile = device.getSipProfile();
+        String url = sipProfile.getTurnUrl() + "?ident=" + sipProfile.getTurnUsername() + "&secret=" + sipProfile.getTurnPassword() + "&domain=cloud.restcomm.com&application=default&room=default&secure=1";
+
+        new IceServerFetcher(url, sipProfile.getTurnEnabled(), this).makeRequest();
     }
 
     // initialize webrtc facilities for the call

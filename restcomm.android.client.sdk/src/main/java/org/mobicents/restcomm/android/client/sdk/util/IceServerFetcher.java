@@ -72,10 +72,9 @@ import java.util.Scanner;
 // Fetches the ICE Servers asynchronously and provides callbacks for result
 public class IceServerFetcher {
     private static final String TAG = "IceServerFetcher";
-    private static final int TURN_HTTP_TIMEOUT_MS = 5000;
     private final IceServerFetcherEvents events;
-    private final String turnUrl;
-    //private final String roomMessage;
+    private final String iceUrl;
+    private boolean turnEnabled = true;
     private AsyncHttpURLConnection httpConnection;
 
     /**
@@ -83,31 +82,30 @@ public class IceServerFetcher {
      */
     public static interface IceServerFetcherEvents {
         /**
-         * Callback fired once the room's signaling parameters
-         * SignalingParameters are extracted.
+         * Callback fired when ICE servers are fetched
          */
         public void onIceServersReady(final LinkedList<PeerConnection.IceServer> iceServers);
 
         /**
-         * Callback for room parameters extraction error.
+         * Callback if there's an error fetching ICE servers
          */
         public void onIceServersError(final String description);
     }
 
-    public IceServerFetcher(String turnUrl, final IceServerFetcherEvents events) {
-        this.turnUrl = turnUrl;
-        //this.roomMessage = roomMessage;
+    public IceServerFetcher(String iceUrl, boolean turnEnabled, final IceServerFetcherEvents events) {
+        this.iceUrl = iceUrl;
+        this.turnEnabled = turnEnabled;
         this.events = events;
     }
 
     public void makeRequest() {
-        Log.d(TAG, "Connecting to room: " + turnUrl);
+        Log.d(TAG, "Requesting ICE servers from: " + iceUrl);
         httpConnection = new AsyncHttpURLConnection(
-                "GET", turnUrl,
+                "GET", iceUrl,
                 new AsyncHttpURLConnection.AsyncHttpEvents() {
                     @Override
                     public void onHttpError(String errorMessage) {
-                        Log.e(TAG, "Room connection error: " + errorMessage);
+                        Log.e(TAG, "ICE servers request timeout: " + errorMessage);
                         events.onIceServersError(errorMessage);
                     }
 
@@ -122,88 +120,48 @@ public class IceServerFetcher {
     private void iceServersHttpResponseParse(String response) {
         Log.d(TAG, "Ice Servers response: " + response);
         try {
-            LinkedList<IceCandidate> iceCandidates = null;
-            SessionDescription offerSdp = null;
-            JSONObject roomJson = new JSONObject(response);
+            JSONObject iceServersJson = new JSONObject(response);
 
-            String result = roomJson.getString("result");
-            if (!result.equals("SUCCESS")) {
-                events.onIceServersError("Room response error: " + result);
+            int result = iceServersJson.getInt("s");
+            if (result != 200) {
+                events.onIceServersError("Ice Servers response error: " + iceServersJson.getString("e"));
                 return;
             }
-            response = roomJson.getString("params");
-            roomJson = new JSONObject(response);
-            String roomId = roomJson.getString("room_id");
-            String clientId = roomJson.getString("client_id");
-            String wssUrl = roomJson.getString("wss_url");
-            String wssPostUrl = roomJson.getString("wss_post_url");
-            boolean initiator = (roomJson.getBoolean("is_initiator"));
-            if (!initiator) {
-                iceCandidates = new LinkedList<IceCandidate>();
-                String messagesString = roomJson.getString("messages");
-                JSONArray messages = new JSONArray(messagesString);
-                for (int i = 0; i < messages.length(); ++i) {
-                    String messageString = messages.getString(i);
-                    JSONObject message = new JSONObject(messageString);
-                    String messageType = message.getString("type");
-                    Log.d(TAG, "GAE->C #" + i + " : " + messageString);
-                    if (messageType.equals("offer")) {
-                        offerSdp = new SessionDescription(
-                                SessionDescription.Type.fromCanonicalForm(messageType),
-                                message.getString("sdp"));
-                    } else if (messageType.equals("candidate")) {
-                        IceCandidate candidate = new IceCandidate(
-                                message.getString("id"),
-                                message.getInt("label"),
-                                message.getString("candidate"));
-                        iceCandidates.add(candidate);
-                    } else {
-                        Log.e(TAG, "Unknown message: " + messageString);
-                    }
-                }
-            }
-            Log.d(TAG, "RoomId: " + roomId + ". ClientId: " + clientId);
-            Log.d(TAG, "Initiator: " + initiator);
-            Log.d(TAG, "WSS url: " + wssUrl);
-            Log.d(TAG, "WSS POST url: " + wssPostUrl);
 
-            LinkedList<PeerConnection.IceServer> iceServers =
-                    iceServersFromPCConfigJSON(roomJson.getString("pc_config"));
-            boolean isTurnPresent = false;
-            for (PeerConnection.IceServer server : iceServers) {
-                Log.d(TAG, "IceServer: " + server);
-                if (server.uri.startsWith("turn:")) {
-                    isTurnPresent = true;
-                    break;
+            LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<PeerConnection.IceServer>();
+            JSONArray iceServersArray = iceServersJson.getJSONObject("d").getJSONArray("iceServers");
+            for (int i = 0; i < iceServersArray.length(); ++i) {
+
+                String iceServerString = iceServersArray.getString(i);
+                JSONObject iceServerJson = new JSONObject(iceServerString);
+
+                String url = iceServerJson.getString("url");
+                if (!this.turnEnabled && url.startsWith("turn:")) {
+                    // if turn is not enabled and the server we got back is a turn (as opposed to stun), skip it
+                    continue;
                 }
-            }
-            // Request TURN servers.
-            if (!isTurnPresent) {
-                LinkedList<PeerConnection.IceServer> turnServers =
-                        requestTurnServers(roomJson.getString("turn_url"));
-                for (PeerConnection.IceServer turnServer : turnServers) {
-                    Log.d(TAG, "TurnServer: " + turnServer);
-                    iceServers.add(turnServer);
+                // username and credentials is optional, for example in the STUN server setting
+                String username = "", password = "";
+                if (iceServerJson.has("username")) {
+                    username = iceServerJson.getString("username");
                 }
+                if (iceServerJson.has("credential")) {
+                    password = iceServerJson.getString("credential");
+                }
+                iceServers.add(new PeerConnection.IceServer(url, username, password));
+
+                Log.d(TAG, "==== URL: " + url + ", username: " + username + ", password: " + password);
             }
 
-            /*
-            SignalingParameters params = new SignalingParameters(
-                    iceServers, initiator,
-                    clientId, wssUrl, wssPostUrl,
-                    offerSdp, iceCandidates);
-            */
             events.onIceServersReady(iceServers);
         } catch (JSONException e) {
-            events.onIceServersError(
-                    "Room JSON parsing error: " + e.toString());
-        } catch (IOException e) {
-            events.onIceServersError("Room IO error: " + e.toString());
+            events.onIceServersError("ICE server JSON parsing error: " + e.toString());
         }
     }
 
     // Requests & returns a TURN ICE Server based on a request URL.  Must be run
     // off the main thread!
+    /*
     private LinkedList<PeerConnection.IceServer> requestTurnServers(String url)
             throws IOException, JSONException {
         LinkedList<PeerConnection.IceServer> turnServers =
@@ -255,5 +213,5 @@ public class IceServerFetcher {
         Scanner s = new Scanner(in).useDelimiter("\\A");
         return s.hasNext() ? s.next() : "";
     }
-
+    */
 }

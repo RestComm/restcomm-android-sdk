@@ -28,6 +28,7 @@ import android.javax.sip.address.SipURI;
 import android.javax.sip.address.URI;
 
 import java.text.ParseException;
+import java.util.HashMap;
 
 public class SipProfile {
 	private static final String TAG = "SipProfile";
@@ -38,6 +39,68 @@ public class SipProfile {
 	private String remoteEndpoint;
 	private  String sipUserName;
 	private  String sipPassword;
+	private boolean turnEnabled;
+	private String turnUrl;
+	private String turnUsername;
+	private String turnPassword;
+
+	public  void setSipProfile(HashMap<String, Object> params) {
+		//RCLogger.i(TAG, "Setting localIp:" + localIp);
+		//this.localIp = localIp;
+		if (params != null) {
+			for (String key : params.keySet()) {
+				if (key.equals("pref_proxy_domain")) {
+					this.setRemoteEndpoint((String) params.get(key));
+				}
+				else if (key.equals("pref_sip_user")) {
+					this.setSipUserName((String) params.get(key));
+				}
+				else if (key.equals("pref_sip_password")) {
+					this.setSipPassword((String) params.get(key));
+				}
+				else if (key.equals("turn-enabled")) {
+					this.setTurnEnabled((Boolean) params.get(key));
+				}
+				else if (key.equals("turn-url")) {
+					this.setTurnUrl((String) params.get(key));
+				}
+				else if (key.equals("turn-username")) {
+					this.setTurnUsername((String) params.get(key));
+				}
+				else if (key.equals("turn-password")) {
+					this.setTurnPassword((String) params.get(key));
+				}
+			}
+		}
+	}
+
+	public boolean getTurnEnabled() {
+		return turnEnabled;
+	}
+	public void setTurnEnabled(boolean turnEnabled) {
+		this.turnEnabled = turnEnabled;
+	}
+
+	public String getTurnUrl() {
+		return turnUrl;
+	}
+	public void setTurnUrl(String turnUrl) {
+		this.turnUrl = turnUrl;
+	}
+
+	public String getTurnUsername() {
+		return turnUsername;
+	}
+	public void setTurnUsername(String turnUsername) {
+		this.turnUsername = turnUsername;
+	}
+
+	public String getTurnPassword() {
+		return turnPassword;
+	}
+	public void setTurnPassword(String turnPassword) {
+		this.turnPassword = turnPassword;
+	}
 
 	public  String getLocalIp() {
 		return localIp;
