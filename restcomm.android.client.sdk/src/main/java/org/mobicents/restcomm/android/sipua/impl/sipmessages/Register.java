@@ -34,11 +34,11 @@ public class Register {
 			// Create addresses and via header for the request
 			Address fromAddress = addressFactory.createAddress("sip:"
 					+ sipManager.getSipProfile().getSipUserName() + "@"
-					+ sipManager.getSipProfile().getRemoteIp(sipManager.addressFactory));
+					+ sipManager.getSipProfile().getSipDomain());
 			fromAddress.setDisplayName(sipManager.getSipProfile().getSipUserName());
 			Address toAddress = addressFactory.createAddress("sip:"
 					+ sipManager.getSipProfile().getSipUserName() + "@"
-					+ sipManager.getSipProfile().getRemoteIp(sipManager.addressFactory));
+					+ sipManager.getSipProfile().getSipDomain());
 			toAddress.setDisplayName(sipManager.getSipProfile().getSipUserName());
 
 			Address contactAddress;
@@ -48,7 +48,7 @@ public class Register {
 				contactAddress = contact;
 			}
 			ArrayList<ViaHeader> viaHeaders = sipManager.createViaHeader();
-			URI requestURI = addressFactory.createAddress(sipManager.getSipProfile().getRemoteEndpoint()).getURI();
+			URI requestURI = addressFactory.createAddress("sip:" + sipManager.getSipProfile().getSipDomain()).getURI();
 			// Build the request
 			final Request request = messageFactory.createRequest(requestURI,
 					Request.REGISTER, sipProvider.getNewCallId(),
@@ -72,7 +72,6 @@ public class Register {
 			request.addHeader(sipManager.generateUserAgentHeader());
 
 			// Print the request
-			//RCLogger.v(TAG, request.toString());
 			return request;
 
 		} catch (ParseException e) {

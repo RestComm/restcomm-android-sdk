@@ -58,27 +58,27 @@ import org.mobicents.restcomm.android.sipua.impl.SipManager;
 
 public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  {
     /**
-     * @abstract Device state
+     * Device state
      */
     static DeviceState state;
     /**
-     * @abstract Device capabilities (<b>Not Implemented yet</b>)
+     * Device capabilities (<b>Not Implemented yet</b>)
      */
     HashMap<DeviceCapability, Object> capabilities;
     /**
-     * @abstract Listener that will be receiving RCDevice events described at RCDeviceListener
+     * Listener that will be receiving RCDevice events described at RCDeviceListener
      */
     RCDeviceListener listener;
     /**
-     * @abstract Is sound for incoming connections enabled
+     * Is sound for incoming connections enabled
      */
     boolean incomingSoundEnabled;
     /**
-     * @abstract Is sound for outgoing connections enabled
+     * Is sound for outgoing connections enabled
      */
     boolean outgoingSoundEnabled;
     /**
-     * @abstract Is sound for disconnect enabled
+     * Is sound for disconnect enabled
      */
     boolean disconnectSoundEnabled;
 
@@ -102,6 +102,19 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         APPLICATION_SID,
         APPLICATION_PARAMETERS,
         CLIENT_NAME,
+    }
+
+    /**
+     * Configuration preferences.
+     */
+    public static class Prefs {
+        public static final String USER_NAME = "pref_sip_user";
+        public static final String DOMAIN = "pref_proxy_domain";
+        public static final String AUTH_USER_NAME = "pref_sip_auth_user";
+        public static final String PASSWORD = "pref_sip_password";
+        public static final String PROXY = "pref_sip_proxy";
+        public static final String VIDEO_ENABLED = "video-enabled";
+        public static final String SIP_HEADERS = "sip-headers";
     }
 
     private static final String TAG = "RCDevice";
@@ -175,8 +188,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         DeviceImpl.GetInstance().sipuaDeviceListener = this;
         // register after initialization
         if (connectivity) {
-            if (!parameters.containsKey("pref_proxy_domain") ||
-                    parameters.containsKey("pref_proxy_domain") && parameters.get("pref_proxy_domain").equals("")) {
+            if (!parameters.containsKey(Prefs.DOMAIN) ||
+                    parameters.containsKey(Prefs.DOMAIN) && parameters.get(Prefs.DOMAIN).equals("")) {
                 // registrarless; we can transition to ready right away (i.e. without waiting for Restcomm to reply to REGISTER)
                 state = DeviceState.READY;
             }
@@ -230,8 +243,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
                 DeviceImpl.GetInstance().bind(SipManager.NetworkInterfaceType.NetworkInterfaceTypeCellularData);
             }
             reachabilityState = newState;
-            if (!parameters.containsKey("pref_proxy_domain") ||
-                    parameters.containsKey("pref_proxy_domain") && parameters.get("pref_proxy_domain").equals("")) {
+            if (!parameters.containsKey(Prefs.DOMAIN) ||
+                    parameters.containsKey(Prefs.DOMAIN) && parameters.get(Prefs.DOMAIN).equals("")) {
                 // registrarless; we can transition to ready right away (i.e. without waiting for Restcomm to reply to REGISTER)
                 state = DeviceState.READY;
                 this.listener.onConnectivityUpdate(this, newState);
@@ -364,20 +377,27 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         if (state == DeviceState.READY) {
             RCLogger.i(TAG, "RCDevice.connect(), with connectivity");
 
-            Boolean enableVideo = (Boolean)parameters.get("video-enabled");
+            Boolean enableVideo = (Boolean)parameters.get(Prefs.VIDEO_ENABLED);
             RCConnection connection = new RCConnection(listener);
             connection.incoming = false;
             connection.state = RCConnection.ConnectionState.PENDING;
             connection.device = this;
             DeviceImpl.GetInstance().sipuaConnectionListener = connection;
 
+            if (enableVideo == null) {
+                enableVideo = false;
+            }
+
             // create a new hash map
             HashMap<String, String> sipHeaders = null;
-            if (parameters.containsKey("sip-headers")) {
-                sipHeaders = (HashMap<String, String>)parameters.get("sip-headers");
+            if (parameters.containsKey(Prefs.SIP_HEADERS)) {
+                sipHeaders = (HashMap<String, String>)parameters.get(Prefs.SIP_HEADERS);
             }
-            //connection.setupWebrtcAndCall((String)parameters.get("username"), sipHeaders, enableVideo.booleanValue());
-            connection.setupWebrtcAndCall(parameters);
+
+            if (connection.setupWebrtcAndCall(parameters) == RCConnection.Status.FAIL) {
+                state = DeviceState.READY;
+                return null;
+            }
             state = DeviceState.BUSY;
 
             return connection;
@@ -527,7 +547,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         RCLogger.i(TAG, "updateParams(): " + params.toString());
         boolean status = false;
 
-        if (params.containsKey("pref_proxy_domain") && !params.get("pref_proxy_domain").equals("")) {
+        if (params.containsKey(Prefs.DOMAIN) && !params.get(Prefs.DOMAIN).equals("")) {
             // we have a new (non empty) domain, need to register
             updateSipProfile(params);
             if (reachabilityState != RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
@@ -551,33 +571,6 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
 
     public void updateSipProfile(HashMap<String, Object> params) {
         sipProfile.setSipProfile(params);
-        /*
-        if (params != null) {
-            for (String key : params.keySet()) {
-                if (key.equals("pref_proxy_domain")) {
-                    sipProfile.setRemoteEndpoint((String) params.get(key));
-                }
-                else if (key.equals("pref_sip_user")) {
-                    sipProfile.setSipUserName((String) params.get(key));
-                }
-                else if (key.equals("pref_sip_password")) {
-                    sipProfile.setSipPassword((String) params.get(key));
-                }
-                else if (key.equals("turn-enabled")) {
-                    sipProfile.setTurnEnabled((Boolean) params.get(key));
-                }
-                else if (key.equals("turn-url")) {
-                    sipProfile.setTurnUrl((String) params.get(key));
-                }
-                else if (key.equals("turn-username")) {
-                    sipProfile.setTurnUsername((String) params.get(key));
-                }
-                else if (key.equals("turn-password")) {
-                    sipProfile.setTurnPassword((String) params.get(key));
-                }
-            }
-        }
-        */
     }
 
     /**

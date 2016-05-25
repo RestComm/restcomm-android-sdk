@@ -262,6 +262,10 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			// new network interface is up, let's retrieve its ip address
 			this.sipProfile.setLocalIp(getIPAddress(true, networkInterfaceType));
 			try {
+				RCLogger.v(TAG, "Binding to: " +
+						sipProfile.getTransport() + ":" +
+						sipProfile.getLocalIp() + ":" +
+						sipProfile.getLocalPort());
 				listeningPoint = sipStack.createListeningPoint(
 						sipProfile.getLocalIp(), sipProfile.getLocalPort(),
 						sipProfile.getTransport());
@@ -745,7 +749,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			try {
 				AuthenticationHelper authenticationHelper = ((SipStackExt) sipStack)
 						.getAuthenticationHelper(
-								new AccountManagerImpl(sipProfile.getSipUserName(),
+								new AccountManagerImpl(sipProfile.getSipAuthUserName(),
 										responseEventExt.getRemoteIpAddress(), sipProfile
 										.getSipPassword()), headerFactory);
 				CallIdHeader callId = (CallIdHeader)response.getHeader("Call-ID");
@@ -878,6 +882,30 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			//RCLogger.i(TAG, "BUSY");
 			dispatchSipEvent(new SipEvent(this,
 					SipEventType.SERVICE_UNAVAILABLE, "", ""));
+		} else if (response.getStatusCode() == Response.FORBIDDEN) {
+			if (tid != null && tid.getRequest() != null) {
+				String method;
+
+				if (tid.getRequest().getMethod() != null) {
+					method = tid.getRequest().getMethod();
+				}
+				else {
+					method = "";
+				}
+
+				if (method.equals(Request.REGISTER)) {
+					dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_NON_CALL, RCClient.ErrorCodes.SIGNALLING_REGISTER_AUTH_ERROR,
+							"Error authenticating " + tid.getRequest().getMethod());
+				}
+				else if (method.equals(Request.MESSAGE)) {
+					dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_NON_CALL, RCClient.ErrorCodes.SIGNALLING_INSTANT_MESSAGE_ERROR,
+							"Error authenticating " + tid.getRequest().getMethod());
+				}
+				else if (method.equals(Request.INVITE)) {
+					dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_CALL, RCClient.ErrorCodes.SIGNALLING_CALL_ERROR,
+							"Error authenticating " + tid.getRequest().getMethod());
+				}
+			}
 		}
 	}
 
@@ -924,7 +952,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	// *** Request/Response Helpers *** //
 	// TODO: revisit dispatchSipEvent and dispatchSipError. Not sure why we need an array of listeners, plus why such synchronization is needed.
-	// We could probably simplify it to one listener and no synchorization (we always take take to only send callbacks to the main application from
+	// We could probably simplify it to one listener and no synchronization (we always take take to only send callbacks to the main application from
 	// the main thread)
 	// Send event to the higher level listener (i.e. DeviceImpl)
 	@SuppressWarnings("unchecked")

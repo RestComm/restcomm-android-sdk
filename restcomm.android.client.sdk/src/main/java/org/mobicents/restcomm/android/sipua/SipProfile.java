@@ -27,6 +27,8 @@ import android.javax.sip.address.AddressFactory;
 import android.javax.sip.address.SipURI;
 import android.javax.sip.address.URI;
 
+import org.mobicents.restcomm.android.client.sdk.RCDevice;
+
 import java.text.ParseException;
 import java.util.HashMap;
 
@@ -39,6 +41,8 @@ public class SipProfile {
 	private String remoteEndpoint;
 	private  String sipUserName;
 	private  String sipPassword;
+	private String sipAuthUserName;
+	private String sipDomain;
 	private boolean turnEnabled;
 	private String turnUrl;
 	private String turnUsername;
@@ -47,6 +51,7 @@ public class SipProfile {
 	public  void setSipProfile(HashMap<String, Object> params) {
 		//RCLogger.i(TAG, "Setting localIp:" + localIp);
 		//this.localIp = localIp;
+		/*
 		if (params != null) {
 			for (String key : params.keySet()) {
 				if (key.equals("pref_proxy_domain")) {
@@ -71,6 +76,54 @@ public class SipProfile {
 					this.setTurnPassword((String) params.get(key));
 				}
 			}
+		}
+		*/
+		if (params == null) {
+			return;
+		}
+
+		String domain = (String)params.get(RCDevice.Prefs.DOMAIN);
+		if (domain != null && !domain.isEmpty()) {
+			this.setSipDomain(domain);
+		}
+
+		String userName = (String)params.get(RCDevice.Prefs.USER_NAME);
+		String authUserName = (String)params.get(RCDevice.Prefs.AUTH_USER_NAME);
+
+		if (userName != null && !userName.isEmpty()) {
+			this.setSipUserName(userName);
+
+			if (authUserName != null && !authUserName.isEmpty()) {
+				this.setSipAuthUserName(authUserName);
+			} else {
+				this.setSipAuthUserName(userName);
+			}
+		}
+
+		String password = (String)params.get(RCDevice.Prefs.PASSWORD);
+		if (password != null && !password.isEmpty()) {
+			this.setSipPassword(password);
+		}
+
+		String outboundProxy = (String)params.get(RCDevice.Prefs.PROXY);
+		if (outboundProxy != null && !outboundProxy.isEmpty()) {
+			this.setRemoteEndpoint(outboundProxy);
+		}
+		else if (domain != null && !domain.isEmpty()) {
+			this.setRemoteEndpoint(domain);
+		}
+
+		if (params.get("turn-enabled") != null) {
+			this.setTurnEnabled((Boolean) params.get("turn-enabled"));
+		}
+		if (params.get("turn-url") != null) {
+			this.setTurnUrl((String) params.get("turn-url"));
+		}
+		if (params.get("turn-username") != null) {
+			this.setTurnUsername((String) params.get("turn-username"));
+		}
+		if (params.get("turn-password") != null) {
+			this.setTurnPassword((String) params.get("turn-password"));
 		}
 	}
 
@@ -180,5 +233,19 @@ public class SipProfile {
 	public void setTransport(String transport) {
 		RCLogger.i(TAG, "Setting transport:" + transport);
 		this.transport = transport;
+	}
+
+	public String getSipAuthUserName() { return sipAuthUserName; }
+
+	public void setSipAuthUserName(String sipAuthUserName) {
+		RCLogger.i(TAG, "Setting sipAuthUserName: " + sipAuthUserName);
+		this.sipAuthUserName = sipAuthUserName;
+	}
+
+	public String getSipDomain() { return sipDomain; }
+
+	public void setSipDomain(String sipDomain) {
+		RCLogger.i(TAG, "Setting sipDomain: " + sipDomain);
+		this.sipDomain = sipDomain;
 	}
 }

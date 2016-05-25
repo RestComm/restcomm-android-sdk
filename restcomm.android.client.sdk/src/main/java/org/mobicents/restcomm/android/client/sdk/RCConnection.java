@@ -105,6 +105,14 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         DISCONNECTED,  /** Connection is in state disconnected */
     };
 
+    /**
+     * General status.
+     */
+    public enum Status {
+        FAIL,
+        PASS
+    }
+
     String IncomingParameterFromKey = "RCConnectionIncomingParameterFromKey";
     String IncomingParameterToKey = "RCConnectionIncomingParameterToKey";
     String IncomingParameterAccountSIDKey ="RCConnectionIncomingParameterAccountSIDKey";
@@ -160,6 +168,9 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             "android.permission.MODIFY_AUDIO_SETTINGS",
             "android.permission.RECORD_AUDIO",
             "android.permission.INTERNET"
+    };
+    private static final String[] MANDATORY_PERMISSIONS_VIDEO = {
+            "android.permission.CAMERA"
     };
     private static final String TAG = "RCConnection";
 
@@ -557,7 +568,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
-                RCLogger.e(TAG, "onSipUAError(): error code: " + errorCode + "error text: " + errorText);
+                RCLogger.e(TAG, "onSipUAError(): error code: " + errorCode + " error text: " + errorText);
                 disconnect();
                 if (connection.listener != null) {
                     connection.listener.onDisconnected(connection, errorCode.ordinal(), errorText);
@@ -591,11 +602,13 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     }
 
     // -- WebRTC stuff:
-    public void setupWebrtcAndCall(Map<String, Object> parameters)
+    public Status setupWebrtcAndCall(Map<String, Object> parameters)
     //public void setupWebrtcAndCall(String sipUri, HashMap<String, String> sipHeaders, boolean videoEnabled)
     {
         this.callParams = (HashMap<String, Object>)parameters;
-        initializeWebrtc((Boolean)this.callParams.get("video-enabled"));
+        if (initializeWebrtc((Boolean)this.callParams.get("video-enabled")) == Status.FAIL) {
+            return Status.FAIL;
+        }
 
         //String url = "https://service.xirsys.com/ice?ident=atsakiridis&secret=4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7&domain=cloud.restcomm.com&application=default&room=default&secure=1";
         RCDevice device = RCClient.listDevices().get(0);
@@ -603,10 +616,11 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         String url = sipProfile.getTurnUrl() + "?ident=" + sipProfile.getTurnUsername() + "&secret=" + sipProfile.getTurnPassword() + "&domain=cloud.restcomm.com&application=default&room=default&secure=1";
 
         new IceServerFetcher(url, sipProfile.getTurnEnabled(), this).makeRequest();
+        return Status.PASS;
     }
 
     // initialize webrtc facilities for the call
-    void initializeWebrtc(boolean videoEnabled)
+    Status initializeWebrtc(boolean videoEnabled)
     {
         RCLogger.i(TAG, "initializeWebrtc  ");
         Context context = RCClient.getContext();
@@ -618,9 +632,20 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         // Check for mandatory permissions.
         for (String permission : MANDATORY_PERMISSIONS) {
             if (context.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
-                logAndToast("Permission " + permission + " is not granted");
-                // TODO: return error to RCConnection listener
-                return;
+                String errorText = "Permission " + permission + " is not granted";
+                logAndToast(errorText);
+                listener.onDisconnected(this, RCClient.ErrorCodes.PERMISSION_NOT_GRANTED_ERROR.ordinal(), errorText);
+                return Status.FAIL;
+            }
+        }
+        if (videoEnabled) {
+            for (String permission : MANDATORY_PERMISSIONS_VIDEO) {
+                if (context.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
+                    String errorText = "Permission " + permission + " is not granted";
+                    logAndToast(errorText);
+                    listener.onDisconnected(this, RCClient.ErrorCodes.PERMISSION_NOT_GRANTED_ERROR.ordinal(), errorText);
+                    return Status.FAIL;
+                }
             }
         }
 
@@ -639,6 +664,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                 true);
 
         createPeerConnectionFactory();
+        return Status.PASS;
     }
 
     private void startCall(SignalingParameters signalingParameters)

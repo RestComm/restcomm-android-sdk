@@ -57,6 +57,7 @@ public class RCClient {
         SIGNALLING_REGISTER_AUTH_ERROR,
         SIGNALLING_CALL_ERROR,
         SIGNALLING_INSTANT_MESSAGE_ERROR,
+        PERMISSION_NOT_GRANTED_ERROR
     }
 
     public static String errorText(ErrorCodes errorCode) {
