@@ -232,7 +232,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         if (haveConnectivity()) {
             this.callParams = (HashMap<String, Object>) parameters;
             initializeWebrtc((Boolean) this.callParams.get("video-enabled"), (SurfaceViewRenderer) parameters.get("local-video"),
-                    (SurfaceViewRenderer) parameters.get("remote-video"));
+                    (SurfaceViewRenderer) parameters.get("remote-video"), (String)parameters.get("preferred-video-codec"));
 
             RCDevice device = RCClient.listDevices().get(0);
             SipProfile sipProfile = device.getSipProfile();
@@ -577,7 +577,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     {
         this.callParams = (HashMap<String, Object>) parameters;
         initializeWebrtc((Boolean) this.callParams.get("video-enabled"), (SurfaceViewRenderer) parameters.get("local-video"),
-                (SurfaceViewRenderer) parameters.get("remote-video"));
+                (SurfaceViewRenderer) parameters.get("remote-video"), (String)parameters.get("preferred-video-codec"));
 
         //String url = "https://service.xirsys.com/ice?ident=atsakiridis&secret=4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7&domain=cloud.restcomm.com&application=default&room=default&secure=1";
         RCDevice device = RCClient.listDevices().get(0);
@@ -588,7 +588,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     }
 
     // initialize webrtc facilities for the call
-    void initializeWebrtc(boolean videoEnabled, SurfaceViewRenderer localVideo, SurfaceViewRenderer remoteVideo) {
+    void initializeWebrtc(boolean videoEnabled, SurfaceViewRenderer localVideo, SurfaceViewRenderer remoteVideo, String preferredVideoCodec) {
         RCLogger.i(TAG, "initializeWebrtc  ");
         Context context = RCClient.getContext();
 
@@ -604,6 +604,11 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             localRender.init(rootEglBase.getEglBaseContext(), null);
             localRender.setZOrderMediaOverlay(true);
             updateVideoView();
+        }
+
+        // default to VP8 as VP9 doesn't seem to have that great android device support
+        if (preferredVideoCodec == null) {
+            preferredVideoCodec = "VP8";
         }
 
         // Check for mandatory permissions.
@@ -623,7 +628,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                 0,  // video height
                 0,  // video fps
                 0,  // video start bitrate
-                "VP8",  // video codec
+                preferredVideoCodec,  // video codec
                 true,  // video condec hw acceleration
                 false, // capture to texture
                 0,  // audio start bitrate

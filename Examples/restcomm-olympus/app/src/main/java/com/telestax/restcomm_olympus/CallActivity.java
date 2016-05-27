@@ -193,6 +193,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             connectParams.put("video-enabled", intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
             connectParams.put("local-video", findViewById(R.id.local_video_view));
             connectParams.put("remote-video", findViewById(R.id.remote_video_view));
+            // by default we use VP8 for video as it tends to be more adopted, but you can override that and specify VP9 as follows:
+            //connectParams.put("preferred-video-codec", "VP9");
 
             // *** if you want to add custom SIP headers, please uncomment this
             //HashMap<String, String> sipHeaders = new HashMap<>();
