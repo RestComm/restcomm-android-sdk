@@ -508,14 +508,7 @@ public class PeerConnectionClient {
           return;
       }
         mediaStream.addTrack(createVideoTrack(videoCapturer));
-
-        /*
-        videoSource = factory.createVideoSource(videoCapturer, videoConstraints);
-        localVideoTrack = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
-        mediaStream.addTrack(localVideoTrack);
-
         events.onLocalVideo(localVideoTrack);
-        */
     }
 
     mediaStream.addTrack(createAudioTrack());
@@ -1080,7 +1073,7 @@ public class PeerConnectionClient {
             remoteVideoTrack = stream.videoTracks.get(0);
             remoteVideoTrack.setEnabled(renderVideo);
             remoteVideoTrack.addRenderer(new VideoRenderer(remoteRender));
-            //events.onRemoteVideo(remoteVideoTrack);
+            events.onRemoteVideo(remoteVideoTrack);
           }
         }
       });

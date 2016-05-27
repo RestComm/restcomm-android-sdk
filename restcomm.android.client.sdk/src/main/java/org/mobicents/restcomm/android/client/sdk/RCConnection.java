@@ -53,7 +53,6 @@ import android.content.Context;
 import android.content.pm.PackageManager;
 import android.opengl.GLSurfaceView;
 import android.os.Handler;
-import android.util.Log;
 import android.view.Gravity;
 import android.widget.Toast;
 
@@ -61,7 +60,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import org.mobicents.restcomm.android.client.sdk.util.IceServerFetcher;
 import org.mobicents.restcomm.android.sipua.SipProfile;
@@ -76,9 +74,7 @@ import org.webrtc.PeerConnection;
 import org.webrtc.SessionDescription;
 import org.webrtc.StatsReport;
 import org.webrtc.SurfaceViewRenderer;
-import org.webrtc.VideoRenderer;
 import org.webrtc.RendererCommon.ScalingType;
-//import org.webrtc.VideoRendererGui;
 import org.webrtc.VideoTrack;
 
 /**
@@ -157,28 +153,12 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     private PeerConnectionClient peerConnectionClient = null;
     private SignalingParameters signalingParameters;
     private AppRTCAudioManager audioManager = null;
-    // Local preview screen position before call is connected.
-    private static final int LOCAL_X_CONNECTING = 0;
-    private static final int LOCAL_Y_CONNECTING = 0;
-    private static final int LOCAL_WIDTH_CONNECTING = 100;
-    private static final int LOCAL_HEIGHT_CONNECTING = 100;
-    // Local preview screen position after call is connected.
-    private static final int LOCAL_X_CONNECTED = 72;
-    private static final int LOCAL_Y_CONNECTED = 2;
-    private static final int LOCAL_WIDTH_CONNECTED = 25;
-    private static final int LOCAL_HEIGHT_CONNECTED = 25;
-    // Remote video screen position
-    private static final int REMOTE_X = 0;
-    private static final int REMOTE_Y = 0;
-    private static final int REMOTE_WIDTH = 100;
-    private static final int REMOTE_HEIGHT = 100;    private ScalingType scalingType;
+    private ScalingType scalingType;
     private Toast logToast;
     private PeerConnectionClient.PeerConnectionParameters peerConnectionParameters;
     private boolean iceConnected;
     HashMap<String, Object> callParams = null;
-    //private Boolean isVideo = false;
     private long callStartedTimeMs = 0;
-    private GLSurfaceView videoView;
     private static boolean DO_TOAST = false;
 
     // List of mandatory application permissions.
@@ -280,13 +260,9 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                         sipHeaders = (HashMap<String, String>) RCConnection.this.callParams.get("sip-headers");
                     }
 
-                    //LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
-                    //iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
                     RCConnection.this.signalingParameters = new SignalingParameters(iceServers, true, "", (String) RCConnection.this.callParams.get("username"), "", null, null, sipHeaders, (Boolean) RCConnection.this.callParams.get("video-enabled"));
                 } else {
                     // we are not the initiator
-                    //LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
-                    //iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
                     RCConnection.this.signalingParameters = new SignalingParameters(iceServers, false, "", "", "", null, null, null, (Boolean) RCConnection.this.callParams.get("video-enabled"));
                     SignalingParameters params = SignalingParameters.extractCandidates(new SessionDescription(SessionDescription.Type.OFFER, incomingCallSdp));
                     RCConnection.this.signalingParameters.offerSdp = params.offerSdp;
@@ -309,10 +285,6 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             }
         };
         mainHandler.post(myRunnable);
-
-                    /*
-                    WebSocketRTCClient.this.reportError(description);
-                    */
     }
 
     private void acceptWebrtc(final String sdp) {
@@ -606,8 +578,6 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         this.callParams = (HashMap<String, Object>) parameters;
         initializeWebrtc((Boolean) this.callParams.get("video-enabled"), (SurfaceViewRenderer) parameters.get("local-video"),
                 (SurfaceViewRenderer) parameters.get("remote-video"));
-
-        //rootEglBase = (EglBase) parameters.get("egl-base");
 
         //String url = "https://service.xirsys.com/ice?ident=atsakiridis&secret=4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7&domain=cloud.restcomm.com&application=default&room=default&secure=1";
         RCDevice device = RCClient.listDevices().get(0);
@@ -951,31 +921,24 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     }
 
     public void onLocalVideo(VideoTrack videoTrack) {
-        final VideoTrack finalVideoTrack = videoTrack;
-        final RCConnection connection = this;
-
         Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
                 RCLogger.i(TAG, "onLocalVideo");
-                listener.onReceiveLocalVideo(connection, finalVideoTrack);
+                updateVideoView();
             }
         };
         mainHandler.post(myRunnable);
     }
 
     public void onRemoteVideo(VideoTrack videoTrack) {
-        final VideoTrack finalVideoTrack = videoTrack;
-        final RCConnection connection = this;
-
         Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
                 RCLogger.i(TAG, "onRemoteVideo");
                 updateVideoView();
-                listener.onReceiveRemoteVideo(connection, finalVideoTrack);
             }
         };
         mainHandler.post(myRunnable);
@@ -1008,14 +971,6 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         logAndToast("Creating peer connection, delay=" + delta + "ms");
         peerConnectionClient.createPeerConnection(rootEglBase.getEglBaseContext(),
                 localRender, remoteRender, signalingParameters);
-
-        //peerConnectionClient.createPeerConnection(
-        //        localRender, remoteRender, signalingParameters);
-        /*
-                            peerConnectionClient.createPeerConnectionFactory(RCClient.getContext(),
-                            VideoRendererGui.getEGLContext(), peerConnectionParameters,
-                            connection);
-         */
 
         if (signalingParameters.initiator) {
             logAndToast("Creating OFFER...");

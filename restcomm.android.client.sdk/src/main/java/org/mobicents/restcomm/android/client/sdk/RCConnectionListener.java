@@ -64,19 +64,5 @@ public interface RCConnectionListener {
      * @param errorText Error Text
      */
     public abstract void onDisconnected(RCConnection connection, int errorCode, String errorText);
-
-    /**
-     * Connection just disconnected with an error
-     * @param connection Connection
-     * @param videoTrack View hosting the local video
-     */
-    public void onReceiveLocalVideo(RCConnection connection, VideoTrack videoTrack);
-
-    /**
-     * Connection just disconnected with an error
-     * @param connection Connection
-     * @param videoTrack Video track hosting the remote video
-     */
-    public void onReceiveRemoteVideo(RCConnection connection, VideoTrack videoTrack);
 }
 

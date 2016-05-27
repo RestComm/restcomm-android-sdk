@@ -29,7 +29,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
-import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -49,44 +48,8 @@ import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.client.sdk.RCConnectionListener;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
 
-import org.mobicents.restcomm.android.client.sdk.util.PercentFrameLayout;
-import org.webrtc.RendererCommon.ScalingType;
-import org.webrtc.EglBase;
-import org.webrtc.SurfaceViewRenderer;
-import org.webrtc.VideoRenderer;
-import org.webrtc.VideoRendererGui;
-import org.webrtc.VideoTrack;
-
 public class CallActivity extends Activity implements RCConnectionListener, View.OnClickListener,
         KeypadFragment.OnFragmentInteractionListener {
-
-    /*
-    private EglBase rootEglBase;
-    //private PercentFrameLayout localRenderLayout;
-    //private PercentFrameLayout remoteRenderLayout;
-    //private GLSurfaceView videoView;
-    //private SurfaceViewRenderer localRender;
-    //private SurfaceViewRenderer remoteRender;
-    //private VideoRenderer.Callbacks localRender = null;
-    //private VideoRenderer.Callbacks remoteRender = null;
-
-    // Local preview screen position before call is connected.
-    private static final int LOCAL_X_CONNECTING = 0;
-    private static final int LOCAL_Y_CONNECTING = 0;
-    private static final int LOCAL_WIDTH_CONNECTING = 100;
-    private static final int LOCAL_HEIGHT_CONNECTING = 100;
-    // Local preview screen position after call is connected.
-    private static final int LOCAL_X_CONNECTED = 72;
-    private static final int LOCAL_Y_CONNECTED = 2;
-    private static final int LOCAL_WIDTH_CONNECTED = 25;
-    private static final int LOCAL_HEIGHT_CONNECTED = 25;
-    // Remote video screen position
-    private static final int REMOTE_X = 0;
-    private static final int REMOTE_Y = 0;
-    private static final int REMOTE_WIDTH = 100;
-    private static final int REMOTE_HEIGHT = 100;
-    private ScalingType scalingType;
-    */
 
     private RCConnection connection, pendingConnection;
     SharedPreferences prefs;
@@ -98,12 +61,12 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     private boolean activityVisible = false;
     private boolean muteAudio = false;
     private boolean muteVideo = false;
+    private boolean isVideo = false;
     // handler for the timer
     private Handler timerHandler = new Handler();
     int secondsElapsed = 0;
     private AlertDialog alertDialog;
 
-    //CheckBox cbMuted;
     ImageButton btnMuteAudio, btnMuteVideo;
     ImageButton btnHangup;
     ImageButton btnAnswer, btnAnswerAudio;
@@ -163,46 +126,9 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             btnAnswerAudio.setVisibility(View.VISIBLE);
         }
 
-        // Setup video stuff
-        //////////
-        // Create UI controls.
-        //scalingType = ScalingType.SCALE_ASPECT_FILL;
-        //localRender = (SurfaceViewRenderer) findViewById(R.id.local_video_view);
-        //remoteRender = (SurfaceViewRenderer) findViewById(R.id.remote_video_view);
-        //localRenderLayout = (PercentFrameLayout) findViewById(R.id.local_video_layout);
-        //remoteRenderLayout = (PercentFrameLayout) findViewById(R.id.remote_video_layout);
-
-        // Create video renderers.
-        /*
-        rootEglBase = EglBase.create();
-        localRender.init(rootEglBase.getEglBaseContext(), null);
-        remoteRender.init(rootEglBase.getEglBaseContext(), null);
-        localRender.setZOrderMediaOverlay(true);
-        */
-
-        //updateVideoView();
-
-        //////////
-        /*
-        videoView = (GLSurfaceView) findViewById(R.id.glview_call);
-        // Create video renderers.
-        VideoRendererGui.setView(videoView, new Runnable() {
-            @Override
-            public void run() {
-                videoContextReady(intent);
-            }
-        });
-        remoteRender = VideoRendererGui.create(
-                REMOTE_X, REMOTE_Y,
-                REMOTE_WIDTH, REMOTE_HEIGHT, scalingType, false);
-        localRender = VideoRendererGui.create(
-                LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING,
-                LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING, scalingType, true);
-        */
-        ///////////
-
         keypadFragment = new KeypadFragment();
 
+        isVideo = intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false);
         lblTimer.setVisibility(View.INVISIBLE);
         // these might need to be moved to Resume()
         btnMuteAudio.setVisibility(View.INVISIBLE);
@@ -215,7 +141,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         ft.hide(keypadFragment);
         ft.commit();
 
-        videoContextReady(intent);
+        handleCall(intent);
     }
 
     @Override
@@ -252,64 +178,28 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         activityVisible = false;
     }
 
-    /*
-    private void updateVideoView() {
-        remoteRenderLayout.setPosition(REMOTE_X, REMOTE_Y, REMOTE_WIDTH, REMOTE_HEIGHT);
-        remoteRender.setScalingType(scalingType);
-        remoteRender.setMirror(false);
-
-        if (connection != null && connection.getState() == RCConnection.ConnectionState.CONNECTED) {
-            localRenderLayout.setPosition(
-                    LOCAL_X_CONNECTED, LOCAL_Y_CONNECTED, LOCAL_WIDTH_CONNECTED, LOCAL_HEIGHT_CONNECTED);
-            localRender.setScalingType(ScalingType.SCALE_ASPECT_FIT);
-        } else {
-            localRenderLayout.setPosition(
-                    LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING, LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING);
-            localRender.setScalingType(scalingType);
-        }
-
-        localRender.setMirror(true);
-        localRender.requestLayout();
-        remoteRender.requestLayout();
-    }
-    */
-
-    private void videoContextReady(Intent intent) {
-        /*
-    }
-        final Intent finalIntent = intent;
-        final CallActivity finalActivity = this;
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-            */
-        // TODO: cleanup this mess once we get this working
-        final Intent finalIntent = intent;
-        final CallActivity finalActivity = this;
-
+    private void handleCall(Intent intent) {
         // Important note: I used to set visibility in Create(), to avoid the flashing of the GL view when it gets added and then removed right away.
         // But if I make the video view invisibe when VideoRendererGui.create() is called, then videoContextReady is never called. Need to figure
         // out a way to work around this
-        //videoView.setVisibility(View.INVISIBLE);
-        //localRender.setVisibility(View.INVISIBLE);
-        //remoteRender.setVisibility(View.INVISIBLE);
+        findViewById(R.id.local_video_view).setVisibility(View.INVISIBLE);
+        findViewById(R.id.remote_video_view).setVisibility(View.INVISIBLE);
 
-        if (finalIntent.getAction().equals(RCDevice.OUTGOING_CALL)) {
-            lblCall.setText("Calling " + finalIntent.getStringExtra(RCDevice.EXTRA_DID).replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
+        if (intent.getAction().equals(RCDevice.OUTGOING_CALL)) {
+            lblCall.setText("Calling " + intent.getStringExtra(RCDevice.EXTRA_DID).replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
             lblStatus.setText("Initiating Call...");
 
-            connectParams.put("username", finalIntent.getStringExtra(RCDevice.EXTRA_DID));
-            connectParams.put("video-enabled", finalIntent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
+            connectParams.put("username", intent.getStringExtra(RCDevice.EXTRA_DID));
+            connectParams.put("video-enabled", intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
             connectParams.put("local-video", findViewById(R.id.local_video_view));
             connectParams.put("remote-video", findViewById(R.id.remote_video_view));
-            //connectParams.put("egl-base", rootEglBase);
 
             // *** if you want to add custom SIP headers, please uncomment this
             //HashMap<String, String> sipHeaders = new HashMap<>();
             //sipHeaders.put("X-SIP-Header1", "Value1");
             //connectParams.put("sip-headers", sipHeaders);
 
-            connection = device.connect(connectParams, finalActivity);
+            connection = device.connect(connectParams, this);
 
             if (connection == null) {
                 Log.e(TAG, "Error: error connecting");
@@ -317,22 +207,18 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 return;
             }
         }
-        if (finalIntent.getAction().equals(RCDevice.INCOMING_CALL)) {
-            lblCall.setText("Call from " + finalIntent.getStringExtra(RCDevice.EXTRA_DID).replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
+        if (intent.getAction().equals(RCDevice.INCOMING_CALL)) {
+            lblCall.setText("Call from " + intent.getStringExtra(RCDevice.EXTRA_DID).replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
             lblStatus.setText("Call Received...");
 
             pendingConnection = device.getPendingConnection();
-            pendingConnection.setConnectionListener(finalActivity);
+            pendingConnection.setConnectionListener(this);
 
             // the number from which we got the call
-            String incomingCallDid = finalIntent.getStringExtra(RCDevice.EXTRA_DID);
+            String incomingCallDid = intent.getStringExtra(RCDevice.EXTRA_DID);
             // notice that this is not used yet; the sdk doesn't tell us if the incoming call is video/audio (TODO)
-            acceptParams.put("video-enabled", finalIntent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
+            acceptParams.put("video-enabled", intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
         }
-                /*
-            }
-        });
-        */
     }
 
     // UI Events
@@ -382,7 +268,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 pendingConnection = null;
             }
         } else if (view.getId() == R.id.button_keypad) {
-            //keypadFragment = new KeypadFragment();
             keypadFragment.setConnection(connection);
 
             // show keypad
@@ -428,7 +313,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
         }
@@ -459,11 +343,10 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
         setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
 
-        //////
-        //localRender.setVisibility(View.VISIBLE);
-        //remoteRender.setVisibility(View.VISIBLE);
-
-        //updateVideoView();
+        if (isVideo) {
+            findViewById(R.id.local_video_view).setVisibility(View.VISIBLE);
+            findViewById(R.id.remote_video_view).setVisibility(View.VISIBLE);
+        }
     }
 
     public void onDisconnected(RCConnection connection) {
@@ -509,35 +392,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         showOkAlert("RCConnection Error", errorText);
         this.connection = null;
         pendingConnection = null;
-    }
-
-    public void onReceiveLocalVideo(RCConnection connection, VideoTrack videoTrack) {
-        /*
-        if (videoTrack != null) {
-            //show media on screen
-            videoTrack.setEnabled(true);
-            videoTrack.addRenderer(new VideoRenderer(localRender));
-        }
-        */
-    }
-
-    public void onReceiveRemoteVideo(RCConnection connection, VideoTrack videoTrack) {
-        /*
-        if (videoTrack != null) {
-            //show media on screen
-            videoTrack.setEnabled(true);
-            videoTrack.addRenderer(new VideoRenderer(remoteRender));
-
-            VideoRendererGui.update(remoteRender,
-                    REMOTE_X, REMOTE_Y,
-                    REMOTE_WIDTH, REMOTE_HEIGHT, scalingType, false);
-            VideoRendererGui.update(localRender,
-                    LOCAL_X_CONNECTED, LOCAL_Y_CONNECTED,
-                    LOCAL_WIDTH_CONNECTED, LOCAL_HEIGHT_CONNECTED,
-                    ScalingType.SCALE_ASPECT_FIT, true);
-            videoView.setVisibility(View.VISIBLE);
-        }
-        */
     }
 
     // Helpers
