@@ -54,6 +54,7 @@ import android.content.pm.PackageManager;
 import android.opengl.GLSurfaceView;
 import android.os.Handler;
 import android.view.Gravity;
+import android.view.View;
 import android.widget.Toast;
 
 import java.util.HashMap;
@@ -111,7 +112,10 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         DISCONNECTED,  /** Connection is in state disconnected */
     }
 
-    ;
+    public enum ConnectionMediaType {
+        AUDIO, /** Connection is audio only */
+        AUDIO_VIDEO, /** Connection audio & video */
+    }
 
     String IncomingParameterFromKey = "RCConnectionIncomingParameterFromKey";
     String IncomingParameterToKey = "RCConnectionIncomingParameterToKey";
@@ -124,6 +128,12 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
      * @discussion A new connection created by RCDevice starts off RCConnectionStatePending. It transitions to RCConnectionStateConnecting when it starts ringing. Once the remote party answers it it transitions to RCConnectionStateConnected. Finally, when disconnected it resets to RCConnectionStateDisconnected.
      */
     ConnectionState state;
+
+    /**
+     * @abstract Type of media.
+     * @discussion Type of media transferred over the RCConnection.
+     */
+    ConnectionMediaType mediaType;
 
     /**
      * @abstract Direction of the connection. True if connection is incoming; false otherwise
@@ -203,6 +213,13 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
      */
     public ConnectionState getState() {
         return this.state;
+    }
+
+    /**
+     * Retrieves the current media type of the connection
+     */
+    public ConnectionMediaType getMediaType() {
+        return this.mediaType;
     }
 
     /**
@@ -598,12 +615,16 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
         rootEglBase = EglBase.create();
         if (videoEnabled) {
+            mediaType = ConnectionMediaType.AUDIO_VIDEO;
             remoteRender = remoteVideo;
             remoteRender.init(rootEglBase.getEglBaseContext(), null);
             localRender = localVideo;
             localRender.init(rootEglBase.getEglBaseContext(), null);
             localRender.setZOrderMediaOverlay(true);
             updateVideoView();
+        }
+        else {
+            mediaType = ConnectionMediaType.AUDIO;
         }
 
         // default to VP8 as VP9 doesn't seem to have that great android device support
@@ -658,7 +679,9 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
         localRender.setMirror(true);
         localRender.bringToFront();
-        localRender.requestLayout();
+        ((View)localRender.getParent()).requestLayout();
+        ((View)localRender.getParent()).invalidate();
+        //localRender.requestLayout();
     }
 
 

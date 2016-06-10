@@ -435,13 +435,10 @@ public class DeviceImpl implements IDevice,Serializable {
 				return RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi;
 			}
 
-			// TODO: leave mobile internet out until we fix some issues that came up; check https://github.com/Mobicents/restcomm-android-sdk/issues/172
-			/*
 			if (activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE && activeNetwork.isConnected()) {
 				Log.w(TAG, "Reachability event: MOBILE");
 				return RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular;
 			}
-			*/
 		}
 		RCLogger.w(TAG, "Reachability event: NONE");
 		return RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone;
