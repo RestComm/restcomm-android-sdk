@@ -113,6 +113,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     }
 
     public enum ConnectionMediaType {
+        UNDEFINED, /** We don't know the type of media yet, for example for remote video before they answer */
         AUDIO, /** Connection is audio only */
         AUDIO_VIDEO, /** Connection audio & video */
     }
@@ -130,10 +131,16 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     ConnectionState state;
 
     /**
-     * @abstract Type of media.
-     * @discussion Type of media transferred over the RCConnection.
+     * @abstract Type of local media.
+     * @discussion Type of local media transferred over the RCConnection.
      */
-    ConnectionMediaType mediaType;
+    ConnectionMediaType localMediaType;
+
+    /**
+     * @abstract Type of remote media.
+     * @discussion Type of local media transferred over the RCConnection.
+     */
+    ConnectionMediaType remoteMediaType;
 
     /**
      * @abstract Direction of the connection. True if connection is incoming; false otherwise
@@ -216,10 +223,17 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     }
 
     /**
-     * Retrieves the current media type of the connection
+     * Retrieves the current local media type of the connection
      */
-    public ConnectionMediaType getMediaType() {
-        return this.mediaType;
+    public ConnectionMediaType getLocalMediaType() {
+        return this.localMediaType;
+    }
+
+    /**
+     * Retrieves the current local media type of the connection
+     */
+    public ConnectionMediaType getRemoteMediaType() {
+        return this.remoteMediaType;
     }
 
     /**
@@ -460,6 +474,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
         // we want to notify webrtc onRemoteDescription *only* on an outgoing call
         if (!this.isIncoming()) {
+            remoteMediaType = sdp2Mediatype(event.sdp);
             onRemoteDescription(event.sdp);
         }
 
@@ -615,7 +630,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
         rootEglBase = EglBase.create();
         if (videoEnabled) {
-            mediaType = ConnectionMediaType.AUDIO_VIDEO;
+            localMediaType = ConnectionMediaType.AUDIO_VIDEO;
             remoteRender = remoteVideo;
             remoteRender.init(rootEglBase.getEglBaseContext(), null);
             localRender = localVideo;
@@ -624,7 +639,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             updateVideoView();
         }
         else {
-            mediaType = ConnectionMediaType.AUDIO;
+            localMediaType = ConnectionMediaType.AUDIO;
         }
 
         // default to VP8 as VP9 doesn't seem to have that great android device support
@@ -663,25 +678,20 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
     private void updateVideoView() {
         //remoteRenderLayout.setPosition(REMOTE_X, REMOTE_Y, REMOTE_WIDTH, REMOTE_HEIGHT);
-        remoteRender.setScalingType(scalingType);
-        remoteRender.setMirror(false);
-
-        /*
-        if (state == RCConnection.ConnectionState.CONNECTED) {
-            //localRenderLayout.setPosition(LOCAL_X_CONNECTED, LOCAL_Y_CONNECTED, LOCAL_WIDTH_CONNECTED, LOCAL_HEIGHT_CONNECTED);
-            localRender.setScalingType(ScalingType.SCALE_ASPECT_FIT);
-        } else {
-            //localRenderLayout.setPosition(LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING, LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING);
-            localRender.setScalingType(scalingType);
+        if (remoteRender != null) {
+            remoteRender.setScalingType(scalingType);
+            remoteRender.setMirror(false);
+            remoteRender.requestLayout();
         }
-        */
-        remoteRender.requestLayout();
 
-        localRender.setMirror(true);
-        localRender.bringToFront();
-        ((View)localRender.getParent()).requestLayout();
-        ((View)localRender.getParent()).invalidate();
-        //localRender.requestLayout();
+        if (localRender != null) {
+            localRender.setMirror(true);
+            //localRender.bringToFront();
+            //((View) localRender.getParent()).requestLayout();
+            //((View) localRender.getParent()).invalidate();
+            localRender.requestLayout();
+        }
+
     }
 
 
@@ -1065,6 +1075,18 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         }
         for (IceCandidate candidate : candidates) {
             peerConnectionClient.addRemoteIceCandidate(candidate);
+        }
+    }
+
+    // Helpers
+    // get from SDP if this is an audio or audio/video call
+    static ConnectionMediaType sdp2Mediatype(String sdp) {
+        // if there is a video line AND the port value is different than 0 (hence 1-9 in the first digit) then we have video
+        if (sdp.matches("m=video [1-9]")) {
+            return ConnectionMediaType.AUDIO_VIDEO;
+        }
+        else {
+            return ConnectionMediaType.AUDIO;
         }
     }
 }
