@@ -1081,12 +1081,36 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     // Helpers
     // get from SDP if this is an audio or audio/video call
     static ConnectionMediaType sdp2Mediatype(String sdp) {
+        boolean foundVideo = false;
+
+        // split the media SDP sections
+        String[] sections = sdp.split("m=");
+        for (int i = 0; i < sections.length; i++) {
+            // and check if the media secion starts with 'video'
+            if (sections[i].matches("(?s)^video.*")) {
+                // if so checks if the video section has recvonly
+                if (sections[i].matches("(?s).*a=recvonly.*")) {
+                    return ConnectionMediaType.AUDIO;
+                }
+                foundVideo = true;
+            }
+        }
+
+        if (!foundVideo) {
+            return ConnectionMediaType.AUDIO;
+        }
+        else {
+            return ConnectionMediaType.AUDIO_VIDEO;
+        }
+
         // if there is a video line AND the port value is different than 0 (hence 1-9 in the first digit) then we have video
-        if (sdp.matches("m=video [1-9]")) {
+        /* Let's keep this around commented in case Firefox changes how it works
+        if (sdp.matches("(?s).*m=video [1-9].*")) {
             return ConnectionMediaType.AUDIO_VIDEO;
         }
         else {
             return ConnectionMediaType.AUDIO;
         }
+        */
     }
 }
