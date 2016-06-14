@@ -11,11 +11,33 @@
     <EditTextPreference
         android:defaultValue="1234"
         android:key="pref_sip_password"
-        android:title="Password" />
+        android:title="Password"
+        android:inputType="textPassword"/>
     <EditTextPreference
         android:defaultValue=""
         android:key="pref_proxy_domain"
         android:title="Domain" />
 </PreferenceCategory>
 
+    <PreferenceCategory
+        android:key="webrtc_ice_settings"
+        android:title="WebRTC ICE Settings" >
+        <CheckBoxPreference
+            android:defaultValue="true"
+            android:key="turn-enabled"
+            android:title="Enable TURN" />
+        <EditTextPreference
+            android:defaultValue="https://service.xirsys.com/ice"
+            android:key="turn-url"
+            android:title="ICE URL" />
+        <EditTextPreference
+            android:defaultValue="atsakiridis"
+            android:key="turn-username"
+            android:title="ICE Username" />
+        <EditTextPreference
+            android:defaultValue="4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7"
+            android:key="turn-password"
+            android:title="ICE Password"
+            android:inputType="textPassword"/>
+    </PreferenceCategory>
 </PreferenceScreen>

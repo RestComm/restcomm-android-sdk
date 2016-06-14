@@ -29,7 +29,6 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.media.AudioManager;
-import android.opengl.GLSurfaceView;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
@@ -49,33 +48,8 @@ import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.client.sdk.RCConnectionListener;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
 
-import org.webrtc.VideoRenderer;
-import org.webrtc.VideoRendererGui;
-import org.webrtc.VideoTrack;
-
 public class CallActivity extends Activity implements RCConnectionListener, View.OnClickListener,
         KeypadFragment.OnFragmentInteractionListener {
-
-    private GLSurfaceView videoView;
-    private VideoRenderer.Callbacks localRender = null;
-    private VideoRenderer.Callbacks remoteRender = null;
-
-    // Local preview screen position before call is connected.
-    private static final int LOCAL_X_CONNECTING = 0;
-    private static final int LOCAL_Y_CONNECTING = 0;
-    private static final int LOCAL_WIDTH_CONNECTING = 100;
-    private static final int LOCAL_HEIGHT_CONNECTING = 100;
-    // Local preview screen position after call is connected.
-    private static final int LOCAL_X_CONNECTED = 72;
-    private static final int LOCAL_Y_CONNECTED = 2;
-    private static final int LOCAL_WIDTH_CONNECTED = 25;
-    private static final int LOCAL_HEIGHT_CONNECTED = 25;
-    // Remote video screen position
-    private static final int REMOTE_X = 0;
-    private static final int REMOTE_Y = 0;
-    private static final int REMOTE_WIDTH = 100;
-    private static final int REMOTE_HEIGHT = 100;
-    private VideoRendererGui.ScalingType scalingType;
 
     private RCConnection connection, pendingConnection;
     SharedPreferences prefs;
@@ -87,12 +61,12 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     private boolean activityVisible = false;
     private boolean muteAudio = false;
     private boolean muteVideo = false;
+    private boolean isVideo = false;
     // handler for the timer
     private Handler timerHandler = new Handler();
     int secondsElapsed = 0;
     private AlertDialog alertDialog;
 
-    //CheckBox cbMuted;
     ImageButton btnMuteAudio, btnMuteVideo;
     ImageButton btnHangup;
     ImageButton btnAnswer, btnAnswerAudio;
@@ -119,21 +93,21 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         setContentView(R.layout.activity_call);
 
         // Initialize UI
-        btnHangup = (ImageButton)findViewById(R.id.button_hangup);
+        btnHangup = (ImageButton) findViewById(R.id.button_hangup);
         btnHangup.setOnClickListener(this);
-        btnAnswer = (ImageButton)findViewById(R.id.button_answer);
+        btnAnswer = (ImageButton) findViewById(R.id.button_answer);
         btnAnswer.setOnClickListener(this);
-        btnAnswerAudio = (ImageButton)findViewById(R.id.button_answer_audio);
+        btnAnswerAudio = (ImageButton) findViewById(R.id.button_answer_audio);
         btnAnswerAudio.setOnClickListener(this);
-        btnMuteAudio = (ImageButton)findViewById(R.id.button_mute_audio);
+        btnMuteAudio = (ImageButton) findViewById(R.id.button_mute_audio);
         btnMuteAudio.setOnClickListener(this);
-        btnMuteVideo = (ImageButton)findViewById(R.id.button_mute_video);
+        btnMuteVideo = (ImageButton) findViewById(R.id.button_mute_video);
         btnMuteVideo.setOnClickListener(this);
-        btnKeypad = (ImageButton)findViewById(R.id.button_keypad);
+        btnKeypad = (ImageButton) findViewById(R.id.button_keypad);
         btnKeypad.setOnClickListener(this);
-        lblCall = (TextView)findViewById(R.id.label_call);
-        lblStatus = (TextView)findViewById(R.id.label_status);
-        lblTimer = (TextView)findViewById(R.id.label_timer);
+        lblCall = (TextView) findViewById(R.id.label_call);
+        lblStatus = (TextView) findViewById(R.id.label_status);
+        lblTimer = (TextView) findViewById(R.id.label_timer);
 
         alertDialog = new AlertDialog.Builder(CallActivity.this).create();
 
@@ -147,30 +121,14 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         if (intent.getAction() == RCDevice.OUTGOING_CALL) {
             btnAnswer.setVisibility(View.INVISIBLE);
             btnAnswerAudio.setVisibility(View.INVISIBLE);
-        }
-        else {
+        } else {
             btnAnswer.setVisibility(View.VISIBLE);
             btnAnswerAudio.setVisibility(View.VISIBLE);
         }
-        // Setup video stuff
-        scalingType = VideoRendererGui.ScalingType.SCALE_ASPECT_FILL;
-        videoView = (GLSurfaceView) findViewById(R.id.glview_call);
-        // Create video renderers.
-        VideoRendererGui.setView(videoView, new Runnable() {
-            @Override
-            public void run() {
-                videoContextReady(intent);
-            }
-        });
-        remoteRender = VideoRendererGui.create(
-                REMOTE_X, REMOTE_Y,
-                REMOTE_WIDTH, REMOTE_HEIGHT, scalingType, false);
-        localRender = VideoRendererGui.create(
-                LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING,
-                LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING, scalingType, true);
 
         keypadFragment = new KeypadFragment();
 
+        isVideo = intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false);
         lblTimer.setVisibility(View.INVISIBLE);
         // these might need to be moved to Resume()
         btnMuteAudio.setVisibility(View.INVISIBLE);
@@ -183,6 +141,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         ft.hide(keypadFragment);
         ft.commit();
 
+        handleCall(intent);
     }
 
     @Override
@@ -219,52 +178,49 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         activityVisible = false;
     }
 
-    private void videoContextReady(Intent intent)
-    {
-        final Intent finalIntent = intent;
-        final CallActivity finalActivity = this;
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
+    private void handleCall(Intent intent) {
+        // Important note: I used to set visibility in Create(), to avoid the flashing of the GL view when it gets added and then removed right away.
+        // But if I make the video view invisibe when VideoRendererGui.create() is called, then videoContextReady is never called. Need to figure
+        // out a way to work around this
+        findViewById(R.id.local_video_view).setVisibility(View.INVISIBLE);
+        findViewById(R.id.remote_video_view).setVisibility(View.INVISIBLE);
 
-                // Important note: I used to set visibility in Create(), to avoid the flashing of the GL view when it gets added and then removed right away.
-                // But if I make the video view invisibe when VideoRendererGui.create() is called, then videoContextReady is never called. Need to figure
-                // out a way to work around this
-                videoView.setVisibility(View.INVISIBLE);
-                if (finalIntent.getAction().equals(RCDevice.OUTGOING_CALL)) {
-                    lblCall.setText("Calling " + finalIntent.getStringExtra(RCDevice.EXTRA_DID).replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
-                    lblStatus.setText("Initiating Call...");
+        if (intent.getAction().equals(RCDevice.OUTGOING_CALL)) {
+            lblCall.setText("Calling " + intent.getStringExtra(RCDevice.EXTRA_DID).replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
+            lblStatus.setText("Initiating Call...");
 
-                    connectParams.put("username", finalIntent.getStringExtra(RCDevice.EXTRA_DID));
-                    connectParams.put("video-enabled", finalIntent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
+            connectParams.put("username", intent.getStringExtra(RCDevice.EXTRA_DID));
+            connectParams.put("video-enabled", intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
+            connectParams.put("local-video", findViewById(R.id.local_video_view));
+            connectParams.put("remote-video", findViewById(R.id.remote_video_view));
+            // by default we use VP8 for video as it tends to be more adopted, but you can override that and specify VP9 as follows:
+            //connectParams.put("preferred-video-codec", "VP9");
 
-                    // *** if you want to add custom SIP headers, please uncomment this
-                    //HashMap<String, String> sipHeaders = new HashMap<>();
-                    //sipHeaders.put("X-SIP-Header1", "Value1");
-                    //connectParams.put("sip-headers", sipHeaders);
+            // *** if you want to add custom SIP headers, please uncomment this
+            //HashMap<String, String> sipHeaders = new HashMap<>();
+            //sipHeaders.put("X-SIP-Header1", "Value1");
+            //connectParams.put("sip-headers", sipHeaders);
 
-                    connection = device.connect(connectParams, finalActivity);
+            connection = device.connect(connectParams, this);
 
-                    if (connection == null) {
-                        Log.e(TAG, "Error: error connecting");
-                        showOkAlert("RCDevice Error", "No Wifi connectivity");
-                        return;
-                    }
-                }
-                if (finalIntent.getAction().equals(RCDevice.INCOMING_CALL)) {
-                    lblCall.setText("Call from " + finalIntent.getStringExtra(RCDevice.EXTRA_DID).replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
-                    lblStatus.setText("Call Received...");
-
-                    pendingConnection = device.getPendingConnection();
-                    pendingConnection.setConnectionListener(finalActivity);
-
-                    // the number from which we got the call
-                    String incomingCallDid = finalIntent.getStringExtra(RCDevice.EXTRA_DID);
-                    // notice that this is not used yet; the sdk doesn't tell us if the incoming call is video/audio (TODO)
-                    acceptParams.put("video-enabled", finalIntent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
-                }
+            if (connection == null) {
+                Log.e(TAG, "Error: error connecting");
+                showOkAlert("RCDevice Error", "No Wifi connectivity");
+                return;
             }
-        });
+        }
+        if (intent.getAction().equals(RCDevice.INCOMING_CALL)) {
+            lblCall.setText("Call from " + intent.getStringExtra(RCDevice.EXTRA_DID).replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
+            lblStatus.setText("Call Received...");
+
+            pendingConnection = device.getPendingConnection();
+            pendingConnection.setConnectionListener(this);
+
+            // the number from which we got the call
+            String incomingCallDid = intent.getStringExtra(RCDevice.EXTRA_DID);
+            // notice that this is not used yet; the sdk doesn't tell us if the incoming call is video/audio (TODO)
+            acceptParams.put("video-enabled", intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
+        }
     }
 
     // UI Events
@@ -294,6 +250,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 btnAnswerAudio.setVisibility(View.INVISIBLE);
                 HashMap<String, Object> params = new HashMap<String, Object>();
                 params.put("video-enabled", true);
+                params.put("local-video", findViewById(R.id.local_video_view));
+                params.put("remote-video", findViewById(R.id.remote_video_view));
                 pendingConnection.accept(params);
                 connection = this.pendingConnection;
                 pendingConnection = null;
@@ -305,12 +263,13 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 btnAnswerAudio.setVisibility(View.INVISIBLE);
                 HashMap<String, Object> params = new HashMap<String, Object>();
                 params.put("video-enabled", false);
+                params.put("local-video", findViewById(R.id.local_video_view));
+                params.put("remote-video", findViewById(R.id.remote_video_view));
                 pendingConnection.accept(params);
                 connection = this.pendingConnection;
                 pendingConnection = null;
             }
         } else if (view.getId() == R.id.button_keypad) {
-            //keypadFragment = new KeypadFragment();
             keypadFragment.setConnection(connection);
 
             // show keypad
@@ -321,8 +280,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             if (connection != null) {
                 if (!muteAudio) {
                     btnMuteAudio.setImageResource(R.drawable.audio_muted_50x50);
-                }
-                else {
+                } else {
                     btnMuteAudio.setImageResource(R.drawable.audio_active_50x50);
                 }
                 muteAudio = !muteAudio;
@@ -332,8 +290,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             if (connection != null) {
                 if (!muteVideo) {
                     btnMuteVideo.setImageResource(R.drawable.video_muted_50x50);
-                }
-                else {
+                } else {
                     btnMuteVideo.setImageResource(R.drawable.video_active_50x50);
                 }
 
@@ -358,7 +315,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
         }
@@ -367,8 +323,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     }
 
     // RCConnection Listeners
-    public void onConnecting(RCConnection connection)
-    {
+    public void onConnecting(RCConnection connection) {
         Log.i(TAG, "RCConnection connecting");
         lblStatus.setText("Started Connecting...");
     }
@@ -389,6 +344,11 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         muteVideo = false;
 
         setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
+
+        if (isVideo) {
+            findViewById(R.id.local_video_view).setVisibility(View.VISIBLE);
+            findViewById(R.id.remote_video_view).setVisibility(View.VISIBLE);
+        }
     }
 
     public void onDisconnected(RCConnection connection) {
@@ -404,8 +364,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
         if (!pendingError) {
             finish();
-        }
-        else {
+        } else {
             pendingError = false;
         }
     }
@@ -435,31 +394,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         showOkAlert("RCConnection Error", errorText);
         this.connection = null;
         pendingConnection = null;
-    }
-
-    public void onReceiveLocalVideo(RCConnection connection, VideoTrack videoTrack) {
-        if (videoTrack != null) {
-            //show media on screen
-            videoTrack.setEnabled(true);
-            videoTrack.addRenderer(new VideoRenderer(localRender));
-        }
-    }
-
-    public void onReceiveRemoteVideo(RCConnection connection, VideoTrack videoTrack) {
-        if (videoTrack != null) {
-            //show media on screen
-            videoTrack.setEnabled(true);
-            videoTrack.addRenderer(new VideoRenderer(remoteRender));
-
-            VideoRendererGui.update(remoteRender,
-                    REMOTE_X, REMOTE_Y,
-                    REMOTE_WIDTH, REMOTE_HEIGHT, scalingType, false);
-            VideoRendererGui.update(localRender,
-                    LOCAL_X_CONNECTED, LOCAL_Y_CONNECTED,
-                    LOCAL_WIDTH_CONNECTED, LOCAL_HEIGHT_CONNECTED,
-                    VideoRendererGui.ScalingType.SCALE_ASPECT_FIT, true);
-            videoView.setVisibility(View.VISIBLE);
-        }
     }
 
     // Helpers
@@ -492,8 +426,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         }
     }
 
-    public void startTimer()
-    {
+    public void startTimer() {
         String time = String.format("%02d:%02d:%02d", secondsElapsed / 3600, (secondsElapsed % 3600) / 60, secondsElapsed % 60);
         lblTimer.setText(time);
         secondsElapsed++;

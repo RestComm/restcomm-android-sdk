@@ -48,6 +48,7 @@ public class RCClient {
         CONNECTION_TIMEOUT,
         NO_CONNECTIVITY,
         WEBRTC_PEERCONNECTION_ERROR,
+        WEBRTC_TURN_ERROR,
         SIGNALLING_SIPURI_PARSE_ERROR,
         SIGNALLING_DNS_ERROR,
         SIGNALLING_DESTINATION_NOT_FOUND,
@@ -78,6 +79,10 @@ public class RCClient {
         else if (errorCode == ErrorCodes.SIGNALLING_SIPURI_PARSE_ERROR) {
             return "Error in DNS resolving";
         }
+        else if (errorCode == ErrorCodes.WEBRTC_TURN_ERROR) {
+            return "Error retrieving TURN servers";
+        }
+
         return "Generic Restcomm Client error";
     }
 

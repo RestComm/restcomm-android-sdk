@@ -54,101 +54,112 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.opengl.GLSurfaceView;
 import android.os.Handler;
-import android.util.Log;
 import android.view.Gravity;
 import android.widget.Toast;
+
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.mobicents.restcomm.android.client.sdk.util.IceServerFetcher;
+import org.mobicents.restcomm.android.sipua.SipProfile;
 import org.mobicents.restcomm.android.sipua.SipUAConnectionListener;
 import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
 import org.mobicents.restcomm.android.sipua.impl.SipEvent;
 import org.mobicents.restcomm.android.sipua.RCLogger;
 
+import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
 import org.webrtc.PeerConnection;
 import org.webrtc.SessionDescription;
 import org.webrtc.StatsReport;
-import org.webrtc.VideoRenderer;
-import org.webrtc.VideoRendererGui;
+import org.webrtc.SurfaceViewRenderer;
+import org.webrtc.RendererCommon.ScalingType;
 import org.webrtc.VideoTrack;
 
 /**
- *  RCConnection represents a call. An RCConnection can be either incoming or outgoing. RCConnections are not created by themselves but
- *  as a result on an action on RCDevice. For example to initiate an outgoing connection you call RCDevice.connect() which instantiates
- *  and returns a new RCConnection. On the other hand when an incoming connection arrives the RCDevice delegate is notified with
- *  RCDeviceListener.onIncomingConnection() and passes the new RCConnection object that is used by the delegate to
- *  control the connection.
- *
- *  When an incoming connection arrives through RCDeviceListener.onIncomingConnection() it is considered RCConnectionStateConnecting until it is either
- *  accepted with RCConnection.accept() or rejected with RCConnection.reject(). Once the connection is accepted the RCConnection transitions to RCConnectionStateConnected
- *  state.
- *
- *  When an outgoing connection is created with RCDevice.connect() it starts with state RCConnectionStatePending. Once it starts ringing on the remote party it
- *  transitions to RCConnectionStateConnecting. When the remote party answers it, the RCConnection state transitions to RCConnectionStateConnected.
- *
- *  Once an RCConnection (either incoming or outgoing) is established (i.e. RCConnectionStateConnected) media can start flowing over it. DTMF digits can be sent over to
- *  the remote party using RCConnection.sendDigits(). When done with the RCConnection you can disconnect it with RCConnection.disconnect().
+ * RCConnection represents a call. An RCConnection can be either incoming or outgoing. RCConnections are not created by themselves but
+ * as a result on an action on RCDevice. For example to initiate an outgoing connection you call RCDevice.connect() which instantiates
+ * and returns a new RCConnection. On the other hand when an incoming connection arrives the RCDevice delegate is notified with
+ * RCDeviceListener.onIncomingConnection() and passes the new RCConnection object that is used by the delegate to
+ * control the connection.
+ * <p/>
+ * When an incoming connection arrives through RCDeviceListener.onIncomingConnection() it is considered RCConnectionStateConnecting until it is either
+ * accepted with RCConnection.accept() or rejected with RCConnection.reject(). Once the connection is accepted the RCConnection transitions to RCConnectionStateConnected
+ * state.
+ * <p/>
+ * When an outgoing connection is created with RCDevice.connect() it starts with state RCConnectionStatePending. Once it starts ringing on the remote party it
+ * transitions to RCConnectionStateConnecting. When the remote party answers it, the RCConnection state transitions to RCConnectionStateConnected.
+ * <p/>
+ * Once an RCConnection (either incoming or outgoing) is established (i.e. RCConnectionStateConnected) media can start flowing over it. DTMF digits can be sent over to
+ * the remote party using RCConnection.sendDigits(). When done with the RCConnection you can disconnect it with RCConnection.disconnect().
  */
-public class RCConnection implements SipUAConnectionListener, PeerConnectionClient.PeerConnectionEvents {
+public class RCConnection implements SipUAConnectionListener, PeerConnectionClient.PeerConnectionEvents, IceServerFetcher.IceServerFetcherEvents {
     /**
      * Connection State
      */
     public enum ConnectionState {
-        PENDING,  /** Connection is in state pending */
-        CONNECTING,  /** Connection is in state connecting */
-        CONNECTED,  /** Connection is in state connected */
+        PENDING, /**
+         * Connection is in state pending
+         */
+        CONNECTING, /**
+         * Connection is in state connecting
+         */
+        CONNECTED, /**
+         * Connection is in state connected
+         */
         DISCONNECTED,  /** Connection is in state disconnected */
-    };
+    }
+
+    ;
 
     String IncomingParameterFromKey = "RCConnectionIncomingParameterFromKey";
     String IncomingParameterToKey = "RCConnectionIncomingParameterToKey";
-    String IncomingParameterAccountSIDKey ="RCConnectionIncomingParameterAccountSIDKey";
+    String IncomingParameterAccountSIDKey = "RCConnectionIncomingParameterAccountSIDKey";
     String IncomingParameterAPIVersionKey = "RCConnectionIncomingParameterAPIVersionKey";
     String IncomingParameterCallSIDKey = "RCConnectionIncomingParameterCallSIDKey";
 
     /**
-     *  @abstract State of the connection.
-     *
-     *  @discussion A new connection created by RCDevice starts off RCConnectionStatePending. It transitions to RCConnectionStateConnecting when it starts ringing. Once the remote party answers it it transitions to RCConnectionStateConnected. Finally, when disconnected it resets to RCConnectionStateDisconnected.
+     * @abstract State of the connection.
+     * @discussion A new connection created by RCDevice starts off RCConnectionStatePending. It transitions to RCConnectionStateConnecting when it starts ringing. Once the remote party answers it it transitions to RCConnectionStateConnected. Finally, when disconnected it resets to RCConnectionStateDisconnected.
      */
     ConnectionState state;
 
     /**
-     *  @abstract Direction of the connection. True if connection is incoming; false otherwise
+     * @abstract Direction of the connection. True if connection is incoming; false otherwise
      */
     boolean incoming;
 
-   /**
-     *  @abstract Connection parameters (**Not Implemented yet**)
+    /**
+     * @abstract Connection parameters (**Not Implemented yet**)
      */
     HashMap<String, String> parameters;
 
     /**
-     *  @abstract Listener that will be called on RCConnection events described at RCConnectionListener
+     * @abstract Listener that will be called on RCConnection events described at RCConnectionListener
      */
     RCConnectionListener listener;
 
     /**
-     *  @abstract Is connection currently muted? If a connection is muted the remote party cannot hear the local party
+     * @abstract Is connection currently muted? If a connection is muted the remote party cannot hear the local party
      */
     boolean muted;
 
+    public RCDevice device = null;
     public String incomingCallSdp = "";
+    private EglBase rootEglBase;
+    private SurfaceViewRenderer localRender;
+    private SurfaceViewRenderer remoteRender;
     private PeerConnectionClient peerConnectionClient = null;
     private SignalingParameters signalingParameters;
     private AppRTCAudioManager audioManager = null;
-    private VideoRenderer.Callbacks localRender = null;
-    private VideoRenderer.Callbacks remoteRender = null;
-    private VideoRendererGui.ScalingType scalingType;
+    private ScalingType scalingType;
     private Toast logToast;
     private PeerConnectionClient.PeerConnectionParameters peerConnectionParameters;
     private boolean iceConnected;
-    private boolean isError;
+    HashMap<String, Object> callParams = null;
     private long callStartedTimeMs = 0;
-    private GLSurfaceView videoView;
     private static boolean DO_TOAST = false;
 
     // List of mandatory application permissions.
@@ -160,29 +171,25 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     private static final String TAG = "RCConnection";
 
     /**
-     *  Initialize a new RCConnection object. <b>Important</b>: this is used internally by RCDevice and is not meant for application use
+     * Initialize a new RCConnection object. <b>Important</b>: this is used internally by RCDevice and is not meant for application use
      *
-     *  @param connectionListener RCConnection listener that will be receiving RCConnection events (@see RCConnectionListener)
-     *
-     *  @return Newly initialized object
+     * @param connectionListener RCConnection listener that will be receiving RCConnection events (@see RCConnectionListener)
+     * @return Newly initialized object
      */
-    public RCConnection(RCConnectionListener connectionListener)
-    {
+    public RCConnection(RCConnectionListener connectionListener) {
         RCLogger.i(TAG, "RCConnection(RCConnectionListener)");
 
         this.listener = connectionListener;
     }
 
     // could not use the previous constructor with connectionListener = null, hence created this:
-    public RCConnection()
-    {
+    public RCConnection() {
         RCLogger.i(TAG, "RCConnection()");
         this.listener = null;
     }
 
     // 'Copy' constructor
-    public RCConnection(RCConnection connection)
-    {
+    public RCConnection(RCConnection connection) {
         this.incoming = connection.incoming;
         this.muted = connection.muted;
 
@@ -195,72 +202,110 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     /**
      * Retrieves the current state of the connection
      */
-    public ConnectionState getState()
-    {
+    public ConnectionState getState() {
         return this.state;
     }
 
     /**
      * Retrieves the set of application parameters associated with this connection (<b>Not Implemented yet</b>)
+     *
      * @return Connection parameters
      */
-    public Map<String, String> getParameters()
-    {
+    public Map<String, String> getParameters() {
         return parameters;
     }
 
     /**
      * Returns whether the connection is incoming or outgoing
+     *
      * @return True if incoming, false otherwise
      */
-    public boolean isIncoming()
-    {
+    public boolean isIncoming() {
         return this.incoming;
     }
 
     /**
      * Accept the incoming connection
      */
-    public void accept(Map<String, Object> parameters)
-    {
+    public void accept(Map<String, Object> parameters) {
         RCLogger.i(TAG, "accept(): " + parameters.toString());
 
         if (haveConnectivity()) {
-            //  DeviceImpl.GetInstance().Accept(
-            Boolean enableVideo = (Boolean)parameters.get("video-enabled");
-            initializeWebrtc(enableVideo.booleanValue());
+            this.callParams = (HashMap<String, Object>) parameters;
+            initializeWebrtc((Boolean) this.callParams.get("video-enabled"), (SurfaceViewRenderer) parameters.get("local-video"),
+                    (SurfaceViewRenderer) parameters.get("remote-video"), (String)parameters.get("preferred-video-codec"));
 
-            LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
-            iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
-            this.signalingParameters = new SignalingParameters(iceServers, false, "", "", "", null, null, null, enableVideo.booleanValue());
-            SignalingParameters params = SignalingParameters.extractCandidates(new SessionDescription(SessionDescription.Type.OFFER, incomingCallSdp));
-            this.signalingParameters.offerSdp = params.offerSdp;
-            this.signalingParameters.iceCandidates = params.iceCandidates;
-            startCall(this.signalingParameters);
+            RCDevice device = RCClient.listDevices().get(0);
+            SipProfile sipProfile = device.getSipProfile();
+            String url = sipProfile.getTurnUrl() + "?ident=" + sipProfile.getTurnUsername() + "&secret=" + sipProfile.getTurnPassword() + "&domain=cloud.restcomm.com&application=default&room=default&secure=1";
+
+            //String url = "https://service.xirsys.com/ice?ident=atsakiridis&secret=4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7&domain=cloud.restcomm.com&application=default&room=default&secure=1";
+            new IceServerFetcher(url, sipProfile.getTurnEnabled(), this).makeRequest();
         }
     }
 
-    private void acceptWebrtc(final String sdp)
-    {
+    // IceServerFetcher callbacks
+    @Override
+    public void onIceServersReady(final LinkedList<PeerConnection.IceServer> iceServers) {
+        // Important: need to fire the event in UI context to make sure no races will arise
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (!RCConnection.this.incoming) {
+                    // we are the initiator
+
+                    // create a new hash map
+                    HashMap<String, String> sipHeaders = null;
+                    if (RCConnection.this.callParams.containsKey("sip-headers")) {
+                        sipHeaders = (HashMap<String, String>) RCConnection.this.callParams.get("sip-headers");
+                    }
+
+                    RCConnection.this.signalingParameters = new SignalingParameters(iceServers, true, "", (String) RCConnection.this.callParams.get("username"), "", null, null, sipHeaders, (Boolean) RCConnection.this.callParams.get("video-enabled"));
+                } else {
+                    // we are not the initiator
+                    RCConnection.this.signalingParameters = new SignalingParameters(iceServers, false, "", "", "", null, null, null, (Boolean) RCConnection.this.callParams.get("video-enabled"));
+                    SignalingParameters params = SignalingParameters.extractCandidates(new SessionDescription(SessionDescription.Type.OFFER, incomingCallSdp));
+                    RCConnection.this.signalingParameters.offerSdp = params.offerSdp;
+                    RCConnection.this.signalingParameters.iceCandidates = params.iceCandidates;
+                }
+                startCall(RCConnection.this.signalingParameters);
+            }
+        };
+        mainHandler.post(myRunnable);
+    }
+
+    @Override
+    public void onIceServersError(final String description) {
+        // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                RCConnection.this.listener.onDisconnected(RCConnection.this, RCClient.ErrorCodes.WEBRTC_TURN_ERROR.ordinal(), description);
+            }
+        };
+        mainHandler.post(myRunnable);
+    }
+
+    private void acceptWebrtc(final String sdp) {
         if (haveConnectivity()) {
             DeviceImpl.GetInstance().AcceptWebrtc(sdp);
-            this.state = state.CONNECTED;
+            //this.state = state.CONNECTED;
         }
     }
 
     /**
      * Ignore incoming connection (<b>Not Implemented yet</b>)
      */
-    public void ignore()
-    {
+    public void ignore() {
 
     }
 
     /**
      * Reject incoming connection
      */
-    public void reject()
-    {
+    public void reject() {
         RCLogger.i(TAG, "reject()");
 
         if (haveConnectivity()) {
@@ -278,8 +323,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     /**
      * Disconnect the established connection
      */
-    public void disconnect()
-    {
+    public void disconnect() {
         RCLogger.i(TAG, "disconnect()");
 
         if (haveConnectivity()) {
@@ -300,10 +344,10 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
     /**
      * Mute connection so that the other party cannot hear local audio
+     *
      * @param muted True to mute and false in order to unmute
      */
-    public void setAudioMuted(boolean muted)
-    {
+    public void setAudioMuted(boolean muted) {
         RCLogger.i(TAG, "setAudioMuted(): " + muted);
 
         if (audioManager != null) {
@@ -313,14 +357,13 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
     /**
      * Retrieve whether connection audio is muted or not
+     *
      * @return True connection is muted and false otherwise
      */
-    public boolean isAudioMuted()
-    {
+    public boolean isAudioMuted() {
         if (audioManager != null) {
             return audioManager.getMute();
-        }
-        else {
+        } else {
             RCLogger.e(TAG, "isMuted called on null audioManager -check memory management");
         }
         return false;
@@ -328,10 +371,10 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
     /**
      * Mute connection so that the other party cannot see local video
+     *
      * @param muted True to mute and false in order to unmute
      */
-    public void setVideoMuted(boolean muted)
-    {
+    public void setVideoMuted(boolean muted) {
         RCLogger.i(TAG, "setVideoMuted(): " + muted);
 
         if (this.peerConnectionClient != null) {
@@ -341,10 +384,10 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
     /**
      * Retrieve whether connection video is muted or not
+     *
      * @return True connection is muted and false otherwise
      */
-    public boolean isVideoMuted()
-    {
+    public boolean isVideoMuted() {
         if (this.peerConnectionClient != null) {
             return !this.peerConnectionClient.getLocalVideoEnabled();
         }
@@ -353,10 +396,10 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
     /**
      * Send DTMF digits over the connection
+     *
      * @param digits A string of DTMF digits to be sent
      */
-    public void sendDigits(String digits)
-    {
+    public void sendDigits(String digits) {
         RCLogger.i(TAG, "sendDigits(): " + digits);
         DeviceImpl.GetInstance().SendDTMF(digits);
     }
@@ -365,10 +408,10 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
      * Update connection listener to be receiving Connection related events. This is
      * usually needed when we switch activities and want the new activity to receive
      * events
-     * @param listener  New connection listener
+     *
+     * @param listener New connection listener
      */
-    public void setConnectionListener(RCConnectionListener listener)
-    {
+    public void setConnectionListener(RCConnectionListener listener) {
         RCLogger.i(TAG, "setConnectionListener()");
 
         this.listener = listener;
@@ -376,8 +419,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     }
 
     // SipUA Connection Listeners
-    public void onSipUAConnecting(SipEvent event)
-    {
+    public void onSipUAConnecting(SipEvent event) {
         RCLogger.i(TAG, "onSipUAConnecting()");
 
         this.state = ConnectionState.CONNECTING;
@@ -396,18 +438,19 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         sendConnectionIntent("connecting");
     }
 
-    public void onSipUAConnected(SipEvent event)
-    {
+    public void onSipUAConnected(SipEvent event) {
         RCLogger.i(TAG, "onSipUAConnected()");
 
-        this.state = ConnectionState.CONNECTED;
+        //this.state = ConnectionState.CONNECTED;
         final RCConnection finalConnection = new RCConnection(this);
 
         // we want to notify webrtc onRemoteDescription *only* on an outgoing call
         if (!this.isIncoming()) {
             onRemoteDescription(event.sdp);
         }
+        sendConnectionIntent("connected");
 
+        /*
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
         Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
@@ -417,12 +460,10 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             }
         };
         mainHandler.post(myRunnable);
-        // Phone state Intents to capture call connected event
-        sendConnectionIntent("connected");
+        */
     }
 
-    public void onSipUADisconnected(final SipEvent event)
-    {
+    public void onSipUADisconnected(final SipEvent event) {
         RCLogger.i(TAG, "onSipUADisconnected()");
 
         // we 're first notifying listener and then setting new state because we want the listener to be able to
@@ -453,8 +494,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         sendConnectionIntent("disconnected");
     }
 
-    public void onSipUACancelled(SipEvent event)
-    {
+    public void onSipUACancelled(SipEvent event) {
         RCLogger.i(TAG, "onSipUACancelled()");
 
         final RCConnection finalConnection = new RCConnection(this);
@@ -480,8 +520,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         sendConnectionIntent("cancelled");
     }
 
-    public void onSipUADeclined(SipEvent event)
-    {
+    public void onSipUADeclined(SipEvent event) {
         RCLogger.i(TAG, "onSipUADeclined");
         final RCConnection finalConnection = new RCConnection(this);
 
@@ -505,8 +544,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         sendConnectionIntent("declined");
     }
 
-    public void onSipUAError(final RCClient.ErrorCodes errorCode, final String errorText)
-    {
+    public void onSipUAError(final RCClient.ErrorCodes errorCode, final String errorText) {
         final RCConnection connection = this;
         Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
@@ -523,8 +561,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     }
 
     // Helpers
-    private boolean haveConnectivity()
-    {
+    private boolean haveConnectivity() {
         RCDevice device = RCClient.listDevices().get(0);
         if (device == null) {
             return false;
@@ -536,8 +573,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         if (state == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi ||
                 state == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular) {
             return true;
-        }
-        else {
+        } else {
             if (this.listener != null) {
                 this.listener.onDisconnected(this, RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal(), RCClient.errorText(RCClient.ErrorCodes.NO_CONNECTIVITY));
             }
@@ -548,26 +584,44 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     }
 
     // -- WebRTC stuff:
-    public void setupWebrtcAndCall(String sipUri, HashMap<String, String> sipHeaders, boolean videoEnabled)
+    public void setupWebrtcAndCall(Map<String, Object> parameters)
+    //public void setupWebrtcAndCall(String sipUri, HashMap<String, String> sipHeaders, boolean videoEnabled)
     {
-        initializeWebrtc(videoEnabled);
+        this.callParams = (HashMap<String, Object>) parameters;
+        initializeWebrtc((Boolean) this.callParams.get("video-enabled"), (SurfaceViewRenderer) parameters.get("local-video"),
+                (SurfaceViewRenderer) parameters.get("remote-video"), (String)parameters.get("preferred-video-codec"));
 
-        LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<>();
-        iceServers.add(new PeerConnection.IceServer("stun:stun.l.google.com:19302", "", ""));
-        this.signalingParameters = new SignalingParameters(iceServers, true, "", sipUri, "", null, null, sipHeaders, videoEnabled);
+        //String url = "https://service.xirsys.com/ice?ident=atsakiridis&secret=4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7&domain=cloud.restcomm.com&application=default&room=default&secure=1";
+        RCDevice device = RCClient.listDevices().get(0);
+        SipProfile sipProfile = device.getSipProfile();
+        String url = sipProfile.getTurnUrl() + "?ident=" + sipProfile.getTurnUsername() + "&secret=" + sipProfile.getTurnPassword() + "&domain=cloud.restcomm.com&application=default&room=default&secure=1";
 
-        startCall(this.signalingParameters);
+        new IceServerFetcher(url, sipProfile.getTurnEnabled(), this).makeRequest();
     }
 
     // initialize webrtc facilities for the call
-    void initializeWebrtc(boolean videoEnabled)
-    {
+    void initializeWebrtc(boolean videoEnabled, SurfaceViewRenderer localVideo, SurfaceViewRenderer remoteVideo, String preferredVideoCodec) {
         RCLogger.i(TAG, "initializeWebrtc  ");
         Context context = RCClient.getContext();
 
         iceConnected = false;
         signalingParameters = null;
-        scalingType = VideoRendererGui.ScalingType.SCALE_ASPECT_FILL;
+        scalingType = ScalingType.SCALE_ASPECT_FILL;
+
+        rootEglBase = EglBase.create();
+        if (videoEnabled) {
+            remoteRender = remoteVideo;
+            remoteRender.init(rootEglBase.getEglBaseContext(), null);
+            localRender = localVideo;
+            localRender.init(rootEglBase.getEglBaseContext(), null);
+            localRender.setZOrderMediaOverlay(true);
+            updateVideoView();
+        }
+
+        // default to VP8 as VP9 doesn't seem to have that great android device support
+        if (preferredVideoCodec == null) {
+            preferredVideoCodec = "VP8";
+        }
 
         // Check for mandatory permissions.
         for (String permission : MANDATORY_PERMISSIONS) {
@@ -579,24 +633,49 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         }
 
         peerConnectionParameters = new PeerConnectionClient.PeerConnectionParameters(
-                videoEnabled,
-                false,
-                0,
-                0,
-                0,
-                0,
-                "VP8",
-                true,
-                0,
-                "OPUS",
-                false,
-                true);
+                videoEnabled,  // video call
+                false,  // loopback
+                false,  // tracing
+                0,  // video width
+                0,  // video height
+                0,  // video fps
+                0,  // video start bitrate
+                preferredVideoCodec,  // video codec
+                true,  // video condec hw acceleration
+                false, // capture to texture
+                0,  // audio start bitrate
+                "OPUS",  // audio codec
+                false,  // no audio processing
+                false,  // aec dump
+                false);  // use opengles
 
         createPeerConnectionFactory();
     }
 
-    private void startCall(SignalingParameters signalingParameters)
-    {
+    private void updateVideoView() {
+        //remoteRenderLayout.setPosition(REMOTE_X, REMOTE_Y, REMOTE_WIDTH, REMOTE_HEIGHT);
+        remoteRender.setScalingType(scalingType);
+        remoteRender.setMirror(false);
+
+        /*
+        if (state == RCConnection.ConnectionState.CONNECTED) {
+            //localRenderLayout.setPosition(LOCAL_X_CONNECTED, LOCAL_Y_CONNECTED, LOCAL_WIDTH_CONNECTED, LOCAL_HEIGHT_CONNECTED);
+            localRender.setScalingType(ScalingType.SCALE_ASPECT_FIT);
+        } else {
+            //localRenderLayout.setPosition(LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING, LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING);
+            localRender.setScalingType(scalingType);
+        }
+        */
+        remoteRender.requestLayout();
+
+        localRender.setMirror(true);
+        localRender.bringToFront();
+        localRender.requestLayout();
+    }
+
+
+
+    private void startCall(SignalingParameters signalingParameters) {
         RCLogger.i(TAG, "startCall");
         callStartedTimeMs = System.currentTimeMillis();
 
@@ -632,10 +711,19 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             peerConnectionClient.close();
             peerConnectionClient = null;
         }
+        if (localRender != null) {
+            localRender.release();
+            localRender = null;
+        }
+        if (remoteRender != null) {
+            remoteRender.release();
+            remoteRender = null;
+        }
         if (audioManager != null) {
             audioManager.close();
             audioManager = null;
         }
+        rootEglBase.release();
     }
 
     private void onAudioManagerChangedState() {
@@ -658,7 +746,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                     RCLogger.d(TAG, "Creating peer connection factory, delay=" + delta + "ms");
                     peerConnectionClient = PeerConnectionClient.getInstance();
                     peerConnectionClient.createPeerConnectionFactory(RCClient.getContext(),
-                            VideoRendererGui.getEGLContext(), peerConnectionParameters,
+                            peerConnectionParameters,
                             connection);
                     logAndToast("Created PeerConnectionFactory");
                 }
@@ -737,8 +825,22 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         mainHandler.post(myRunnable);
     }
 
-    public void onIceGatheringComplete()
-    {
+    @Override
+    public void onIceCandidatesRemoved(final IceCandidate[] candidates) {
+        final RCConnection connection = this;
+        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+        Runnable myRunnable = new Runnable() {
+            @Override
+            public void run() {
+                RCLogger.i(TAG, "onIceCandidateRemoved: Not Implemented Yet");
+                //connection.signalingParameters.addIceCandidate(candidate);
+            }
+        };
+        mainHandler.post(myRunnable);
+
+    }
+
+    public void onIceGatheringComplete() {
         final RCConnection connection = this;
 
         Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
@@ -755,8 +857,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                     DeviceImpl.GetInstance().CallWebrtc(signalingParameters.sipUrl,
                             connection.signalingParameters.generateSipSdp(connection.signalingParameters.offerSdp,
                                     connection.signalingParameters.iceCandidates), connection.signalingParameters.sipHeaders);
-                }
-                else {
+                } else {
                     DeviceImpl.GetInstance().AcceptWebrtc(connection.signalingParameters.generateSipSdp(connection.signalingParameters.answerSdp,
                             connection.signalingParameters.iceCandidates));
                     connection.state = state.CONNECTED;
@@ -777,6 +878,9 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                 RCLogger.i(TAG, "onIceConnected");
                 logAndToast("ICE connected, delay=" + delta + "ms");
                 iceConnected = true;
+                RCConnection.this.state = ConnectionState.CONNECTED;
+                updateVideoView();
+                listener.onConnected(RCConnection.this);
             }
         };
         mainHandler.post(myRunnable);
@@ -808,7 +912,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
-                if (!isError && iceConnected) {
+                if (iceConnected) {
                     //hudFragment.updateEncoderStatistics(reports);
                 }
             }
@@ -817,8 +921,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     }
 
     @Override
-    public void onPeerConnectionError(final String description)
-    {
+    public void onPeerConnectionError(final String description) {
         final RCConnection connection = this;
         Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
@@ -836,33 +939,25 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         mainHandler.post(myRunnable);
     }
 
-    public void onLocalVideo(VideoTrack videoTrack)
-    {
-        final VideoTrack finalVideoTrack = videoTrack;
-        final RCConnection connection = this;
-
+    public void onLocalVideo(VideoTrack videoTrack) {
         Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
                 RCLogger.i(TAG, "onLocalVideo");
-                listener.onReceiveLocalVideo(connection, finalVideoTrack);
+                updateVideoView();
             }
         };
         mainHandler.post(myRunnable);
     }
 
-    public void onRemoteVideo(VideoTrack videoTrack)
-    {
-        final VideoTrack finalVideoTrack = videoTrack;
-        final RCConnection connection = this;
-
+    public void onRemoteVideo(VideoTrack videoTrack) {
         Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
             public void run() {
                 RCLogger.i(TAG, "onRemoteVideo");
-                listener.onReceiveRemoteVideo(connection, finalVideoTrack);
+                updateVideoView();
             }
         };
         mainHandler.post(myRunnable);
@@ -898,7 +993,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             return;
         }
         logAndToast("Creating peer connection, delay=" + delta + "ms");
-        peerConnectionClient.createPeerConnection(
+        peerConnectionClient.createPeerConnection(rootEglBase.getEglBaseContext(),
                 localRender, remoteRender, signalingParameters);
 
         if (signalingParameters.initiator) {

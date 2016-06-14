@@ -43,7 +43,6 @@ public class AsyncHttpURLConnection {
   private static final String HTTP_ORIGIN = "https://apprtc.appspot.com";
   private final String method;
   private final String url;
-  private final String message;
   private final AsyncHttpEvents events;
   private String contentType;
 
@@ -55,11 +54,10 @@ public class AsyncHttpURLConnection {
     public void onHttpComplete(String response);
   }
 
-  public AsyncHttpURLConnection(String method, String url, String message,
+  public AsyncHttpURLConnection(String method, String url,
       AsyncHttpEvents events) {
     this.method = method;
     this.url = url;
-    this.message = message;
     this.events = events;
   }
 
@@ -81,9 +79,6 @@ public class AsyncHttpURLConnection {
       HttpURLConnection connection =
         (HttpURLConnection) new URL(url).openConnection();
       byte[] postData = new byte[0];
-      if (message != null) {
-        postData = message.getBytes("UTF-8");
-      }
       connection.setRequestMethod(method);
       connection.setUseCaches(false);
       connection.setDoInput(true);
