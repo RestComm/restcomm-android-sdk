@@ -629,18 +629,25 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         scalingType = ScalingType.SCALE_ASPECT_FILL;
 
         rootEglBase = EglBase.create();
+        localRender = localVideo;
+        remoteRender = remoteVideo;
+
         if (videoEnabled) {
             localMediaType = ConnectionMediaType.AUDIO_VIDEO;
-            remoteRender = remoteVideo;
-            remoteRender.init(rootEglBase.getEglBaseContext(), null);
-            localRender = localVideo;
-            localRender.init(rootEglBase.getEglBaseContext(), null);
-            localRender.setZOrderMediaOverlay(true);
-            updateVideoView();
         }
         else {
             localMediaType = ConnectionMediaType.AUDIO;
         }
+
+        localRender.init(rootEglBase.getEglBaseContext(), null);
+        localRender.setZOrderMediaOverlay(true);
+        //updateVideoView();
+
+        // for incoming calls we know the remote media type at the point we are accepting it (and calling initializeWebrtc)
+        //if (this.isIncoming() && remoteMediaType == ConnectionMediaType.AUDIO_VIDEO) {
+            remoteRender.init(rootEglBase.getEglBaseContext(), null);
+            updateVideoView();
+        //}
 
         // default to VP8 as VP9 doesn't seem to have that great android device support
         if (preferredVideoCodec == null) {
@@ -1006,6 +1013,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             RCLogger.w(TAG, "Room is connected, but EGL context is not ready yet.");
             return;
         }
+
         logAndToast("Creating peer connection, delay=" + delta + "ms");
         peerConnectionClient.createPeerConnection(rootEglBase.getEglBaseContext(),
                 localRender, remoteRender, signalingParameters);
