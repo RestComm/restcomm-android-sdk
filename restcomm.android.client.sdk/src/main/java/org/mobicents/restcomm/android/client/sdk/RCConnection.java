@@ -1100,6 +1100,9 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                 if (sections[i].matches("(?s).*a=recvonly.*")) {
                     return ConnectionMediaType.AUDIO;
                 }
+                else if (sections[i].matches("(?s).*video 0.*")) {
+                    return ConnectionMediaType.AUDIO;
+                }
                 foundVideo = true;
             }
         }
