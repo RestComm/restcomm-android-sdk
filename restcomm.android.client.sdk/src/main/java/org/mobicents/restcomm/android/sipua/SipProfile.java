@@ -34,7 +34,7 @@ public class SipProfile {
 	private static final String TAG = "SipProfile";
 	private  String localIp;
 	private  int localPort = 5080;
-	private  String transport = "tcp";
+	private  String transport = "tls";
 
 	private String remoteEndpoint;
 	private  String sipUserName;
@@ -182,3 +182,4 @@ public class SipProfile {
 		this.transport = transport;
 	}
 }
+

@@ -1,6 +1,11 @@
 package org.mobicents.restcomm.android.sipua.impl;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
@@ -100,7 +105,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	private static SipStack sipStack;
-	public static String USERAGENT_STRING = "TelScale Restcomm Android Client 1.0.0 BETA3";
+	public static String USERAGENT_STRING = "TelScale Restcomm Android Client 1.0.0 BETA4";
 	public SipProvider sipProvider;
 	public HeaderFactory headerFactory;
 	public AddressFactory addressFactory;
@@ -147,16 +152,25 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		sipFactory = SipFactory.getInstance();
 		sipFactory.resetFactory();
 		sipFactory.setPathName("android.gov.nist");
+		String keystorePath = setupTls(context);
 
 		Properties properties = new Properties();
-		// Using ROUTE instead
+		// Using ROUTE instead that is more flexible
 		/*
 		if (!sipProfile.getRemoteIp().isEmpty()) {
 			properties.setProperty("android.javax.sip.OUTBOUND_PROXY",
 					sipProfile.getRemoteEndpoint() + "/" + sipProfile.getTransport());
 		}
 		*/
+
 		properties.setProperty("android.javax.sip.STACK_NAME", "androidSip");
+
+		// TLS
+		properties.setProperty( "javax.net.ssl.keyStore", keystorePath);
+		properties.setProperty( "javax.net.ssl.trustStore", keystorePath);
+		properties.setProperty( "javax.net.ssl.keyStorePassword", "changeit" );
+		properties.setProperty( "javax.net.ssl.keyStoreType", "jks" );
+
 		// You need 16 for logging traces. 32 for debug + traces.
 		// Your code will limp at 32 but it is best for debugging.
 		//properties.setProperty("android.gov.nist.javax.sip.TRACE_LEVEL", "32");
@@ -188,6 +202,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			initialized = true;
 			sipManagerState = SipManagerState.READY;
 		} catch (PeerUnavailableException e) {
+			e.printStackTrace();
 			return false;
 		} catch (ObjectInUseException e) {
 			e.printStackTrace();
@@ -221,6 +236,46 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 		return true;
 	}
+
+	private String setupTls(Context context)
+	{
+		// Check if keystore file exists in internal storage and if not copy it from Assets folder. This
+		// whole thing is needed because JAIN SIP needs a path to work with, and I haven't found a way
+		// to reference assets using a path, so
+		File keystoreFile = new File(context.getFilesDir(), "restcomm-sample.keystore");
+		if (!keystoreFile.exists()) {
+			BufferedReader reader = null;
+			try {
+				reader = new BufferedReader(new InputStreamReader(context.getAssets().open("restcomm-sample.keystore")));
+
+				//File downloadPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+				//File textFile = new File(downloadPath, "restcomm.keystore");
+				//File textFile = new File("/assets/restcomm.keystore");
+
+				FileOutputStream outputStream = new FileOutputStream(keystoreFile);
+				//outputStream = context.openFileOutput(filename, Context.MODE_PRIVATE);
+
+				// do reading, usually loop until end of file reading
+				String line;
+				while ((line = reader.readLine()) != null) {
+					outputStream.write(line.getBytes());
+				}
+				outputStream.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			} finally {
+				if (reader != null) {
+					try {
+						reader.close();
+					} catch (IOException e) {
+						//log the exception
+					}
+				}
+			}
+		}
+		return keystoreFile.getAbsolutePath();
+	}
+
 
 	// shutdown SIP stack
 	public boolean shutdown()

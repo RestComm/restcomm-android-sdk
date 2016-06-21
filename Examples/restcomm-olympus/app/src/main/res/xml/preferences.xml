@@ -17,6 +17,11 @@
         android:defaultValue=""
         android:key="pref_proxy_domain"
         android:title="Domain" />
+    <CheckBoxPreference
+        android:defaultValue="false"
+        android:key="secure-signaling"
+        android:title="Secure Signaling" />
+
 </PreferenceCategory>
 
     <PreferenceCategory
