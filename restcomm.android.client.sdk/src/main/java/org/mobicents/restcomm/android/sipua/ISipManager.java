@@ -11,5 +11,6 @@ public interface ISipManager {
 	public void SendDTMF(String digit) throws NotInitializedException;
 	public void Register(int expiry) throws ParseException, TransactionUnavailableException;
 	public void Call(String to, int localRtpPort, HashMap<String, String> sipHeaders) throws NotInitializedException, ParseException;
+	public void CallWebrtc(String to, String sdp, HashMap<String, String> sipHeaders) throws NotInitializedException, ParseException;
 	public void Hangup() throws NotInitializedException;
 }

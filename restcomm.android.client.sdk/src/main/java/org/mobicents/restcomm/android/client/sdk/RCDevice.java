@@ -596,11 +596,12 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         incomingConnection.state = RCConnection.ConnectionState.CONNECTING;
         incomingConnection.incomingCallSdp = event.sdp;
         incomingConnection.device = this;
+        incomingConnection.remoteMediaType = RCConnection.sdp2Mediatype(event.sdp);
         DeviceImpl.GetInstance().sipuaConnectionListener = incomingConnection;
         state = DeviceState.BUSY;
 
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
-        final String from = event.from;
+        final SipEvent finalEvent = event;
         Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
         Runnable myRunnable = new Runnable() {
             @Override
@@ -609,11 +610,12 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
                 try {
                     Intent dataIntent = new Intent();
                     dataIntent.setAction(INCOMING_CALL);
-                    dataIntent.putExtra(RCDevice.EXTRA_DID, from);
+                    dataIntent.putExtra(RCDevice.EXTRA_DID, finalEvent.from);
+                    dataIntent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, (incomingConnection.remoteMediaType == RCConnection.ConnectionMediaType.AUDIO_VIDEO));
                     pendingCallIntent.send(RCClient.getContext(), 0, dataIntent);
 
                     // Phone state Intents to capture incoming phone call event
-                    sendIncomingConnectionIntent(from, incomingConnection);
+                    sendIncomingConnectionIntent(finalEvent.from, incomingConnection);
                     // I re-enabled this listener for incoming connections, it was disabled in RCDeviceListener
                     if (listener != null) {
                         listener.onIncomingConnection(RCDevice.this, incomingConnection);

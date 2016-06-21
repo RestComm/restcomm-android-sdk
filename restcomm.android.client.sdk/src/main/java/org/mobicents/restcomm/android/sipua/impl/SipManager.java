@@ -111,6 +111,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	private ListeningPoint listeningPoint;
 	private SipProfile sipProfile;
 	private Dialog dialog;
+	public String viaReceivedAddress;
+	public int viaRport;
 
 	private ArrayList<ISipEventListener> sipEventListenerList = new ArrayList<ISipEventListener>();
 	private boolean initialized = false;
@@ -157,10 +159,10 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		properties.setProperty("android.javax.sip.STACK_NAME", "androidSip");
 		// You need 16 for logging traces. 32 for debug + traces.
 		// Your code will limp at 32 but it is best for debugging.
-		//properties.setProperty("android.gov.nist.javax.sip.TRACE_LEVEL", "32");
-		//File downloadPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-		//properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", downloadPath.getAbsolutePath() + "/debug-jain.log");
-		//properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", downloadPath.getAbsolutePath() + "/server-jain.log");
+		properties.setProperty("android.gov.nist.javax.sip.TRACE_LEVEL", "32");
+		File downloadPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+		properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", downloadPath.getAbsolutePath() + "/debug-jain.log");
+		properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", downloadPath.getAbsolutePath() + "/server-jain.log");
 
 		// old code, just in case we need the path
 		//properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", "/mnt/sdcard/Download/debug-jain.log");
@@ -817,6 +819,13 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			else if (cseq.getMethod().equals(Request.REGISTER)) {
 				// we got 200 OK to register request, clear the map
 				authenticationMap.clear();
+
+				ViaHeader viaHeader = (ViaHeader)response.getHeader(ViaHeader.NAME);
+
+				// keep around the Via received and rport parms so that we can populate the contact properly
+				viaReceivedAddress = viaHeader.getReceived();
+				viaRport = viaHeader.getRPort();
+
 				dispatchSipEvent(new SipEvent(this,
 						SipEventType.REGISTER_SUCCESS, "", ""));
 

@@ -55,6 +55,7 @@ import android.content.pm.PackageManager;
 import android.opengl.GLSurfaceView;
 import android.os.Handler;
 import android.view.Gravity;
+import android.view.View;
 import android.widget.Toast;
 
 import java.util.HashMap;
@@ -112,7 +113,11 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         DISCONNECTED,  /** Connection is in state disconnected */
     }
 
-    ;
+    public enum ConnectionMediaType {
+        UNDEFINED, /** We don't know the type of media yet, for example for remote video before they answer */
+        AUDIO, /** Connection is audio only */
+        AUDIO_VIDEO, /** Connection audio & video */
+    }
 
     String IncomingParameterFromKey = "RCConnectionIncomingParameterFromKey";
     String IncomingParameterToKey = "RCConnectionIncomingParameterToKey";
@@ -125,6 +130,18 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
      * @discussion A new connection created by RCDevice starts off RCConnectionStatePending. It transitions to RCConnectionStateConnecting when it starts ringing. Once the remote party answers it it transitions to RCConnectionStateConnected. Finally, when disconnected it resets to RCConnectionStateDisconnected.
      */
     ConnectionState state;
+
+    /**
+     * @abstract Type of local media.
+     * @discussion Type of local media transferred over the RCConnection.
+     */
+    ConnectionMediaType localMediaType;
+
+    /**
+     * @abstract Type of remote media.
+     * @discussion Type of local media transferred over the RCConnection.
+     */
+    ConnectionMediaType remoteMediaType;
 
     /**
      * @abstract Direction of the connection. True if connection is incoming; false otherwise
@@ -204,6 +221,20 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
      */
     public ConnectionState getState() {
         return this.state;
+    }
+
+    /**
+     * Retrieves the current local media type of the connection
+     */
+    public ConnectionMediaType getLocalMediaType() {
+        return this.localMediaType;
+    }
+
+    /**
+     * Retrieves the current local media type of the connection
+     */
+    public ConnectionMediaType getRemoteMediaType() {
+        return this.remoteMediaType;
     }
 
     /**
@@ -446,6 +477,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
         // we want to notify webrtc onRemoteDescription *only* on an outgoing call
         if (!this.isIncoming()) {
+            remoteMediaType = sdp2Mediatype(event.sdp);
             onRemoteDescription(event.sdp);
         }
         sendConnectionIntent("connected");
@@ -610,12 +642,16 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
         rootEglBase = EglBase.create();
         if (videoEnabled) {
+            localMediaType = ConnectionMediaType.AUDIO_VIDEO;
             remoteRender = remoteVideo;
             remoteRender.init(rootEglBase.getEglBaseContext(), null);
             localRender = localVideo;
             localRender.init(rootEglBase.getEglBaseContext(), null);
             localRender.setZOrderMediaOverlay(true);
             updateVideoView();
+        }
+        else {
+            localMediaType = ConnectionMediaType.AUDIO;
         }
 
         // default to VP8 as VP9 doesn't seem to have that great android device support
@@ -654,23 +690,20 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
     private void updateVideoView() {
         //remoteRenderLayout.setPosition(REMOTE_X, REMOTE_Y, REMOTE_WIDTH, REMOTE_HEIGHT);
-        remoteRender.setScalingType(scalingType);
-        remoteRender.setMirror(false);
-
-        /*
-        if (state == RCConnection.ConnectionState.CONNECTED) {
-            //localRenderLayout.setPosition(LOCAL_X_CONNECTED, LOCAL_Y_CONNECTED, LOCAL_WIDTH_CONNECTED, LOCAL_HEIGHT_CONNECTED);
-            localRender.setScalingType(ScalingType.SCALE_ASPECT_FIT);
-        } else {
-            //localRenderLayout.setPosition(LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING, LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING);
-            localRender.setScalingType(scalingType);
+        if (remoteRender != null) {
+            remoteRender.setScalingType(scalingType);
+            remoteRender.setMirror(false);
+            remoteRender.requestLayout();
         }
-        */
-        remoteRender.requestLayout();
 
-        localRender.setMirror(true);
-        localRender.bringToFront();
-        localRender.requestLayout();
+        if (localRender != null) {
+            localRender.setMirror(true);
+            //localRender.bringToFront();
+            //((View) localRender.getParent()).requestLayout();
+            //((View) localRender.getParent()).invalidate();
+            localRender.requestLayout();
+        }
+
     }
 
 
@@ -1094,9 +1127,8 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
     }
 
     // Phone state Intents to capture dropped call event with reason
-    private void sendDisconnectErrorIntent (int error, String errorText)
-    {
-        Intent intent = new Intent ("org.mobicents.restcomm.android.DISCONNECT_ERROR");
+    private void sendDisconnectErrorIntent (int error, String errorText) {
+        Intent intent = new Intent("org.mobicents.restcomm.android.DISCONNECT_ERROR");
         intent.putExtra("STATE", "disconnect error");
         if (errorText != null)
             intent.putExtra("ERRORTEXT", errorText);
@@ -1109,10 +1141,44 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             Class aclass = Class.forName("com.cortxt.app.mmccore.Services.Intents.MMCIntentHandler");
             intent.setClass(context.getApplicationContext(), aclass);
             context.sendBroadcast(intent);
-        }
-        catch (ClassNotFoundException e)
-        {
+        } catch (ClassNotFoundException e) {
             // If the MMC class isn't here, no intent
         }
+    }
+    // Helpers
+    // get from SDP if this is an audio or audio/video call
+    static ConnectionMediaType sdp2Mediatype(String sdp) {
+        boolean foundVideo = false;
+
+        // split the media SDP sections
+        String[] sections = sdp.split("m=");
+        for (int i = 0; i < sections.length; i++) {
+            // and check if the media secion starts with 'video'
+            if (sections[i].matches("(?s)^video.*")) {
+                // if so checks if the video section has recvonly
+                if (sections[i].matches("(?s).*a=recvonly.*")) {
+                    return ConnectionMediaType.AUDIO;
+                }
+                foundVideo = true;
+            }
+        }
+
+        if (!foundVideo) {
+            return ConnectionMediaType.AUDIO;
+        }
+        else {
+            return ConnectionMediaType.AUDIO_VIDEO;
+        }
+
+        // if there is a video line AND the port value is different than 0 (hence 1-9 in the first digit) then we have video
+        /* Let's keep this around commented in case Firefox changes how it works
+        if (sdp.matches("(?s).*m=video [1-9].*")) {
+            return ConnectionMediaType.AUDIO_VIDEO;
+        }
+        else {
+            return ConnectionMediaType.AUDIO;
+        }
+        */
+
     }
 }

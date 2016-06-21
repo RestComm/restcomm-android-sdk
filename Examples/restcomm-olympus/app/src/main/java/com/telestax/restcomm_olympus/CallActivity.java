@@ -186,7 +186,15 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         findViewById(R.id.remote_video_view).setVisibility(View.INVISIBLE);
 
         if (intent.getAction().equals(RCDevice.OUTGOING_CALL)) {
-            lblCall.setText("Calling " + intent.getStringExtra(RCDevice.EXTRA_DID).replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
+            String text;
+            if (isVideo) {
+                text = "Video Calling ";
+            }
+            else {
+                text = "Audio Calling ";
+            }
+
+            lblCall.setText(text + intent.getStringExtra(RCDevice.EXTRA_DID).replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
             lblStatus.setText("Initiating Call...");
 
             connectParams.put("username", intent.getStringExtra(RCDevice.EXTRA_DID));
@@ -210,7 +218,15 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             }
         }
         if (intent.getAction().equals(RCDevice.INCOMING_CALL)) {
-            lblCall.setText("Call from " + intent.getStringExtra(RCDevice.EXTRA_DID).replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
+            String text;
+            if (isVideo) {
+                text = "Video Call from ";
+            }
+            else {
+                text = "Audio Call from ";
+            }
+
+            lblCall.setText(text + intent.getStringExtra(RCDevice.EXTRA_DID).replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
             lblStatus.setText("Call Received...");
 
             pendingConnection = device.getPendingConnection();
@@ -233,6 +249,11 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 pendingConnection = null;
             } else {
                 if (connection != null) {
+                    //Log.e(TAG, "%%%% Bringing to front");
+                    //findViewById(R.id.local_video_view).bringToFront();
+                    //findViewById(R.id.local_video_view).getParent().requestLayout();
+                    //((View)findViewById(R.id.local_video_view).getParent()).invalidate();
+                    //return;
                     // incoming established or outgoing any state (pending, connecting, connected)
                     lblStatus.setText("Disconnecting Call...");
                     connection.disconnect();
@@ -345,8 +366,10 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
         setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
 
-        if (isVideo) {
+        if (connection.getLocalMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) {
             findViewById(R.id.local_video_view).setVisibility(View.VISIBLE);
+        }
+        if (connection.getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) {
             findViewById(R.id.remote_video_view).setVisibility(View.VISIBLE);
         }
     }

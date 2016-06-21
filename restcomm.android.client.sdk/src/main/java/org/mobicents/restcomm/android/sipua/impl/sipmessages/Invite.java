@@ -30,13 +30,13 @@ public class Invite  {
 	private static final String TAG = "Invite";
 
     public Request MakeRequest(SipManager sipManager,String to, int port, HashMap<String, String> sipHeaders) throws  ParseException {
-    	
-    	try {
+
+		try {
 			SipURI from = sipManager.addressFactory.createSipURI(sipManager.getSipProfile().getSipUserName(), sipManager.getSipProfile().getLocalEndpoint());
 			Address fromNameAddress = sipManager.addressFactory.createAddress(from);
 			//fromNameAddress.setDisplayName(sipUsername);
 			FromHeader fromHeader = sipManager.headerFactory.createFromHeader(fromNameAddress,
-                    "Tzt0ZEP92");
+					"Tzt0ZEP92");
 			URI toAddress = sipManager.addressFactory.createURI(to);
 			Address toNameAddress = sipManager.addressFactory.createAddress(toAddress);
 			// toNameAddress.setDisplayName(username);
@@ -60,14 +60,7 @@ public class Invite  {
 			SupportedHeader supportedHeader = sipManager.headerFactory
 					.createSupportedHeader("replaces, outbound");
 			callRequest.addHeader(supportedHeader);
-            addCustomHeaders(callRequest, sipManager, sipHeaders);
-
-			/*
-			SipURI routeUri = sipManager.addressFactory.createSipURI(null, sipManager.getSipProfile().getRemoteIp(sipManager.addressFactory));
-			routeUri.setTransportParam(sipManager.getSipProfile().getTransport());
-			routeUri.setLrParam();
-			routeUri.setPort(sipManager.getSipProfile().getRemotePort(sipManager.addressFactory));
-			*/
+			addCustomHeaders(callRequest, sipManager, sipHeaders);
 
 			if (!sipManager.getSipProfile().getRemoteEndpoint().isEmpty()) {
 				// we want to add the ROUTE header only on regular calls (i.e. non-registrarless)
@@ -101,13 +94,13 @@ public class Invite  {
 			// Add the extension header.
 			//Header extensionHeader = sipManager.headerFactory.createHeader("My-Header", "my header value");
 			//callRequest.addHeader(extensionHeader);
-			
-			String sdpData= "v=0\r\n" +
-					"o=- 13760799956958020 13760799956958020" + " IN IP4 " + sipManager.getSipProfile().getLocalIp() +"\r\n" +
+
+			String sdpData = "v=0\r\n" +
+					"o=- 13760799956958020 13760799956958020" + " IN IP4 " + sipManager.getSipProfile().getLocalIp() + "\r\n" +
 					//"s=mysession session\r\n" +
 					"s=-\r\n" +
 					//"p=+46 8 52018010\r\n" +
-					"c=IN IP4 " + sipManager.getSipProfile().getLocalIp()+"\r\n" +
+					"c=IN IP4 " + sipManager.getSipProfile().getLocalIp() + "\r\n" +
 					"t=0 0\r\n" +
 					"m=audio " + port + " RTP/AVP 0\r\n" +
 					//"m=audio " + port + " RTP/AVP 0 4 18\r\n" +
@@ -122,15 +115,13 @@ public class Invite  {
 					"<http://www.antd.nist.gov>");
 			callRequest.addHeader(callInfoHeader);
 			return callRequest;
-		}
-		catch (ParseException e) {
+		} catch (ParseException e) {
 			// we want to be able to catch the parse exception from upper layers
 			throw e;
-		}
-		catch (Exception ex) {
+		} catch (Exception ex) {
 			RCLogger.i(TAG, ex.getMessage());
 			ex.printStackTrace();
-		
+
 		}
 		return null;
 	}
@@ -179,13 +170,21 @@ public class Invite  {
 			}
 
 			// Create ContentTypeHeader
-			ContentTypeHeader contentTypeHeader = sipManager.headerFactory
-					.createContentTypeHeader("application", "sdp");
+			ContentTypeHeader contentTypeHeader = sipManager.headerFactory.createContentTypeHeader("application", "sdp");
 
-			// Create the contact name address.
-			SipURI contactURI = sipManager.addressFactory.createSipURI(sipManager.getSipProfile().getSipUserName(), sipManager.getSipProfile().getLocalIp());
-			contactURI.setPort(sipManager.sipProvider.getListeningPoint(sipManager.getSipProfile().getTransport())
-					.getPort());
+			// Create the contact address. If we have Via received/rport populated we need to use those, otherwise just use the local listening point's
+			int contactPort = sipManager.sipProvider.getListeningPoint(sipManager.getSipProfile().getTransport()).getPort();
+			String contactIPAddress = sipManager.getSipProfile().getLocalIp();
+			if (sipManager.viaRport != -1) {
+				contactPort = sipManager.viaRport;
+			}
+			if (sipManager.viaReceivedAddress != null) {
+				contactIPAddress = sipManager.viaReceivedAddress;
+			}
+
+			// TODO: I don't think the username is needed for the contact, but it doesn't cause any issues either
+			SipURI contactURI = sipManager.addressFactory.createSipURI(sipManager.getSipProfile().getSipUserName(), contactIPAddress);
+			contactURI.setPort(contactPort);
 
 			Address contactAddress = sipManager.addressFactory.createAddress(contactURI);
 
