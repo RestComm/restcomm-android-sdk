@@ -2,6 +2,7 @@ package org.mobicents.restcomm.android.sipua.impl;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
@@ -12,6 +13,7 @@ import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -154,6 +156,55 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		sipFactory.setPathName("android.gov.nist");
 		String keystorePath = setupTls(context);
 
+
+
+
+		/*
+		File keystoreFile = new File(keystorePath);
+		BufferedReader reader = null;
+		try {
+			FileInputStream is = new FileInputStream(keystoreFile);
+
+			byte [] buffer = new byte[100];
+			Arrays.fill(buffer, (byte) 0);
+
+			int status = is.read(buffer, 0, 10);
+			//reader = new BufferedReader(new InputStreamReader(is));
+
+			//File downloadPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+			//File textFile = new File(downloadPath, "restcomm.keystore");
+			//File textFile = new File("/assets/restcomm.keystore");
+
+			is.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		*/
+
+
+		/*
+		BufferedReader br;
+		try {
+			br = new BufferedReader(new FileReader(keystorePath));
+			try {
+				String x;
+				while ( (x = br.readLine()) != null ) {
+					// printing out each line in the file
+					System.out.println(x);
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		} catch (java.io.FileNotFoundException e) {
+
+			e.printStackTrace();
+		}
+		*/
+
+
+
+
+
 		Properties properties = new Properties();
 		// Using ROUTE instead that is more flexible
 		/*
@@ -169,14 +220,14 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		properties.setProperty( "javax.net.ssl.keyStore", keystorePath);
 		properties.setProperty( "javax.net.ssl.trustStore", keystorePath);
 		properties.setProperty( "javax.net.ssl.keyStorePassword", "changeit" );
-		properties.setProperty( "javax.net.ssl.keyStoreType", "jks" );
+		properties.setProperty( "javax.net.ssl.keyStoreType", "bks" );
 
 		// You need 16 for logging traces. 32 for debug + traces.
 		// Your code will limp at 32 but it is best for debugging.
-		//properties.setProperty("android.gov.nist.javax.sip.TRACE_LEVEL", "32");
-		//File downloadPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-		//properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", downloadPath.getAbsolutePath() + "/debug-jain.log");
-		//properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", downloadPath.getAbsolutePath() + "/server-jain.log");
+		properties.setProperty("android.gov.nist.javax.sip.TRACE_LEVEL", "32");
+		File downloadPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+		properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", downloadPath.getAbsolutePath() + "/debug-jain.log");
+		properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", downloadPath.getAbsolutePath() + "/server-jain.log");
 
 		// old code, just in case we need the path
 		//properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", "/mnt/sdcard/Download/debug-jain.log");
@@ -237,16 +288,17 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		return true;
 	}
 
+	// Sets up TLS keystore and return a full path to it, usable by JAIN
 	private String setupTls(Context context)
 	{
 		// Check if keystore file exists in internal storage and if not copy it from Assets folder. This
 		// whole thing is needed because JAIN SIP needs a path to work with, and I haven't found a way
-		// to reference assets using a path, so
-		File keystoreFile = new File(context.getFilesDir(), "restcomm-sample.keystore");
+		// to reference assets using a path, so :(
+		File keystoreFile = new File(context.getFilesDir(), "restcomm-sample.bks");
 		if (!keystoreFile.exists()) {
 			BufferedReader reader = null;
 			try {
-				reader = new BufferedReader(new InputStreamReader(context.getAssets().open("restcomm-sample.keystore")));
+				reader = new BufferedReader(new InputStreamReader(context.getAssets().open("restcomm-sample.bks")));
 
 				//File downloadPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
 				//File textFile = new File(downloadPath, "restcomm.keystore");
@@ -268,7 +320,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 					try {
 						reader.close();
 					} catch (IOException e) {
-						//log the exception
+						e.printStackTrace();
 					}
 				}
 			}
