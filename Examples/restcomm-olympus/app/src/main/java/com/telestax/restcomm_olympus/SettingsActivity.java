@@ -22,8 +22,10 @@
 
 package com.telestax.restcomm_olympus;
 
+import android.content.SharedPreferences;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -33,7 +35,14 @@ import android.view.MenuItem;
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
 
-public class SettingsActivity extends AppCompatActivity {
+import java.util.HashMap;
+
+public class SettingsActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
+    SharedPreferences prefs;
+    HashMap<String, Object> params;
+    RCDevice device;
+    boolean updated;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -51,13 +60,20 @@ public class SettingsActivity extends AppCompatActivity {
 
         // Display the fragment as the main content.
         getFragmentManager().beginTransaction().replace(R.id.content_frame, new SettingsFragment()).commit();
+
+        device = RCClient.listDevices().get(0);
+        params = new HashMap<String, Object>();
+
+        prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        prefs.registerOnSharedPreferenceChangeListener(this);
     }
 
     protected void onResume() {
         super.onResume();
 
+        updated = false;
         // retrieve the device
-        RCDevice device = RCClient.listDevices().get(0);
+        //RCDevice device = RCClient.listDevices().get(0);
 
         if (device.getState() == RCDevice.DeviceState.OFFLINE) {
             getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorTextSecondary)));
@@ -73,10 +89,53 @@ public class SettingsActivity extends AppCompatActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
         if (id == android.R.id.home) {
+            if (updated) {
+                if (!device.updateParams(params)) {
+                    // TODO:
+                    //showOkAlert("RCDevice Error", "No Wifi connectivity");
+                }
+            }
+
             NavUtils.navigateUpFromSameTask(this);
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+                                          String key) {
+        if (key.equals("pref_proxy_domain")) {
+            params.put("pref_proxy_domain", prefs.getString("pref_proxy_domain", "sip:cloud.restcomm.com:5060"));
+            updated = true;
+        }
+        else if (key.equals("pref_sip_user")) {
+            params.put("pref_sip_user", prefs.getString("pref_sip_user", "android-sdk"));
+            updated = true;
+        }
+        else if (key.equals("pref_sip_password")) {
+            params.put("pref_sip_password", prefs.getString("pref_sip_password", "1234"));
+            updated = true;
+        }
+        else if (key.equals("turn-enabled")) {
+            params.put("turn-enabled", prefs.getBoolean("turn-enabled", true));
+            updated = true;
+        }
+        else if (key.equals("turn-url")) {
+            params.put("turn-url", prefs.getString("turn-url", ""));
+            updated = true;
+        }
+        else if (key.equals("turn-username")) {
+            params.put("turn-username", prefs.getString("turn-username", ""));
+            updated = true;
+        }
+        else if (key.equals("turn-password")) {
+            params.put("turn-password", prefs.getString("turn-password", ""));
+            updated = true;
+        }
+        else if (key.equals("signaling-secure")) {
+            params.put("signaling-secure", prefs.getBoolean("signaling-secure", false));
+            updated = true;
+        }
+    }
 }

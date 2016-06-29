@@ -1,3 +1,25 @@
+/*
+ * TeleStax, Open Source Cloud Communications
+ * Copyright 2011-2015, Telestax Inc and individual contributors
+ * by the @authors tag.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation; either version 3 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ *
+ * For questions related to commercial use licensing, please contact sales@telestax.com.
+ *
+ */
+
 package org.mobicents.restcomm.android.sipua.impl;
 
 import java.io.BufferedReader;
@@ -44,6 +66,7 @@ public class DeviceImpl implements IDevice,Serializable {
 	private int registrationRefresh = 60;
 	public SipUADeviceListener sipuaDeviceListener = null;
 	public SipUAConnectionListener sipuaConnectionListener = null;
+	HashMap<String, Object> activeTask;
 	private static final String TAG = "DeviceImpl";
 	// use this handler for registration refreshes
 	Handler registerRefreshHandler = null;
@@ -95,6 +118,20 @@ public class DeviceImpl implements IDevice,Serializable {
 	public void bind(SipManager.NetworkInterfaceType networkInterfaceType)
 	{
 		sipManager.bind(networkInterfaceType);
+	}
+
+	public void refreshTls(HashMap<String, Object> params)
+	{
+		activeTask = new HashMap<String, Object>();
+		activeTask.put("parameters", params);
+
+		// we have an empty domain
+		if (!sipProfile.getRemoteEndpoint().equals("")) {
+			// previously we had a registrar setup, need to unregister (important: we call updateSipProfile afterwards cause if we do no
+			// unregister will check the SipProfile, find that domain is empty and skip unregistration
+			this.Unregister();
+			//activeTask.put("branch-id", branchId);
+		}
 	}
 
 	public void Shutdown()
@@ -175,6 +212,31 @@ public class DeviceImpl implements IDevice,Serializable {
 			}
 		} else if (sipEventObject.type == SipEventType.REGISTER_SUCCESS) {
 			this.sipuaDeviceListener.onSipUARegisterSuccess(sipEventObject);
+
+			if (activeTask != null) {
+				try {
+					this.unbind();
+					this.sipProfile.setSipProfile((HashMap<String, Object>) activeTask.get("parameters"));
+
+					RCDeviceListener.RCConnectivityStatus status = checkReachability(context);
+					if (status == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi) {
+						this.bind(SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi);
+					}
+					else if (status == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular) {
+						this.bind(SipManager.NetworkInterfaceType.NetworkInterfaceTypeCellularData);
+					}
+
+					if (status != RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone &&
+							!sipProfile.getRemoteEndpoint().equals("")) {
+						// if we have connectivity and we are in non-registrarless mode
+						this.Register();
+					}
+					activeTask = null;
+				}
+				catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
 		}
 	}
 
@@ -364,6 +426,7 @@ public class DeviceImpl implements IDevice,Serializable {
 				this.sipuaDeviceListener.onSipUAError(RCClient.ErrorCodes.SIGNALLING_SIPURI_PARSE_ERROR, "Error parsing SIP URI");
 			}
 		}
+		//return "";
 	}
 
 	public void RefreshNetworking(SipManager.NetworkInterfaceType networkInterfaceType)

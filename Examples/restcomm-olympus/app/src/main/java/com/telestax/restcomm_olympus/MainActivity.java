@@ -101,6 +101,7 @@ public class MainActivity extends AppCompatActivity
         params.put("turn-url", prefs.getString("turn-url", ""));
         params.put("turn-username", prefs.getString("turn-username", ""));
         params.put("turn-password", prefs.getString("turn-password", ""));
+        params.put("signaling-secure", prefs.getBoolean("signaling-secure", false));
         device = RCClient.createDevice(params, this);
         device.setPendingIntents(new Intent(getApplicationContext(), CallActivity.class),
                 new Intent(getApplicationContext(), MessageActivity.class));
@@ -335,6 +336,7 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
                                           String key) {
+        /*
         boolean updated = false;
         if (key.equals("pref_proxy_domain")) {
             params.put("pref_proxy_domain", prefs.getString("pref_proxy_domain", "sip:cloud.restcomm.com:5060"));
@@ -370,6 +372,7 @@ public class MainActivity extends AppCompatActivity
                 showOkAlert("RCDevice Error", "No Wifi connectivity");
             }
         }
+        */
     }
 
     /**

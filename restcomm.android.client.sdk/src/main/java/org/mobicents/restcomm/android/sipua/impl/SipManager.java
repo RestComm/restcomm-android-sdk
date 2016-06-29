@@ -1,25 +1,35 @@
+/*
+ * TeleStax, Open Source Cloud Communications
+ * Copyright 2011-2015, Telestax Inc and individual contributors
+ * by the @authors tag.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation; either version 3 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ *
+ * For questions related to commercial use licensing, please contact sales@telestax.com.
+ *
+ */
+
 package org.mobicents.restcomm.android.sipua.impl;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
-import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
-import java.security.InvalidKeyException;
-import java.security.KeyPair;
-import java.security.KeyPairGenerator;
-import java.security.KeyStore;
-import java.security.NoSuchProviderException;
-import java.security.Security;
-import java.security.SignatureException;
-import java.security.spec.ECGenParameterSpec;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Date;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -39,15 +49,6 @@ import org.mobicents.restcomm.android.sipua.impl.sipmessages.*;
 import org.mobicents.restcomm.android.sipua.SipProfile;
 import org.mobicents.restcomm.android.sipua.RCLogger;
 
-import org.spongycastle.asn1.x509.BasicConstraints;
-import org.spongycastle.asn1.x509.ExtendedKeyUsage;
-import org.spongycastle.asn1.x509.GeneralName;
-import org.spongycastle.asn1.x509.GeneralNames;
-import org.spongycastle.asn1.x509.KeyPurposeId;
-import org.spongycastle.asn1.x509.KeyUsage;
-import org.spongycastle.asn1.x509.X509Extensions;
-import org.spongycastle.jce.provider.BouncyCastleProvider;
-import org.spongycastle.x509.X509V3CertificateGenerator;
 
 import android.gov.nist.javax.sdp.SessionDescriptionImpl;
 import android.gov.nist.javax.sdp.parser.SDPAnnounceParser;
@@ -101,13 +102,6 @@ import android.os.Environment;
 import android.text.format.Formatter;
 import android.content.Context;
 
-import android.util.Log;
-
-import javax.security.auth.x500.X500Principal;
-import java.security.cert.X509Certificate;
-
-import EDU.oswego.cs.dl.util.concurrent.FJTask;
-
 public class SipManager implements SipListener, ISipManager, Serializable {
 	enum CallDirection {
 		NONE,
@@ -153,11 +147,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	private int remoteRtpPort;
 	static private Context androidContext;
 
-	static {
-		//Security.addProvider(new BouncyCastleProvider());
-		Security.insertProviderAt(new BouncyCastleProvider(), 1);
-	}
-
 	// Constructors/Initializers
 	public SipManager(SipProfile sipProfile, boolean connectivity, NetworkInterfaceType networkInterfaceType, Context context) {
 		RCLogger.v(TAG, "SipManager()");
@@ -166,28 +155,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		initialize(connectivity, networkInterfaceType, context);
 	}
 
-	public static X509Certificate generateV3Certificate(KeyPair pair)
-			throws InvalidKeyException, NoSuchProviderException, SignatureException
-	{
-		// generate the certificate
-		X509V3CertificateGenerator certGen = new X509V3CertificateGenerator();
 
-		certGen.setSerialNumber(BigInteger.valueOf(System.currentTimeMillis()));
-		certGen.setIssuerDN(new X500Principal("CN=Test Certificate"));
-		certGen.setNotBefore(new Date(System.currentTimeMillis() - 50000));
-		// TODO: using 1 day for now, need to increase that
-		certGen.setNotAfter(new Date(System.currentTimeMillis() + 86400000));
-		certGen.setSubjectDN(new X500Principal("CN=Test Certificate"));
-		certGen.setPublicKey(pair.getPublic());
-		certGen.setSignatureAlgorithm("SHA1withECDSA");
-
-		certGen.addExtension(X509Extensions.BasicConstraints, true, new BasicConstraints(false));
-		certGen.addExtension(X509Extensions.KeyUsage, true, new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyEncipherment));
-		certGen.addExtension(X509Extensions.ExtendedKeyUsage, true, new ExtendedKeyUsage(KeyPurposeId.id_kp_serverAuth));
-		certGen.addExtension(X509Extensions.SubjectAlternativeName, false, new GeneralNames(new GeneralName(GeneralName.rfc822Name, "test@test.test")));
-
-		return certGen.generateX509Certificate(pair.getPrivate(), "BC");
-	}
 
 	private boolean initialize(boolean connectivity, NetworkInterfaceType networkInterfaceType, Context context)
 	{
@@ -199,10 +167,9 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		sipFactory = SipFactory.getInstance();
 		sipFactory.resetFactory();
 		sipFactory.setPathName("android.gov.nist");
-		String keystorePath = setupTls(context);
 
 		Properties properties = new Properties();
-		// Using ROUTE instead that is more flexible
+		// This is no longer needed; we 're using ROUTE headers instead that is more flexible
 		/*
 		if (!sipProfile.getRemoteIp().isEmpty()) {
 			properties.setProperty("android.javax.sip.OUTBOUND_PROXY",
@@ -212,12 +179,14 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 		properties.setProperty("android.javax.sip.STACK_NAME", "androidSip");
 
-		// TLS
-		properties.setProperty( "javax.net.ssl.keyStore", keystorePath);
-		properties.setProperty( "javax.net.ssl.trustStore", keystorePath);
-		properties.setProperty( "javax.net.ssl.keyStorePassword", "changeit" );
-		properties.setProperty( "javax.net.ssl.keyStoreType", "bks" );
-		properties.setProperty( "android.gov.nist.javax.sip.ENABLED_CIPHER_SUITES", "TLS_RSA_WITH_AES_128_CBC_SHA SSL_RSA_WITH_3DES_EDE_CBC_SHA" );
+		// Setup TLS even if currently we aren't using it, so that if user changes the setting later
+		// the SIP stack is ready to support it
+		//if (this.sipProfile.getTransport().equals("tls")) {
+			// Generate custom keystore
+			String keystoreFilename = "restcomm-android.keystore";
+			HashMap<String, String> parameters = SecurityHelper.generateKeystore(context, keystoreFilename);
+			SecurityHelper.setProperties(properties, parameters.get("keystore-path"), parameters.get("keystore-password"));
+		//}
 
 		// You need 16 for logging traces. 32 for debug + traces.
 		// Your code will limp at 32 but it is best for debugging.
@@ -226,7 +195,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", downloadPath.getAbsolutePath() + "/debug-jain.log");
 		properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", downloadPath.getAbsolutePath() + "/server-jain.log");
 
-		// old code, just in case we need the path
+		// old code, just in case we need the absolute path
 		//properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", "/mnt/sdcard/Download/debug-jain.log");
 		//properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", "/mnt/sdcard/Download/server-jain.log");
 
@@ -284,95 +253,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 		return true;
 	}
-
-	// Create custom store, generate keypair and certificate and add then to it for use of our identity, etc, and in the end
-	// also add to the store all the trusted certificates from the System Wide Android CA Store, so that we properly accept
-	// legit server certificates
-	private String setupTls(Context context)
-	{
-		String keystorePath = "";
-		try {
-			// Create custom BKS store
-			KeyStore ks = KeyStore.getInstance("BKS");
-			ks.load(null);
-
-			// Generate key pair using Elliptic Curve algorithm and Bouncy Castle provider
-			KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", "BC");
-			kpg.initialize(new ECGenParameterSpec("secp256r1"));
-			KeyPair kp = kpg.generateKeyPair();
-
-			// Generate actual X509v3 certificate
-			X509Certificate cert = generateV3Certificate(kp);
-			X509Certificate[] certs = new X509Certificate[1];
-			certs[0] = cert;
-
-			// Add all the above in the keystore
-			ks.setKeyEntry("restcomm-android-sdk", kp.getPrivate(), "changeit".toCharArray(), certs);
-
-			// Copy all trusted CA certs from System Wide keystore to our custom keystore, so that JAIN sip can properly
-			// trust servers it talks to
-			KeyStore CAks = KeyStore.getInstance("AndroidCAStore");
-			CAks.load(null);
-			Enumeration<String> aliases = CAks.aliases();
-			while (aliases.hasMoreElements()) {
-				String alias = aliases.nextElement();
-				ks.setCertificateEntry(alias, CAks.getCertificate(alias));
-			}
-
-			// Save keystore in filesystem and retrieve path so that JAIN SIP can access it
-			File keystoreFile = new File(context.getFilesDir(), "restcomm.keystore-2");
-			FileOutputStream outputStream = new FileOutputStream(keystoreFile);
-			ks.store(outputStream, "changeit".toCharArray());
-			outputStream.close();
-			keystorePath = keystoreFile.getAbsolutePath();
-
-		}
-		catch (Exception e) {
-			e.printStackTrace();
-		}
-		return keystorePath;
-	}
-
-	/*
-	// Sets up TLS keystore and return a full path to it, usable by JAIN
-	private String setupTls(Context context)
-	{
-		String filename = "restcomm.keystore";
-		// Check if keystore file exists in internal storage and if not copy it from Assets folder. This
-		// whole thing is needed because JAIN SIP needs a path to work with, and I haven't found a way
-		// to reference assets using a path, so :(
-		File keystoreFile = new File(context.getFilesDir(), filename);
-		if (!keystoreFile.exists()) {
-			BufferedReader reader = null;
-			DataInputStream inputStream = null;
-			try {
-				//reader = new BufferedReader(new InputStreamReader(context.getAssets().open(filename)));
-				inputStream = new DataInputStream(context.getAssets().open(filename));
-
-				FileOutputStream outputStream = new FileOutputStream(keystoreFile);
-
-				// do reading, usually loop until end of file reading
-				String line;
-				while (inputStream.available() > 0) {
-					byte b = inputStream.readByte();
-					outputStream.write(b);
-				}
-				outputStream.close();
-			} catch (IOException e) {
-				e.printStackTrace();
-			} finally {
-				if (inputStream != null) {
-					try {
-						inputStream.close();
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				}
-			}
-		}
-		return keystoreFile.getAbsolutePath();
-	}
-	*/
 
 
 	// shutdown SIP stack
@@ -605,9 +485,10 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			Thread thread = new Thread() {
 				public void run() {
 					try {
+						// remember that this might block waiting for DNS server
 						final ClientTransaction transaction = sipProvider.getNewClientTransaction(r);
 						transaction.sendRequest();
-					} catch (Exception e) {
+					} catch (SipException e) {
 						// DNS error (error resolving registrar URI)
 						dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_NON_CALL, RCClient.ErrorCodes.SIGNALLING_REGISTER_ERROR,
 								e.getMessage());
@@ -625,6 +506,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	public void Unregister(Address contact) throws ParseException, TransactionUnavailableException {
 		RCLogger.v(TAG, "Unregister()");
+
+		String branchId = "";
 		if (sipProvider == null) {
 			return;
 		}
@@ -634,6 +517,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			final Request r = registerRequest.MakeRequest(this, 0, contact);
 			RCLogger.v(TAG, "Sending SIP request: \n" + r.toString());
 			final SipProvider sipProvider = this.sipProvider;
+			//branchId = transaction.getBranchId();
 			// Send the request statefully, through the client transaction.
 			Thread thread = new Thread() {
 				public void run() {
@@ -649,11 +533,11 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			};
 			thread.start();
 
-		} catch (ParseException e) {
-			e.printStackTrace();
-		} catch (InvalidArgumentException e) {
+		} catch (ParseException|InvalidArgumentException e) {
 			e.printStackTrace();
 		}
+
+		//return branchId;
 	}
 
 	@Override

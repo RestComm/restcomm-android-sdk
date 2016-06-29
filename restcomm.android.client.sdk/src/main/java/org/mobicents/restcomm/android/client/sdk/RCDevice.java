@@ -527,57 +527,43 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         RCLogger.i(TAG, "updateParams(): " + params.toString());
         boolean status = false;
 
-        if (params.containsKey("pref_proxy_domain") && !params.get("pref_proxy_domain").equals("")) {
-            // we have a new (non empty) domain, need to register
-            updateSipProfile(params);
-            if (reachabilityState != RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
-                DeviceImpl.GetInstance().Register();
+        if (!params.containsKey("signaling-secure")) {
+            if (params.containsKey("pref_proxy_domain") && !params.get("pref_proxy_domain").equals("")) {
+                // we have a new (non empty) domain, need to register
+                updateSipProfile(params);
+                if (reachabilityState != RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
+                    DeviceImpl.GetInstance().Register();
+                    status = true;
+                }
+            } else {
+                // we have an empty domain
+                if (!sipProfile.getRemoteEndpoint().equals("")) {
+                    // previously we had a registrar setup, need to unregister (important: we call updateSipProfile afterwards cause if we do no
+                    // unregister will check the SipProfile, find that domain is empty and skip unregistration
+                    DeviceImpl.GetInstance().Unregister();
+                }
+                // previously we didn't have a registrar setup, no need to do anything
+                updateSipProfile(params);
                 status = true;
+            }
+
+            if (params.containsKey("signaling-secure")) {
+                if (reachabilityState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi) {
+                    DeviceImpl.GetInstance().RefreshNetworking(SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi);
+                } else if (reachabilityState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular) {
+                    DeviceImpl.GetInstance().RefreshNetworking(SipManager.NetworkInterfaceType.NetworkInterfaceTypeCellularData);
+                }
             }
         }
         else {
-            // we have an empty domain
-            if (!sipProfile.getRemoteEndpoint().equals("")) {
-                // previously we had a registrar setup, need to unregister (important: we call updateSipProfile afterwards cause if we do no
-                // unregister will check the SipProfile, find that domain is empty and skip unregistration
-                DeviceImpl.GetInstance().Unregister();
-            }
-            // previously we didn't have a registrar setup, no need to do anything
-            updateSipProfile(params);
-            status = true;
+            DeviceImpl.GetInstance().refreshTls(params);
         }
+
         return status;
     }
 
     public void updateSipProfile(HashMap<String, Object> params) {
         sipProfile.setSipProfile(params);
-        /*
-        if (params != null) {
-            for (String key : params.keySet()) {
-                if (key.equals("pref_proxy_domain")) {
-                    sipProfile.setRemoteEndpoint((String) params.get(key));
-                }
-                else if (key.equals("pref_sip_user")) {
-                    sipProfile.setSipUserName((String) params.get(key));
-                }
-                else if (key.equals("pref_sip_password")) {
-                    sipProfile.setSipPassword((String) params.get(key));
-                }
-                else if (key.equals("turn-enabled")) {
-                    sipProfile.setTurnEnabled((Boolean) params.get(key));
-                }
-                else if (key.equals("turn-url")) {
-                    sipProfile.setTurnUrl((String) params.get(key));
-                }
-                else if (key.equals("turn-username")) {
-                    sipProfile.setTurnUsername((String) params.get(key));
-                }
-                else if (key.equals("turn-password")) {
-                    sipProfile.setTurnPassword((String) params.get(key));
-                }
-            }
-        }
-        */
     }
 
     /**

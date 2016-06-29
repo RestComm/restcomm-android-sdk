@@ -34,7 +34,7 @@ public class SipProfile {
 	private static final String TAG = "SipProfile";
 	private  String localIp;
 	private  int localPort = 5080;
-	private  String transport = "tls";
+	private  String transport = "tcp";
 
 	private String remoteEndpoint;
 	private  String sipUserName;
@@ -69,6 +69,14 @@ public class SipProfile {
 				}
 				else if (key.equals("turn-password")) {
 					this.setTurnPassword((String) params.get(key));
+				}
+				else if (key.equals("signaling-secure")) {
+					if ((boolean)params.get("signaling-secure")) {
+						transport = "tls";
+					}
+					else {
+						transport = "tcp";
+					}
 				}
 			}
 		}
