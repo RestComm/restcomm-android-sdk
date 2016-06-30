@@ -466,7 +466,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         };
         mainHandler.post(myRunnable);
         // Phone state Intents to capture connecting event
-        sendConnectionIntent("connecting");
+        sendQoSConnectionIntent("connecting");
     }
 
     public void onSipUAConnected(SipEvent event) {
@@ -480,7 +480,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             remoteMediaType = sdp2Mediatype(event.sdp);
             onRemoteDescription(event.sdp);
         }
-        sendConnectionIntent("connected");
+        sendQoSConnectionIntent("connected");
 
         /*
         // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
@@ -523,7 +523,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
         this.state = ConnectionState.DISCONNECTED;
         // Phone state Intents to capture normal disconnect event
-        sendConnectionIntent("disconnected");
+        sendQoSConnectionIntent("disconnected");
     }
 
     public void onSipUACancelled(SipEvent event) {
@@ -549,7 +549,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
         this.state = ConnectionState.DISCONNECTED;
         // Phone state Intents to capture cancelled event
-        sendConnectionIntent("cancelled");
+        sendQoSConnectionIntent("cancelled");
     }
 
     public void onSipUADeclined(SipEvent event) {
@@ -573,7 +573,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
 
         this.state = ConnectionState.DISCONNECTED;
         // Phone state Intents to capture declined event
-        sendConnectionIntent("declined");
+        sendQoSConnectionIntent("declined");
     }
 
     public void onSipUAError(final RCClient.ErrorCodes errorCode, final String errorText) {
@@ -610,7 +610,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                 this.listener.onDisconnected(this, RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal(), RCClient.errorText(RCClient.ErrorCodes.NO_CONNECTIVITY));
             }
             // Phone state Intents to capture dropped call due to no connectivity
-            sendDisconnectErrorIntent (RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal(), RCClient.errorText(RCClient.ErrorCodes.NO_CONNECTIVITY));
+            sendQoSDisconnectErrorIntent(RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal(), RCClient.errorText(RCClient.ErrorCodes.NO_CONNECTIVITY));
             return false;
         }
     }
@@ -973,7 +973,7 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
                     connection.listener.onDisconnected(connection, RCClient.ErrorCodes.WEBRTC_PEERCONNECTION_ERROR.ordinal(), description);
                 }
                 // Phone state Intents to capture dropped call event
-                sendDisconnectErrorIntent(RCClient.ErrorCodes.WEBRTC_PEERCONNECTION_ERROR.ordinal(), description);
+                sendQoSDisconnectErrorIntent(RCClient.ErrorCodes.WEBRTC_PEERCONNECTION_ERROR.ordinal(), description);
             }
         };
         mainHandler.post(myRunnable);
@@ -1018,9 +1018,9 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         mainHandler.post(myRunnable);
         // Phone state Intents to capture dialing or answering event
         if (signalingParameters.initiator)
-            sendConnectionIntent("dialing");
+            sendQoSConnectionIntent("dialing");
         else
-            sendConnectionIntent("answering");
+            sendQoSConnectionIntent("answering");
     }
 
     private void onConnectedToRoomInternal(final SignalingParameters params) {
@@ -1105,54 +1105,6 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
         }
     }
 
-    // Phone state Intents to capture events
-    private void sendConnectionIntent (String state)
-    {
-        SignalingParameters params = this.signalingParameters;
-        Intent intent = new Intent ("org.mobicents.restcomm.android.CALL_STATE");
-
-        intent.putExtra("STATE", state);
-        intent.putExtra("INCOMING", this.isIncoming());
-        if (params != null)
-        {
-            intent.putExtra("VIDEO", params.videoEnabled);
-            intent.putExtra("REQUEST", params.sipUrl);
-        }
-        if (this.getState() != null)
-            intent.putExtra("CONNECTIONSTATE", this.getState().toString());
-
-        Context context = RCClient.getContext();
-        try {
-            // Restrict the Intent to MMC Handler running within the same application
-            Class aclass = Class.forName("com.cortxt.app.mmccore.Services.Intents.MMCIntentHandler");
-            intent.setClass(context.getApplicationContext(), aclass);
-            context.sendBroadcast(intent);
-        }
-        catch (ClassNotFoundException e)
-        {
-            // If the MMC class isn't here, no intent
-        }
-    }
-
-    // Phone state Intents to capture dropped call event with reason
-    private void sendDisconnectErrorIntent (int error, String errorText) {
-        Intent intent = new Intent("org.mobicents.restcomm.android.DISCONNECT_ERROR");
-        intent.putExtra("STATE", "disconnect error");
-        if (errorText != null)
-            intent.putExtra("ERRORTEXT", errorText);
-        intent.putExtra("ERROR", error);
-        intent.putExtra("INCOMING", this.isIncoming());
-
-        Context context = RCClient.getContext();
-        try {
-            // Restrict the Intent to MMC Handler running within the same application
-            Class aclass = Class.forName("com.cortxt.app.mmccore.Services.Intents.MMCIntentHandler");
-            intent.setClass(context.getApplicationContext(), aclass);
-            context.sendBroadcast(intent);
-        } catch (ClassNotFoundException e) {
-            // If the MMC class isn't here, no intent
-        }
-    }
     // Helpers
     // get from SDP if this is an audio or audio/video call
     static ConnectionMediaType sdp2Mediatype(String sdp) {
@@ -1190,6 +1142,55 @@ public class RCConnection implements SipUAConnectionListener, PeerConnectionClie
             return ConnectionMediaType.AUDIO;
         }
         */
+    }
 
+    // -- Notify QoS module of Connection related events through intents, if the module is available
+    // Phone state Intents to capture events
+    private void sendQoSConnectionIntent (String state)
+    {
+        SignalingParameters params = this.signalingParameters;
+        Intent intent = new Intent ("org.mobicents.restcomm.android.CALL_STATE");
+
+        intent.putExtra("STATE", state);
+        intent.putExtra("INCOMING", this.isIncoming());
+        if (params != null)
+        {
+            intent.putExtra("VIDEO", params.videoEnabled);
+            intent.putExtra("REQUEST", params.sipUrl);
+        }
+        if (this.getState() != null)
+            intent.putExtra("CONNECTIONSTATE", this.getState().toString());
+
+        Context context = RCClient.getContext();
+        try {
+            // Restrict the Intent to MMC Handler running within the same application
+            Class aclass = Class.forName("com.cortxt.app.mmccore.Services.Intents.MMCIntentHandler");
+            intent.setClass(context.getApplicationContext(), aclass);
+            context.sendBroadcast(intent);
+        }
+        catch (ClassNotFoundException e)
+        {
+            // If the MMC class isn't here, no intent
+        }
+    }
+
+    // Phone state Intents to capture dropped call event with reason
+    private void sendQoSDisconnectErrorIntent (int error, String errorText) {
+        Intent intent = new Intent("org.mobicents.restcomm.android.DISCONNECT_ERROR");
+        intent.putExtra("STATE", "disconnect error");
+        if (errorText != null)
+            intent.putExtra("ERRORTEXT", errorText);
+        intent.putExtra("ERROR", error);
+        intent.putExtra("INCOMING", this.isIncoming());
+
+        Context context = RCClient.getContext();
+        try {
+            // Restrict the Intent to MMC Handler running within the same application
+            Class aclass = Class.forName("com.cortxt.app.mmccore.Services.Intents.MMCIntentHandler");
+            intent.setClass(context.getApplicationContext(), aclass);
+            context.sendBroadcast(intent);
+        } catch (ClassNotFoundException e) {
+            // If the MMC class isn't here, no intent
+        }
     }
 }

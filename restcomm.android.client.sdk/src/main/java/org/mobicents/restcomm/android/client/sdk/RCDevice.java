@@ -362,7 +362,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
             String username = "";
             if (parameters != null && parameters.get("username") != null)
                 username = parameters.get("username").toString();
-            sendNoConnectionIntent(username, this.getReachability().toString());
+            sendQoSNoConnectionIntent(username, this.getReachability().toString());
             return null;
         }
 
@@ -601,12 +601,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
                     pendingCallIntent.send(RCClient.getContext(), 0, dataIntent);
 
                     // Phone state Intents to capture incoming phone call event
-                    sendIncomingConnectionIntent(finalEvent.from, incomingConnection);
-                    // I re-enabled this listener for incoming connections, it was disabled in RCDeviceListener
-                    if (listener != null) {
-                        listener.onIncomingConnection(RCDevice.this, incomingConnection);
-                    }
-
+                    sendQoSIncomingConnectionIntent(finalEvent.from, incomingConnection);
                 } catch (PendingIntent.CanceledException e) {
                     e.printStackTrace();
                 }
@@ -642,11 +637,6 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
                     dataIntent.putExtra(INCOMING_MESSAGE_PARAMS, finalParameters);
                     dataIntent.putExtra(INCOMING_MESSAGE_TEXT, finalContent);
                     pendingMessageIntent.send(RCClient.getContext(), 0, dataIntent);
-
-                    // I re-enabled this listener for incoming message, it was disabled in RCDeviceListener
-                    if (listener != null) {
-                        listener.onIncomingMessage(RCDevice.this, finalContent, finalParameters);
-                    }
                 } catch (PendingIntent.CanceledException e) {
                     e.printStackTrace();
                 }
@@ -699,10 +689,12 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         };
         mainHandler.post(myRunnable);
     }
+
     // Helpers
 
+    // -- Notify QoS module of Device related event through intents, if the module is available
     // Phone state Intents to capture incoming call event
-    private void sendIncomingConnectionIntent (String user, RCConnection connection)
+    private void sendQoSIncomingConnectionIntent (String user, RCConnection connection)
     {
         Intent intent = new Intent ("org.mobicents.restcomm.android.CALL_STATE");
         intent.putExtra("STATE", "ringing");
@@ -721,7 +713,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         }
     }
 
-    private void sendNoConnectionIntent (String user, String message) {
+    private void sendQoSNoConnectionIntent (String user, String message) {
         Intent intent = new Intent("org.mobicents.restcomm.android.CONNECT_FAILED");
         intent.putExtra("STATE", "connect failed");
         intent.putExtra("ERRORTEXT", message);
