@@ -358,6 +358,11 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
 
         if (DeviceImpl.checkReachability(RCClient.getContext()) == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
             RCLogger.e(TAG, "connect(): No reachability");
+            // Phone state Intents to capture connection failed event
+            String username = "";
+            if (parameters != null && parameters.get("username") != null)
+                username = parameters.get("username").toString();
+            sendNoConnectionIntent(username, this.getReachability().toString());
             return null;
         }
 
@@ -595,6 +600,13 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
                     dataIntent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, (incomingConnection.remoteMediaType == RCConnection.ConnectionMediaType.AUDIO_VIDEO));
                     pendingCallIntent.send(RCClient.getContext(), 0, dataIntent);
 
+                    // Phone state Intents to capture incoming phone call event
+                    sendIncomingConnectionIntent(finalEvent.from, incomingConnection);
+                    // I re-enabled this listener for incoming connections, it was disabled in RCDeviceListener
+                    if (listener != null) {
+                        listener.onIncomingConnection(RCDevice.this, incomingConnection);
+                    }
+
                 } catch (PendingIntent.CanceledException e) {
                     e.printStackTrace();
                 }
@@ -630,6 +642,11 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
                     dataIntent.putExtra(INCOMING_MESSAGE_PARAMS, finalParameters);
                     dataIntent.putExtra(INCOMING_MESSAGE_TEXT, finalContent);
                     pendingMessageIntent.send(RCClient.getContext(), 0, dataIntent);
+
+                    // I re-enabled this listener for incoming message, it was disabled in RCDeviceListener
+                    if (listener != null) {
+                        listener.onIncomingMessage(RCDevice.this, finalContent, finalParameters);
+                    }
                 } catch (PendingIntent.CanceledException e) {
                     e.printStackTrace();
                 }
@@ -661,8 +678,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         mainHandler.post(myRunnable);
     }
 
-    public void onSipUARegisterSuccess(SipEvent event)
-    {
+    public void onSipUARegisterSuccess(SipEvent event) {
         RCLogger.i(TAG, "onSipUARegisterSuccess()");
 
         final RCDevice device = this;
@@ -685,6 +701,43 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
     }
     // Helpers
 
+    // Phone state Intents to capture incoming call event
+    private void sendIncomingConnectionIntent (String user, RCConnection connection)
+    {
+        Intent intent = new Intent ("org.mobicents.restcomm.android.CALL_STATE");
+        intent.putExtra("STATE", "ringing");
+        intent.putExtra("INCOMING", true);
+        intent.putExtra("FROM", user);
+        Context context = RCClient.getContext();
+        try {
+            // Restrict the Intent to MMC Handler running within the same application
+            Class aclass = Class.forName("com.cortxt.app.mmccore.Services.Intents.MMCIntentHandler");
+            intent.setClass(context.getApplicationContext(), aclass);
+            context.sendBroadcast(intent);
+        }
+        catch (ClassNotFoundException e)
+        {
+            // If there is no MMC class isn't here, no intent
+        }
+    }
+
+    private void sendNoConnectionIntent (String user, String message) {
+        Intent intent = new Intent("org.mobicents.restcomm.android.CONNECT_FAILED");
+        intent.putExtra("STATE", "connect failed");
+        intent.putExtra("ERRORTEXT", message);
+        intent.putExtra("ERROR", RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal());
+        intent.putExtra("INCOMING", false);
+        intent.putExtra("USER", user);
+        Context context = RCClient.getContext();
+        try {
+            // Restrict the Intent to MMC Handler running within the same application
+            Class aclass = Class.forName("com.cortxt.app.mmccore.Services.Intents.MMCIntentHandler");
+            intent.setClass(context.getApplicationContext(), aclass);
+            context.sendBroadcast(intent);
+        } catch (ClassNotFoundException e) {
+            // If there is no MMC class isn't here, no intent
+        }
+    }
     public SipProfile getSipProfile()
     {
         return sipProfile;
