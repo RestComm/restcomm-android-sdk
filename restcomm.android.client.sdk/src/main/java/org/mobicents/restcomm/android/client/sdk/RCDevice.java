@@ -32,6 +32,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.os.Handler;
+
 import org.mobicents.restcomm.android.sipua.RCLogger;
 
 import org.mobicents.restcomm.android.sipua.SipProfile;
@@ -56,7 +57,7 @@ import org.mobicents.restcomm.android.sipua.impl.SipManager;
  *  @see RCConnection
  */
 
-public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  {
+public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, UIClientListener  {
     /**
      * @abstract Device state
      */
@@ -123,6 +124,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
     private RCConnection incomingConnection;
     private RCDeviceListener.RCConnectivityStatus reachabilityState = RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone;
     private SipProfile sipProfile = null;
+    private UIClient uiClient;
 
     /**
      * Initialize a new RCDevice object
@@ -166,12 +168,19 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         sipProfile = new SipProfile();
         updateSipProfile(parameters);
         DeviceImpl deviceImpl = DeviceImpl.GetInstance();
+
+        uiClient = new UIClient(this, RCClient.getContext());
+
         if (reachabilityState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi) {
-            deviceImpl.Initialize(RCClient.getContext(), sipProfile, connectivity, SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi);
+            uiClient.open(parameters, connectivity, SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi);
+            //deviceImpl.Initialize(RCClient.getContext(), sipProfile, connectivity, SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi);
         }
         else {
-            deviceImpl.Initialize(RCClient.getContext(), sipProfile, connectivity, SipManager.NetworkInterfaceType.NetworkInterfaceTypeCellularData);
+            uiClient.open(parameters, connectivity, SipManager.NetworkInterfaceType.NetworkInterfaceTypeCellularData);
+            //deviceImpl.Initialize(RCClient.getContext(), sipProfile, connectivity, SipManager.NetworkInterfaceType.NetworkInterfaceTypeCellularData);
         }
+
+        /*
         DeviceImpl.GetInstance().sipuaDeviceListener = this;
         // register after initialization
         if (connectivity) {
@@ -184,6 +193,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
                 DeviceImpl.GetInstance().Register();
             }
         }
+        */
     }
 
     private void onReachabilityChanged(final RCDeviceListener.RCConnectivityStatus newState)
@@ -733,5 +743,34 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
     public SipProfile getSipProfile()
     {
         return sipProfile;
+    }
+
+    // -- UIClientListener events for incoming messages from signaling thread
+    // Replies
+    public void onOpenReply(String id, String status)
+    {
+
+    }
+    public void onCallReply(String id, String status)
+    {
+
+    }
+    public void onSendMessageReply(String id, String status)
+    {
+
+    }
+
+    // Unsolicited Events
+    public void onCallArrivedEvent(String id, String peer)
+    {
+
+    }
+    public void onMessageArrivedEvent(String id, String peer, String text)
+    {
+
+    }
+    public void onErrorEvent(String id, int errorCode, String errorText)
+    {
+
     }
 }

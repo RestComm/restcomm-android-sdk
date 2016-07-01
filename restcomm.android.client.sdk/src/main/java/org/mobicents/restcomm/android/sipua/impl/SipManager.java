@@ -865,7 +865,6 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 				dispatchSipEvent(new SipEvent(this,
 						SipEventType.REGISTER_SUCCESS, "", ""));
-
 			}
 			else if (cseq.getMethod().equals(Request.CANCEL)) {
 				if (dialog.getState() == DialogState.CONFIRMED) {
