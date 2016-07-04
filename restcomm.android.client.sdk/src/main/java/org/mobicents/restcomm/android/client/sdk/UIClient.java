@@ -38,6 +38,7 @@ public class UIClient {
         /////
     }
 
+    // TODO: remove connectivity and networkInterfaceType from here once things clear out (the idea is to move reachability facilities inside the signaling module if possible)
     String open(HashMap<String,Object> parameters, boolean connectivity, SipManager.NetworkInterfaceType networkInterfaceType)
     {
         String id = generateId();

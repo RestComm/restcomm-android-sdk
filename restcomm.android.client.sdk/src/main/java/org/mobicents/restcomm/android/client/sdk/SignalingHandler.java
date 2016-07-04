@@ -49,14 +49,15 @@ public class SignalingHandler extends Handler implements SignalingClientListener
 
     // -- SignalingClientListener events, that send messages towards UI thread
     // Replies
-    public void onOpenReply(String id, String text)
+    public void onOpenReply(String id, RCClient.ErrorCodes status, String text)
     {
-        /*
-        SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.CALL_REPLY, "recepient");
+        SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.OPEN_REPLY);
+        signalingMessage.status = status;
+        signalingMessage.text = text;
         Message message = uiHandler.obtainMessage(1, signalingMessage);
         message.sendToTarget();
-        */
     }
+
     public void onCloseReply(String id, String text)
     {
 

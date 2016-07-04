@@ -35,20 +35,16 @@ public class UserCredentialsImpl implements UserCredentials {
         this.sipDomain = sipDomain;
         this.password = password;
     }
-
   
     public String getPassword() {
         return password;
     }
 
-
     public String getSipDomain() {
        return sipDomain;
     }
 
-   
     public String getUserName() {
-       
         return userName;
     }
 

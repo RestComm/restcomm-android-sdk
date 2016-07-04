@@ -43,6 +43,7 @@ public class RCClient {
     private static boolean initialized = false;
 
     public enum ErrorCodes {
+        SUCCESS,
         GENERIC_ERROR,
         CONNECTION_DECLINED,
         CONNECTION_TIMEOUT,
@@ -57,6 +58,13 @@ public class RCClient {
         SIGNALLING_REGISTER_AUTH_ERROR,
         SIGNALLING_CALL_ERROR,
         SIGNALLING_INSTANT_MESSAGE_ERROR,
+
+        // New errors
+        ERROR_SIGNALING_BOOTSTRAP,
+        ERROR_SIGNALING_AUTHENTICATION,
+        ERROR_SIGNALING_TIMEOUT,
+        ERROR_SIGNALING_REGISTERING,
+        ERROR_SIGNALING_TODO,
     }
 
     public static String errorText(ErrorCodes errorCode) {
@@ -81,6 +89,23 @@ public class RCClient {
         }
         else if (errorCode == ErrorCodes.WEBRTC_TURN_ERROR) {
             return "Error retrieving TURN servers";
+        }
+
+        // New errors
+        else if (errorCode == ErrorCodes.ERROR_SIGNALING_BOOTSTRAP) {
+            return "Error bootstraping signaling facilities";
+        }
+        else if (errorCode == ErrorCodes.ERROR_SIGNALING_TIMEOUT) {
+            return "Timed out trying to contact Restcomm";
+        }
+        else if (errorCode == ErrorCodes.ERROR_SIGNALING_AUTHENTICATION) {
+            return "Error authenticating with Restcomm";
+        }
+        else if (errorCode == ErrorCodes.ERROR_SIGNALING_REGISTERING) {
+            return "Error registering with Restcomm";
+        }
+        else if (errorCode == ErrorCodes.ERROR_SIGNALING_TODO) {
+            return "Error TODO";
         }
 
         return "Generic Restcomm Client error";

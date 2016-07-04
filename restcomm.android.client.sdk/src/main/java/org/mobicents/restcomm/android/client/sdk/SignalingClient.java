@@ -41,15 +41,18 @@ public class SignalingClient implements JainSipClientListener, JainSipCallListen
         jainSipClient.close("register call id");
     }
 
+
     // -- JainSipClientListener events
     public void onClientOpenedEvent(String id)
     {
-        listener.onOpenReply(id, "Successfully opened client");
+        listener.onOpenReply(id, RCClient.ErrorCodes.SUCCESS, "Success");
     }
-    public void onClientErrorEvent(String id)
+
+    public void onClientErrorEvent(String id, RCClient.ErrorCodes status, String text)
     {
-        listener.onOpenReply(id, "Failed to open client");
+        listener.onOpenReply(id, status, text);
     }
+
     public void onClientClosedEvent(String id)
     {
         listener.onCloseReply(id, "Successfully closed client");

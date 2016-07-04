@@ -21,7 +21,7 @@ public class UIHandler extends Handler {
         SignalingMessage message = (SignalingMessage) inputMessage.obj;
 
         if (message.type == SignalingMessage.MessageType.OPEN_REPLY) {
-            listener.onOpenReply(message.id, message.status);
+            listener.onOpenReply(message.id, message.successful, message.text);
         }
         else if (message.type == SignalingMessage.MessageType.CALL_REPLY) {
             //listener.onCallArrivedEvent();

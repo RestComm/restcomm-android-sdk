@@ -4,7 +4,7 @@ import java.util.HashMap;
 
 public interface UIClientListener {
     // Replies
-    public abstract void onOpenReply(String id, String status);
+    public abstract void onOpenReply(String id, boolean successful, String text);
     public abstract void onCallReply(String id, String status);
     public abstract void onSendMessageReply(String id, String status);
 

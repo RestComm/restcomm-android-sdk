@@ -747,10 +747,16 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
 
     // -- UIClientListener events for incoming messages from signaling thread
     // Replies
-    public void onOpenReply(String id, String status)
+    public void onOpenReply(String id, boolean successful, String text)
     {
-
+        if (successful) {
+            RCLogger.i(TAG, "onOpenReply(): id: " + id + ", success - " + text);
+        }
+        else {
+            RCLogger.i(TAG, "onOpenReply(): id: " + id + ", failure - " + text);
+        }
     }
+
     public void onCallReply(String id, String status)
     {
 

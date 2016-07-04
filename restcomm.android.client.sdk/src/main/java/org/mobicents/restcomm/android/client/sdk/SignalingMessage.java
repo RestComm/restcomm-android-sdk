@@ -8,9 +8,6 @@ import java.util.HashMap;
 
 // Structure signaling messages exchanged between UI and signaling thread
 public class SignalingMessage {
-    /**
-     * Device capability (<b>Not Implemented yet</b>)
-     */
     public enum MessageType {
         OPEN_REQUEST,
         OPEN_REPLY,
@@ -19,15 +16,25 @@ public class SignalingMessage {
         CALL_EVENT,
     }
 
+    /*
+    public enum MessageStatus {
+        STATUS_SUCCESS,
+        STATUS_FAILURE,
+    }
+    */
+
     public String id;
     public MessageType type;
     public HashMap<String, Object> parameters;
     public Context androidContext;
+    // result status and text
+    public RCClient.ErrorCodes status;
+    public String text;
 
     public boolean connectivity;
     public SipManager.NetworkInterfaceType networkInterfaceType;
 
-    public String status;
+    //public String status;
     /*
     public String peer;
     public String domain;
