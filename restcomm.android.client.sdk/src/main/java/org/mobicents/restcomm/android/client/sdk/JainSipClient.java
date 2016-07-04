@@ -29,6 +29,7 @@ import android.javax.sip.message.Request;
 import android.javax.sip.message.Response;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.Environment;
 import android.text.format.Formatter;
 
 import org.apache.http.conn.util.InetAddressUtils;
@@ -38,6 +39,7 @@ import org.mobicents.restcomm.android.sipua.impl.SecurityHelper;
 import org.mobicents.restcomm.android.sipua.impl.SipManager;
 import org.mobicents.restcomm.android.sipua.impl.sipmessages.Register;
 
+import java.io.File;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.text.ParseException;
@@ -75,21 +77,25 @@ public class JainSipClient implements SipListener {
         Properties properties = new Properties();
         properties.setProperty("android.javax.sip.STACK_NAME", "androidSip");
 
+        boolean secure = false;
+        if (parameters.containsKey("signaling-secure") && parameters.get("signaling-secure") == true) {
+            secure = true;
+        }
+
         // Setup TLS even if currently we aren't using it, so that if user changes the setting later
         // the SIP stack is ready to support it
-        //if (this.sipProfile.getTransport().equals("tls")) {
-        // Generate custom keystore
         String keystoreFilename = "restcomm-android.keystore";
         HashMap<String, String> securityParameters = SecurityHelper.generateKeystore(androidContext, keystoreFilename);
         SecurityHelper.setProperties(properties, securityParameters.get("keystore-path"), securityParameters.get("keystore-password"));
-        //}
 
-        // You need 16 for logging traces. 32 for debug + traces.
-        // Your code will limp at 32 but it is best for debugging.
-        //properties.setProperty("android.gov.nist.javax.sip.TRACE_LEVEL", "32");
-        //File downloadPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-        //properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", downloadPath.getAbsolutePath() + "/debug-jain.log");
-        //properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", downloadPath.getAbsolutePath() + "/server-jain.log");
+        if (parameters.containsKey("jain-sip-logging-enabled") && parameters.get("jain-sip-logging-enabled") == true) {
+            // You need 16 for logging traces. 32 for debug + traces.
+            // Your code will limp at 32 but it is best for debugging.
+            properties.setProperty("android.gov.nist.javax.sip.TRACE_LEVEL", "32");
+            File downloadPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+            //properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", downloadPath.getAbsolutePath() + "/debug-jain.log");
+            //properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", downloadPath.getAbsolutePath() + "/server-jain.log");
+        }
 
         try {
             /*
@@ -107,7 +113,7 @@ public class JainSipClient implements SipListener {
             jainSipMessageBuilder.jainSipMessageFactory = jainSipFactory.createMessageFactory();
 
             if (connectivity) {
-                bind(id, networkInterfaceType);
+                bind(id, secure, networkInterfaceType);
             }
 
             // TODO: Didn't have that in the past, hope it doesn't cause any issues
@@ -115,7 +121,7 @@ public class JainSipClient implements SipListener {
 
             //initialized = true;
         }  catch (SipException e) {
-            listener.onClientErrorEvent(id, RCClient.ErrorCodes.ERROR_SIGNALING_BOOTSTRAP, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_BOOTSTRAP));
+            listener.onClientErrorEvent(id, RCClient.ErrorCodes.ERROR_SIGNALING_SIP_STACK_BOOTSTRAP, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_SIP_STACK_BOOTSTRAP));
             RCLogger.e(TAG, "open(): " + e.getMessage());
             e.printStackTrace();
         }
@@ -165,12 +171,13 @@ public class JainSipClient implements SipListener {
             }
         }
         catch (SipException e) {
+            // android.javax.sip.SipException: Could not connect to cloud.restcomm.com/107.21.247.251:5070
             // TODO: DNS error (error resolving registrar URI)
             /*
             dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_NON_CALL, RCClient.ErrorCodes.SIGNALLING_REGISTER_ERROR,
                 e.getMessage());
              */
-            listener.onClientErrorEvent(id, RCClient.ErrorCodes.ERROR_SIGNALING_REGISTERING, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTERING));
+            listener.onClientErrorEvent(id, RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT));
             RCLogger.e(TAG, "register(): Error parsing REGISTER SIP URI: " + e.getMessage());
             e.printStackTrace();
         }
@@ -196,21 +203,24 @@ public class JainSipClient implements SipListener {
     }
 
     // setup JAIN networking facilities
-    public void bind(String id, SipManager.NetworkInterfaceType networkInterfaceType)
+    public void bind(String id, boolean secure, SipManager.NetworkInterfaceType networkInterfaceType)
     {
         RCLogger.w(TAG, "bind()");
         if (jainSipListeningPoint == null) {
             // new network interface is up, let's retrieve its ip address
-            //this.sipProfile.setLocalIp(getIPAddress(true, networkInterfaceType));
+            String transport = "tcp";
+            if (secure) {
+                transport = "tls";
+            }
             try {
                 jainSipListeningPoint = jainSipStack.createListeningPoint(
                         getIPAddress(id, true, networkInterfaceType), 5090,
-                        "tls");
+                        transport);
                 jainSipProvider = jainSipStack.createSipProvider(jainSipListeningPoint);
                 jainSipProvider.addSipListener(this);
             }
             catch (Exception e) {
-                listener.onClientErrorEvent(id, RCClient.ErrorCodes.ERROR_SIGNALING_TODO, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_TODO));
+                listener.onClientErrorEvent(id, RCClient.ErrorCodes.ERROR_SIGNALING_NETWORK_BINDING, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_NETWORK_BINDING));
                 RCLogger.e(TAG, "register(): " + e.getMessage());
                 e.printStackTrace();
             }
@@ -231,52 +241,6 @@ public class JainSipClient implements SipListener {
         }
     }
 
-    // TODO: Improve this, try to not depend on such low level facilities
-    public String getIPAddress(String id, boolean useIPv4, SipManager.NetworkInterfaceType networkInterfaceType)
-    {
-        RCLogger.i(TAG, "getIPAddress()");
-        try {
-            if (networkInterfaceType == SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi) {
-                WifiManager wifiMgr = (WifiManager) androidContext.getSystemService(Context.WIFI_SERVICE);
-                WifiInfo wifiInfo = wifiMgr.getConnectionInfo();
-                int ip = wifiInfo.getIpAddress();
-                return Formatter.formatIpAddress(ip);
-            }
-
-            if (networkInterfaceType == SipManager.NetworkInterfaceType.NetworkInterfaceTypeCellularData) {
-                List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
-                for (NetworkInterface intf : interfaces) {
-                    if (!intf.getName().matches("wlan.*")) {
-                        List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
-                        for (InetAddress addr : addrs) {
-                            if (!addr.isLoopbackAddress()) {
-                                String sAddr = addr.getHostAddress().toUpperCase();
-                                boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr);
-                                if (useIPv4) {
-                                    if (isIPv4)
-                                        return sAddr;
-                                } else {
-                                    if (!isIPv4) {
-                                        int delim = sAddr.indexOf('%'); // drop ip6 port
-                                        // suffix
-                                        return delim < 0 ? sAddr : sAddr.substring(0,
-                                                delim);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        } catch (Exception e) {
-            //listener.onClientErrorEvent(id);
-            listener.onClientErrorEvent(id, RCClient.ErrorCodes.ERROR_SIGNALING_TODO, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_TODO));
-            RCLogger.i(TAG, "register(): " + e.getMessage());
-            e.printStackTrace();
-        }
-        return "";
-    }
-
     // -- SipListener events
     public void processRequest(RequestEvent requestEvent)
     {
@@ -293,55 +257,40 @@ public class JainSipClient implements SipListener {
         String callId = callIdHeader.getCallId();
         JainSipTransaction jainSipTransaction = jainSipTransactionManager.get(callId);
         if (jainSipTransaction == null) {
-            // TODO: Unrecognized message; issue error
+            RCLogger.e(TAG, "processResponse(): warning, got response for unknown transaction");
             return;
         }
 
         CSeqHeader cseq = (CSeqHeader) response.getHeader(CSeqHeader.NAME);
         String method = cseq.getMethod();
-        if (response.getStatusCode() == Response.PROXY_AUTHENTICATION_REQUIRED || response.getStatusCode() == Response.UNAUTHORIZED) {
-            try {
-                AuthenticationHelper authenticationHelper = ((SipStackExt)jainSipStack).getAuthenticationHelper(
-                        new AccountManagerImpl((String)jainSipTransaction.parameters.get("pref_sip_user"),
-                                responseEventExt.getRemoteIpAddress(), (String)jainSipTransaction.parameters.get("pref_sip_password")), jainSipMessageBuilder.jainSipHeaderFactory);
+        if (method.equals(Request.REGISTER)) {
+            if (response.getStatusCode() == Response.PROXY_AUTHENTICATION_REQUIRED || response.getStatusCode() == Response.UNAUTHORIZED) {
+                try {
+                    AuthenticationHelper authenticationHelper = ((SipStackExt) jainSipStack).getAuthenticationHelper(
+                            new AccountManagerImpl((String) jainSipTransaction.parameters.get("pref_sip_user"),
+                                    responseEventExt.getRemoteIpAddress(), (String) jainSipTransaction.parameters.get("pref_sip_password")), jainSipMessageBuilder.jainSipHeaderFactory);
 
-                // we 're subtracting one since the first attempt has already taken place
-                // (that way we are enforcing MAX_AUTH_ATTEMPTS at most)
-                if (jainSipTransaction.shouldRetry()) {
-                    ClientTransaction authenticationTransaction = authenticationHelper.handleChallenge(response, (ClientTransaction)jainSipTransaction.transaction, jainSipProvider, 5, true);
+                    // we 're subtracting one since the first attempt has already taken place
+                    // (that way we are enforcing MAX_AUTH_ATTEMPTS at most)
+                    if (jainSipTransaction.shouldRetry()) {
+                        ClientTransaction authenticationTransaction = authenticationHelper.handleChallenge(response, (ClientTransaction) jainSipTransaction.transaction, jainSipProvider, 5, true);
 
-                    // update previous transaction with authenticationTransaction (remember that previous ended with 407 final response)
-                    jainSipTransaction.update(authenticationTransaction);
-
-                    RCLogger.v(TAG, "Sending SIP request: \n" + authenticationTransaction.getRequest().toString());
-
-                    authenticationTransaction.sendRequest();
-                    if (cseq.getMethod().equals(Request.INVITE)) {
-                        // only update the dialog if we are responding to INVITE with new invite
-                        // TODO: fix this after we handle calls and have a clearer picture
-                        //dialog = inviteTid.getDialog();
+                        // update previous transaction with authenticationTransaction (remember that previous ended with 407 final response)
+                        jainSipTransaction.update(authenticationTransaction);
+                        RCLogger.v(TAG, "Sending SIP request: \n" + authenticationTransaction.getRequest().toString());
+                        authenticationTransaction.sendRequest();
+                        jainSipTransaction.increaseAuthAttempts();
+                    } else {
+                        jainSipTransactionManager.remove(callId);
+                        listener.onClientErrorEvent(callId, RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_AUTHENTICATION_MAX_RETRIES_REACHED,
+                                RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_AUTHENTICATION_MAX_RETRIES_REACHED));
                     }
-
-                    jainSipTransaction.increaseAuthAttempts();
-                }
-                else {
-                    // TODO: add error code/text
+                } catch (Exception e) {
                     jainSipTransactionManager.remove(callId);
-                    listener.onClientErrorEvent(callId, RCClient.ErrorCodes.ERROR_SIGNALING_TODO, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_TODO));
-                    /*
-                    if (tid != null && tid.getRequest() != null) {
-                        dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_NON_CALL, RCClient.ErrorCodes.SIGNALLING_REGISTER_AUTH_ERROR,
-                                "Error authenticating " + tid.getRequest().getMethod());
-                    }
-                    */
+                    listener.onClientErrorEvent(callId, RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED));
+                    RCLogger.e(TAG, "register(): " + e.getMessage());
+                    e.printStackTrace();
                 }
-            }
-            catch (Exception e) {
-                jainSipTransactionManager.remove(callId);
-                listener.onClientErrorEvent(callId, RCClient.ErrorCodes.ERROR_SIGNALING_TODO, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_TODO));
-                RCLogger.e(TAG, "register(): " + e.getMessage());
-                e.printStackTrace();
-            }
             /*
             catch (NullPointerException e) {
                 e.printStackTrace();
@@ -350,17 +299,18 @@ public class JainSipClient implements SipListener {
                 e.printStackTrace();
             }
             */
-        }
-        else if (response.getStatusCode() == Response.FORBIDDEN) {
-            jainSipTransactionManager.remove(callId);
-            listener.onClientErrorEvent(callId, RCClient.ErrorCodes.ERROR_SIGNALING_AUTHENTICATION, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_AUTHENTICATION));
-        }
-        else if (response.getStatusCode() == Response.OK) {
-            if (cseq.getMethod().equals(Request.REGISTER)) {
+            } else if (response.getStatusCode() == Response.FORBIDDEN) {
+                jainSipTransactionManager.remove(callId);
+                listener.onClientErrorEvent(callId, RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_AUTHENTICATION_FORBIDDEN, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_AUTHENTICATION_FORBIDDEN));
+            } else if (response.getStatusCode() == Response.OK) {
                 // register succeeded
                 jainSipTransactionManager.remove(callId);
                 listener.onClientOpenedEvent(jainSipTransaction.id);
             }
+        }
+        else if (method.equals(Request.INVITE)) {
+            // TODO: forward to JainSipCall for processing
+
         }
     }
 
@@ -414,7 +364,7 @@ public class JainSipClient implements SipListener {
         if (jainSipTransaction.type == JainSipTransaction.Type.TYPE_REGISTRATION) {
             // TODO: need to handle registration refreshes
             jainSipTransactionManager.remove(callId);
-            listener.onClientErrorEvent(callId, RCClient.ErrorCodes.ERROR_SIGNALING_TIMEOUT, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_TIMEOUT));
+            listener.onClientErrorEvent(callId, RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_TIMEOUT, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_TIMEOUT));
         }
         else if (jainSipTransaction.type == JainSipTransaction.Type.TYPE_CALL) {
             // TODO: call JainSipCall.processTimeout()
@@ -438,5 +388,50 @@ public class JainSipClient implements SipListener {
 
     // -- Helpers
 
+    // TODO: Improve this, try to not depend on such low level facilities
+    public String getIPAddress(String id, boolean useIPv4, SipManager.NetworkInterfaceType networkInterfaceType)
+    {
+        RCLogger.i(TAG, "getIPAddress()");
+        try {
+            if (networkInterfaceType == SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi) {
+                WifiManager wifiMgr = (WifiManager) androidContext.getSystemService(Context.WIFI_SERVICE);
+                WifiInfo wifiInfo = wifiMgr.getConnectionInfo();
+                int ip = wifiInfo.getIpAddress();
+                return Formatter.formatIpAddress(ip);
+            }
+
+            if (networkInterfaceType == SipManager.NetworkInterfaceType.NetworkInterfaceTypeCellularData) {
+                List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+                for (NetworkInterface intf : interfaces) {
+                    if (!intf.getName().matches("wlan.*")) {
+                        List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
+                        for (InetAddress addr : addrs) {
+                            if (!addr.isLoopbackAddress()) {
+                                String sAddr = addr.getHostAddress().toUpperCase();
+                                boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr);
+                                if (useIPv4) {
+                                    if (isIPv4)
+                                        return sAddr;
+                                } else {
+                                    if (!isIPv4) {
+                                        int delim = sAddr.indexOf('%'); // drop ip6 port
+                                        // suffix
+                                        return delim < 0 ? sAddr : sAddr.substring(0,
+                                                delim);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (Exception e) {
+            //listener.onClientErrorEvent(id);
+            listener.onClientErrorEvent(id, RCClient.ErrorCodes.ERROR_SIGNALING_NETWORK_INTERFACE, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_NETWORK_INTERFACE));
+            RCLogger.i(TAG, "register(): " + e.getMessage());
+            e.printStackTrace();
+        }
+        return "";
+    }
 
 }

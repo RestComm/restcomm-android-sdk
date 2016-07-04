@@ -60,10 +60,19 @@ public class RCClient {
         SIGNALLING_INSTANT_MESSAGE_ERROR,
 
         // New errors
-        ERROR_SIGNALING_BOOTSTRAP,
-        ERROR_SIGNALING_AUTHENTICATION,
-        ERROR_SIGNALING_TIMEOUT,
-        ERROR_SIGNALING_REGISTERING,
+        ERROR_SIGNALING_SIP_STACK_BOOTSTRAP,
+        ERROR_SIGNALING_NETWORK_BINDING,
+        ERROR_SIGNALING_REGISTER_AUTHENTICATION_MAX_RETRIES_REACHED,
+        ERROR_SIGNALING_REGISTER_AUTHENTICATION_FORBIDDEN,
+        ERROR_SIGNALING_REGISTER_TIMEOUT,
+        ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT,
+        ERROR_SIGNALING_REGISTER_URI_INVALID,
+        ERROR_SIGNALING_NETWORK_INTERFACE,
+        // Note on unhandled: unhandled errors shouldn't occur. If they do we need to evaluate if its because of a bug that needs to be fixed,
+        // or because of bad user configuration that wasn't properly identified and hence error-reported, in which case we need to introduce a new error code
+        ERROR_SIGNALING_UNHANDLED,
+
+
         ERROR_SIGNALING_TODO,
     }
 
@@ -92,20 +101,32 @@ public class RCClient {
         }
 
         // New errors
-        else if (errorCode == ErrorCodes.ERROR_SIGNALING_BOOTSTRAP) {
-            return "Error bootstraping signaling facilities";
+        else if (errorCode == ErrorCodes.ERROR_SIGNALING_SIP_STACK_BOOTSTRAP) {
+            return "Error bootstraping signaling stack";
         }
-        else if (errorCode == ErrorCodes.ERROR_SIGNALING_TIMEOUT) {
-            return "Timed out trying to contact Restcomm";
+        else if (errorCode == ErrorCodes.ERROR_SIGNALING_NETWORK_BINDING) {
+            return "Error setting up networking facilities";
         }
-        else if (errorCode == ErrorCodes.ERROR_SIGNALING_AUTHENTICATION) {
+        else if (errorCode == ErrorCodes.ERROR_SIGNALING_REGISTER_TIMEOUT) {
+            return "Registration with Restcomm timed out";
+        }
+        else if (errorCode == ErrorCodes.ERROR_SIGNALING_REGISTER_AUTHENTICATION_MAX_RETRIES_REACHED) {
             return "Error authenticating with Restcomm";
         }
-        else if (errorCode == ErrorCodes.ERROR_SIGNALING_REGISTERING) {
-            return "Error registering with Restcomm";
+        else if (errorCode == ErrorCodes.ERROR_SIGNALING_REGISTER_AUTHENTICATION_FORBIDDEN) {
+            return "Error authenticating with Restcomm";
         }
-        else if (errorCode == ErrorCodes.ERROR_SIGNALING_TODO) {
-            return "Error TODO";
+        else if (errorCode == ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT) {
+            return "Could not connect with Restcomm";
+        }
+        else if (errorCode == ErrorCodes.ERROR_SIGNALING_REGISTER_URI_INVALID) {
+            return "Register URI is invalid";
+        }
+        else if (errorCode == ErrorCodes.ERROR_SIGNALING_NETWORK_INTERFACE) {
+            return "Error retrieving local network interface information";
+        }
+        else if (errorCode == ErrorCodes.ERROR_SIGNALING_UNHANDLED) {
+            return "Unhandled signaling error occurred";
         }
 
         return "Generic Restcomm Client error";

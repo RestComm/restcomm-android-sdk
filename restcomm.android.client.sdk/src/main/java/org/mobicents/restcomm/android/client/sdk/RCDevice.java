@@ -757,11 +757,11 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
         }
     }
 
-    public void onCallReply(String id, String status)
+    public void onCallReply(String id, RCClient.ErrorCodes status, String text)
     {
 
     }
-    public void onSendMessageReply(String id, String status)
+    public void onSendMessageReply(String id, RCClient.ErrorCodes status, String text)
     {
 
     }
@@ -775,7 +775,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
     {
 
     }
-    public void onErrorEvent(String id, int errorCode, String errorText)
+    public void onErrorEvent(String id, RCClient.ErrorCodes status, String text)
     {
 
     }

@@ -38,9 +38,8 @@ public class JainSipMessageBuilder {
     {
         try {
             // Create addresses and via header for the request
-            Address fromAddress = jainSipAddressFactory.createAddress("sip:"
-                    + parameters.get("pref_sip_user") + "@"
-                    + sipUri2IpAddress((String) parameters.get("pref_proxy_domain")));
+            Address fromAddress = jainSipAddressFactory.createAddress("sip:" + parameters.get("pref_sip_user") + "@" +
+                    sipUri2IpAddress((String) parameters.get("pref_proxy_domain")));
             fromAddress.setDisplayName((String)parameters.get("pref_sip_user"));
 
             Address contactAddress;
@@ -80,29 +79,22 @@ public class JainSipMessageBuilder {
 
             // Add the contact header
             request.addHeader(jainSipHeaderFactory.createContactHeader(contactAddress));
-            ExpiresHeader eh = jainSipHeaderFactory.createExpiresHeader(expires);
-            request.addHeader(eh);
+            ExpiresHeader expiresHeader = jainSipHeaderFactory.createExpiresHeader(expires);
+            request.addHeader(expiresHeader);
             request.addHeader(generateUserAgentHeader());
 
             return request;
         }
         catch (ParseException e) {
-            // TODO: typical of bad URI
-            listener.onClientErrorEvent(id, RCClient.ErrorCodes.ERROR_SIGNALING_TODO, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_TODO));
+            listener.onClientErrorEvent(id, RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_URI_INVALID, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_URI_INVALID));
             RCLogger.e(TAG, "buildRegister(): " + e.getMessage());
             e.printStackTrace();
         }
-        catch (SipException e) {
-            listener.onClientErrorEvent(id, RCClient.ErrorCodes.ERROR_SIGNALING_TODO, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_TODO));
+        catch (Exception e) {
+            listener.onClientErrorEvent(id, RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED));
             RCLogger.e(TAG, "buildRegister(): " + e.getMessage());
             e.printStackTrace();
         }
-        catch (InvalidArgumentException e) {
-            listener.onClientErrorEvent(id, RCClient.ErrorCodes.ERROR_SIGNALING_TODO, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_TODO));
-            RCLogger.e(TAG, "buildRegister(): " + e.getMessage());
-            e.printStackTrace();
-        }
-
         return null;
     }
 
@@ -113,19 +105,13 @@ public class JainSipMessageBuilder {
         return ((SipURI)address.getURI()).getHost();
     }
 
-    public Address createContactAddress(ListeningPoint listeningPoint, HashMap<String,Object> parameters) {
+    public Address createContactAddress(ListeningPoint listeningPoint, HashMap<String,Object> parameters) throws ParseException{
         RCLogger.i(TAG, "createContactAddress()");
-        try {
-            // TODO: check if we can use jainSipListeningPoint.getSentBy() instead
-            // TODO: do we really need registering_acc?
-            return this.jainSipAddressFactory.createAddress("sip:"
-                    + parameters.get("pref_sip_user") + "@"
-                    + listeningPoint.getIPAddress() + ':' + listeningPoint.getPort() + ";transport=" + listeningPoint.getTransport()
-                    + ";registering_acc=" + sipUri2IpAddress((String)parameters.get("pref_proxy_domain")));
-        }
-        catch (ParseException e) {
-            return null;
-        }
+        // TODO: do we really need registering_acc?
+        return this.jainSipAddressFactory.createAddress("sip:"
+                + parameters.get("pref_sip_user") + "@"
+                + listeningPoint.getIPAddress() + ':' + listeningPoint.getPort() + ";transport=" + listeningPoint.getTransport()
+                + ";registering_acc=" + sipUri2IpAddress((String) parameters.get("pref_proxy_domain")));
     }
 
     // TODO: properly handle exception
