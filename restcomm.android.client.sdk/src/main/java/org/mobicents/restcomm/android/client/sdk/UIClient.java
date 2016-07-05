@@ -60,6 +60,19 @@ public class UIClient {
         return id;
     }
 
+    // Change signaling configuration, like update username/password, change domain, etc
+    String reconfigure(HashMap<String,Object> parameters)
+    {
+        String id = generateId();
+        SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.RECONFIGURE_REQUEST);
+        signalingMessage.setParameters(parameters);
+
+        Message message = signalingHandler.obtainMessage(1, signalingMessage);
+        message.sendToTarget();
+
+        return id;
+    }
+
     String call(HashMap<String,String> parameters)
     {
         String id = generateId();
@@ -80,15 +93,22 @@ public class UIClient {
         return id;
     }
 
-    void close()
+    String close()
     {
+        String id = generateId();
+        SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.CLOSE_REQUEST);
+        //signalingMessage.setParameters(parameters);
 
+        Message message = signalingHandler.obtainMessage(1, signalingMessage);
+        message.sendToTarget();
+
+        return id;
     }
 
     // Helpers
 
     // Generate unique identifier for 'transactions' created by UIClient, this can then be used as call-id when it enters JAIN SIP
-    String generateId()
+    private String generateId()
     {
         return Long.toString(System.currentTimeMillis());
     }

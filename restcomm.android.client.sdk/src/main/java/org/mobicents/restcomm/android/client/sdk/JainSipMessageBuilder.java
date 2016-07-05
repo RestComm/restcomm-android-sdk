@@ -2,7 +2,9 @@ package org.mobicents.restcomm.android.client.sdk;
 
 import android.javax.sip.InvalidArgumentException;
 import android.javax.sip.ListeningPoint;
+import android.javax.sip.PeerUnavailableException;
 import android.javax.sip.SipException;
+import android.javax.sip.SipFactory;
 import android.javax.sip.address.Address;
 import android.javax.sip.address.AddressFactory;
 import android.javax.sip.address.SipURI;
@@ -33,6 +35,19 @@ public class JainSipMessageBuilder {
     // TODO: put this in a central place
     public static String USERAGENT_STRING = "TelScale Restcomm Android Client 1.0.0 BETA4";
 
+    void initialize(SipFactory sipFactory) throws PeerUnavailableException
+    {
+        jainSipHeaderFactory = sipFactory.createHeaderFactory();
+        jainSipAddressFactory = sipFactory.createAddressFactory();
+        jainSipMessageFactory = sipFactory.createMessageFactory();
+    }
+
+    void shutdown()
+    {
+        jainSipHeaderFactory = null;
+        jainSipAddressFactory = null;
+        jainSipMessageFactory = null;
+    }
 
     public Request buildRegister(String id, JainSipClientListener listener, ListeningPoint listeningPoint, int expires, final Address contact, HashMap<String,Object> parameters)
     {

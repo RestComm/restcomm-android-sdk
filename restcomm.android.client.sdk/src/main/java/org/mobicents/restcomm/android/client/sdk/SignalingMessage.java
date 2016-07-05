@@ -11,6 +11,10 @@ public class SignalingMessage {
     public enum MessageType {
         OPEN_REQUEST,
         OPEN_REPLY,
+        CLOSE_REQUEST,
+        CLOSE_REPLY,
+        RECONFIGURE_REQUEST,
+        RECONFIGURE_REPLY,
         CALL_REQUEST,
         CALL_REPLY,
         CALL_EVENT,

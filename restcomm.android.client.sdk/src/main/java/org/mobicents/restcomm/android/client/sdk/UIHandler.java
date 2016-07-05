@@ -23,6 +23,9 @@ public class UIHandler extends Handler {
         if (message.type == SignalingMessage.MessageType.OPEN_REPLY) {
             listener.onOpenReply(message.id, message.status, message.text);
         }
+        else if (message.type == SignalingMessage.MessageType.CLOSE_REPLY) {
+            listener.onCloseReply(message.id, message.status, message.text);
+        }
         else if (message.type == SignalingMessage.MessageType.CALL_REPLY) {
             //listener.onCallArrivedEvent();
         }

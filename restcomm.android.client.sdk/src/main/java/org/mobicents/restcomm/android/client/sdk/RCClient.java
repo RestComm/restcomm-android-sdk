@@ -70,6 +70,8 @@ public class RCClient {
         ERROR_SIGNALING_NETWORK_INTERFACE,
         // Note on unhandled: unhandled errors shouldn't occur. If they do we need to evaluate if its because of a bug that needs to be fixed,
         // or because of bad user configuration that wasn't properly identified and hence error-reported, in which case we need to introduce a new error code
+        ERROR_SIGNALING_REGISTER_SERVICE_UNAVAILABLE,
+        ERROR_SIGNALING_UNREGISTER_SERVICE_UNAVAILABLE,
         ERROR_SIGNALING_UNHANDLED,
 
 
@@ -101,6 +103,9 @@ public class RCClient {
         }
 
         // New errors
+        else if (errorCode == ErrorCodes.SUCCESS) {
+            return "Success";
+        }
         else if (errorCode == ErrorCodes.ERROR_SIGNALING_SIP_STACK_BOOTSTRAP) {
             return "Error bootstraping signaling stack";
         }
@@ -111,19 +116,25 @@ public class RCClient {
             return "Registration with Restcomm timed out";
         }
         else if (errorCode == ErrorCodes.ERROR_SIGNALING_REGISTER_AUTHENTICATION_MAX_RETRIES_REACHED) {
-            return "Error authenticating with Restcomm";
+            return "Error authenticating with Service";
         }
         else if (errorCode == ErrorCodes.ERROR_SIGNALING_REGISTER_AUTHENTICATION_FORBIDDEN) {
-            return "Error authenticating with Restcomm";
+            return "Error authenticating with Service";
         }
         else if (errorCode == ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT) {
-            return "Could not connect with Restcomm";
+            return "Could not connect with Service";
         }
         else if (errorCode == ErrorCodes.ERROR_SIGNALING_REGISTER_URI_INVALID) {
             return "Register URI is invalid";
         }
         else if (errorCode == ErrorCodes.ERROR_SIGNALING_NETWORK_INTERFACE) {
             return "Error retrieving local network interface information";
+        }
+        else if (errorCode == ErrorCodes.ERROR_SIGNALING_REGISTER_SERVICE_UNAVAILABLE) {
+            return "Error registering; service unavailable";
+        }
+        else if (errorCode == ErrorCodes.ERROR_SIGNALING_UNREGISTER_SERVICE_UNAVAILABLE) {
+            return "Error unregistering; service unavailable";
         }
         else if (errorCode == ErrorCodes.ERROR_SIGNALING_UNHANDLED) {
             return "Unhandled signaling error occurred";

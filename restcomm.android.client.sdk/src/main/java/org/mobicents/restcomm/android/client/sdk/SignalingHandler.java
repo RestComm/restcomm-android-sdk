@@ -5,9 +5,9 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
-public class SignalingHandler extends Handler implements SignalingClientListener {
+public class SignalingHandler extends Handler implements JainSipClientListener, JainSipCallListener {
     //SignalingClientListener listener;
-    SignalingClient signalingClient;
+    JainSipClient jainSipClient;
     Handler uiHandler;
     private static final String TAG = "SignalingHandler";
 
@@ -15,7 +15,7 @@ public class SignalingHandler extends Handler implements SignalingClientListener
         // instantiate parent Handler, and pass non UI looper remember by default associates this handler with the Looper for the current thread, hence signaling thread
         super(looper);
 
-        signalingClient = new SignalingClient(this);
+        jainSipClient = new JainSipClient(this);
         this.uiHandler = uiHandler;
         //this.listener = listener;
     }
@@ -35,11 +35,13 @@ public class SignalingHandler extends Handler implements SignalingClientListener
         */
 
         if (message.type == SignalingMessage.MessageType.OPEN_REQUEST) {
-            signalingClient.open(message.id, message.androidContext, message.parameters, message.connectivity, message.networkInterfaceType);
-            //listener.onOpenReply(message.id, message.text);
+            jainSipClient.open(message.id, message.androidContext, message.parameters, this, message.connectivity, message.networkInterfaceType);
+        }
+        else if (message.type == SignalingMessage.MessageType.CLOSE_REQUEST) {
+            jainSipClient.close(message.id);
         }
         else if (message.type == SignalingMessage.MessageType.CALL_REQUEST) {
-            signalingClient.call(message.id, message.parameters);
+            jainSipClient.call(message.id, message.parameters);
             //listener.onCallArrivedEvent();
         }
         else {
@@ -49,6 +51,7 @@ public class SignalingHandler extends Handler implements SignalingClientListener
 
     // -- SignalingClientListener events, that send messages towards UI thread
     // Replies
+    /*
     public void onOpenReply(String id, RCClient.ErrorCodes status, String text)
     {
         SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.OPEN_REPLY);
@@ -93,5 +96,74 @@ public class SignalingHandler extends Handler implements SignalingClientListener
     {
 
     }
+    */
 
+    // -- JainSipClientListener events
+    public void onClientOpenedEvent(String id, RCClient.ErrorCodes status, String text)
+    {
+        //listener.onOpenReply(id, RCClient.ErrorCodes.SUCCESS, "Success");
+        SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.OPEN_REPLY);
+        signalingMessage.status = status;  //RCClient.ErrorCodes.SUCCESS;
+        signalingMessage.text = text;  //"Success";
+        Message message = uiHandler.obtainMessage(1, signalingMessage);
+        message.sendToTarget();
+    }
+
+    public void onClientErrorEvent(String id, RCClient.ErrorCodes status, String text)
+    {
+        //listener.onOpenReply(id, status, text);
+        SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.OPEN_REPLY);
+        signalingMessage.status = status;
+        signalingMessage.text = text;
+        Message message = uiHandler.obtainMessage(1, signalingMessage);
+        message.sendToTarget();
+    }
+
+    public void onClientClosedEvent(String id, RCClient.ErrorCodes status, String text)
+    {
+        //listener.onCloseReply(id, "Successfully closed client");
+        SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.CLOSE_REPLY);
+        signalingMessage.status = status;  //RCClient.ErrorCodes.SUCCESS;
+        signalingMessage.text = text;  //"Success";
+        Message message = uiHandler.obtainMessage(1, signalingMessage);
+        message.sendToTarget();
+    }
+
+    // -- JainSipCallListener events
+    public void onCallRingingEvent(String callId)
+    {
+        //listener.onCallArrivedEvent(callId);
+    }
+    public void onCallPeerHangupEvent(String callId)
+    {
+        //listener.
+    }
+    public void onCallPeerRingingEvent(String callId)
+    {
+
+    }
+    public void onCallInProgressEvent(String callId)
+    {
+
+    }
+    public void onCallPeerSdpAnswerEvent(String callId)
+    {
+
+    }
+    public void onCallPeerSdpOfferEvent(String callId)
+    {
+
+    }
+    public void onCallCancelledEvent(String callId)
+    {
+
+    }
+    public void onCallIgnoredEvent(String callId)
+    {
+
+    }
+    public void onCallErrorEvent(String callId)
+    {
+
+    }
 }
