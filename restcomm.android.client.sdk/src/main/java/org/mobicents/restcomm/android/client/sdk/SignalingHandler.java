@@ -40,6 +40,9 @@ public class SignalingHandler extends Handler implements JainSipClientListener, 
         else if (message.type == SignalingMessage.MessageType.CLOSE_REQUEST) {
             jainSipClient.close(message.id);
         }
+        if (message.type == SignalingMessage.MessageType.RECONFIGURE_REQUEST) {
+            jainSipClient.reconfigure(message.id, message.androidContext, message.parameters, this, message.connectivity, message.networkInterfaceType);
+        }
         else if (message.type == SignalingMessage.MessageType.CALL_REQUEST) {
             jainSipClient.call(message.id, message.parameters);
             //listener.onCallArrivedEvent();

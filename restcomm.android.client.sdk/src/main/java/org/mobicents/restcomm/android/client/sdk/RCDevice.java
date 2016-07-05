@@ -272,6 +272,12 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
         RCLogger.i(TAG, "release()");
         this.listener = null;
 
+        uiClient.close();
+        // important, otherwise if shutdown and re-initialized the old RCDevice instance will be getting events
+        RCClient.getContext().unregisterReceiver(this);
+        state = DeviceState.OFFLINE;
+
+        /*
         if (DeviceImpl.isInitialized()) {
             if (state != DeviceState.OFFLINE) {
                 DeviceImpl.GetInstance().Unregister();
@@ -294,6 +300,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
         // important, otherwise if shutdown and re-initialized the old RCDevice instance will be getting events
         RCClient.getContext().unregisterReceiver(this);
         state = DeviceState.OFFLINE;
+        */
     }
 
     /**
@@ -755,7 +762,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
             }
         }
 
-        uiClient.close();
+        //uiClient.close();
     }
 
     public void onCloseReply(String id, RCClient.ErrorCodes status, String text) {
