@@ -53,9 +53,9 @@ public class JainSipMessageBuilder {
     {
         try {
             // Create addresses and via header for the request
-            Address fromAddress = jainSipAddressFactory.createAddress("sip:" + parameters.get("pref_sip_user") + "@" +
-                    sipUri2IpAddress((String) parameters.get("pref_proxy_domain")));
-            fromAddress.setDisplayName((String)parameters.get("pref_sip_user"));
+            Address fromAddress = jainSipAddressFactory.createAddress("sip:" + parameters.get(RCDevice.ParameterKeys.SIGNALING_USERNAME) + "@" +
+                    sipUri2IpAddress((String) parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN)));
+            fromAddress.setDisplayName((String)parameters.get(RCDevice.ParameterKeys.SIGNALING_USERNAME));
 
             Address contactAddress;
             if (contact == null) {
@@ -75,7 +75,7 @@ public class JainSipMessageBuilder {
             viaHeader.setRPort();
             viaHeaders.add(viaHeader);
 
-            URI requestURI = jainSipAddressFactory.createAddress((String)parameters.get("pref_proxy_domain")).getURI();
+            URI requestURI = jainSipAddressFactory.createAddress((String)parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN)).getURI();
 
             // Build the request
             Request request = jainSipMessageFactory.createRequest(requestURI,
@@ -86,7 +86,7 @@ public class JainSipMessageBuilder {
                     jainSipHeaderFactory.createMaxForwardsHeader(70));
 
             // Add route header with the proxy first
-            SipURI routeUri = (SipURI) jainSipAddressFactory.createURI((String)parameters.get("pref_proxy_domain"));
+            SipURI routeUri = (SipURI) jainSipAddressFactory.createURI((String)parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN));
             routeUri.setLrParam();
             Address routeAddress = jainSipAddressFactory.createAddress(routeUri);
             RouteHeader routeHeader = jainSipHeaderFactory.createRouteHeader(routeAddress);
@@ -124,9 +124,9 @@ public class JainSipMessageBuilder {
         RCLogger.i(TAG, "createContactAddress()");
         // TODO: do we really need registering_acc?
         return this.jainSipAddressFactory.createAddress("sip:"
-                + parameters.get("pref_sip_user") + "@"
+                + parameters.get(RCDevice.ParameterKeys.SIGNALING_USERNAME) + "@"
                 + listeningPoint.getIPAddress() + ':' + listeningPoint.getPort() + ";transport=" + listeningPoint.getTransport()
-                + ";registering_acc=" + sipUri2IpAddress((String) parameters.get("pref_proxy_domain")));
+                + ";registering_acc=" + sipUri2IpAddress((String) parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN)));
     }
 
     // TODO: properly handle exception

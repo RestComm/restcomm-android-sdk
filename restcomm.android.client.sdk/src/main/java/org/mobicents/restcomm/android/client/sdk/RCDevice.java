@@ -109,6 +109,20 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
         CLIENT_NAME,
     }
 
+    /**
+     * Parameter keys for RCClient.createDevice() and RCDevice.updateParams()
+     */
+    public static class ParameterKeys {
+        public static final String SIGNALING_USERNAME = "pref_sip_user";
+        public static final String SIGNALING_DOMAIN = "pref_proxy_domain";
+        public static final String SIGNALING_PASSWORD = "pref_sip_password";
+        public static final String SIGNALING_SECURE_ENABLED = "signaling-secure";
+        public static final String MEDIA_TURN_ENABLED = "turn-enabled";
+        public static final String MEDIA_TURN_URL = "turn-url";
+        public static final String MEDIA_TURN_USERNAME = "turn-username";
+        public static final String MEDIA_TURN_PASSWORD = "turn-password";
+    }
+
     private static final String TAG = "RCDevice";
     //private static boolean online = false;
     public static String OUTGOING_CALL = "ACTION_OUTGOING_CALL";
@@ -186,8 +200,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
         DeviceImpl.GetInstance().sipuaDeviceListener = this;
         // register after initialization
         if (connectivity) {
-            if (!parameters.containsKey("pref_proxy_domain") ||
-                    parameters.containsKey("pref_proxy_domain") && parameters.get("pref_proxy_domain").equals("")) {
+            if (!parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) ||
+                    parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) && parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
                 // registrarless; we can transition to ready right away (i.e. without waiting for Restcomm to reply to REGISTER)
                 state = DeviceState.READY;
             }
@@ -239,8 +253,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
                 DeviceImpl.GetInstance().bind(SipManager.NetworkInterfaceType.NetworkInterfaceTypeCellularData);
             }
             reachabilityState = newState;
-            if (!parameters.containsKey("pref_proxy_domain") ||
-                    parameters.containsKey("pref_proxy_domain") && parameters.get("pref_proxy_domain").equals("")) {
+            if (!parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) ||
+                    parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) && parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
                 // registrarless; we can transition to ready right away (i.e. without waiting for Restcomm to reply to REGISTER)
                 state = DeviceState.READY;
                 this.listener.onConnectivityUpdate(this, newState);
@@ -542,11 +556,14 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
      * @return Whether the update was successful or not
      */
     public boolean updateParams(HashMap<String, Object> params) {
+        uiClient.reconfigure(params);
+
+        /*
         RCLogger.i(TAG, "updateParams(): " + params.toString());
         boolean status = false;
 
-        if (!params.containsKey("signaling-secure")) {
-            if (params.containsKey("pref_proxy_domain") && !params.get("pref_proxy_domain").equals("")) {
+        if (!params.containsKey(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED)) {
+            if (params.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) && !params.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
                 // we have a new (non empty) domain, need to register
                 updateSipProfile(params);
                 if (reachabilityState != RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
@@ -565,7 +582,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
                 status = true;
             }
 
-            if (params.containsKey("signaling-secure")) {
+            if (params.containsKey(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED)) {
                 if (reachabilityState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi) {
                     DeviceImpl.GetInstance().RefreshNetworking(SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi);
                 } else if (reachabilityState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular) {
@@ -575,8 +592,10 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
         } else {
             DeviceImpl.GetInstance().refreshTls(params);
         }
+        */
 
-        return status;
+        // TODO: need to provide asynchronous status for this
+        return true;
     }
 
     public void updateSipProfile(HashMap<String, Object> params) {
@@ -774,6 +793,14 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
         }
     }
 
+    public void onReconfigureReply(String id, RCClient.ErrorCodes status, String text) {
+        if (status == RCClient.ErrorCodes.SUCCESS) {
+            RCLogger.i(TAG, "onReconfigureReply(): id: " + id + ", success - " + text);
+        } else {
+            RCLogger.i(TAG, "onReconfigureReply(): id: " + id + ", failure - " + text);
+        }
+    }
+
     public void onCallReply(String id, RCClient.ErrorCodes status, String text) {
 
     }
@@ -792,6 +819,10 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
     }
 
     public void onErrorEvent(String id, RCClient.ErrorCodes status, String text) {
-
+        if (status == RCClient.ErrorCodes.SUCCESS) {
+            RCLogger.i(TAG, "onErrorEvent(): id: " + id + ", success - " + text);
+        } else {
+            RCLogger.i(TAG, "onErrorEvent(): id: " + id + ", failure - " + text);
+        }
     }
 }

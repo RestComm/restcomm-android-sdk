@@ -105,36 +105,36 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
                                           String key) {
-        if (key.equals("pref_proxy_domain")) {
-            params.put("pref_proxy_domain", prefs.getString("pref_proxy_domain", "sip:cloud.restcomm.com:5060"));
+        if (key.equals(RCDevice.ParameterKeys.SIGNALING_DOMAIN)) {
+            params.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN, prefs.getString(RCDevice.ParameterKeys.SIGNALING_DOMAIN, "sip:cloud.restcomm.com:5060"));
             updated = true;
         }
-        else if (key.equals("pref_sip_user")) {
-            params.put("pref_sip_user", prefs.getString("pref_sip_user", "android-sdk"));
+        else if (key.equals(RCDevice.ParameterKeys.SIGNALING_USERNAME)) {
+            params.put(RCDevice.ParameterKeys.SIGNALING_USERNAME, prefs.getString(RCDevice.ParameterKeys.SIGNALING_USERNAME, "android-sdk"));
             updated = true;
         }
-        else if (key.equals("pref_sip_password")) {
-            params.put("pref_sip_password", prefs.getString("pref_sip_password", "1234"));
+        else if (key.equals(RCDevice.ParameterKeys.SIGNALING_PASSWORD)) {
+            params.put(RCDevice.ParameterKeys.SIGNALING_PASSWORD, prefs.getString(RCDevice.ParameterKeys.SIGNALING_PASSWORD, "1234"));
             updated = true;
         }
-        else if (key.equals("turn-enabled")) {
-            params.put("turn-enabled", prefs.getBoolean("turn-enabled", true));
+        else if (key.equals(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED)) {
+            params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
             updated = true;
         }
-        else if (key.equals("turn-url")) {
-            params.put("turn-url", prefs.getString("turn-url", ""));
+        else if (key.equals(RCDevice.ParameterKeys.MEDIA_TURN_URL)) {
+            params.put(RCDevice.ParameterKeys.MEDIA_TURN_URL, prefs.getString(RCDevice.ParameterKeys.MEDIA_TURN_URL, ""));
             updated = true;
         }
-        else if (key.equals("turn-username")) {
-            params.put("turn-username", prefs.getString("turn-username", ""));
+        else if (key.equals(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME)) {
+            params.put(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME, prefs.getString(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME, ""));
             updated = true;
         }
-        else if (key.equals("turn-password")) {
-            params.put("turn-password", prefs.getString("turn-password", ""));
+        else if (key.equals(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD)) {
+            params.put(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD, prefs.getString(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD, ""));
             updated = true;
         }
-        else if (key.equals("signaling-secure")) {
-            params.put("signaling-secure", prefs.getBoolean("signaling-secure", false));
+        else if (key.equals(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED)) {
+            params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false));
             updated = true;
         }
     }

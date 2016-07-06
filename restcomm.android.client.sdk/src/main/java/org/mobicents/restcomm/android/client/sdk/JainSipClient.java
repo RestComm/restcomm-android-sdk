@@ -30,6 +30,7 @@ import android.os.SystemClock;
 import android.text.format.Formatter;
 
 import org.apache.http.conn.util.InetAddressUtils;
+import org.apache.log4j.spi.ErrorCode;
 import org.mobicents.restcomm.android.sipua.RCLogger;
 import org.mobicents.restcomm.android.sipua.impl.AccountManagerImpl;
 import org.mobicents.restcomm.android.sipua.impl.SecurityHelper;
@@ -38,6 +39,8 @@ import org.mobicents.restcomm.android.sipua.impl.SipManager;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
+import java.net.SocketException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -45,7 +48,6 @@ import java.util.Properties;
 
 public class JainSipClient implements SipListener {
     public JainSipClientListener listener;
-    JainSipFsm jainSipFsm;
     JainSipMessageBuilder jainSipMessageBuilder;
     Context androidContext;
     HashMap<String, Object> configuration;
@@ -54,8 +56,6 @@ public class JainSipClient implements SipListener {
     // android handler token to identify registration refresh posts
     final int REGISTER_REFRESH_HANDLER_TOKEN = 1;
     Handler signalingHandler;
-    // let's use a separate handler for registration refreshes, so that we can remove refresh callback without affecting
-    //Handler registerRefreshHandler;
     final int DEFAULT_REGISTER_EXPIRY_PERIOD = 60;
     // the registration refresh needs to happen sooner than expiry to make sure that the client has a registration at all times. Let's
     // set it to EXPIRY - 10 seconds. TODO: in the future we could randomize this so that for example it is between half the expiry
@@ -79,10 +79,8 @@ public class JainSipClient implements SipListener {
         this.listener = listener;
         this.androidContext = androidContext;
         configuration = parameters;
-        jainSipFsm = new JainSipFsm();
         jainSipMessageBuilder = new JainSipMessageBuilder();
-        jainSipTransactionManager = new JainSipTransactionManager();
-        //registerRefreshHandler = new Handler(Looper.myLooper());
+        jainSipTransactionManager = new JainSipTransactionManager(this);
 
         jainSipFactory = SipFactory.getInstance();
         jainSipFactory.resetFactory();
@@ -92,7 +90,7 @@ public class JainSipClient implements SipListener {
         properties.setProperty("android.javax.sip.STACK_NAME", "androidSip");
 
         boolean secure = false;
-        if (parameters.containsKey("signaling-secure") && parameters.get("signaling-secure") == true) {
+        if (parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED) && parameters.get(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED) == true) {
             secure = true;
         }
 
@@ -112,36 +110,16 @@ public class JainSipClient implements SipListener {
         }
 
         try {
-            /*
-            if (jainSipListeningPoint != null) {
-                // Binding again
-                jainSipStack.deleteListeningPoint(jainSipListeningPoint);
-                jainSipProvider.removeSipListener(this);
-                jainSipListeningPoint = null;
-            }
-            */
             jainSipStack = jainSipFactory.createSipStack(properties);
             jainSipMessageBuilder.initialize(jainSipFactory);
 
             if (connectivity) {
-                bind(id, secure, networkInterfaceType);
+                jainSipTransactionManager.add(id, JainSipTransaction.Type.TYPE_OPEN, parameters);
             }
-
-            // TODO: Didn't have that in the past, hope it doesn't cause any issues
-            jainSipStack.start();
-            clientConnected = true;
         } catch (SipException e) {
             listener.onClientOpenedEvent(id, RCClient.ErrorCodes.ERROR_SIGNALING_SIP_STACK_BOOTSTRAP, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_SIP_STACK_BOOTSTRAP));
             RCLogger.e(TAG, "open(): " + e.getMessage());
             e.printStackTrace();
-        }
-
-        if (parameters.containsKey("pref_proxy_domain") && !parameters.get("pref_proxy_domain").equals("")) {
-            // Domain has been provided do the registration
-            jainSipRegister(id, parameters, JainSipTransaction.RegistrationType.REGISTRATION_INITIAL);
-        } else {
-            // No Domain there we are done here
-            listener.onClientOpenedEvent(id, RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
         }
     }
 
@@ -157,26 +135,21 @@ public class JainSipClient implements SipListener {
 
             jainSipTransactionManager.removeAll();
 
-            /*
-            // create a runnable to run after registration is complete
-            Runnable runnable = new Runnable() {
-                @Override
-                public void run() {
-                }
-            };
-            */
-
-            if (configuration.containsKey("pref_proxy_domain") && !configuration.get("pref_proxy_domain").equals("")) {
+            if (configuration.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) && !configuration.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
                 // non registrar-less, we need to unregister and when done shutdown
-                jainSipUnregister(id, configuration, JainSipTransaction.RegistrationType.REGISTRATION_UNREGISTER, null);
-                jainSipFsm.init(id, "close", this);
+                jainSipTransactionManager.add(id, JainSipTransaction.Type.TYPE_CLOSE, this.configuration);
             }
             else {
                 // registrar-less, just shutdown and notify UI thread
-                unbind();
-                jainSipStopStack();
+                try {
+                    unbind();
+                    jainSipStopStack();
 
-                listener.onClientClosedEvent(id, RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
+                    listener.onClientClosedEvent(id, RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
+                } catch (JainSipException e) {
+                    RCLogger.w(TAG, "close(): close failed: " + Arrays.toString(Thread.currentThread().getStackTrace()));
+                    listener.onClientClosedEvent(id, e.errorCode, e.errorText);
+                }
             }
         } else {
             RCLogger.w(TAG, "close(): JAIN SIP client already closed, bailing");
@@ -186,9 +159,53 @@ public class JainSipClient implements SipListener {
 
     void reconfigure(String id, Context androidContext, HashMap<String, Object> parameters, JainSipClientListener listener, boolean connectivity, SipManager.NetworkInterfaceType networkInterfaceType)
     {
-        // TODO: start FSM and pass it both previous and current parameters, so that it: a. unregisters from old creds, b. unbinds, c. binds, d. registers with new creds
-        jainSipUnregister(id, configuration, JainSipTransaction.RegistrationType.REGISTRATION_UNREGISTER, null);
-        jainSipFsm.init(id, "reconfigure", this);
+        // check which parameters actually changed by comparing this.configuration with parameters
+        HashMap<String, Object> modifiedParameters = JainSipConfiguration.modifiedParameters(this.configuration, parameters);
+
+        if (modifiedParameters.size() == 0) {
+            listener.onClientReconfigureEvent(id, RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
+            return;
+        }
+
+        HashMap<String, Object> oldParameters = new HashMap<String, Object>();
+        oldParameters.putAll(configuration);
+
+        // remember that the new parameters can be just a subset of the currently stored in configuration, so to update the current parameters we need
+        // to merge them with the new (i.e. keep the old and replace any new keys with new values)
+        configuration = JainSipConfiguration.mergeParameters(configuration, parameters);
+
+        // Set the media parameters right away, since they are irrelevant to signaling
+        if (modifiedParameters.containsKey(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED)) {
+            this.configuration.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, modifiedParameters.get(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED));
+        }
+        if (modifiedParameters.containsKey(RCDevice.ParameterKeys.MEDIA_TURN_URL)) {
+            this.configuration.put(RCDevice.ParameterKeys.MEDIA_TURN_URL, modifiedParameters.get(RCDevice.ParameterKeys.MEDIA_TURN_URL));
+        }
+        if (modifiedParameters.containsKey(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME)) {
+            this.configuration.put(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME, modifiedParameters.get(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME));
+        }
+        if (modifiedParameters.containsKey(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD)) {
+            this.configuration.put(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD, modifiedParameters.get(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD));
+        }
+
+        if (modifiedParameters.containsKey(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED)) {
+            // if signaling has changed we need to a. unregister from old using old creds, b. unbind, c. bind, d. register with new using new creds
+            // start FSM and pass it both previous and current parameters
+            HashMap<String, Object> multipleParameters = new HashMap<String, Object>();
+            multipleParameters.put("old-parameters", oldParameters);
+            multipleParameters.put("new-parameters", configuration);
+            jainSipTransactionManager.add(id, JainSipTransaction.Type.TYPE_RECONFIGURE_RELOAD_NETWORKING, multipleParameters);
+        }
+        else if (modifiedParameters.containsKey(RCDevice.ParameterKeys.SIGNALING_USERNAME) ||
+                    modifiedParameters.containsKey(RCDevice.ParameterKeys.SIGNALING_PASSWORD) ||
+                            modifiedParameters.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN)) {
+                // if username, password or domain has changed we need to a. unregister from old using old creds and b. register with new using new creds
+                // start FSM and pass it both previous and current parameters
+                jainSipTransactionManager.add(id, JainSipTransaction.Type.TYPE_RECONFIGURE, this.configuration);
+        }
+        else {
+            listener.onClientReconfigureEvent(id, RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
+        }
     }
 
     void call(String id, HashMap<String, Object> parameters) {
@@ -199,7 +216,7 @@ public class JainSipClient implements SipListener {
     }
 
     // Setup JAIN networking facilities
-    public void bind(String id, boolean secure, SipManager.NetworkInterfaceType networkInterfaceType) {
+    public void bind(String id, boolean secure, SipManager.NetworkInterfaceType networkInterfaceType) throws JainSipException {
         RCLogger.w(TAG, "bind()");
         if (jainSipListeningPoint == null) {
             // new network interface is up, let's retrieve its ip address
@@ -213,30 +230,24 @@ public class JainSipClient implements SipListener {
                         transport);
                 jainSipProvider = jainSipStack.createSipProvider(jainSipListeningPoint);
                 jainSipProvider.addSipListener(this);
-            } catch (Exception e) {
-                listener.onClientOpenedEvent(id, RCClient.ErrorCodes.ERROR_SIGNALING_NETWORK_BINDING, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_NETWORK_BINDING));
+            } catch (SocketException e) {
+                RCLogger.i(TAG, "register(): " + e.getMessage());
+                e.printStackTrace();
+                throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_NETWORK_INTERFACE,
+                        RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_NETWORK_INTERFACE));
+            }
+            catch (Exception e) {
                 RCLogger.e(TAG, "register(): " + e.getMessage());
                 e.printStackTrace();
+                throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_NETWORK_BINDING,
+                        RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_NETWORK_BINDING));
+
             }
-            /*
-            catch (TransportNotSupportedException e) {
-                e.printStackTrace();
-            }
-            catch (InvalidArgumentException e) {
-                e.printStackTrace();
-            }
-            catch (ObjectInUseException e) {
-                e.printStackTrace();
-            }
-            catch (TooManyListenersException e) {
-                e.printStackTrace();
-            }
-            */
         }
     }
 
     // Release JAIN networking facilities
-    public void unbind() {
+    public void unbind() throws JainSipException {
         RCLogger.w(TAG, "unbind()");
         if (jainSipListeningPoint != null) {
             try {
@@ -251,8 +262,23 @@ public class JainSipClient implements SipListener {
             } catch (ObjectInUseException e) {
                 RCLogger.e(TAG, "unbind(): " + e.getMessage());
                 e.printStackTrace();
+                throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED));
             }
         }
+    }
+
+    int jainSipStartStack(String id) {
+        // TODO: Didn't have that in the past, hope it doesn't cause any issues
+        try {
+            jainSipStack.start();
+            clientConnected = true;
+
+        } catch (SipException e) {
+            RCLogger.e(TAG, "jainSipStartStack(): " + e.getMessage());
+            e.printStackTrace();
+            return RCClient.ErrorCodes.ERROR_SIGNALING_SIP_STACK_BOOTSTRAP.ordinal();
+        }
+        return RCClient.ErrorCodes.SUCCESS.ordinal();
     }
 
     void jainSipStopStack() {
@@ -270,7 +296,7 @@ public class JainSipClient implements SipListener {
         clientConnected = false;
     }
 
-    public void jainSipRegister(String id, final HashMap<String, Object> parameters, JainSipTransaction.RegistrationType registrationType) {
+    public ClientTransaction jainSipRegister(String id, final HashMap<String, Object> parameters, JainSipTransaction.RegistrationType registrationType) throws JainSipException {
         RCLogger.v(TAG, "jainSipRegister()");
 
         int expiry = DEFAULT_REGISTER_EXPIRY_PERIOD;
@@ -282,77 +308,58 @@ public class JainSipClient implements SipListener {
             }
         }
 
+        ClientTransaction transaction = null;
         try {
             Request registerRequest = jainSipMessageBuilder.buildRegister(id, listener, jainSipListeningPoint, expiry, null, parameters);
             if (registerRequest != null) {
                 RCLogger.v(TAG, "jainSipRegister(): Sending SIP request: \n" + registerRequest.toString());
 
                 // Remember that this might block waiting for DNS server
-                ClientTransaction transaction = this.jainSipProvider.getNewClientTransaction(registerRequest);
+                transaction = this.jainSipProvider.getNewClientTransaction(registerRequest);
                 transaction.sendRequest();
-
-                jainSipTransactionManager.add(id, JainSipTransaction.Type.TYPE_REGISTRATION, registrationType, transaction, parameters);
             }
         } catch (SipException e) {
-            listener.onClientOpenedEvent(id, RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT));
             RCLogger.e(TAG, "jainSipRegister(): " + e.getMessage());
             e.printStackTrace();
+            throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT));
         }
-        /*
-        catch (Exception e) {
-            listener.onClientErrorEvent(id);
-            RCLogger.e(TAG, "register(): " + e.getMessage());
-            e.printStackTrace();
-        }
-        */
-        /*
-        catch (ParseException e) {
-            //e.printStackTrace();
-            listener.onClientOpenedEvent(id);
-            RCLogger.i(TAG, "register(): " + e.getMessage());
-        }
-        catch (InvalidArgumentException e) {
-            //e.printStackTrace();
-            listener.onClientOpenedEvent(id);
-            RCLogger.i(TAG, "register(): " + e.getMessage());
-        }
-        */
 
         // cancel any pending scheduled registrations (in case this is an on-demand registration and we end up posting to handler on top of the old)
         signalingHandler.removeCallbacksAndMessages(REGISTER_REFRESH_HANDLER_TOKEN);
-
         // schedule a registration update after 'registrationRefresh' seconds
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                jainSipRegister(Long.toString(System.currentTimeMillis()), parameters, JainSipTransaction.RegistrationType.REGISTRATION_REFRESH);
+                jainSipTransactionManager.add(Long.toString(System.currentTimeMillis()), JainSipTransaction.Type.TYPE_REGISTER_REFRESH, parameters);
             }
         };
         signalingHandler.postAtTime(runnable, REGISTER_REFRESH_HANDLER_TOKEN, SystemClock.uptimeMillis() + (expiry - REGISTER_REFRESH_MINUS_INTERVAL) * 1000);
+
+        return transaction;
     }
 
-    public void jainSipUnregister(String id, final HashMap<String, Object> parameters, JainSipTransaction.RegistrationType registrationType, Runnable onCompletion) {
+    public ClientTransaction jainSipUnregister(String id, final HashMap<String, Object> parameters, JainSipTransaction.RegistrationType registrationType) throws JainSipException {
         RCLogger.v(TAG, "jainSipUnregister()");
-
+        ClientTransaction transaction = null;
         try {
             Request registerRequest = jainSipMessageBuilder.buildRegister(id, listener, jainSipListeningPoint, 0, null, parameters);
             if (registerRequest != null) {
                 RCLogger.v(TAG, "jainSipUnregister(): Sending SIP request: \n" + registerRequest.toString());
 
                 // Remember that this might block waiting for DNS server
-                ClientTransaction transaction = this.jainSipProvider.getNewClientTransaction(registerRequest);
+                transaction = this.jainSipProvider.getNewClientTransaction(registerRequest);
                 transaction.sendRequest();
-
-                jainSipTransactionManager.add(id, JainSipTransaction.Type.TYPE_REGISTRATION, registrationType, transaction, parameters, onCompletion);
             }
         } catch (SipException e) {
-            listener.onClientOpenedEvent(id, RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT));
             RCLogger.e(TAG, "jainSipUnregister(): " + e.getMessage());
             e.printStackTrace();
+            throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT));
         }
 
         // cancel any pending scheduled registrations
         signalingHandler.removeCallbacksAndMessages(REGISTER_REFRESH_HANDLER_TOKEN);
+
+        return transaction;
     }
 
     // -- SipListener events
@@ -373,12 +380,12 @@ public class JainSipClient implements SipListener {
             @Override
             public void run() {
                 ResponseEventExt responseEventExt = (ResponseEventExt) responseEvent;
-                Response response = (Response) responseEvent.getResponse();
+                Response response = responseEvent.getResponse();
                 RCLogger.v(TAG, "Received SIP response: \n" + response.toString());
 
                 CallIdHeader callIdHeader = (CallIdHeader) response.getHeader("Call-ID");
                 String callId = callIdHeader.getCallId();
-                JainSipTransaction jainSipTransaction = jainSipTransactionManager.get(callId);
+                JainSipTransaction jainSipTransaction = jainSipTransactionManager.getUsingTransactionId(callId);
                 if (jainSipTransaction == null) {
                     RCLogger.e(TAG, "processResponse(): warning, got response for unknown transaction");
                     return;
@@ -390,8 +397,8 @@ public class JainSipClient implements SipListener {
                     if (response.getStatusCode() == Response.PROXY_AUTHENTICATION_REQUIRED || response.getStatusCode() == Response.UNAUTHORIZED) {
                         try {
                             AuthenticationHelper authenticationHelper = ((SipStackExt) jainSipStack).getAuthenticationHelper(
-                                    new AccountManagerImpl((String) jainSipTransaction.parameters.get("pref_sip_user"),
-                                            responseEventExt.getRemoteIpAddress(), (String) jainSipTransaction.parameters.get("pref_sip_password")), jainSipMessageBuilder.jainSipHeaderFactory);
+                                    new AccountManagerImpl((String) jainSipTransaction.parameters.get(RCDevice.ParameterKeys.SIGNALING_USERNAME),
+                                            responseEventExt.getRemoteIpAddress(), (String) jainSipTransaction.parameters.get(RCDevice.ParameterKeys.SIGNALING_PASSWORD)), jainSipMessageBuilder.jainSipHeaderFactory);
 
                             // we 're subtracting one since the first attempt has already taken place
                             // (that way we are enforcing MAX_AUTH_ATTEMPTS at most)
@@ -399,50 +406,37 @@ public class JainSipClient implements SipListener {
                                 ClientTransaction authenticationTransaction = authenticationHelper.handleChallenge(response, (ClientTransaction) jainSipTransaction.transaction, jainSipProvider, 5, true);
 
                                 // update previous transaction with authenticationTransaction (remember that previous ended with 407 final response)
-                                jainSipTransaction.update(authenticationTransaction);
+                                String authCallId = ((CallIdHeader)authenticationTransaction.getRequest().getHeader("Call-ID")).getCallId();
+                                jainSipTransaction.updateTransaction(authenticationTransaction);
+                                jainSipTransaction.updateTransactionId(authCallId);
                                 RCLogger.v(TAG, "Sending SIP request: \n" + authenticationTransaction.getRequest().toString());
                                 authenticationTransaction.sendRequest();
                                 jainSipTransaction.increaseAuthAttempts();
                             } else {
-                                listener.onClientOpenedEvent(callId, RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_AUTHENTICATION_MAX_RETRIES_REACHED,
+                                jainSipTransaction.processFsm(jainSipTransaction.id, "register-failure", RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_AUTHENTICATION_MAX_RETRIES_REACHED,
                                         RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_AUTHENTICATION_MAX_RETRIES_REACHED));
-                                jainSipTransactionManager.remove(callId);
+                                //jainSipTransactionManager.remove(callId);
                             }
                         } catch (Exception e) {
-                            listener.onClientOpenedEvent(callId, RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED));
-                            jainSipTransactionManager.remove(callId);
+                            jainSipTransaction.processFsm(jainSipTransaction.id, "register-failure", RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED,
+                                    RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED));
+
+                            //listener.onClientOpenedEvent(callId, RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED));
+                            //jainSipTransactionManager.remove(callId);
                             RCLogger.e(TAG, "register(): " + e.getMessage());
                             e.printStackTrace();
                         }
-                        /*
-                        catch (NullPointerException e) {
-                            e.printStackTrace();
-                        }
-                        catch (SipException e) {
-                            e.printStackTrace();
-                        }
-                        */
                     } else if (response.getStatusCode() == Response.FORBIDDEN) {
-                        listener.onClientOpenedEvent(callId, RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_AUTHENTICATION_FORBIDDEN, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_AUTHENTICATION_FORBIDDEN));
-                        jainSipTransactionManager.remove(callId);
+                        jainSipTransaction.processFsm(jainSipTransaction.id, "register-failure", RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_AUTHENTICATION_FORBIDDEN,
+                                RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_AUTHENTICATION_FORBIDDEN));
+                        //jainSipTransactionManager.remove(callId);
                     } else if (response.getStatusCode() == Response.SERVICE_UNAVAILABLE) {
-                        jainSipFsm.process(callId, "unregister-failure");
+                        jainSipTransaction.processFsm(callId, "register-failure", RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_SERVICE_UNAVAILABLE,
+                                RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_SERVICE_UNAVAILABLE));
                     } else if (response.getStatusCode() == Response.OK) {
                         // register succeeded
-                        // if it's initial registration we need to notify the UI thread, if it is a refresh or unregister we shouldn't
-                        if (jainSipTransaction.registrationType == JainSipTransaction.RegistrationType.REGISTRATION_INITIAL) {
-                            listener.onClientOpenedEvent(jainSipTransaction.id, RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
-                        }
-                        if (jainSipTransaction.registrationType == JainSipTransaction.RegistrationType.REGISTRATION_UNREGISTER) {
-                            jainSipFsm.process(callId, "unregister-success");
-                        }
-
-                        /*
-                        if (jainSipTransaction.onCompletion != null) {
-                            jainSipTransaction.onCompletion.run();
-                        }*/
-
-                        jainSipTransactionManager.remove(callId);
+                        jainSipTransaction.processFsm(jainSipTransaction.id, "register-success", RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
+                        //jainSipTransactionManager.remove(callId);
                     }
                 } else if (method.equals(Request.INVITE)) {
                     // TODO: forward to JainSipCall for processing
@@ -515,7 +509,7 @@ public class JainSipClient implements SipListener {
                 RCLogger.i(TAG, "processTimeout(): method: " + request.getMethod() + " URI: " + request.getRequestURI());
                 CallIdHeader callIdHeader = (CallIdHeader) request.getHeader("Call-ID");
                 String callId = callIdHeader.getCallId();
-                JainSipTransaction jainSipTransaction = jainSipTransactionManager.get(callId);
+                JainSipTransaction jainSipTransaction = jainSipTransactionManager.getUsingTransactionId(callId);
                 if (jainSipTransaction == null) {
                     // transaction is not identified, just emit a log error; don't notify UI thread
                     RCLogger.i(TAG, "processTimeout(): transaction not identified");
@@ -524,8 +518,8 @@ public class JainSipClient implements SipListener {
 
                 if (jainSipTransaction.type == JainSipTransaction.Type.TYPE_REGISTRATION) {
                     // TODO: need to handle registration refreshes
-                    jainSipTransactionManager.remove(callId);
-                    listener.onClientErrorEvent(callId, RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_TIMEOUT, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_TIMEOUT));
+                    jainSipTransaction.processFsm(jainSipTransaction.id, "timeout", RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_TIMEOUT, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_TIMEOUT));
+                    //jainSipTransactionManager.remove(callId);
                 } else if (jainSipTransaction.type == JainSipTransaction.Type.TYPE_CALL) {
                     // TODO: call JainSipCall.processTimeout()
                 } else if (jainSipTransaction.type == JainSipTransaction.Type.TYPE_MESSAGE) {
@@ -552,46 +546,40 @@ public class JainSipClient implements SipListener {
     // -- Helpers
 
     // TODO: Improve this, try to not depend on such low level facilities
-    public String getIPAddress(String id, boolean useIPv4, SipManager.NetworkInterfaceType networkInterfaceType) {
+    public String getIPAddress(String id, boolean useIPv4, SipManager.NetworkInterfaceType networkInterfaceType) throws SocketException
+    {
         RCLogger.i(TAG, "getIPAddress()");
-        try {
-            if (networkInterfaceType == SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi) {
-                WifiManager wifiMgr = (WifiManager) androidContext.getSystemService(Context.WIFI_SERVICE);
-                WifiInfo wifiInfo = wifiMgr.getConnectionInfo();
-                int ip = wifiInfo.getIpAddress();
-                return Formatter.formatIpAddress(ip);
-            }
+        if (networkInterfaceType == SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi) {
+            WifiManager wifiMgr = (WifiManager) androidContext.getSystemService(Context.WIFI_SERVICE);
+            WifiInfo wifiInfo = wifiMgr.getConnectionInfo();
+            int ip = wifiInfo.getIpAddress();
+            return Formatter.formatIpAddress(ip);
+        }
 
-            if (networkInterfaceType == SipManager.NetworkInterfaceType.NetworkInterfaceTypeCellularData) {
-                List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
-                for (NetworkInterface intf : interfaces) {
-                    if (!intf.getName().matches("wlan.*")) {
-                        List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
-                        for (InetAddress addr : addrs) {
-                            if (!addr.isLoopbackAddress()) {
-                                String sAddr = addr.getHostAddress().toUpperCase();
-                                boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr);
-                                if (useIPv4) {
-                                    if (isIPv4)
-                                        return sAddr;
-                                } else {
-                                    if (!isIPv4) {
-                                        int delim = sAddr.indexOf('%'); // drop ip6 port
-                                        // suffix
-                                        return delim < 0 ? sAddr : sAddr.substring(0,
-                                                delim);
-                                    }
+        if (networkInterfaceType == SipManager.NetworkInterfaceType.NetworkInterfaceTypeCellularData) {
+            List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+            for (NetworkInterface intf : interfaces) {
+                if (!intf.getName().matches("wlan.*")) {
+                    List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
+                    for (InetAddress addr : addrs) {
+                        if (!addr.isLoopbackAddress()) {
+                            String sAddr = addr.getHostAddress().toUpperCase();
+                            boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr);
+                            if (useIPv4) {
+                                if (isIPv4)
+                                    return sAddr;
+                            } else {
+                                if (!isIPv4) {
+                                    int delim = sAddr.indexOf('%'); // drop ip6 port
+                                    // suffix
+                                    return delim < 0 ? sAddr : sAddr.substring(0,
+                                            delim);
                                 }
                             }
                         }
                     }
                 }
             }
-        } catch (Exception e) {
-            //listener.onClientErrorEvent(id);
-            listener.onClientErrorEvent(id, RCClient.ErrorCodes.ERROR_SIGNALING_NETWORK_INTERFACE, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_NETWORK_INTERFACE));
-            RCLogger.i(TAG, "register(): " + e.getMessage());
-            e.printStackTrace();
         }
         return "";
     }

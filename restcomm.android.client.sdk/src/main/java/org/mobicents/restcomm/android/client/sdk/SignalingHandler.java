@@ -115,7 +115,7 @@ public class SignalingHandler extends Handler implements JainSipClientListener, 
     public void onClientErrorEvent(String id, RCClient.ErrorCodes status, String text)
     {
         //listener.onOpenReply(id, status, text);
-        SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.OPEN_REPLY);
+        SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.ERROR_EVENT);
         signalingMessage.status = status;
         signalingMessage.text = text;
         Message message = uiHandler.obtainMessage(1, signalingMessage);
@@ -131,6 +131,17 @@ public class SignalingHandler extends Handler implements JainSipClientListener, 
         Message message = uiHandler.obtainMessage(1, signalingMessage);
         message.sendToTarget();
     }
+
+    public void onClientReconfigureEvent(String id, RCClient.ErrorCodes status, String text)
+    {
+        //listener.onOpenReply(id, RCClient.ErrorCodes.SUCCESS, "Success");
+        SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.RECONFIGURE_REPLY);
+        signalingMessage.status = status;  //RCClient.ErrorCodes.SUCCESS;
+        signalingMessage.text = text;  //"Success";
+        Message message = uiHandler.obtainMessage(1, signalingMessage);
+        message.sendToTarget();
+    }
+
 
     // -- JainSipCallListener events
     public void onCallRingingEvent(String callId)

@@ -27,6 +27,8 @@ import android.javax.sip.address.AddressFactory;
 import android.javax.sip.address.SipURI;
 import android.javax.sip.address.URI;
 
+import org.mobicents.restcomm.android.client.sdk.RCDevice;
+
 import java.text.ParseException;
 import java.util.HashMap;
 
@@ -49,29 +51,29 @@ public class SipProfile {
 		//this.localIp = localIp;
 		if (params != null) {
 			for (String key : params.keySet()) {
-				if (key.equals("pref_proxy_domain")) {
+				if (key.equals(RCDevice.ParameterKeys.SIGNALING_DOMAIN)) {
 					this.setRemoteEndpoint((String) params.get(key));
 				}
-				else if (key.equals("pref_sip_user")) {
+				else if (key.equals(RCDevice.ParameterKeys.SIGNALING_USERNAME)) {
 					this.setSipUserName((String) params.get(key));
 				}
-				else if (key.equals("pref_sip_password")) {
+				else if (key.equals(RCDevice.ParameterKeys.SIGNALING_PASSWORD)) {
 					this.setSipPassword((String) params.get(key));
 				}
-				else if (key.equals("turn-enabled")) {
+				else if (key.equals(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED)) {
 					this.setTurnEnabled((Boolean) params.get(key));
 				}
-				else if (key.equals("turn-url")) {
+				else if (key.equals(RCDevice.ParameterKeys.MEDIA_TURN_URL)) {
 					this.setTurnUrl((String) params.get(key));
 				}
-				else if (key.equals("turn-username")) {
+				else if (key.equals(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME)) {
 					this.setTurnUsername((String) params.get(key));
 				}
-				else if (key.equals("turn-password")) {
+				else if (key.equals(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD)) {
 					this.setTurnPassword((String) params.get(key));
 				}
-				else if (key.equals("signaling-secure")) {
-					if ((boolean)params.get("signaling-secure")) {
+				else if (key.equals(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED)) {
+					if ((boolean)params.get(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED)) {
 						transport = "tls";
 					}
 					else {

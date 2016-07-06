@@ -43,7 +43,6 @@ public class RCClient {
     private static boolean initialized = false;
 
     public enum ErrorCodes {
-        SUCCESS,
         GENERIC_ERROR,
         CONNECTION_DECLINED,
         CONNECTION_TIMEOUT,
@@ -60,6 +59,7 @@ public class RCClient {
         SIGNALLING_INSTANT_MESSAGE_ERROR,
 
         // New errors
+        SUCCESS,
         ERROR_SIGNALING_SIP_STACK_BOOTSTRAP,
         ERROR_SIGNALING_NETWORK_BINDING,
         ERROR_SIGNALING_REGISTER_AUTHENTICATION_MAX_RETRIES_REACHED,

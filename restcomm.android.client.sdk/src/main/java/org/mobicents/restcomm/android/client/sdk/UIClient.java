@@ -50,9 +50,9 @@ public class UIClient {
         signalingMessage.connectivity = connectivity;
         signalingMessage.networkInterfaceType = networkInterfaceType;
         /*
-        signalingMessage.setParametersOpen((String)parameters.get("pref_proxy_domain"),
-                (String)parameters.get("pref_sip_user"),
-                (String)parameters.get("pref_sip_password"));
+        signalingMessage.setParametersOpen((String)parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN),
+                (String)parameters.get(RCDevice.ParameterKeys.SIGNALING_USERNAME),
+                (String)parameters.get(RCDevice.ParameterKeys.SIGNALING_PASSWORD));
                 */
         Message message = signalingHandler.obtainMessage(1, signalingMessage);
         message.sendToTarget();

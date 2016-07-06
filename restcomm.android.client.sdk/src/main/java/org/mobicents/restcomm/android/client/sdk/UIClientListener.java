@@ -6,6 +6,7 @@ public interface UIClientListener {
     // Replies
     public abstract void onOpenReply(String id, RCClient.ErrorCodes status, String text);
     public abstract void onCloseReply(String id, RCClient.ErrorCodes status, String text);
+    public abstract void onReconfigureReply(String id, RCClient.ErrorCodes status, String text);
     public abstract void onCallReply(String id, RCClient.ErrorCodes status, String text);
     public abstract void onSendMessageReply(String id, RCClient.ErrorCodes status, String text);
 

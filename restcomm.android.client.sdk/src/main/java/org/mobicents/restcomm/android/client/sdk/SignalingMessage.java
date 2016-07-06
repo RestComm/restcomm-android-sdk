@@ -18,6 +18,7 @@ public class SignalingMessage {
         CALL_REQUEST,
         CALL_REPLY,
         CALL_EVENT,
+        ERROR_EVENT,
     }
 
     /*
