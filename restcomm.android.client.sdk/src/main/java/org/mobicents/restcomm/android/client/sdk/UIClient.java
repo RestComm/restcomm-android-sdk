@@ -38,8 +38,7 @@ public class UIClient {
         /////
     }
 
-    // TODO: remove connectivity and networkInterfaceType from here once things clear out (the idea is to move reachability facilities inside the signaling module if possible)
-    String open(HashMap<String,Object> parameters, boolean connectivity, SipManager.NetworkInterfaceType networkInterfaceType)
+    String open(HashMap<String,Object> parameters)
     {
         String id = generateId();
         SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.OPEN_REQUEST);
@@ -47,8 +46,8 @@ public class UIClient {
         signalingMessage.setAndroidContext(context);
 
         // TODO: remove these once reachability is properly handled (probably within the signaling thread)
-        signalingMessage.connectivity = connectivity;
-        signalingMessage.networkInterfaceType = networkInterfaceType;
+        //signalingMessage.connectivity = connectivity;
+        //signalingMessage.networkInterfaceType = networkInterfaceType;
         /*
         signalingMessage.setParametersOpen((String)parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN),
                 (String)parameters.get(RCDevice.ParameterKeys.SIGNALING_USERNAME),

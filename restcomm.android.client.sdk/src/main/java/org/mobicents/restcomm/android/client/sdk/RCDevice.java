@@ -117,6 +117,8 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
         public static final String SIGNALING_DOMAIN = "pref_proxy_domain";
         public static final String SIGNALING_PASSWORD = "pref_sip_password";
         public static final String SIGNALING_SECURE_ENABLED = "signaling-secure";
+        public static final String SIGNALING_LOCAL_PORT = "signaling-local-port";
+        public static final String SIGNALING_JAIN_SIP_LOGGING_ENABLED = "jain-sip-logging-enabled";
         public static final String MEDIA_TURN_ENABLED = "turn-enabled";
         public static final String MEDIA_TURN_URL = "turn-url";
         public static final String MEDIA_TURN_USERNAME = "turn-username";
@@ -160,9 +162,11 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
         state = DeviceState.OFFLINE;
 
         // register broadcast receiver for reachability
+        /*
         Context context = RCClient.getContext();
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         context.registerReceiver(this, filter);
+        */
 
         // initialize JAIN SIP if we have connectivity
         this.parameters = parameters;

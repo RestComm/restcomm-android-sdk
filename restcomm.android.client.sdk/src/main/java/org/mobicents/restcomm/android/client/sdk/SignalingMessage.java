@@ -36,8 +36,8 @@ public class SignalingMessage {
     public RCClient.ErrorCodes status;
     public String text;
 
-    public boolean connectivity;
-    public SipManager.NetworkInterfaceType networkInterfaceType;
+    //public boolean connectivity;
+    //public SipManager.NetworkInterfaceType networkInterfaceType;
 
     //public String status;
     /*

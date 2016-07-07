@@ -7,36 +7,38 @@ import java.util.Map;
 
 // Handles live JAIN SIP transactions. Each transaction is stored in 'transactions' map identified by an 'id' provided by the caller (in our RCDevice or RCConnection)
 // and keeps information such as the JAIN SIP Transaction (Client or Server) amongst other things
-public class JainSipTransactionManager {
+public class JainSipJobManager {
     // TODO: consider using interface instead
     JainSipClient jainSipClient;
-    HashMap<String, JainSipTransaction> transactions;
+    HashMap<String, JainSipJob> transactions;
 
 
-    JainSipTransactionManager(JainSipClient jainSipClient) {
+    JainSipJobManager(JainSipClient jainSipClient) {
         this.jainSipClient = jainSipClient;
         transactions = new HashMap<>();
     }
 
-    void add(String id, JainSipTransaction.Type type, JainSipTransaction.RegistrationType registrationType, Transaction transaction, HashMap<String, Object> parameters) {
-        //JainSipTransaction jainSipTransaction = new JainSipTransaction(this, jainSipClient, id, type, registrationType, transaction, parameters);
-        JainSipTransaction jainSipTransaction = new JainSipTransaction(this, jainSipClient, id, type, registrationType, transaction, parameters);
-        transactions.put(id, jainSipTransaction);
-        jainSipTransaction.processFsm(id, "", null, null);
-    }
-
-    void add(String id, JainSipTransaction.Type type, Transaction transaction, HashMap<String, Object> parameters) {
-        add(id, type, null, transaction, parameters);
-    }
-
-    void add(String id, JainSipTransaction.Type type, HashMap<String, Object> parameters) {
-        add(id, type, null, null, parameters);
+    void add(String id, JainSipJob.Type type, Transaction transaction, HashMap<String, Object> parameters) {
+        //JainSipJob jainSipJob = new JainSipJob(this, jainSipClient, id, type, registrationType, transaction, parameters);
+        JainSipJob jainSipJob = new JainSipJob(this, jainSipClient, id, type, transaction, parameters);
+        transactions.put(id, jainSipJob);
+        jainSipJob.processFsm(id, "", null, null, null);
     }
 
     /*
-    void add(String id, JainSipTransaction.Type type, JainSipTransaction.RegistrationType registrationType, Transaction transaction, HashMap<String, Object> parameters, Runnable onCompletion) {
+    void add(String id, JainSipJob.Type type, Transaction transaction, HashMap<String, Object> parameters) {
+        add(id, type, transaction, parameters);
+    }
+    */
+
+    void add(String id, JainSipJob.Type type, HashMap<String, Object> parameters) {
+        add(id, type, null, parameters);
+    }
+
+    /*
+    void add(String id, JainSipJob.Type type, JainSipJob.RegistrationType registrationType, Transaction transaction, HashMap<String, Object> parameters, Runnable onCompletion) {
         //synchronized (this) {
-        JainSipTransaction t = new JainSipTransaction(jainSipClient, id, type, registrationType, transaction, parameters, onCompletion);
+        JainSipJob t = new JainSipJob(jainSipClient, id, type, registrationType, transaction, parameters, onCompletion);
         //HashMap<String, Object> data = new HashMap<>();
         //data.put("transaction", transaction);
         //data.put("parameters", parameters);
@@ -47,7 +49,7 @@ public class JainSipTransactionManager {
     }
     */
 
-    JainSipTransaction get(String id) {
+    JainSipJob get(String id) {
         //synchronized (this) {
             if (transactions.containsKey(id)) {
                 // this doesn't seem harmful let's suppress it for now
@@ -59,10 +61,10 @@ public class JainSipTransactionManager {
         //}
     }
 
-    JainSipTransaction getUsingTransactionId(String transactionId)
+    JainSipJob getUsingTransactionId(String transactionId)
     {
-        for (Map.Entry<String, JainSipTransaction> entry : transactions.entrySet()) {
-            JainSipTransaction transaction = entry.getValue();
+        for (Map.Entry<String, JainSipJob> entry : transactions.entrySet()) {
+            JainSipJob transaction = entry.getValue();
             if (transaction.transactionId.equals(transactionId)) {
                 return transaction;
             }

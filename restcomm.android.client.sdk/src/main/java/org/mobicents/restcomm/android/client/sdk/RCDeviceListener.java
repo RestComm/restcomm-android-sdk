@@ -30,7 +30,6 @@ import java.util.HashMap;
  *  RCDevice notifies its listener for RCDevice related events defined in this interface
  */
 public interface RCDeviceListener {
-    // map RCConnectivityStatus enum with Reachability.h:NerworkStatus enum 1-1
      enum RCConnectivityStatus {
         RCConnectivityStatusWiFi,  // restcomm reachable and online via Wifi (or if in registrarless mode we don't register with restcomm; we just know that we have internet connectivity)
         RCConnectivityStatusCellular,  // restcomm reachable and online via cellular (same as above for registraless)

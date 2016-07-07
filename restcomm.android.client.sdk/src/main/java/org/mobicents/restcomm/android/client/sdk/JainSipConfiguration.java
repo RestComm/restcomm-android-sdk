@@ -26,4 +26,12 @@ public class JainSipConfiguration {
         return mergedParameters;
     }
 
+    static boolean getBoolean(HashMap<String, Object> parameters, String key)
+    {
+        if (parameters.containsKey(key) && parameters.get(key) == true) {
+            return true;
+        }
+        return false;
+    }
+
 }
