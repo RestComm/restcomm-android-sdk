@@ -21,7 +21,7 @@ import org.webrtc.CameraEnumerationAndroid;
 import org.webrtc.DataChannel;
 import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
-import org.webrtc.Logging;
+//import org.webrtc.Logging;
 import org.webrtc.MediaCodecVideoEncoder;
 import org.webrtc.MediaConstraints;
 import org.webrtc.MediaConstraints.KeyValuePair;
@@ -487,10 +487,12 @@ public class PeerConnectionClient {
 
     // Set default WebRTC tracing and INFO libjingle logging.
     // NOTE: this _must_ happen while |factory| is alive!
+    /*
     Logging.enableTracing(
         "logcat:",
         EnumSet.of(Logging.TraceLevel.TRACE_DEFAULT),
-        Logging.Severity.LS_INFO);
+            Logging.Severity.LS_INFO);
+            */
 
     mediaStream = factory.createLocalMediaStream("ARDAMS");
     if (videoCallEnabled) {
