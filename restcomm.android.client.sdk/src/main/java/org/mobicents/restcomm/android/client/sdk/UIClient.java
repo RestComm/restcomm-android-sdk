@@ -11,6 +11,23 @@ import java.util.HashMap;
 
 // Client object that will send all asynchronous requests from UI towards signaling thread
 public class UIClient {
+
+    // Interface the UIClient listener needs to implement, to get events from us
+    public interface UIClientListener {
+        // Replies
+        void onOpenReply(String id, RCClient.ErrorCodes status, String text);
+        void onCloseReply(String id, RCClient.ErrorCodes status, String text);
+        void onReconfigureReply(String id, RCClient.ErrorCodes status, String text);
+        void onCallReply(String id, RCClient.ErrorCodes status, String text);
+        void onSendMessageReply(String id, RCClient.ErrorCodes status, String text);
+
+        // Unsolicited Events
+        void onCallArrivedEvent(String id, String peer);
+        void onMessageArrivedEvent(String id, String peer, String text);
+        void onErrorEvent(String id, RCClient.ErrorCodes status, String text);
+        void onConnectivityEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus);
+    }
+
     // handler at signaling thread to send messages to
     SignalingHandlerThread signalingHandlerThread;
     Handler signalingHandler;

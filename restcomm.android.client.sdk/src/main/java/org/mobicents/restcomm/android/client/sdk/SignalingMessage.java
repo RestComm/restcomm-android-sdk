@@ -19,6 +19,7 @@ public class SignalingMessage {
         CALL_REPLY,
         CALL_EVENT,
         ERROR_EVENT,
+        CONNECTIVITY_EVENT;
     }
 
     /*
@@ -32,28 +33,13 @@ public class SignalingMessage {
     public MessageType type;
     public HashMap<String, Object> parameters;
     public Context androidContext;
+
     // result status and text
     public RCClient.ErrorCodes status;
     public String text;
 
-    //public boolean connectivity;
-    //public SipManager.NetworkInterfaceType networkInterfaceType;
-
-    //public String status;
-    /*
-    public String peer;
-    public String domain;
-    public String username;
-    public String password;
-    public String text;
-    */
-
-    /*
-    public SignalingMessage()
-    {
-
-    }
-    */
+    // additional fields per request
+    public RCDeviceListener.RCConnectivityStatus connectivityStatus;
 
     // let's enforce id and type, to make sure we always get them
     public SignalingMessage(String id, MessageType type)
@@ -71,14 +57,5 @@ public class SignalingMessage {
     {
         this.androidContext = androidContext;
     }
-
-    /*
-    public void setParametersOpen(String domain, String username, String password)
-    {
-        this.domain = domain;
-        this.username = username;
-        this.password = password;
-    }
-    */
 
 }

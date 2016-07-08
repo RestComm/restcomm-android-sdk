@@ -35,34 +35,26 @@ public class JainSipMessageBuilder {
     // TODO: put this in a central place
     public static String USERAGENT_STRING = "TelScale Restcomm Android Client 1.0.0 BETA4";
 
-    void initialize(SipFactory sipFactory) throws PeerUnavailableException
-    {
+    void initialize(SipFactory sipFactory) throws PeerUnavailableException {
         jainSipHeaderFactory = sipFactory.createHeaderFactory();
         jainSipAddressFactory = sipFactory.createAddressFactory();
         jainSipMessageFactory = sipFactory.createMessageFactory();
     }
 
-    void shutdown()
-    {
+    void shutdown() {
         jainSipHeaderFactory = null;
         jainSipAddressFactory = null;
         jainSipMessageFactory = null;
     }
 
-    public Request buildRegister(String id, JainSipClientListener listener, ListeningPoint listeningPoint, int expires, final Address contact, HashMap<String,Object> parameters)
-    {
+    public Request buildRegister(String id, JainSipClient.JainSipClientListener listener, ListeningPoint listeningPoint, int expires, final String contact, HashMap<String, Object> parameters) {
         try {
             // Create addresses and via header for the request
             Address fromAddress = jainSipAddressFactory.createAddress("sip:" + parameters.get(RCDevice.ParameterKeys.SIGNALING_USERNAME) + "@" +
                     sipUri2IpAddress((String) parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN)));
-            fromAddress.setDisplayName((String)parameters.get(RCDevice.ParameterKeys.SIGNALING_USERNAME));
+            fromAddress.setDisplayName((String) parameters.get(RCDevice.ParameterKeys.SIGNALING_USERNAME));
 
-            Address contactAddress;
-            if (contact == null) {
-                contactAddress = createContactAddress(listeningPoint, parameters);
-            } else {
-                contactAddress = contact;
-            }
+            Address contactAddress = createContactAddress(listeningPoint, contact, (String)parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN));
 
             // Create callId from the user provided id, to maintain a correlation between UI and signaling thread
             CallIdHeader callIdHeader = jainSipHeaderFactory.createCallIdHeader(id);
@@ -75,7 +67,7 @@ public class JainSipMessageBuilder {
             viaHeader.setRPort();
             viaHeaders.add(viaHeader);
 
-            URI requestURI = jainSipAddressFactory.createAddress((String)parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN)).getURI();
+            URI requestURI = jainSipAddressFactory.createAddress((String) parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN)).getURI();
 
             // Build the request
             Request request = jainSipMessageFactory.createRequest(requestURI,
@@ -86,7 +78,7 @@ public class JainSipMessageBuilder {
                     jainSipHeaderFactory.createMaxForwardsHeader(70));
 
             // Add route header with the proxy first
-            SipURI routeUri = (SipURI) jainSipAddressFactory.createURI((String)parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN));
+            SipURI routeUri = (SipURI) jainSipAddressFactory.createURI((String) parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN));
             routeUri.setLrParam();
             Address routeAddress = jainSipAddressFactory.createAddress(routeUri);
             RouteHeader routeHeader = jainSipHeaderFactory.createRouteHeader(routeAddress);
@@ -96,16 +88,14 @@ public class JainSipMessageBuilder {
             request.addHeader(jainSipHeaderFactory.createContactHeader(contactAddress));
             ExpiresHeader expiresHeader = jainSipHeaderFactory.createExpiresHeader(expires);
             request.addHeader(expiresHeader);
-            request.addHeader(generateUserAgentHeader());
+            request.addHeader(createUserAgentHeader());
 
             return request;
-        }
-        catch (ParseException e) {
+        } catch (ParseException e) {
             listener.onClientErrorEvent(id, RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_URI_INVALID, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_URI_INVALID));
             RCLogger.e(TAG, "buildRegister(): " + e.getMessage());
             e.printStackTrace();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             listener.onClientErrorEvent(id, RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED));
             RCLogger.e(TAG, "buildRegister(): " + e.getMessage());
             e.printStackTrace();
@@ -117,29 +107,32 @@ public class JainSipMessageBuilder {
     // convert sip uri, like  sip:cloud.restcomm.com:5060 -> cloud.restcomm.com
     public String sipUri2IpAddress(String sipUri) throws ParseException {
         Address address = jainSipAddressFactory.createAddress(sipUri);
-        return ((SipURI)address.getURI()).getHost();
+        return ((SipURI) address.getURI()).getHost();
     }
 
-    public Address createContactAddress(ListeningPoint listeningPoint, HashMap<String,Object> parameters) throws ParseException{
+    public Address createContactAddress(ListeningPoint listeningPoint, String contact, String domain) throws ParseException {
         RCLogger.i(TAG, "createContactAddress()");
+        if (contact == null) {
+            contact = getContactString(listeningPoint, domain);
+        }
+        return this.jainSipAddressFactory.createAddress(contact);
+    }
+
+    public String getContactString(ListeningPoint listeningPoint, String domain) throws ParseException {
         // TODO: do we really need registering_acc?
-        return this.jainSipAddressFactory.createAddress("sip:"
-                + parameters.get(RCDevice.ParameterKeys.SIGNALING_USERNAME) + "@"
-                + listeningPoint.getIPAddress() + ':' + listeningPoint.getPort() + ";transport=" + listeningPoint.getTransport()
-                + ";registering_acc=" + sipUri2IpAddress((String) parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN)));
+        return "sip:" + listeningPoint.getIPAddress() + ':' + listeningPoint.getPort() + ";transport=" + listeningPoint.getTransport() +
+                ";registering_acc=" + sipUri2IpAddress(domain);
     }
 
     // TODO: properly handle exception
-    public UserAgentHeader generateUserAgentHeader()
-    {
-        RCLogger.i(TAG, "generateUserAgentHeader()");
+    public UserAgentHeader createUserAgentHeader() {
+        RCLogger.i(TAG, "createUserAgentHeader()");
         List<String> userAgentTokens = new LinkedList<String>();
         UserAgentHeader header = null;
         userAgentTokens.add(USERAGENT_STRING);
         try {
             header = this.jainSipHeaderFactory.createUserAgentHeader(userAgentTokens);
-        }
-        catch (ParseException e) {
+        } catch (ParseException e) {
             e.printStackTrace();
         }
 

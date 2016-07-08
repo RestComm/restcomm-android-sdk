@@ -6,13 +6,19 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.os.Handler;
 import android.util.Log;
 
 import org.mobicents.restcomm.android.sipua.RCLogger;
-import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
 import org.mobicents.restcomm.android.sipua.impl.SipManager;
 
 public class NotificationManager extends BroadcastReceiver {
+
+    // Define NotificationManager events
+    public interface NotificationManagerListener {
+        void onConnectivityChange(ConnectivityChange connectivityChange);
+    }
+
     public enum ConnectivityChange {
         OFFLINE,
         OFFLINE_TO_WIFI,
@@ -21,18 +27,13 @@ public class NotificationManager extends BroadcastReceiver {
         CELLULAR_DATA_TO_WIFI,
     }
 
-    // Define NotificationManager events
-    public interface NotificationManagerListener {
-        void onConnectivityChange(ConnectivityChange connectivityChange);
-    }
-
     Context androidContext;
     NotificationManagerListener listener;
     static final String TAG = "NotificationManager";
     RCDeviceListener.RCConnectivityStatus connectivityStatus;
 
 
-    NotificationManager(Context androidContext, NotificationManagerListener listener)
+    NotificationManager(Context androidContext, Handler handler, NotificationManagerListener listener)
     {
         this.androidContext = androidContext;
         this.listener = listener;
@@ -40,7 +41,7 @@ public class NotificationManager extends BroadcastReceiver {
         // initialize current connectivity status
         connectivityStatus = checkConnectivity(androidContext);
         // register for connectivity related events
-        androidContext.registerReceiver(this, filter);
+        androidContext.registerReceiver(this, filter, null, handler);
     }
 
     public void close()
@@ -129,4 +130,8 @@ public class NotificationManager extends BroadcastReceiver {
         }
     }
 
+    RCDeviceListener.RCConnectivityStatus getConnectivityStatus()
+    {
+        return connectivityStatus;
+    }
 }

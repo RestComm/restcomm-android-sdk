@@ -6,9 +6,9 @@ import android.os.Message;
 // Attached to UI thread, handles incoming messages from signaling thread. These can either be replies to previous requests towards signaling thread or
 // unsolicited events (like incoming calls or messages)
 public class UIHandler extends Handler {
-    UIClientListener listener;
+    UIClient.UIClientListener listener;
 
-    public UIHandler(UIClientListener listener) {
+    public UIHandler(UIClient.UIClientListener listener) {
         // instantiate parent Handler; remember by default associates this handler with the Looper for the current thread, hence UI thread
         super();
 
@@ -37,6 +37,9 @@ public class UIHandler extends Handler {
         }
         else if (message.type == SignalingMessage.MessageType.ERROR_EVENT) {
             listener.onErrorEvent(message.id, message.status, message.text);
+        }
+        else if (message.type == SignalingMessage.MessageType.CONNECTIVITY_EVENT) {
+            listener.onConnectivityEvent(message.id, message.connectivityStatus);
         }
     }
 

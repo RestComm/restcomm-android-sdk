@@ -5,8 +5,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
-public class SignalingHandler extends Handler implements JainSipClientListener, JainSipCallListener {
-    //SignalingClientListener listener;
+public class SignalingHandler extends Handler implements JainSipClient.JainSipClientListener, JainSipCall.JainSipCallListener {
     JainSipClient jainSipClient;
     Handler uiHandler;
     private static final String TAG = "SignalingHandler";
@@ -52,55 +51,6 @@ public class SignalingHandler extends Handler implements JainSipClientListener, 
         }
     }
 
-    // -- SignalingClientListener events, that send messages towards UI thread
-    // Replies
-    /*
-    public void onOpenReply(String id, RCClient.ErrorCodes status, String text)
-    {
-        SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.OPEN_REPLY);
-        signalingMessage.status = status;
-        signalingMessage.text = text;
-        Message message = uiHandler.obtainMessage(1, signalingMessage);
-        message.sendToTarget();
-    }
-
-    public void onCloseReply(String id, String text)
-    {
-
-    }
-    public void onCallReply(String callId)
-    {
-
-    }
-    public void onSendMessageReply(int errorCode, String errorText)
-    {
-
-    }
-
-    // Unsolicited Events (due to incoming SIP requests)
-    public void onCallArrivedEvent(String callId)
-    {
-
-    }
-    public void onCallHangupEvent(String callId)
-    {
-
-    }
-    // Incoming call was cancelled before it was answered
-    public void onCallCancelledEvent(String callId)
-    {
-
-    }
-    public void onMessageArrivedEvent(String id, String peer, String text)
-    {
-
-    }
-    public void onErrorEvent(String id, int errorCode, String errorText)
-    {
-
-    }
-    */
-
     // -- JainSipClientListener events
     public void onClientOpenedEvent(String id, RCClient.ErrorCodes status, String text)
     {
@@ -142,6 +92,13 @@ public class SignalingHandler extends Handler implements JainSipClientListener, 
         message.sendToTarget();
     }
 
+    public void onClientConnectivityEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus)
+    {
+        SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.CONNECTIVITY_EVENT);
+        signalingMessage.connectivityStatus = connectivityStatus;
+        Message message = uiHandler.obtainMessage(1, signalingMessage);
+        message.sendToTarget();
+    }
 
     // -- JainSipCallListener events
     public void onCallRingingEvent(String callId)

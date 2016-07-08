@@ -57,7 +57,7 @@ import org.mobicents.restcomm.android.sipua.impl.SipManager;
  * @see RCConnection
  */
 
-public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, UIClientListener {
+public class RCDevice implements SipUADeviceListener, UIClient.UIClientListener {
     /**
      * @abstract Device state
      */
@@ -170,35 +170,26 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
 
         // initialize JAIN SIP if we have connectivity
         this.parameters = parameters;
-        reachabilityState = DeviceImpl.checkReachability(RCClient.getContext());
+        //reachabilityState = DeviceImpl.checkReachability(RCClient.getContext());
 
+        uiClient = new UIClient(this, RCClient.getContext());
+        uiClient.open(parameters);
+
+        /*
         boolean connectivity = false;
         if (reachabilityState != RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
             connectivity = true;
         }
         initializeSignalling(connectivity);
-    }
-
-    @Override
-    public void onReceive(Context context, Intent intent) {
-        onReachabilityChanged(DeviceImpl.checkReachability(RCClient.getContext()));
+        */
     }
 
     private void initializeSignalling(boolean connectivity) {
         RCLogger.i(TAG, "initializeSignalling()");
-        sipProfile = new SipProfile();
-        updateSipProfile(parameters);
-        DeviceImpl deviceImpl = DeviceImpl.GetInstance();
+        //sipProfile = new SipProfile();
+        //updateSipProfile(parameters);
+        //DeviceImpl deviceImpl = DeviceImpl.GetInstance();
 
-        uiClient = new UIClient(this, RCClient.getContext());
-
-        if (reachabilityState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi) {
-            uiClient.open(parameters, connectivity, SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi);
-            //deviceImpl.Initialize(RCClient.getContext(), sipProfile, connectivity, SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi);
-        } else {
-            uiClient.open(parameters, connectivity, SipManager.NetworkInterfaceType.NetworkInterfaceTypeCellularData);
-            //deviceImpl.Initialize(RCClient.getContext(), sipProfile, connectivity, SipManager.NetworkInterfaceType.NetworkInterfaceTypeCellularData);
-        }
 
         /*
         DeviceImpl.GetInstance().sipuaDeviceListener = this;
@@ -216,6 +207,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
         */
     }
 
+    /*
     private void onReachabilityChanged(final RCDeviceListener.RCConnectivityStatus newState) {
         if (newState == reachabilityState) {
             RCLogger.w(TAG, "Reachability event, but remained the same: " + newState);
@@ -267,7 +259,9 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
             }
         }
     }
+    */
 
+    // TODO: this is for RCConnection, but see if they can figure out the connectivity in a different way, like asking the signaling thread directly?
     public RCDeviceListener.RCConnectivityStatus getReachability() {
         return reachabilityState;
     }
@@ -292,7 +286,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
 
         uiClient.close();
         // important, otherwise if shutdown and re-initialized the old RCDevice instance will be getting events
-        RCClient.getContext().unregisterReceiver(this);
+        //RCClient.getContext().unregisterReceiver(this);
         state = DeviceState.OFFLINE;
 
         /*
@@ -333,7 +327,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
     }
 
     /**
-     * Stop listeninig for incoming connections
+     * Stop listening for incoming connections
      */
     public void unlisten() {
         RCLogger.i(TAG, "unlisten()");
@@ -771,19 +765,25 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
     public void onOpenReply(String id, RCClient.ErrorCodes status, String text) {
         if (status != RCClient.ErrorCodes.SUCCESS) {
             RCLogger.e(TAG, "onOpenReply(): id: " + id + ", failure - " + text);
+
+            // TODO: Maybe we should introduce separate message specifically for RCDevice initialization. Using onStopListening() looks weird
+            listener.onStopListening(this, status.ordinal(), text);
             return;
         }
 
         RCLogger.i(TAG, "onOpenReply(): id: " + id + ", success - " + text);
-        //final RCDevice device = this;
-        final RCDeviceListener.RCConnectivityStatus state = this.reachabilityState;
+        state = DeviceState.READY;
+        listener.onStartListening(this);
 
+        /*
+        final RCDeviceListener.RCConnectivityStatus state = this.reachabilityState;
         if (this.listener != null) {
             if (this.state == DeviceState.OFFLINE) {
                 this.state = DeviceState.READY;
                 this.listener.onConnectivityUpdate(this, state);
             }
         }
+        */
 
         //uiClient.close();
     }
@@ -828,5 +828,10 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener, 
         } else {
             RCLogger.i(TAG, "onErrorEvent(): id: " + id + ", failure - " + text);
         }
+    }
+
+    public void onConnectivityEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus)
+    {
+        RCLogger.i(TAG, "onConnectivityEvent(): id: " + id + ", status - " + connectivityStatus);
     }
 }
