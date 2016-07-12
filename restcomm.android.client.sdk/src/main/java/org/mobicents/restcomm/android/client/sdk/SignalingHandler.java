@@ -5,6 +5,8 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
+import java.util.HashMap;
+
 public class SignalingHandler extends Handler implements JainSipClient.JainSipClientListener, JainSipCall.JainSipCallListener {
    JainSipClient jainSipClient;
    Handler uiHandler;
@@ -46,10 +48,9 @@ public class SignalingHandler extends Handler implements JainSipClient.JainSipCl
       }
       else if (message.type == SignalingMessage.MessageType.CALL_REQUEST) {
          jainSipClient.call(message.id, message.parameters, this);
-         //listener.onCallArrivedEvent();
       }
-      else {
-
+      else if (message.type == SignalingMessage.MessageType.CALL_HANGUP_REQUEST) {
+         jainSipClient.hangup(message.id, this);
       }
    }
 
@@ -103,11 +104,43 @@ public class SignalingHandler extends Handler implements JainSipClient.JainSipCl
       message.sendToTarget();
    }
 
+   public void onClientMessageArrivedEvent(String id, String messageText, String peer)
+   {
+      SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.MESSAGE_EVENT);
+      //signalingMessage.parameters = parameters;
+      signalingMessage.messageText = messageText;
+      signalingMessage.peer = peer;
+      Message message = uiHandler.obtainMessage(1, signalingMessage);
+      message.sendToTarget();
+   }
+
    // -- JainSipCallListener events
+   public void onCallArrivedEvent(String id, String peer, String sdpOffer)
+   {
+      SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.CALL_EVENT);
+      signalingMessage.sdp = sdpOffer;
+      signalingMessage.peer = peer;
+      Message message = uiHandler.obtainMessage(1, signalingMessage);
+      message.sendToTarget();
+   }
+
    public void onCallConnectedEvent(String callId, String sdpAnswer)
    {
       SignalingMessage signalingMessage = new SignalingMessage(callId, SignalingMessage.MessageType.CALL_CONNECTED_EVENT);
       signalingMessage.sdp = sdpAnswer;
+      Message message = uiHandler.obtainMessage(1, signalingMessage);
+      message.sendToTarget();
+   }
+
+   public void onCallPeerDisconnectedEvent(String callId)
+   {
+      SignalingMessage signalingMessage = new SignalingMessage(callId, SignalingMessage.MessageType.CALL_PEER_HANGUP_EVENT);
+      Message message = uiHandler.obtainMessage(1, signalingMessage);
+      message.sendToTarget();
+   }
+   public void onCallLocalDisconnectedEvent(String callId)
+   {
+      SignalingMessage signalingMessage = new SignalingMessage(callId, SignalingMessage.MessageType.CALL_HANGUP_REPLY);
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
    }
@@ -147,7 +180,11 @@ public class SignalingHandler extends Handler implements JainSipClient.JainSipCl
 
    public void onCallCancelledEvent(String callId)
    {
-
+      SignalingMessage signalingMessage = new SignalingMessage(callId, SignalingMessage.MessageType.CALL_CANCELED_EVENT);
+      //signalingMessage.sdp = sdpOffer;
+      //signalingMessage.peer = peer;
+      Message message = uiHandler.obtainMessage(1, signalingMessage);
+      message.sendToTarget();
    }
 
    public void onCallIgnoredEvent(String callId)

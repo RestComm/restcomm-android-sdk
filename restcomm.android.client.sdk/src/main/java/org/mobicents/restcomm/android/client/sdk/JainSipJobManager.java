@@ -19,12 +19,13 @@ public class JainSipJobManager {
       transactions = new HashMap<>();
    }
 
-   void add(String id, JainSipJob.Type type, Transaction transaction, HashMap<String, Object> parameters, JainSipCall jainSipCall)
+   JainSipJob add(String id, JainSipJob.Type type, Transaction transaction, HashMap<String, Object> parameters, JainSipCall jainSipCall)
    {
       //JainSipJob jainSipJob = new JainSipJob(this, jainSipClient, id, type, registrationType, transaction, parameters);
       JainSipJob jainSipJob = new JainSipJob(this, jainSipClient, id, type, transaction, parameters, jainSipCall);
       transactions.put(id, jainSipJob);
       jainSipJob.processFsm(id, "", null, null, null);
+      return jainSipJob;
    }
 
     /*
@@ -33,14 +34,14 @@ public class JainSipJobManager {
     }
     */
 
-   void add(String id, JainSipJob.Type type, HashMap<String, Object> parameters)
+   JainSipJob add(String id, JainSipJob.Type type, HashMap<String, Object> parameters)
    {
-      add(id, type, null, parameters, null);
+      return add(id, type, null, parameters, null);
    }
 
-   void add(String id, JainSipJob.Type type, HashMap<String, Object> parameters, JainSipCall jainSipCall)
+   JainSipJob add(String id, JainSipJob.Type type, HashMap<String, Object> parameters, JainSipCall jainSipCall)
    {
-      add(id, type, null, parameters, jainSipCall);
+      return add(id, type, null, parameters, jainSipCall);
    }
     /*
     void add(String id, JainSipJob.Type type, JainSipJob.RegistrationType registrationType, Transaction transaction, HashMap<String, Object> parameters, Runnable onCompletion) {

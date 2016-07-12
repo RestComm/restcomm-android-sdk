@@ -23,6 +23,7 @@
 package org.mobicents.restcomm.android.client.sdk;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import android.app.PendingIntent;
@@ -406,7 +407,7 @@ public class RCDevice implements UIClient.UIClientListener {
          RCLogger.i(TAG, "RCDevice.connect(), with connectivity");
 
          //Boolean enableVideo = (Boolean) parameters.get("video-enabled");
-         RCConnection connection = new RCConnection(false, RCConnection.ConnectionState.PENDING, this, uiClient, listener);
+         RCConnection connection = new RCConnection(null, false, RCConnection.ConnectionState.PENDING, this, uiClient, listener);
          connection.open(parameters);
 
          // keep connection in the connections hashmap
@@ -510,7 +511,15 @@ public class RCDevice implements UIClient.UIClientListener {
 
    public RCConnection getPendingConnection()
    {
-      // TODO: FIX THIS!!!
+      Iterator it = connections.entrySet().iterator();
+      while (it.hasNext()) {
+         Map.Entry pair = (Map.Entry)it.next();
+         RCConnection connection = (RCConnection)pair.getValue();
+         if (connection.incoming && connection.state == RCConnection.ConnectionState.CONNECTING) {
+            return connection;
+         }
+      }
+
       return null;
    }
 
@@ -902,7 +911,59 @@ public class RCDevice implements UIClient.UIClientListener {
          connections.get(signalingMessage.id).handleSignalingMessage(signalingMessage);
       }
       else {
-         throw new RuntimeException("RCConnection doesn't exist for signaling message");
+         if (signalingMessage.type == SignalingMessage.MessageType.CALL_EVENT) {
+            handleIncomingCall(signalingMessage);
+         }
+         else if (signalingMessage.type == SignalingMessage.MessageType.MESSAGE_EVENT) {
+            handleIncomingTextMessage(signalingMessage);
+         }
+         else {
+            throw new RuntimeException("Unexpected signaling message type");
+         }
+      }
+   }
+
+   private void handleIncomingCall(SignalingMessage signalingMessage)
+   {
+      RCConnection connection = new RCConnection(signalingMessage.id, true, RCConnection.ConnectionState.CONNECTING, this, uiClient, null);
+      connection.incomingCallSdp = signalingMessage.sdp;
+      connection.remoteMediaType = RCConnection.sdp2Mediatype(signalingMessage.sdp);
+      // keep connection in the connections hashmap
+      connections.put(signalingMessage.id, connection);
+
+      state = DeviceState.BUSY;
+
+      try {
+         Intent dataIntent = new Intent();
+         dataIntent.setAction(INCOMING_CALL);
+         dataIntent.putExtra(RCDevice.EXTRA_DID, signalingMessage.peer);
+         dataIntent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, (connection.remoteMediaType == RCConnection.ConnectionMediaType.AUDIO_VIDEO));
+         pendingCallIntent.send(RCClient.getContext(), 0, dataIntent);
+
+         // Phone state Intents to capture incoming phone call event
+         sendQoSIncomingConnectionIntent(signalingMessage.peer, connection);
+      }
+      catch (PendingIntent.CanceledException e) {
+         e.printStackTrace();
+      }
+   }
+
+   private void handleIncomingTextMessage(SignalingMessage signalingMessage)
+   {
+      HashMap<String, String> parameters = new HashMap<String, String>();
+      // filter out SIP URI stuff and leave just the name
+      String from = signalingMessage.peer.replaceAll("^<", "").replaceAll(">$", "");
+      parameters.put("username", from);
+
+      try {
+         Intent dataIntent = new Intent();
+         dataIntent.setAction(INCOMING_MESSAGE);
+         dataIntent.putExtra(INCOMING_MESSAGE_PARAMS, parameters);
+         dataIntent.putExtra(INCOMING_MESSAGE_TEXT, signalingMessage.messageText);
+         pendingMessageIntent.send(RCClient.getContext(), 0, dataIntent);
+      }
+      catch (PendingIntent.CanceledException e) {
+         e.printStackTrace();
       }
    }
 }

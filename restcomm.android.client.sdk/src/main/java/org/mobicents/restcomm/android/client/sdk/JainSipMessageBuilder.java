@@ -1,10 +1,13 @@
 package org.mobicents.restcomm.android.client.sdk;
 
+import android.app.Dialog;
 import android.javax.sip.InvalidArgumentException;
 import android.javax.sip.ListeningPoint;
 import android.javax.sip.PeerUnavailableException;
+import android.javax.sip.ServerTransaction;
 import android.javax.sip.SipException;
 import android.javax.sip.SipFactory;
+import android.javax.sip.SipProvider;
 import android.javax.sip.address.Address;
 import android.javax.sip.address.AddressFactory;
 import android.javax.sip.address.SipURI;
@@ -25,6 +28,7 @@ import android.javax.sip.header.UserAgentHeader;
 import android.javax.sip.header.ViaHeader;
 import android.javax.sip.message.MessageFactory;
 import android.javax.sip.message.Request;
+import android.javax.sip.message.Response;
 
 import org.mobicents.restcomm.android.sipua.RCLogger;
 
@@ -85,10 +89,7 @@ public class JainSipMessageBuilder {
                jainSipHeaderFactory.createMaxForwardsHeader(70));
 
          // Add route header with the proxy first
-         SipURI routeUri = (SipURI) jainSipAddressFactory.createURI((String) parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN));
-         routeUri.setLrParam();
-         Address routeAddress = jainSipAddressFactory.createAddress(routeUri);
-         RouteHeader routeHeader = jainSipHeaderFactory.createRouteHeader(routeAddress);
+         RouteHeader routeHeader = createRouteHeader((String) parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN));
          request.addFirst(routeHeader);
 
          // Add the contact header
@@ -120,26 +121,12 @@ public class JainSipMessageBuilder {
                sipUri2IpAddress((String) clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN)));
          fromAddress.setDisplayName((String) clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_USERNAME));
 
-            /*
-            SipURI from = jainSipAddressFactory.createSipURI(sipManager.getSipProfile().getSipUserName(), sipManager.getSipProfile().getLocalEndpoint());
-            Address fromNameAddress = jainSipAddressFactory.createAddress(from);
-            FromHeader fromHeader = jainSipHeaderFactory.createFromHeader(fromNameAddress,
-                    "Tzt0ZEP92");
-                    */
-
-            /*
-            SipURI toAddress = (SipURI) jainSipAddressFactory.createURI((String)parameters.get("username"));
-            Address toNameAddress = jainSipAddressFactory.createAddress(toAddress);
-            // toNameAddress.setDisplayName(username);
-            ToHeader toHeader = jainSipHeaderFactory.createToHeader(toNameAddress, null);
-            */
          Address toAddress = jainSipAddressFactory.createAddress((String) parameters.get("username"));
 
          URI requestURI = jainSipAddressFactory.createURI((String) parameters.get("username"));
 
          ArrayList<ViaHeader> viaHeaders = createViaHeaders(listeningPoint);
 
-         //CallIdHeader callIdHeader = sipManager.sipProvider.getNewCallId();
          // Create callId from the user provided id, to maintain a correlation between UI and signaling thread
          CallIdHeader callIdHeader = jainSipHeaderFactory.createCallIdHeader(id);
 
@@ -153,22 +140,25 @@ public class JainSipMessageBuilder {
                jainSipHeaderFactory.createToHeader(toAddress, null),
                viaHeaders,
                maxForwards);
+
          SupportedHeader supportedHeader = jainSipHeaderFactory.createSupportedHeader("replaces, outbound");
          callRequest.addHeader(supportedHeader);
 
          if (parameters.containsKey("sip-headers")) {
-            addCustomHeaders(callRequest, (HashMap<String, String>) parameters.get("sip-headers"));
+            try {
+               addCustomHeaders(callRequest, (HashMap<String, String>) parameters.get("sip-headers"));
+            }
+            catch (ParseException e) {
+               throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_PARSE_CUSTOM_SIP_HEADERS,
+                     RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_PARSE_CUSTOM_SIP_HEADERS));
+            }
          }
 
          if (clientConfiguration.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) &&
                !clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
             // we want to add the ROUTE header only on regular calls (i.e. non-registrarless)
             // Add route header with the proxy first
-            // Add route header with the proxy first
-            SipURI routeUri = (SipURI) jainSipAddressFactory.createURI((String) clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN));
-            routeUri.setLrParam();
-            Address routeAddress = jainSipAddressFactory.createAddress(routeUri);
-            RouteHeader routeHeader = jainSipHeaderFactory.createRouteHeader(routeAddress);
+            RouteHeader routeHeader = createRouteHeader((String) clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN));
             callRequest.addFirst(routeHeader);
          }
 
@@ -188,16 +178,6 @@ public class JainSipMessageBuilder {
          String contactString = getContactString(contactIPAddress, contactPort, listeningPoint.getTransport());
          Address contactAddress = jainSipAddressFactory.createAddress(contactString);
 
-         //Address contactAddress = createContactAddress(listeningPoint, contactIPAddress + ":" + contactPort, null);
-
-         // TODO: I don't think the username is needed for the contact, but it doesn't cause any issues either
-         //SipURI contactURI = jainSipAddressFactory.createSipURI(sipManager.getSipProfile().getSipUserName(), contactIPAddress);
-         //contactURI.setPort(contactPort);
-         //Address contactAddress = jainSipAddressFactory.createAddress(contactURI);
-
-         // Add the contact address.
-         //contactAddress.setDisplayName(fromName);
-
          ContactHeader contactHeader = jainSipHeaderFactory.createContactHeader(contactAddress);
          callRequest.addHeader(contactHeader);
 
@@ -209,31 +189,67 @@ public class JainSipMessageBuilder {
          callRequest.addHeader(createUserAgentHeader());
 
          return callRequest;
-
       }
       catch (ParseException e) {
          RCLogger.e(TAG, "buildInvite(): " + e.getMessage());
          e.printStackTrace();
          throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID));
-            /*
-            listener.onCallErrorEvent(id, RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID));
-            RCLogger.e(TAG, "buildInvite(): " + e.getMessage());
-            e.printStackTrace();
-            */
       }
       catch (Exception e) {
          RCLogger.e(TAG, "buildInvite(): " + e.getMessage());
          e.printStackTrace();
          throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED));
-            /*
-            listener.onCallErrorEvent(id, RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED));
-            RCLogger.e(TAG, "buildInvite(): " + e.getMessage());
-            e.printStackTrace();
-            */
       }
    }
 
-   private void addCustomHeaders(Request callRequest, HashMap<String, String> sipHeaders)
+   public Request buildBye(android.javax.sip.Dialog dialog, HashMap<String, Object> clientConfiguration)
+   {
+      try {
+         Request request = dialog.createRequest(Request.BYE);
+         if (clientConfiguration.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) &&
+               !clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
+            // we only need this for non-registrarless calls since the problem is only for incoming calls,
+            // and when working in registrarless mode there are no incoming calls
+            RouteHeader routeHeader = createRouteHeader((String) clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN));
+            request.addFirst(routeHeader);
+         }
+
+         return request;
+      }
+      catch (SipException e) {
+         throw new RuntimeException("Error creating SIP Bye request");
+      }
+   }
+
+   /*
+   public Response build200OK(Request request)
+   {
+      Response response;
+      try {
+         response = jainSipMessageFactory.createResponse(200, request);
+         RCLogger.v(TAG, "Sending SIP response: \n" + response.toString());
+         return response;
+      } catch (ParseException e) {
+         throw new RuntimeException("Error creating 200 OK");
+      }
+   }
+   */
+
+   // -- Helpers
+   private RouteHeader createRouteHeader(String route)
+   {
+      try {
+         SipURI routeUri = (SipURI) jainSipAddressFactory.createURI(route);
+         routeUri.setLrParam();
+         Address routeAddress = jainSipAddressFactory.createAddress(routeUri);
+         return jainSipHeaderFactory.createRouteHeader(routeAddress);
+      }
+      catch (ParseException e) {
+         throw new RuntimeException("Error creating SIP Route header");
+      }
+   }
+
+   private void addCustomHeaders(Request callRequest, HashMap<String, String> sipHeaders) throws ParseException
    {
       if (sipHeaders != null) {
          // Get a set of the entries
@@ -243,18 +259,12 @@ public class JainSipMessageBuilder {
          // Display elements
          while (i.hasNext()) {
             Map.Entry me = (Map.Entry) i.next();
-            try {
-               Header customHeader = jainSipHeaderFactory.createHeader(me.getKey().toString(), me.getValue().toString());
-               callRequest.addHeader(customHeader);
-            }
-            catch (ParseException e) {
-               e.printStackTrace();
-            }
+            Header customHeader = jainSipHeaderFactory.createHeader(me.getKey().toString(), me.getValue().toString());
+            callRequest.addHeader(customHeader);
          }
       }
    }
 
-   // -- Helpers
    // convert sip uri, like  sip:cloud.restcomm.com:5060 -> cloud.restcomm.com
    public String sipUri2IpAddress(String sipUri) throws ParseException
    {
@@ -316,7 +326,7 @@ public class JainSipMessageBuilder {
          header = jainSipHeaderFactory.createUserAgentHeader(userAgentTokens);
       }
       catch (ParseException e) {
-         e.printStackTrace();
+         throw new RuntimeException("Error creating User Agent header");
       }
 
       return header;

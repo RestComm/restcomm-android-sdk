@@ -453,7 +453,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     }
 
     public void startTimer() {
-        Log.w(TAG, "--- startTimer: " + secondsElapsed);
+        //Log.w(TAG, "--- startTimer: " + secondsElapsed);
         String time = String.format("%02d:%02d:%02d", secondsElapsed / 3600, (secondsElapsed % 3600) / 60, secondsElapsed % 60);
         lblTimer.setText(time);
         secondsElapsed++;

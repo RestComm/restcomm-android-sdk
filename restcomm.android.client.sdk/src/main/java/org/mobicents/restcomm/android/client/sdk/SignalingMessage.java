@@ -15,15 +15,24 @@ public class SignalingMessage {
       CLOSE_REPLY,
       RECONFIGURE_REQUEST,
       RECONFIGURE_REPLY,
+
       CALL_REQUEST,
       //CALL_REPLY,
       CALL_EVENT,
       ERROR_EVENT,
       CONNECTIVITY_EVENT,
+
       CALL_PEER_RINGING_EVENT,
       CALL_PEER_HANGUP_EVENT,
       CALL_CONNECTED_EVENT,
       CALL_ERROR_EVENT,
+
+      CALL_HANGUP_REQUEST,
+      CALL_HANGUP_REPLY,
+      //CALL_DISCONNECTED_EVENT,
+      CALL_CANCELED_EVENT,
+
+      MESSAGE_EVENT,
    }
 
     /*
@@ -46,6 +55,9 @@ public class SignalingMessage {
    public RCDeviceListener.RCConnectivityStatus connectivityStatus;
    // SDP
    public String sdp;
+   // incoming messages
+   public String messageText;
+   public String peer;
 
    // let's enforce id and type, to make sure we always get them
    public SignalingMessage(String id, MessageType type)

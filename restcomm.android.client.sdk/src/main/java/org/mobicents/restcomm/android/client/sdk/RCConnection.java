@@ -208,10 +208,15 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    }
 
    // Additional constructor
-   public RCConnection(boolean incoming, RCConnection.ConnectionState state, RCDevice device, UIClient uiClient, RCConnectionListener listener)
+   public RCConnection(String id, boolean incoming, RCConnection.ConnectionState state, RCDevice device, UIClient uiClient, RCConnectionListener listener)
    {
-      // create a unique id for the RCConnection, this is used for signaling actions to maintain state
-      this.id = Long.toString(System.currentTimeMillis());
+      if (id == null) {
+         // create a unique id for the RCConnection, this is used for signaling actions to maintain state
+         this.id = Long.toString(System.currentTimeMillis());
+      }
+      else {
+         this.id = id;
+      }
       this.incoming = incoming;
       this.state = state;
       this.device = device;
@@ -348,6 +353,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       RCLogger.i(TAG, "disconnect()");
 
+      uiClient.hangup(id);
+      /*
       if (haveConnectivity()) {
          if (state == ConnectionState.CONNECTING) {
             DeviceImpl.GetInstance().Cancel();
@@ -356,6 +363,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             DeviceImpl.GetInstance().Hangup();
          }
       }
+      */
       // also update RCDevice state
       //RCDevice device = RCClient.listDevices().get(0);
       if (RCDevice.state == RCDevice.DeviceState.BUSY) {
@@ -466,11 +474,14 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       else if (signalingMessage.type == SignalingMessage.MessageType.CALL_PEER_RINGING_EVENT) {
          handleConnecting();
       }
+      else if (signalingMessage.type == SignalingMessage.MessageType.CALL_HANGUP_REPLY) {
+         handleDisconnected(false);
+      }
    }
 
    public void handleConnecting()
    {
-      RCLogger.i(TAG, "onSipUAConnecting()");
+      RCLogger.i(TAG, "handleConnecting()");
 
       state = ConnectionState.CONNECTING;
       listener.onConnecting(this);
@@ -481,7 +492,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    public void handleConnected(String sdp)
    {
-      RCLogger.i(TAG, "onSipUAConnected()");
+      RCLogger.i(TAG, "handleConnected()");
 
       //this.state = ConnectionState.CONNECTED;
       final RCConnection finalConnection = new RCConnection(this);
@@ -496,7 +507,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    public void handleDisconnected(boolean inboundDisconnect)
    {
-      RCLogger.i(TAG, "onSipUADisconnected()");
+      RCLogger.i(TAG, "handleDisconnected()");
 
       // we 're first notifying listener and then setting new state because we want the listener to be able to
       // differentiate between disconnect and remote cancel events with the same listener method: onDisconnected.
@@ -506,7 +517,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       // also update RCDevice state
       //RCDevice device = RCClient.listDevices().get(0);
       if (inboundDisconnect && RCDevice.state == RCDevice.DeviceState.BUSY) {
-         // for outgoing disconnect we are handling it in RCConnection.disconnect()
+         // for outboud disconnect we are handling it in RCConnection.disconnect()
          disconnectWebrtc();
          RCDevice.state = RCDevice.DeviceState.READY;
       }
@@ -517,54 +528,36 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       sendQoSConnectionIntent("disconnected");
    }
 
-   public void handleCancelled(SipEvent event)
+   public void handleCancelled()
    {
-      RCLogger.i(TAG, "onSipUACancelled()");
+      RCLogger.i(TAG, "handleCancelled()");
 
       final RCConnection finalConnection = new RCConnection(this);
 
-      // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
-      Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
-      Runnable myRunnable = new Runnable() {
-         @Override
-         public void run()
-         {
-            // also update RCDevice state
-            //RCDevice device = RCClient.listDevices().get(0);
-            if (RCDevice.state == RCDevice.DeviceState.BUSY) {
-               RCDevice.state = RCDevice.DeviceState.READY;
-            }
+      // also update RCDevice state
+      //RCDevice device = RCClient.listDevices().get(0);
+      if (RCDevice.state == RCDevice.DeviceState.BUSY) {
+         RCDevice.state = RCDevice.DeviceState.READY;
+      }
 
-            listener.onCancelled(finalConnection);
-         }
-      };
-      mainHandler.post(myRunnable);
+      listener.onCancelled(finalConnection);
 
       this.state = ConnectionState.DISCONNECTED;
       // Phone state Intents to capture cancelled event
       sendQoSConnectionIntent("cancelled");
    }
 
-   public void handleDeclined(SipEvent event)
+   public void handleDeclined()
    {
-      RCLogger.i(TAG, "onSipUADeclined");
+      RCLogger.i(TAG, "handleDeclined");
       final RCConnection finalConnection = new RCConnection(this);
 
-      // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
-      Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
-      Runnable myRunnable = new Runnable() {
-         @Override
-         public void run()
-         {
-            // also update RCDevice state
-            //RCDevice device = RCClient.listDevices().get(0);
-            if (RCDevice.state == RCDevice.DeviceState.BUSY) {
-               RCDevice.state = RCDevice.DeviceState.READY;
-            }
-            listener.onDeclined(finalConnection);
-         }
-      };
-      mainHandler.post(myRunnable);
+      // also update RCDevice state
+      //RCDevice device = RCClient.listDevices().get(0);
+      if (RCDevice.state == RCDevice.DeviceState.BUSY) {
+         RCDevice.state = RCDevice.DeviceState.READY;
+      }
+      listener.onDeclined(finalConnection);
 
       this.state = ConnectionState.DISCONNECTED;
       // Phone state Intents to capture declined event
@@ -574,19 +567,11 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void handleError(final RCClient.ErrorCodes errorCode, final String errorText)
    {
       final RCConnection connection = this;
-      Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
-      Runnable myRunnable = new Runnable() {
-         @Override
-         public void run()
-         {
-            RCLogger.e(TAG, "onSipUAError(): error code: " + errorCode + "error text: " + errorText);
-            disconnect();
-            if (connection.listener != null) {
-               connection.listener.onDisconnected(connection, errorCode.ordinal(), errorText);
-            }
-         }
-      };
-      mainHandler.post(myRunnable);
+      RCLogger.e(TAG, "onSipUAError(): error code: " + errorCode + "error text: " + errorText);
+      disconnect();
+      if (connection.listener != null) {
+         connection.listener.onDisconnected(connection, errorCode.ordinal(), errorText);
+      }
    }
 
    // Helpers
@@ -983,6 +968,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
                             */
             }
             else {
+               // TODO: resume here
                DeviceImpl.GetInstance().AcceptWebrtc(connection.signalingParameters.generateSipSdp(connection.signalingParameters.answerSdp,
                      connection.signalingParameters.iceCandidates));
                connection.state = ConnectionState.CONNECTED;
