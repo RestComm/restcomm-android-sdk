@@ -43,7 +43,7 @@ public class SignalingHandler extends Handler implements JainSipClient.JainSipCl
             jainSipClient.reconfigure(message.id, message.androidContext, message.parameters, this);
         }
         else if (message.type == SignalingMessage.MessageType.CALL_REQUEST) {
-            jainSipClient.call(message.id, message.parameters);
+            jainSipClient.call(message.id, message.parameters, this);
             //listener.onCallArrivedEvent();
         }
         else {
@@ -52,12 +52,13 @@ public class SignalingHandler extends Handler implements JainSipClient.JainSipCl
     }
 
     // -- JainSipClientListener events
-    public void onClientOpenedEvent(String id, RCClient.ErrorCodes status, String text)
+    public void onClientOpenedEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
     {
         //listener.onOpenReply(id, RCClient.ErrorCodes.SUCCESS, "Success");
         SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.OPEN_REPLY);
         signalingMessage.status = status;  //RCClient.ErrorCodes.SUCCESS;
         signalingMessage.text = text;  //"Success";
+        signalingMessage.connectivityStatus = connectivityStatus;
         Message message = uiHandler.obtainMessage(1, signalingMessage);
         message.sendToTarget();
     }
@@ -101,17 +102,27 @@ public class SignalingHandler extends Handler implements JainSipClient.JainSipCl
     }
 
     // -- JainSipCallListener events
+    public void onCallConnectedEvent(String callId, String sdpAnswer)
+    {
+        SignalingMessage signalingMessage = new SignalingMessage(callId, SignalingMessage.MessageType.CALL_CONNECTED_EVENT);
+        signalingMessage.sdp = sdpAnswer;
+        Message message = uiHandler.obtainMessage(1, signalingMessage);
+        message.sendToTarget();
+    }
     public void onCallRingingEvent(String callId)
     {
-        //listener.onCallArrivedEvent(callId);
     }
     public void onCallPeerHangupEvent(String callId)
     {
-        //listener.
+        SignalingMessage signalingMessage = new SignalingMessage(callId, SignalingMessage.MessageType.CALL_PEER_HANGUP_EVENT);
+        Message message = uiHandler.obtainMessage(1, signalingMessage);
+        message.sendToTarget();
     }
     public void onCallPeerRingingEvent(String callId)
     {
-
+        SignalingMessage signalingMessage = new SignalingMessage(callId, SignalingMessage.MessageType.CALL_PEER_RINGING_EVENT);
+        Message message = uiHandler.obtainMessage(1, signalingMessage);
+        message.sendToTarget();
     }
     public void onCallInProgressEvent(String callId)
     {
@@ -133,7 +144,7 @@ public class SignalingHandler extends Handler implements JainSipClient.JainSipCl
     {
 
     }
-    public void onCallErrorEvent(String callId)
+    public void onCallErrorEvent(String callId, RCClient.ErrorCodes status, String text)
     {
 
     }

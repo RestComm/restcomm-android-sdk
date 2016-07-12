@@ -57,7 +57,7 @@ import org.mobicents.restcomm.android.sipua.impl.SipManager;
  * @see RCConnection
  */
 
-public class RCDevice implements SipUADeviceListener, UIClient.UIClientListener {
+public class RCDevice implements UIClient.UIClientListener {
     /**
      * @abstract Device state
      */
@@ -138,11 +138,13 @@ public class RCDevice implements SipUADeviceListener, UIClient.UIClientListener 
     public static String EXTRA_SDP = "com.telestax.restcomm_messenger.SDP";
     //public static String EXTRA_DEVICE = "com.telestax.restcomm.android.client.sdk.extra-device";
     //public static String EXTRA_CONNECTION = "com.telestax.restcomm.android.client.sdk.extra-connection";
+    // Parameters passed in the RCDevice constructor
     HashMap<String, Object> parameters;
     PendingIntent pendingCallIntent;
     PendingIntent pendingMessageIntent;
-    private RCConnection incomingConnection;
-    private RCDeviceListener.RCConnectivityStatus reachabilityState = RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone;
+    HashMap<String, RCConnection> connections;
+    //private RCConnection incomingConnection;
+    private RCDeviceListener.RCConnectivityStatus cachedConnectivityStatus = RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone;
     private SipProfile sipProfile = null;
     private UIClient uiClient;
 
@@ -168,6 +170,7 @@ public class RCDevice implements SipUADeviceListener, UIClient.UIClientListener 
         context.registerReceiver(this, filter);
         */
 
+        connections = new HashMap<String, RCConnection>();
         // initialize JAIN SIP if we have connectivity
         this.parameters = parameters;
         //reachabilityState = DeviceImpl.checkReachability(RCClient.getContext());
@@ -184,14 +187,13 @@ public class RCDevice implements SipUADeviceListener, UIClient.UIClientListener 
         */
     }
 
+    /*
     private void initializeSignalling(boolean connectivity) {
         RCLogger.i(TAG, "initializeSignalling()");
-        //sipProfile = new SipProfile();
-        //updateSipProfile(parameters);
-        //DeviceImpl deviceImpl = DeviceImpl.GetInstance();
+        sipProfile = new SipProfile();
+        updateSipProfile(parameters);
+        DeviceImpl deviceImpl = DeviceImpl.GetInstance();
 
-
-        /*
         DeviceImpl.GetInstance().sipuaDeviceListener = this;
         // register after initialization
         if (connectivity) {
@@ -199,13 +201,12 @@ public class RCDevice implements SipUADeviceListener, UIClient.UIClientListener 
                     parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) && parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
                 // registrarless; we can transition to ready right away (i.e. without waiting for Restcomm to reply to REGISTER)
                 state = DeviceState.READY;
-            }
-            else {
+            } else {
                 DeviceImpl.GetInstance().Register();
             }
         }
-        */
     }
+    */
 
     /*
     private void onReachabilityChanged(final RCDeviceListener.RCConnectivityStatus newState) {
@@ -262,8 +263,8 @@ public class RCDevice implements SipUADeviceListener, UIClient.UIClientListener 
     */
 
     // TODO: this is for RCConnection, but see if they can figure out the connectivity in a different way, like asking the signaling thread directly?
-    public RCDeviceListener.RCConnectivityStatus getReachability() {
-        return reachabilityState;
+    public RCDeviceListener.RCConnectivityStatus getConnectivityStatus() {
+        return cachedConnectivityStatus;
     }
 
     // 'Copy' constructor
@@ -387,27 +388,36 @@ public class RCDevice implements SipUADeviceListener, UIClient.UIClientListener 
             String username = "";
             if (parameters != null && parameters.get("username") != null)
                 username = parameters.get("username").toString();
-            sendQoSNoConnectionIntent(username, this.getReachability().toString());
+            sendQoSNoConnectionIntent(username, this.getConnectivityStatus().toString());
             return null;
         }
 
         if (state == DeviceState.READY) {
             RCLogger.i(TAG, "RCDevice.connect(), with connectivity");
 
-            Boolean enableVideo = (Boolean) parameters.get("video-enabled");
-            RCConnection connection = new RCConnection(listener);
-            connection.incoming = false;
-            connection.state = RCConnection.ConnectionState.PENDING;
-            connection.device = this;
-            DeviceImpl.GetInstance().sipuaConnectionListener = connection;
+            //Boolean enableVideo = (Boolean) parameters.get("video-enabled");
+            RCConnection connection = new RCConnection(false, RCConnection.ConnectionState.PENDING, this, uiClient, listener);
+            connection.open(parameters);
 
+            // keep connection in the connections hashmap
+            connections.put(connection.getId(), connection);
+
+            //connection.incoming = false;
+            //connection.state = RCConnection.ConnectionState.PENDING;
+            //connection.device = this;
+            //DeviceImpl.GetInstance().sipuaConnectionListener = connection;
+            //uiClient.setCallListener(connection);
+
+            /*
             // create a new hash map
             HashMap<String, String> sipHeaders = null;
             if (parameters.containsKey("sip-headers")) {
                 sipHeaders = (HashMap<String, String>) parameters.get("sip-headers");
             }
+            */
+
             //connection.setupWebrtcAndCall((String)parameters.get("username"), sipHeaders, enableVideo.booleanValue());
-            connection.setupWebrtcAndCall(parameters);
+            //connection.setupWebrtcAndCall(parameters);
             state = DeviceState.BUSY;
 
             return connection;
@@ -482,7 +492,8 @@ public class RCDevice implements SipUADeviceListener, UIClient.UIClientListener 
     }
 
     public RCConnection getPendingConnection() {
-        return incomingConnection;
+        // TODO: FIX THIS!!!
+        return null;
     }
 
     public RCConnection getDevice() {
@@ -555,6 +566,7 @@ public class RCDevice implements SipUADeviceListener, UIClient.UIClientListener 
      */
     public boolean updateParams(HashMap<String, Object> params) {
         uiClient.reconfigure(params);
+        this.parameters = params;
 
         /*
         RCLogger.i(TAG, "updateParams(): " + params.toString());
@@ -596,13 +608,16 @@ public class RCDevice implements SipUADeviceListener, UIClient.UIClientListener 
         return true;
     }
 
+    public HashMap<String, Object> getParameters()
+    {
+        return parameters;
+    }
+
+    /*
     public void updateSipProfile(HashMap<String, Object> params) {
         sipProfile.setSipProfile(params);
     }
 
-    /**
-     * INTERNAL: not to be used from the Application
-     */
     public void onSipUAConnectionArrived(SipEvent event) {
         RCLogger.i(TAG, "onSipUAConnectionArrived()");
 
@@ -639,9 +654,6 @@ public class RCDevice implements SipUADeviceListener, UIClient.UIClientListener 
         mainHandler.post(myRunnable);
     }
 
-    /**
-     * INTERNAL: not to be used from the Application
-     */
     public void onSipUAMessageArrived(SipEvent event) {
         RCLogger.i(TAG, "onSipUAMessageArrived()");
 
@@ -717,6 +729,7 @@ public class RCDevice implements SipUADeviceListener, UIClient.UIClientListener 
         };
         mainHandler.post(myRunnable);
     }
+    */
 
     // Helpers
 
@@ -762,18 +775,20 @@ public class RCDevice implements SipUADeviceListener, UIClient.UIClientListener 
 
     // -- UIClientListener events for incoming messages from signaling thread
     // Replies
-    public void onOpenReply(String id, RCClient.ErrorCodes status, String text) {
+    public void onOpenReply(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text) {
+        cachedConnectivityStatus = connectivityStatus;
         if (status != RCClient.ErrorCodes.SUCCESS) {
             RCLogger.e(TAG, "onOpenReply(): id: " + id + ", failure - " + text);
 
             // TODO: Maybe we should introduce separate message specifically for RCDevice initialization. Using onStopListening() looks weird
-            listener.onStopListening(this, status.ordinal(), text);
+            //listener.onStopListening(this, status.ordinal(), text);
+            listener.onInitialized(this, connectivityStatus, status.ordinal(), text);
             return;
         }
 
         RCLogger.i(TAG, "onOpenReply(): id: " + id + ", success - " + text);
         state = DeviceState.READY;
-        listener.onStartListening(this);
+        listener.onInitialized(this, connectivityStatus, RCClient.ErrorCodes.SUCCESS.ordinal(), RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
 
         /*
         final RCDeviceListener.RCConnectivityStatus state = this.reachabilityState;
@@ -830,8 +845,21 @@ public class RCDevice implements SipUADeviceListener, UIClient.UIClientListener 
         }
     }
 
-    public void onConnectivityEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus)
-    {
+    public void onConnectivityEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus) {
         RCLogger.i(TAG, "onConnectivityEvent(): id: " + id + ", status - " + connectivityStatus);
+        cachedConnectivityStatus = connectivityStatus;
+        listener.onConnectivityUpdate(this, connectivityStatus);
+    }
+
+
+    // This is for messages that have to do with a call, which are delegated to RCConnection
+    public void onCallRelatedMessage(SignalingMessage signalingMessage)
+    {
+        if (connections.containsKey(signalingMessage.id)) {
+            connections.get(signalingMessage.id).handleSignalingMessage(signalingMessage);
+        }
+        else {
+            throw new RuntimeException("RCConnection doesn't exist for signaling message");
+        }
     }
 }

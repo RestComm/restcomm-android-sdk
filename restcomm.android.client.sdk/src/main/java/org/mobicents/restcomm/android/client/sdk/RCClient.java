@@ -70,10 +70,14 @@ public class RCClient {
         ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT,
         ERROR_SIGNALING_REGISTER_URI_INVALID,
         ERROR_SIGNALING_NETWORK_INTERFACE,
-        // Note on unhandled: unhandled errors shouldn't occur. If they do we need to evaluate if its because of a bug that needs to be fixed,
-        // or because of bad user configuration that wasn't properly identified and hence error-reported, in which case we need to introduce a new error code
         ERROR_SIGNALING_REGISTER_SERVICE_UNAVAILABLE,
         ERROR_SIGNALING_UNREGISTER_SERVICE_UNAVAILABLE,
+        ERROR_SIGNALING_CALL_URI_INVALID,
+        ERROR_SIGNALING_CALL_PEER_UNAVAILABLE,
+        ERROR_SIGNALING_CALL_PEER_NOT_FOUND,
+        ERROR_SIGNALING_CALL_SERVICE_UNAVAILABLE,
+        // Note on unhandled: unhandled errors shouldn't occur. If they do we need to evaluate if its because of a bug that needs to be fixed,
+        // or because of bad user configuration that wasn't properly identified and hence error-reported, in which case we need to introduce a new error code
         ERROR_SIGNALING_UNHANDLED,
 
 
@@ -143,6 +147,18 @@ public class RCClient {
         }
         else if (errorCode == ErrorCodes.ERROR_SIGNALING_UNREGISTER_SERVICE_UNAVAILABLE) {
             return "Error unregistering; service unavailable";
+        }
+        else if (errorCode == ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID) {
+            return "Call URI is invalid";
+        }
+        else if (errorCode == ErrorCodes.ERROR_SIGNALING_CALL_PEER_UNAVAILABLE) {
+            return "Error calling; peer is unavailable";
+        }
+        else if (errorCode == ErrorCodes.ERROR_SIGNALING_CALL_PEER_NOT_FOUND) {
+            return "Error calling; peer not found";
+        }
+        else if (errorCode == ErrorCodes.ERROR_SIGNALING_CALL_SERVICE_UNAVAILABLE) {
+            return "Error calling; service is unavailable";
         }
         else if (errorCode == ErrorCodes.ERROR_SIGNALING_UNHANDLED) {
             return "Unhandled signaling error occurred";

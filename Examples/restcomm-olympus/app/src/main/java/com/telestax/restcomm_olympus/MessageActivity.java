@@ -184,6 +184,11 @@ public class MessageActivity extends AppCompatActivity
     /**
      * RCDeviceListener callbacks
      */
+    public void onInitialized(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus, int statusCode, String statusText)
+    {
+
+    }
+
     public void onStartListening(RCDevice device) {
 
     }

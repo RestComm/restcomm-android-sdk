@@ -15,7 +15,7 @@ public class UIClient {
     // Interface the UIClient listener needs to implement, to get events from us
     public interface UIClientListener {
         // Replies
-        void onOpenReply(String id, RCClient.ErrorCodes status, String text);
+        void onOpenReply(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text);
         void onCloseReply(String id, RCClient.ErrorCodes status, String text);
         void onReconfigureReply(String id, RCClient.ErrorCodes status, String text);
         void onCallReply(String id, RCClient.ErrorCodes status, String text);
@@ -26,8 +26,19 @@ public class UIClient {
         void onMessageArrivedEvent(String id, String peer, String text);
         void onErrorEvent(String id, RCClient.ErrorCodes status, String text);
         void onConnectivityEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus);
+
+        // this are for messages that have to do with a call, which are delegated to RCConnection
+        void onCallRelatedMessage(SignalingMessage message);
+
     }
 
+    /*
+    public interface UICallListener {
+        void onCallPeerHangupEvent(String jobId);
+        void onCallPeerRingingEvent(String jobId);
+        void onCallConnectedEvent(String jobId, String sdpAnswer);
+    }
+    */
     // handler at signaling thread to send messages to
     SignalingHandlerThread signalingHandlerThread;
     Handler signalingHandler;
@@ -54,6 +65,13 @@ public class UIClient {
         */
         /////
     }
+
+    /*
+    void setCallListener(UICallListener callListener)
+    {
+
+    }
+    */
 
     String open(HashMap<String,Object> parameters)
     {
@@ -89,15 +107,16 @@ public class UIClient {
         return id;
     }
 
-    String call(HashMap<String,String> parameters)
+    void call(String id, HashMap<String,Object> parameters)
     {
-        String id = generateId();
+        //String id = generateId();
         SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.CALL_REQUEST);
+        signalingMessage.setParameters(parameters);
         // TODO: add message parameters
         Message message = signalingHandler.obtainMessage(1, signalingMessage);
         message.sendToTarget();
 
-        return id;
+        //return id;
     }
 
     String sendMessage(HashMap<String,String> parameters)

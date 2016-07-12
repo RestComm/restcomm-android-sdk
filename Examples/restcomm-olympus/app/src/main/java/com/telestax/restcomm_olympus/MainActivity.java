@@ -57,7 +57,7 @@ public class MainActivity extends AppCompatActivity
     private HashMap<String, Object> params;
     private MainFragment listFragment;
     private AlertDialog alertDialog;
-    private RCConnectivityStatus previousConnectivityStatus = RCConnectivityStatus.RCConnectivityStatusWiFi;
+    private RCConnectivityStatus previousConnectivityStatus = RCConnectivityStatus.RCConnectivityStatusNone;
 
     ImageButton btnAdd;
 
@@ -109,8 +109,9 @@ public class MainActivity extends AppCompatActivity
         // preferences
         prefs.registerOnSharedPreferenceChangeListener(this);
 
+        // No longer needed, we'll change with toast
         // set it to wifi by default to avoid the status message when starting with wifi
-        previousConnectivityStatus = RCConnectivityStatus.RCConnectivityStatusWiFi;
+        //previousConnectivityStatus = RCConnectivityStatus.RCConnectivityStatusWiFi;
     }
 
     @Override
@@ -262,6 +263,20 @@ public class MainActivity extends AppCompatActivity
             showOkAlert("Unknown Error", "Unknown Restcomm Client error");
         }
         */
+    }
+
+    public void onInitialized(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus, int statusCode, String statusText)
+    {
+        if (statusCode == RCClient.ErrorCodes.SUCCESS.ordinal()) {
+            onConnectivityUpdate(device, connectivityStatus);
+        }
+        else if (statusCode == RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY.ordinal()) {
+            onConnectivityUpdate(device, connectivityStatus);
+        }
+        else {
+            showOkAlert("RCDevice Error", statusText);
+        }
+
     }
 
     public void onConnectivityUpdate(RCDevice device, RCConnectivityStatus connectivityStatus)

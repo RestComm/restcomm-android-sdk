@@ -36,18 +36,33 @@ public interface RCDeviceListener {
          RCConnectivityStatusCellular,  // restcomm reachable and online via cellular (same as above for registraless)
     }
     /**
+     *  RCDevice initialized successfully
+     *
+     *  @param device Device of interest
+     */
+    void onInitialized(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus, int statusCode, String statusText);
+
+    /**
+     *  RCDevice failed to initialize
+     *
+     *  @param errorCode Error code for the error
+     *  @param errorText Error text for the error
+     */
+    //void onInitializationFailure(int errorCode, String errorText);
+
+    /**
      *  RCDevice started listening for incoming connections (<b>Not Implemented yet</b>)
      *
      *  @param device Device of interest
      */
-    public abstract void onStartListening(RCDevice device);
+    void onStartListening(RCDevice device);
 
     /**
      *  RCDevice stopped listening for incoming connections
      *
      *  @param device Device of interest
      */
-    public abstract void onStopListening(RCDevice device);
+    void onStopListening(RCDevice device);
 
     /**
      *  RCDevice stopped listening for incoming connections due to error
@@ -56,7 +71,7 @@ public interface RCDeviceListener {
      *  @param errorCode  Error code
      *  @param errorText  Error text
      */
-    public abstract void onStopListening(RCDevice device, int errorCode, String errorText);
+    void onStopListening(RCDevice device, int errorCode, String errorText);
 
     /**
      *  RCDevice connectivity status has been updated
@@ -64,7 +79,7 @@ public interface RCDeviceListener {
      *  @param device Device of interest
      *  @param connectivityStatus  Connectivity status of Device
      */
-    public abstract void onConnectivityUpdate(RCDevice device, RCConnectivityStatus connectivityStatus);
+    void onConnectivityUpdate(RCDevice device, RCConnectivityStatus connectivityStatus);
 
     /**
      *  RCDevice received incoming connection
@@ -72,7 +87,7 @@ public interface RCDeviceListener {
      *  @param device     Device of interest
      *  @param connection Newly established connection
      */
-    //public abstract void onIncomingConnection(RCDevice device, RCConnection connection);
+    //void onIncomingConnection(RCDevice device, RCConnection connection);
 
     /**
      * Text message received
@@ -80,19 +95,19 @@ public interface RCDeviceListener {
      * @param message  Tex message
      * @param parameters  Parameters, such as 'username' designating the username who sent the message
      */
-    //public abstract void onIncomingMessage(RCDevice device, String message, HashMap<String, String> parameters);
+    //void onIncomingMessage(RCDevice device, String message, HashMap<String, String> parameters);
 
     /**
      *  Called to query whether the application wants to retrieve presence events. Return false to indicate that the application isn't interested (<b>Not implemented yet</b>)
      *
      *  @param device  Device of interest
      */
-    public abstract boolean receivePresenceEvents(RCDevice device);
+    boolean receivePresenceEvents(RCDevice device);
 
     /**
      * Called when the presence status has changed (<b>Not implemented yet</b>)
      * @param device  Device of interest
      * @param presenceEvent  Presence Event
      */
-    public abstract void onPresenceChanged(RCDevice device, RCPresenceEvent presenceEvent);
+    void onPresenceChanged(RCDevice device, RCPresenceEvent presenceEvent);
 }

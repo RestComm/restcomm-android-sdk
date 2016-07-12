@@ -33,7 +33,7 @@ public class JainSipJob {
             index = 0;
 
             if (type == JainSipJob.Type.TYPE_OPEN) {
-                states = new String[]{"bind-start-register", "auth", "notify"};
+                states = new String[]{"start-bind-register", "auth", "notify"};
             } else if (type == Type.TYPE_REGISTER_REFRESH) {
                 states = new String[]{"register", "auth", "notify"};
             } else if (type == Type.TYPE_CLOSE) {
@@ -46,6 +46,9 @@ public class JainSipJob {
                 states = new String[]{"unbind-bind-register", "auth", "notify"};
             } else if (type == Type.TYPE_START_NETWORKING) {
                 states = new String[]{"bind-register", "auth", "notify"};
+            }
+            else if (type == Type.TYPE_CALL) {
+                states = new String[]{"invite", "auth", "notify"};
             }
         }
 
@@ -71,12 +74,13 @@ public class JainSipJob {
                         RCLogger.e(TAG, "process(): no more states to process");
                     }
                     if (type == Type.TYPE_OPEN) {
-                        if (states[index].equals("bind-start-register")) {
+                        if (states[index].equals("start-bind-register")) {
                             try {
                                 jainSipClient.jainSipStartStack(JainSipJob.this.id);
 
                                 if (!jainSipClient.notificationManager.haveConnectivity()) {
-                                    jainSipClient.listener.onClientOpenedEvent(id, RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY,
+                                    jainSipClient.listener.onClientOpenedEvent(id, jainSipClient.notificationManager.getConnectivityStatus(),
+                                            RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY,
                                             RCClient.errorText(RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY));
                                     jainSipJobManager.remove(id);
                                     return;
@@ -88,14 +92,14 @@ public class JainSipJob {
                                     transaction = jainSipClient.jainSipRegister(id, parameters);
                                 } else {
                                     // No Domain there we are done here
-                                    jainSipClient.listener.onClientOpenedEvent(id, RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
+                                    jainSipClient.listener.onClientOpenedEvent(id, jainSipClient.notificationManager.getConnectivityStatus(),
+                                            RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
+                                    jainSipJobManager.remove(id);
                                 }
-
                             } catch (JainSipException e) {
-                                jainSipClient.listener.onClientOpenedEvent(id, e.errorCode, e.errorText);
+                                jainSipClient.listener.onClientOpenedEvent(id, jainSipClient.notificationManager.getConnectivityStatus(), e.errorCode, e.errorText);
                                 jainSipJobManager.remove(id);
                             }
-
                         } else if (states[index].equals("auth")) {
                             // the auth step is optional hence we check if auth-required event was passed by the caller, if not we loop around to visit next state
                             if (event.equals("auth-required")) {
@@ -103,7 +107,7 @@ public class JainSipJob {
                                 try {
                                     jainSipClient.jainSipAuthenticate(id, JainSipJob.this, parameters, responseEventExt);
                                 } catch (JainSipException e) {
-                                    jainSipClient.listener.onClientOpenedEvent(id, e.errorCode, e.errorText);
+                                    jainSipClient.listener.onClientOpenedEvent(id, jainSipClient.notificationManager.getConnectivityStatus(), e.errorCode, e.errorText);
                                     jainSipJobManager.remove(id);
                                 }
                             } else {
@@ -111,7 +115,7 @@ public class JainSipJob {
                             }
                         } else if (states[index].equals("notify")) {
                             if (event.equals("register-success") || event.equals("register-failure")) {
-                                jainSipClient.listener.onClientOpenedEvent(id, statusCode, statusText);
+                                jainSipClient.listener.onClientOpenedEvent(id, jainSipClient.notificationManager.getConnectivityStatus(), statusCode, statusText);
                                 jainSipJobManager.remove(id);
                             }
                         }
@@ -387,7 +391,7 @@ public class JainSipJob {
                                     jainSipJobManager.remove(id);
                                 }
                             } catch (JainSipException e) {
-                                jainSipClient.listener.onClientOpenedEvent(id, e.errorCode, e.errorText);
+                                jainSipClient.listener.onClientErrorEvent(id, e.errorCode, e.errorText);
                             }
                         } else if (states[index].equals("auth")) {
                             // the auth step is optional hence we check if auth-required event was passed by the caller, if not we loop around to visit next state
@@ -414,6 +418,39 @@ public class JainSipJob {
                             }
                         }
                     }
+                    /*
+                    else if (type == Type.TYPE_CALL) {
+                        if (states[index].equals("invite")) {
+                            try {
+                                transaction = jainSipCall.jainSipCallInvite(id, parameters);
+                            } catch (JainSipException e) {
+                                jainSipCall.listener.onCallErrorEvent(id, e.errorCode, e.errorText);
+                                jainSipJobManager.remove(id);
+                            }
+                        } else if (states[index].equals("auth")) {
+                            // the auth step is optional hence we check if auth-required event was passed by the caller, if not we loop around to visit next state
+                            if (event.equals("auth-required")) {
+                                ResponseEventExt responseEventExt = (ResponseEventExt) arg;
+                                try {
+                                    jainSipClient.jainSipAuthenticate(id, JainSipJob.this, parameters, responseEventExt);
+                                } catch (JainSipException e) {
+                                    jainSipCall.listener.onCallErrorEvent(id, e.errorCode, e.errorText);
+                                    jainSipJobManager.remove(id);
+                                }
+                            } else {
+                                loop = true;
+                            }
+                        } else if (states[index].equals("notify")) {
+                            if (event.equals("invite-failure")) {
+                                jainSipCall.listener.onCallErrorEvent(id, statusCode, statusText);
+                            }
+                            if (event.equals("invite-success") || event.equals("invite-failure")) {
+                                jainSipCall.listener.onCallErrorEvent(id, statusCode, statusText);
+                                jainSipJobManager.remove(id);
+                            }
+                        }
+                    }
+                    */
                     index++;
                 } while (loop);
             }
@@ -423,7 +460,7 @@ public class JainSipJob {
     public enum Type {
         // TODO: remove those when we are done with new logic
         TYPE_REGISTRATION,
-        TYPE_CALL,
+        //TYPE_CALL,
         TYPE_MESSAGE,
 
         //
@@ -434,6 +471,8 @@ public class JainSipJob {
         TYPE_RECONFIGURE_RELOAD_NETWORKING,
         TYPE_RELOAD_NETWORKING,
         TYPE_START_NETWORKING,
+
+        TYPE_CALL,
     }
 
     /*
@@ -453,6 +492,7 @@ public class JainSipJob {
     //public RegistrationType registrationType;
     public Transaction transaction;
     public HashMap<String, Object> parameters;
+    public JainSipCall jainSipCall;
     //public Runnable onCompletion;
     public int authenticationAttempts;
     public static int MAX_AUTH_ATTEMPTS = 3;
@@ -461,7 +501,8 @@ public class JainSipJob {
     JainSipFsm jainSipFsm;
     static final String TAG = "JainSipJob";
 
-    JainSipJob(JainSipJobManager jainSipJobManager, JainSipClient jainSipClient, String id, Type type, Transaction transaction, HashMap<String, Object> parameters) {
+    JainSipJob(JainSipJobManager jainSipJobManager, JainSipClient jainSipClient, String id, Type type, Transaction transaction, HashMap<String, Object> parameters,
+               JainSipCall jainSipCall) {
         this.id = id;
         this.transactionId = id;
         this.type = type;
@@ -473,6 +514,7 @@ public class JainSipJob {
         //this.onCompletion = onCompletion;
         this.jainSipJobManager = jainSipJobManager;
         this.jainSipFsm = new JainSipFsm(type, jainSipClient);
+        this.jainSipCall = jainSipCall;
     }
 
     /*

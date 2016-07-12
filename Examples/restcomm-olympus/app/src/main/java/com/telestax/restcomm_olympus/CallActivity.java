@@ -176,6 +176,9 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         super.onStop();
         Log.i(TAG, "%% onStop");
         activityVisible = false;
+        if (timerHandler != null) {
+            timerHandler.removeCallbacksAndMessages(null);
+        }
     }
 
     private void handleCall(Intent intent) {
@@ -450,10 +453,12 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     }
 
     public void startTimer() {
+        Log.w(TAG, "--- startTimer: " + secondsElapsed);
         String time = String.format("%02d:%02d:%02d", secondsElapsed / 3600, (secondsElapsed % 3600) / 60, secondsElapsed % 60);
         lblTimer.setText(time);
         secondsElapsed++;
 
+        timerHandler.removeCallbacksAndMessages(null);
         // schedule a registration update after 'registrationRefresh' seconds
         Runnable timerRunnable = new Runnable() {
             @Override

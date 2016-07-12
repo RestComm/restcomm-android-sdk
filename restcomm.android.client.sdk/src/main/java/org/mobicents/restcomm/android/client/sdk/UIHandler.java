@@ -21,7 +21,7 @@ public class UIHandler extends Handler {
         SignalingMessage message = (SignalingMessage) inputMessage.obj;
 
         if (message.type == SignalingMessage.MessageType.OPEN_REPLY) {
-            listener.onOpenReply(message.id, message.status, message.text);
+            listener.onOpenReply(message.id, message.connectivityStatus, message.status, message.text);
         }
         else if (message.type == SignalingMessage.MessageType.CLOSE_REPLY) {
             listener.onCloseReply(message.id, message.status, message.text);
@@ -29,17 +29,14 @@ public class UIHandler extends Handler {
         else if (message.type == SignalingMessage.MessageType.RECONFIGURE_REPLY) {
             listener.onReconfigureReply(message.id, message.status, message.text);
         }
-        else if (message.type == SignalingMessage.MessageType.CALL_REPLY) {
-            //listener.onCallArrivedEvent();
-        }
-        else if (message.type == SignalingMessage.MessageType.CALL_EVENT) {
-
-        }
         else if (message.type == SignalingMessage.MessageType.ERROR_EVENT) {
             listener.onErrorEvent(message.id, message.status, message.text);
         }
         else if (message.type == SignalingMessage.MessageType.CONNECTIVITY_EVENT) {
             listener.onConnectivityEvent(message.id, message.connectivityStatus);
+        }
+        else {
+            listener.onCallRelatedMessage(message);
         }
     }
 
