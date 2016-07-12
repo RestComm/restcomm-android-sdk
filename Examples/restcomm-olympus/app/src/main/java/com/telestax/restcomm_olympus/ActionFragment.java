@@ -30,61 +30,66 @@ import android.content.DialogInterface;
 import android.os.Bundle;
 
 public class ActionFragment extends DialogFragment {
-    enum ActionType {
-        ACTION_TYPE_AUDIO_CALL,
-        ACTION_TYPE_VIDEO_CALL,
-        ACTION_TYPE_TEXT_MESSAGE
-    }
+   enum ActionType {
+      ACTION_TYPE_AUDIO_CALL,
+      ACTION_TYPE_VIDEO_CALL,
+      ACTION_TYPE_TEXT_MESSAGE
+   }
 
-    public interface ActionListener {
-        public void onActionClicked(ActionType action, String username, String sipuri);
-    }
+   public interface ActionListener {
+      public void onActionClicked(ActionType action, String username, String sipuri);
+   }
 
-    // Use this instance of the interface to deliver action events
-    ActionListener listener;
+   // Use this instance of the interface to deliver action events
+   ActionListener listener;
 
-    /**
-     * Create a new instance of MyDialogFragment, providing "num"
-     * as an argument.
-     */
-    public static ActionFragment newInstance(String username, String sipuri) {
-        ActionFragment f = new ActionFragment();
+   /**
+    * Create a new instance of MyDialogFragment, providing "num"
+    * as an argument.
+    */
+   public static ActionFragment newInstance(String username, String sipuri)
+   {
+      ActionFragment f = new ActionFragment();
 
-        // Supply num input as an argument.
-        Bundle args = new Bundle();
-        args.putString("username", username);
-        args.putString("sipuri", sipuri);
-        f.setArguments(args);
+      // Supply num input as an argument.
+      Bundle args = new Bundle();
+      args.putString("username", username);
+      args.putString("sipuri", sipuri);
+      f.setArguments(args);
 
-        return f;
-    }
+      return f;
+   }
 
-    // Override the Fragment.onAttach() method to instantiate the NoticeDialogListener
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-        // Verify that the host activity implements the callback interface
-        try {
-            // Instantiate the NoticeDialogListener so we can send events to the host
-            listener = (ActionListener) activity;
-        } catch (ClassCastException e) {
-            // The activity doesn't implement the interface, throw exception
-            throw new ClassCastException(activity.toString()
-                    + " must implement ContactDialogListener");
-        }
-    }
+   // Override the Fragment.onAttach() method to instantiate the NoticeDialogListener
+   @Override
+   public void onAttach(Activity activity)
+   {
+      super.onAttach(activity);
+      // Verify that the host activity implements the callback interface
+      try {
+         // Instantiate the NoticeDialogListener so we can send events to the host
+         listener = (ActionListener) activity;
+      }
+      catch (ClassCastException e) {
+         // The activity doesn't implement the interface, throw exception
+         throw new ClassCastException(activity.toString()
+               + " must implement ContactDialogListener");
+      }
+   }
 
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        listener = null;
-    }
+   @Override
+   public void onDetach()
+   {
+      super.onDetach();
+      listener = null;
+   }
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+   @Override
+   public void onCreate(Bundle savedInstanceState)
+   {
+      super.onCreate(savedInstanceState);
 
-    }
+   }
 
     /*
     // Notice that for this doesn't work if onCreateView has been overriden as described above. To add
@@ -133,24 +138,28 @@ public class ActionFragment extends DialogFragment {
     }
     */
 
-    @Override
-    public Dialog onCreateDialog(Bundle savedInstanceState) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-        builder.setTitle(getArguments().getString("username"))
-                .setItems(R.array.actions_array, new DialogInterface.OnClickListener() {
-                    public void onClick(DialogInterface dialog, int position) {
-                        ActionType action;
-                        if (position == 0) {
-                            action = ActionType.ACTION_TYPE_VIDEO_CALL;
-                        } else if (position == 1) {
-                            action = ActionType.ACTION_TYPE_AUDIO_CALL;
-                        } else {
-                            action = ActionType.ACTION_TYPE_TEXT_MESSAGE;
-                        }
-                        listener.onActionClicked(action, getArguments().getString("username"), getArguments().getString("sipuri"));
-                    }
-                });
-        return builder.create();
-    }
+   @Override
+   public Dialog onCreateDialog(Bundle savedInstanceState)
+   {
+      AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+      builder.setTitle(getArguments().getString("username"))
+            .setItems(R.array.actions_array, new DialogInterface.OnClickListener() {
+               public void onClick(DialogInterface dialog, int position)
+               {
+                  ActionType action;
+                  if (position == 0) {
+                     action = ActionType.ACTION_TYPE_VIDEO_CALL;
+                  }
+                  else if (position == 1) {
+                     action = ActionType.ACTION_TYPE_AUDIO_CALL;
+                  }
+                  else {
+                     action = ActionType.ACTION_TYPE_TEXT_MESSAGE;
+                  }
+                  listener.onActionClicked(action, getArguments().getString("username"), getArguments().getString("sipuri"));
+               }
+            });
+      return builder.create();
+   }
 
 }

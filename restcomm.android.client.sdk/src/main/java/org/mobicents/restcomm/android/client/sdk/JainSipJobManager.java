@@ -8,22 +8,24 @@ import java.util.Map;
 // Handles live JAIN SIP transactions. Each transaction is stored in 'transactions' map identified by an 'id' provided by the caller (in our RCDevice or RCConnection)
 // and keeps information such as the JAIN SIP Transaction (Client or Server) amongst other things
 public class JainSipJobManager {
-    // TODO: consider using interface instead
-    JainSipClient jainSipClient;
-    HashMap<String, JainSipJob> transactions;
+   // TODO: consider using interface instead
+   JainSipClient jainSipClient;
+   HashMap<String, JainSipJob> transactions;
 
 
-    JainSipJobManager(JainSipClient jainSipClient) {
-        this.jainSipClient = jainSipClient;
-        transactions = new HashMap<>();
-    }
+   JainSipJobManager(JainSipClient jainSipClient)
+   {
+      this.jainSipClient = jainSipClient;
+      transactions = new HashMap<>();
+   }
 
-    void add(String id, JainSipJob.Type type, Transaction transaction, HashMap<String, Object> parameters, JainSipCall jainSipCall) {
-        //JainSipJob jainSipJob = new JainSipJob(this, jainSipClient, id, type, registrationType, transaction, parameters);
-        JainSipJob jainSipJob = new JainSipJob(this, jainSipClient, id, type, transaction, parameters, jainSipCall);
-        transactions.put(id, jainSipJob);
-        jainSipJob.processFsm(id, "", null, null, null);
-    }
+   void add(String id, JainSipJob.Type type, Transaction transaction, HashMap<String, Object> parameters, JainSipCall jainSipCall)
+   {
+      //JainSipJob jainSipJob = new JainSipJob(this, jainSipClient, id, type, registrationType, transaction, parameters);
+      JainSipJob jainSipJob = new JainSipJob(this, jainSipClient, id, type, transaction, parameters, jainSipCall);
+      transactions.put(id, jainSipJob);
+      jainSipJob.processFsm(id, "", null, null, null);
+   }
 
     /*
     void add(String id, JainSipJob.Type type, Transaction transaction, HashMap<String, Object> parameters) {
@@ -31,13 +33,15 @@ public class JainSipJobManager {
     }
     */
 
-    void add(String id, JainSipJob.Type type, HashMap<String, Object> parameters) {
-        add(id, type, null, parameters, null);
-    }
+   void add(String id, JainSipJob.Type type, HashMap<String, Object> parameters)
+   {
+      add(id, type, null, parameters, null);
+   }
 
-    void add(String id, JainSipJob.Type type, HashMap<String, Object> parameters, JainSipCall jainSipCall) {
-        add(id, type, null, parameters, jainSipCall);
-    }
+   void add(String id, JainSipJob.Type type, HashMap<String, Object> parameters, JainSipCall jainSipCall)
+   {
+      add(id, type, null, parameters, jainSipCall);
+   }
     /*
     void add(String id, JainSipJob.Type type, JainSipJob.RegistrationType registrationType, Transaction transaction, HashMap<String, Object> parameters, Runnable onCompletion) {
         //synchronized (this) {
@@ -52,43 +56,47 @@ public class JainSipJobManager {
     }
     */
 
-    JainSipJob get(String id) {
-        //synchronized (this) {
-            if (transactions.containsKey(id)) {
-                // this doesn't seem harmful let's suppress it for now
-                //@SuppressWarnings("unchecked")
-                return transactions.get(id);
-            } else {
-                return null;
-            }
-        //}
-    }
+   JainSipJob get(String id)
+   {
+      //synchronized (this) {
+      if (transactions.containsKey(id)) {
+         // this doesn't seem harmful let's suppress it for now
+         //@SuppressWarnings("unchecked")
+         return transactions.get(id);
+      }
+      else {
+         return null;
+      }
+      //}
+   }
 
-    JainSipJob getUsingTransactionId(String transactionId)
-    {
-        for (Map.Entry<String, JainSipJob> entry : transactions.entrySet()) {
-            JainSipJob transaction = entry.getValue();
-            if (transaction.transactionId.equals(transactionId)) {
-                return transaction;
-            }
-        }
-        return null;
-    }
+   JainSipJob getUsingTransactionId(String transactionId)
+   {
+      for (Map.Entry<String, JainSipJob> entry : transactions.entrySet()) {
+         JainSipJob transaction = entry.getValue();
+         if (transaction.transactionId.equals(transactionId)) {
+            return transaction;
+         }
+      }
+      return null;
+   }
 
-    void remove(String id) {
-        //synchronized (this) {
-            if (transactions.containsKey(id)) {
-                // this doesn't seem harmful let's suppress it for now
-                //@SuppressWarnings("unchecked")
-                transactions.remove(id);
-            }
-        //}
-    }
+   void remove(String id)
+   {
+      //synchronized (this) {
+      if (transactions.containsKey(id)) {
+         // this doesn't seem harmful let's suppress it for now
+         //@SuppressWarnings("unchecked")
+         transactions.remove(id);
+      }
+      //}
+   }
 
-    void removeAll() {
-        //synchronized (this) {
-            transactions.clear();
-        //}
-    }
+   void removeAll()
+   {
+      //synchronized (this) {
+      transactions.clear();
+      //}
+   }
 
 }

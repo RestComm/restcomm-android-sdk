@@ -26,22 +26,25 @@ package org.mobicents.restcomm.android.client.sdk;
  * RCPresenceEvent represents a Presence event that is sent through RCDeviceListener
  */
 public class RCPresenceEvent {
-    String name;
-    boolean available;
+   String name;
+   boolean available;
 
-    public RCPresenceEvent(String name, boolean available)
-    {
-    }
-    public String getName()
-    {
-        return this.name;
-    }
-    public boolean isAvailable()
-    {
-        return available;
-    }
-    public String toString()
-    {
-        return "";
-    }
+   public RCPresenceEvent(String name, boolean available)
+   {
+   }
+
+   public String getName()
+   {
+      return this.name;
+   }
+
+   public boolean isAvailable()
+   {
+      return available;
+   }
+
+   public String toString()
+   {
+      return "";
+   }
 }

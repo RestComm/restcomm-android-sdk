@@ -38,104 +38,109 @@ import org.mobicents.restcomm.android.client.sdk.RCDevice;
 import java.util.HashMap;
 
 public class SettingsActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
-    SharedPreferences prefs;
-    HashMap<String, Object> params;
-    RCDevice device;
-    boolean updated;
+   SharedPreferences prefs;
+   HashMap<String, Object> params;
+   RCDevice device;
+   boolean updated;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_settings);
+   @Override
+   protected void onCreate(Bundle savedInstanceState)
+   {
+      super.onCreate(savedInstanceState);
+      setContentView(R.layout.activity_settings);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.settings_toolbar);
-        setSupportActionBar(toolbar);
-        toolbar.setTitle(getTitle());
+      Toolbar toolbar = (Toolbar) findViewById(R.id.settings_toolbar);
+      setSupportActionBar(toolbar);
+      toolbar.setTitle(getTitle());
 
-        ActionBar actionBar = getSupportActionBar();
-        if (actionBar != null) {
-            // Show the Up button in the action bar.
-            actionBar.setDisplayHomeAsUpEnabled(true);
-        }
+      ActionBar actionBar = getSupportActionBar();
+      if (actionBar != null) {
+         // Show the Up button in the action bar.
+         actionBar.setDisplayHomeAsUpEnabled(true);
+      }
 
-        // Display the fragment as the main content.
-        getFragmentManager().beginTransaction().replace(R.id.content_frame, new SettingsFragment()).commit();
+      // Display the fragment as the main content.
+      getFragmentManager().beginTransaction().replace(R.id.content_frame, new SettingsFragment()).commit();
 
-        device = RCClient.listDevices().get(0);
-        params = new HashMap<String, Object>();
+      device = RCClient.listDevices().get(0);
+      params = new HashMap<String, Object>();
 
-        prefs = PreferenceManager.getDefaultSharedPreferences(this);
-        prefs.registerOnSharedPreferenceChangeListener(this);
-    }
+      prefs = PreferenceManager.getDefaultSharedPreferences(this);
+      prefs.registerOnSharedPreferenceChangeListener(this);
+   }
 
-    protected void onResume() {
-        super.onResume();
+   protected void onResume()
+   {
+      super.onResume();
 
-        updated = false;
-        // retrieve the device
-        //RCDevice device = RCClient.listDevices().get(0);
+      updated = false;
+      // retrieve the device
+      //RCDevice device = RCClient.listDevices().get(0);
 
-        if (device.getState() == RCDevice.DeviceState.OFFLINE) {
-            getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorTextSecondary)));
-        } else {
-            getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
-        }
-    }
+      if (device.getState() == RCDevice.DeviceState.OFFLINE) {
+         getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorTextSecondary)));
+      }
+      else {
+         getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
+      }
+   }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-        if (id == android.R.id.home) {
-            if (updated) {
-                if (!device.updateParams(params)) {
-                    // TODO:
-                    //showOkAlert("RCDevice Error", "No Wifi connectivity");
-                }
+   @Override
+   public boolean onOptionsItemSelected(MenuItem item)
+   {
+      // Handle action bar item clicks here. The action bar will
+      // automatically handle clicks on the Home/Up button, so long
+      // as you specify a parent activity in AndroidManifest.xml.
+      int id = item.getItemId();
+      if (id == android.R.id.home) {
+         if (updated) {
+            if (!device.updateParams(params)) {
+               // TODO:
+               //showOkAlert("RCDevice Error", "No Wifi connectivity");
             }
+         }
 
-            NavUtils.navigateUpFromSameTask(this);
-            return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
+         NavUtils.navigateUpFromSameTask(this);
+         return true;
+      }
+      return super.onOptionsItemSelected(item);
+   }
 
-    @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
-                                          String key) {
-        if (key.equals(RCDevice.ParameterKeys.SIGNALING_DOMAIN)) {
-            params.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN, prefs.getString(RCDevice.ParameterKeys.SIGNALING_DOMAIN, "sip:cloud.restcomm.com:5060"));
-            updated = true;
-        }
-        else if (key.equals(RCDevice.ParameterKeys.SIGNALING_USERNAME)) {
-            params.put(RCDevice.ParameterKeys.SIGNALING_USERNAME, prefs.getString(RCDevice.ParameterKeys.SIGNALING_USERNAME, "android-sdk"));
-            updated = true;
-        }
-        else if (key.equals(RCDevice.ParameterKeys.SIGNALING_PASSWORD)) {
-            params.put(RCDevice.ParameterKeys.SIGNALING_PASSWORD, prefs.getString(RCDevice.ParameterKeys.SIGNALING_PASSWORD, "1234"));
-            updated = true;
-        }
-        else if (key.equals(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED)) {
-            params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
-            updated = true;
-        }
-        else if (key.equals(RCDevice.ParameterKeys.MEDIA_TURN_URL)) {
-            params.put(RCDevice.ParameterKeys.MEDIA_TURN_URL, prefs.getString(RCDevice.ParameterKeys.MEDIA_TURN_URL, ""));
-            updated = true;
-        }
-        else if (key.equals(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME)) {
-            params.put(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME, prefs.getString(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME, ""));
-            updated = true;
-        }
-        else if (key.equals(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD)) {
-            params.put(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD, prefs.getString(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD, ""));
-            updated = true;
-        }
-        else if (key.equals(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED)) {
-            params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false));
-            updated = true;
-        }
-    }
+   @Override
+   public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+                                         String key)
+   {
+      if (key.equals(RCDevice.ParameterKeys.SIGNALING_DOMAIN)) {
+         params.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN, prefs.getString(RCDevice.ParameterKeys.SIGNALING_DOMAIN, "sip:cloud.restcomm.com:5060"));
+         updated = true;
+      }
+      else if (key.equals(RCDevice.ParameterKeys.SIGNALING_USERNAME)) {
+         params.put(RCDevice.ParameterKeys.SIGNALING_USERNAME, prefs.getString(RCDevice.ParameterKeys.SIGNALING_USERNAME, "android-sdk"));
+         updated = true;
+      }
+      else if (key.equals(RCDevice.ParameterKeys.SIGNALING_PASSWORD)) {
+         params.put(RCDevice.ParameterKeys.SIGNALING_PASSWORD, prefs.getString(RCDevice.ParameterKeys.SIGNALING_PASSWORD, "1234"));
+         updated = true;
+      }
+      else if (key.equals(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED)) {
+         params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
+         updated = true;
+      }
+      else if (key.equals(RCDevice.ParameterKeys.MEDIA_TURN_URL)) {
+         params.put(RCDevice.ParameterKeys.MEDIA_TURN_URL, prefs.getString(RCDevice.ParameterKeys.MEDIA_TURN_URL, ""));
+         updated = true;
+      }
+      else if (key.equals(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME)) {
+         params.put(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME, prefs.getString(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME, ""));
+         updated = true;
+      }
+      else if (key.equals(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD)) {
+         params.put(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD, prefs.getString(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD, ""));
+         updated = true;
+      }
+      else if (key.equals(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED)) {
+         params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false));
+         updated = true;
+      }
+   }
 }

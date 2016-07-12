@@ -32,67 +32,73 @@ import android.view.View;
 import android.widget.EditText;
 
 public class AddUserDialogFragment extends DialogFragment {
-    public static final int DIALOG_TYPE_ADD_CONTACT = 0;
-    public static final int DIALOG_TYPE_UPDATE_CONTACT = 1;
-    EditText txtUsername;
-    EditText txtSipuri;
-    // Use this instance of the interface to deliver action events
-    ContactDialogListener listener;
+   public static final int DIALOG_TYPE_ADD_CONTACT = 0;
+   public static final int DIALOG_TYPE_UPDATE_CONTACT = 1;
+   EditText txtUsername;
+   EditText txtSipuri;
+   // Use this instance of the interface to deliver action events
+   ContactDialogListener listener;
 
 
-    /* The activity that creates an instance of this dialog fragment must
-     * implement this interface in order to receive event callbacks.
-     * Each method passes the DialogFragment in case the host needs to query it. */
-    public interface ContactDialogListener {
-        public void onDialogPositiveClick(int type, String username, String sipuri);
-        public void onDialogNegativeClick();
-    }
+   /* The activity that creates an instance of this dialog fragment must
+    * implement this interface in order to receive event callbacks.
+    * Each method passes the DialogFragment in case the host needs to query it. */
+   public interface ContactDialogListener {
+      public void onDialogPositiveClick(int type, String username, String sipuri);
 
-    /**
-     * Create a new instance of MyDialogFragment, providing "num"
-     * as an argument.
-     */
-    public static AddUserDialogFragment newInstance(int type, String username, String sipuri) {
-        AddUserDialogFragment f = new AddUserDialogFragment();
+      public void onDialogNegativeClick();
+   }
 
-        // Supply num input as an argument.
-        Bundle args = new Bundle();
-        args.putInt("type", type);
-        if (type == DIALOG_TYPE_UPDATE_CONTACT) {
-            args.putString("username", username);
-            args.putString("sipuri", sipuri);
-        }
-        f.setArguments(args);
+   /**
+    * Create a new instance of MyDialogFragment, providing "num"
+    * as an argument.
+    */
+   public static AddUserDialogFragment newInstance(int type, String username, String sipuri)
+   {
+      AddUserDialogFragment f = new AddUserDialogFragment();
 
-        return f;
-    }
+      // Supply num input as an argument.
+      Bundle args = new Bundle();
+      args.putInt("type", type);
+      if (type == DIALOG_TYPE_UPDATE_CONTACT) {
+         args.putString("username", username);
+         args.putString("sipuri", sipuri);
+      }
+      f.setArguments(args);
 
-    // Override the Fragment.onAttach() method to instantiate the NoticeDialogListener
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-        // Verify that the host activity implements the callback interface
-        try {
-            // Instantiate the NoticeDialogListener so we can send events to the host
-            listener = (ContactDialogListener) activity;
-        } catch (ClassCastException e) {
-            // The activity doesn't implement the interface, throw exception
-            throw new ClassCastException(activity.toString()
-                    + " must implement ContactDialogListener");
-        }
-    }
+      return f;
+   }
 
-    @Override
-    public void onDetach() {
-        super.onDetach();
-        listener = null;
-    }
+   // Override the Fragment.onAttach() method to instantiate the NoticeDialogListener
+   @Override
+   public void onAttach(Activity activity)
+   {
+      super.onAttach(activity);
+      // Verify that the host activity implements the callback interface
+      try {
+         // Instantiate the NoticeDialogListener so we can send events to the host
+         listener = (ContactDialogListener) activity;
+      }
+      catch (ClassCastException e) {
+         // The activity doesn't implement the interface, throw exception
+         throw new ClassCastException(activity.toString()
+               + " must implement ContactDialogListener");
+      }
+   }
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+   @Override
+   public void onDetach()
+   {
+      super.onDetach();
+      listener = null;
+   }
 
-    }
+   @Override
+   public void onCreate(Bundle savedInstanceState)
+   {
+      super.onCreate(savedInstanceState);
+
+   }
 
     /* Not to be used when onCreateDialog is overriden (it is for non-alert dialog fragments
     @Override
@@ -106,48 +112,51 @@ public class AddUserDialogFragment extends DialogFragment {
     }
     */
 
-    // Notice that for this doesn't work if onCreateView has been overriden as described above. To add
-    // custom view when using alert we need to use builder.setView() as seen below
-    @Override
-    public Dialog onCreateDialog(Bundle savedInstanceState) {
-        // Get the layout inflater
-        View view = getActivity().getLayoutInflater().inflate(R.layout.fragment_dialog_add_contact, null);
-        txtUsername = (EditText)view.findViewById(R.id.editText_username);
-        txtSipuri = (EditText)view.findViewById(R.id.editText_sipuri);
+   // Notice that for this doesn't work if onCreateView has been overriden as described above. To add
+   // custom view when using alert we need to use builder.setView() as seen below
+   @Override
+   public Dialog onCreateDialog(Bundle savedInstanceState)
+   {
+      // Get the layout inflater
+      View view = getActivity().getLayoutInflater().inflate(R.layout.fragment_dialog_add_contact, null);
+      txtUsername = (EditText) view.findViewById(R.id.editText_username);
+      txtSipuri = (EditText) view.findViewById(R.id.editText_sipuri);
 
-        String title = "Add Contact";
-        String positiveText = "Add";
-        if (getArguments().getInt("type") == DIALOG_TYPE_UPDATE_CONTACT) {
-            title = "Update Contact";
-            positiveText = "Update";
+      String title = "Add Contact";
+      String positiveText = "Add";
+      if (getArguments().getInt("type") == DIALOG_TYPE_UPDATE_CONTACT) {
+         title = "Update Contact";
+         positiveText = "Update";
 
-            txtUsername.setText(getArguments().getString("username", ""));
-            txtSipuri.setText(getArguments().getString("sipuri", ""));
-            // sipuri is not modifiable
-            txtSipuri.setEnabled(false);
-        }
+         txtUsername.setText(getArguments().getString("username", ""));
+         txtSipuri.setText(getArguments().getString("sipuri", ""));
+         // sipuri is not modifiable
+         txtSipuri.setEnabled(false);
+      }
 
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+      AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 
-        // Inflate and set the layout for the dialog
-        // Pass null as the parent view because its going in the dialog layout
-        builder.setView(view)
-                .setTitle(title)
-                .setPositiveButton(positiveText,
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int whichButton) {
-                                listener.onDialogPositiveClick(getArguments().getInt("type"), txtUsername.getText().toString(),
-                                        txtSipuri.getText().toString());
-                            }
-                        }
-                )
-                .setNegativeButton("Cancel",
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int whichButton) {
-                                listener.onDialogNegativeClick();
-                            }
-                        }
-                );
-        return builder.create();
-    }
+      // Inflate and set the layout for the dialog
+      // Pass null as the parent view because its going in the dialog layout
+      builder.setView(view)
+            .setTitle(title)
+            .setPositiveButton(positiveText,
+                  new DialogInterface.OnClickListener() {
+                     public void onClick(DialogInterface dialog, int whichButton)
+                     {
+                        listener.onDialogPositiveClick(getArguments().getInt("type"), txtUsername.getText().toString(),
+                              txtSipuri.getText().toString());
+                     }
+                  }
+            )
+            .setNegativeButton("Cancel",
+                  new DialogInterface.OnClickListener() {
+                     public void onClick(DialogInterface dialog, int whichButton)
+                     {
+                        listener.onDialogNegativeClick();
+                     }
+                  }
+            );
+      return builder.create();
+   }
 }

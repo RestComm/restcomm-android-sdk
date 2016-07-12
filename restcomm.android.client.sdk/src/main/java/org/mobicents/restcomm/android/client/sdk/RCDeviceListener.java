@@ -27,87 +27,89 @@ import org.mobicents.restcomm.android.client.sdk.RCDevice;
 import java.util.HashMap;
 
 /**
- *  RCDevice notifies its listener for RCDevice related events defined in this interface
+ * RCDevice notifies its listener for RCDevice related events defined in this interface
  */
 public interface RCDeviceListener {
-     enum RCConnectivityStatus {
-         RCConnectivityStatusNone,  // no restcomm connectivity either we have no internet connectivity or couldn't register to restcomm (or both)
-         RCConnectivityStatusWiFi,  // restcomm reachable and online via Wifi (or if in registrarless mode we don't register with restcomm; we just know that we have internet connectivity)
-         RCConnectivityStatusCellular,  // restcomm reachable and online via cellular (same as above for registraless)
-    }
-    /**
-     *  RCDevice initialized successfully
-     *
-     *  @param device Device of interest
-     */
-    void onInitialized(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus, int statusCode, String statusText);
+   enum RCConnectivityStatus {
+      RCConnectivityStatusNone,  // no restcomm connectivity either we have no internet connectivity or couldn't register to restcomm (or both)
+      RCConnectivityStatusWiFi,  // restcomm reachable and online via Wifi (or if in registrarless mode we don't register with restcomm; we just know that we have internet connectivity)
+      RCConnectivityStatusCellular,  // restcomm reachable and online via cellular (same as above for registraless)
+   }
 
-    /**
-     *  RCDevice failed to initialize
-     *
-     *  @param errorCode Error code for the error
-     *  @param errorText Error text for the error
-     */
-    //void onInitializationFailure(int errorCode, String errorText);
+   /**
+    * RCDevice initialized successfully
+    *
+    * @param device Device of interest
+    */
+   void onInitialized(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus, int statusCode, String statusText);
 
-    /**
-     *  RCDevice started listening for incoming connections (<b>Not Implemented yet</b>)
-     *
-     *  @param device Device of interest
-     */
-    void onStartListening(RCDevice device);
+   /**
+    *  RCDevice failed to initialize
+    *
+    *  @param errorCode Error code for the error
+    *  @param errorText Error text for the error
+    */
+   //void onInitializationFailure(int errorCode, String errorText);
 
-    /**
-     *  RCDevice stopped listening for incoming connections
-     *
-     *  @param device Device of interest
-     */
-    void onStopListening(RCDevice device);
+   /**
+    * RCDevice started listening for incoming connections (<b>Not Implemented yet</b>)
+    *
+    * @param device Device of interest
+    */
+   void onStartListening(RCDevice device);
 
-    /**
-     *  RCDevice stopped listening for incoming connections due to error
-     *
-     *  @param device Device of interest
-     *  @param errorCode  Error code
-     *  @param errorText  Error text
-     */
-    void onStopListening(RCDevice device, int errorCode, String errorText);
+   /**
+    * RCDevice stopped listening for incoming connections
+    *
+    * @param device Device of interest
+    */
+   void onStopListening(RCDevice device);
 
-    /**
-     *  RCDevice connectivity status has been updated
-     *
-     *  @param device Device of interest
-     *  @param connectivityStatus  Connectivity status of Device
-     */
-    void onConnectivityUpdate(RCDevice device, RCConnectivityStatus connectivityStatus);
+   /**
+    * RCDevice stopped listening for incoming connections due to error
+    *
+    * @param device    Device of interest
+    * @param errorCode Error code
+    * @param errorText Error text
+    */
+   void onStopListening(RCDevice device, int errorCode, String errorText);
 
-    /**
-     *  RCDevice received incoming connection
-     *
-     *  @param device     Device of interest
-     *  @param connection Newly established connection
-     */
-    //void onIncomingConnection(RCDevice device, RCConnection connection);
+   /**
+    * RCDevice connectivity status has been updated
+    *
+    * @param device             Device of interest
+    * @param connectivityStatus Connectivity status of Device
+    */
+   void onConnectivityUpdate(RCDevice device, RCConnectivityStatus connectivityStatus);
 
-    /**
-     * Text message received
-     * @param device  Device of interest
-     * @param message  Tex message
-     * @param parameters  Parameters, such as 'username' designating the username who sent the message
-     */
-    //void onIncomingMessage(RCDevice device, String message, HashMap<String, String> parameters);
+   /**
+    *  RCDevice received incoming connection
+    *
+    *  @param device     Device of interest
+    *  @param connection Newly established connection
+    */
+   //void onIncomingConnection(RCDevice device, RCConnection connection);
 
-    /**
-     *  Called to query whether the application wants to retrieve presence events. Return false to indicate that the application isn't interested (<b>Not implemented yet</b>)
-     *
-     *  @param device  Device of interest
-     */
-    boolean receivePresenceEvents(RCDevice device);
+   /**
+    * Text message received
+    * @param device  Device of interest
+    * @param message  Tex message
+    * @param parameters  Parameters, such as 'username' designating the username who sent the message
+    */
+   //void onIncomingMessage(RCDevice device, String message, HashMap<String, String> parameters);
 
-    /**
-     * Called when the presence status has changed (<b>Not implemented yet</b>)
-     * @param device  Device of interest
-     * @param presenceEvent  Presence Event
-     */
-    void onPresenceChanged(RCDevice device, RCPresenceEvent presenceEvent);
+   /**
+    * Called to query whether the application wants to retrieve presence events. Return false to indicate that the application isn't interested (<b>Not implemented yet</b>)
+    *
+    * @param device Device of interest
+    */
+   boolean receivePresenceEvents(RCDevice device);
+
+   /**
+    * Called when the presence status has changed (<b>Not implemented yet</b>)
+    *
+    * @param device        Device of interest
+    * @param presenceEvent Presence Event
+    */
+   void onPresenceChanged(RCDevice device, RCPresenceEvent presenceEvent);
 }

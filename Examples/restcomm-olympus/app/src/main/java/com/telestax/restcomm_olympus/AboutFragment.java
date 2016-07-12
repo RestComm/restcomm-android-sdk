@@ -32,51 +32,57 @@ import android.view.View;
 
 public class AboutFragment extends DialogFragment {
 
-    /**
-     * Create a new instance of MyDialogFragment, providing "num"
-     * as an argument.
-     */
-    public static AboutFragment newInstance() {
-        AboutFragment f = new AboutFragment();
+   /**
+    * Create a new instance of MyDialogFragment, providing "num"
+    * as an argument.
+    */
+   public static AboutFragment newInstance()
+   {
+      AboutFragment f = new AboutFragment();
 
-        return f;
-    }
+      return f;
+   }
 
-    // Override the Fragment.onAttach() method to instantiate the NoticeDialogListener
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
-    }
+   // Override the Fragment.onAttach() method to instantiate the NoticeDialogListener
+   @Override
+   public void onAttach(Activity activity)
+   {
+      super.onAttach(activity);
+   }
 
-    @Override
-    public void onDetach() {
-        super.onDetach();
-    }
+   @Override
+   public void onDetach()
+   {
+      super.onDetach();
+   }
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+   @Override
+   public void onCreate(Bundle savedInstanceState)
+   {
+      super.onCreate(savedInstanceState);
 
-    }
+   }
 
-    // Notice that for this doesn't work if onCreateView has been overriden as described above. To add
-    // custom view when using alert we need to use builder.setView() as seen below
-    @Override
-    public Dialog onCreateDialog(Bundle savedInstanceState) {
-        // Get the layout inflater
-        View view = getActivity().getLayoutInflater().inflate(R.layout.fragment_about, null);
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+   // Notice that for this doesn't work if onCreateView has been overriden as described above. To add
+   // custom view when using alert we need to use builder.setView() as seen below
+   @Override
+   public Dialog onCreateDialog(Bundle savedInstanceState)
+   {
+      // Get the layout inflater
+      View view = getActivity().getLayoutInflater().inflate(R.layout.fragment_about, null);
+      AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 
-        // Inflate and set the layout for the dialog
-        // Pass null as the parent view because its going in the dialog layout
-        builder.setView(view)
-                .setTitle("About")
-                .setPositiveButton("OK",
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int whichButton) {
-                            }
-                        }
-                );
-        return builder.create();
-    }
+      // Inflate and set the layout for the dialog
+      // Pass null as the parent view because its going in the dialog layout
+      builder.setView(view)
+            .setTitle("About")
+            .setPositiveButton("OK",
+                  new DialogInterface.OnClickListener() {
+                     public void onClick(DialogInterface dialog, int whichButton)
+                     {
+                     }
+                  }
+            );
+      return builder.create();
+   }
 }

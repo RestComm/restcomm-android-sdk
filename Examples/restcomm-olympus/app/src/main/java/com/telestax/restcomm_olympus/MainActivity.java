@@ -47,211 +47,224 @@ import org.mobicents.restcomm.android.client.sdk.RCPresenceEvent;
 import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity
-        implements MainFragment.Callbacks, RCDeviceListener,
-        View.OnClickListener, SharedPreferences.OnSharedPreferenceChangeListener,
-        AddUserDialogFragment.ContactDialogListener, ActionFragment.ActionListener {
+      implements MainFragment.Callbacks, RCDeviceListener,
+      View.OnClickListener, SharedPreferences.OnSharedPreferenceChangeListener,
+      AddUserDialogFragment.ContactDialogListener, ActionFragment.ActionListener {
 
-    private static final String TAG = "MainActivity";
-    SharedPreferences prefs;
-    private RCDevice device;
-    private HashMap<String, Object> params;
-    private MainFragment listFragment;
-    private AlertDialog alertDialog;
-    private RCConnectivityStatus previousConnectivityStatus = RCConnectivityStatus.RCConnectivityStatusNone;
+   private static final String TAG = "MainActivity";
+   SharedPreferences prefs;
+   private RCDevice device;
+   private HashMap<String, Object> params;
+   private MainFragment listFragment;
+   private AlertDialog alertDialog;
+   private RCConnectivityStatus previousConnectivityStatus = RCConnectivityStatus.RCConnectivityStatusNone;
 
-    ImageButton btnAdd;
+   ImageButton btnAdd;
 
-    private static final int CONNECTION_REQUEST = 1;
+   private static final int CONNECTION_REQUEST = 1;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+   @Override
+   protected void onCreate(Bundle savedInstanceState)
+   {
+      super.onCreate(savedInstanceState);
+      setContentView(R.layout.activity_main);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
-        toolbar.setTitle(getTitle());
+      Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+      setSupportActionBar(toolbar);
+      toolbar.setTitle(getTitle());
 
-        listFragment = (MainFragment)getSupportFragmentManager().findFragmentById(R.id.item_list);
+      listFragment = (MainFragment) getSupportFragmentManager().findFragmentById(R.id.item_list);
 
-        btnAdd = (ImageButton)findViewById(R.id.imageButton_add);
-        btnAdd.setOnClickListener(this);
+      btnAdd = (ImageButton) findViewById(R.id.imageButton_add);
+      btnAdd.setOnClickListener(this);
 
-        alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+      alertDialog = new AlertDialog.Builder(MainActivity.this).create();
 
-        PreferenceManager.setDefaultValues(this, "preferences.xml", MODE_PRIVATE, R.xml.preferences, false);
-        prefs = PreferenceManager.getDefaultSharedPreferences(this);
+      PreferenceManager.setDefaultValues(this, "preferences.xml", MODE_PRIVATE, R.xml.preferences, false);
+      prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
-        RCClient.setLogLevel(Log.VERBOSE);
-        RCClient.initialize(getApplicationContext(), new RCClient.RCInitListener() {
-            public void onInitialized() {
-                Log.i(TAG, "RCClient initialized");
-            }
+      RCClient.setLogLevel(Log.VERBOSE);
+      RCClient.initialize(getApplicationContext(), new RCClient.RCInitListener() {
+         public void onInitialized()
+         {
+            Log.i(TAG, "RCClient initialized");
+         }
 
-            public void onError(Exception exception) {
-                Log.e(TAG, "RCClient initialization error");
-            }
-        });
+         public void onError(Exception exception)
+         {
+            Log.e(TAG, "RCClient initialization error");
+         }
+      });
 
-        params = new HashMap<String, Object>();
-        params.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN, prefs.getString(RCDevice.ParameterKeys.SIGNALING_DOMAIN, ""));
-        params.put(RCDevice.ParameterKeys.SIGNALING_USERNAME, prefs.getString(RCDevice.ParameterKeys.SIGNALING_USERNAME, "android-sdk"));
-        params.put(RCDevice.ParameterKeys.SIGNALING_PASSWORD, prefs.getString(RCDevice.ParameterKeys.SIGNALING_PASSWORD, "1234"));
-        params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
-        params.put(RCDevice.ParameterKeys.MEDIA_TURN_URL, prefs.getString(RCDevice.ParameterKeys.MEDIA_TURN_URL, ""));
-        params.put(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME, prefs.getString(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME, ""));
-        params.put(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD, prefs.getString(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD, ""));
-        params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false));
-        device = RCClient.createDevice(params, this);
-        device.setPendingIntents(new Intent(getApplicationContext(), CallActivity.class),
-                new Intent(getApplicationContext(), MessageActivity.class));
+      params = new HashMap<String, Object>();
+      params.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN, prefs.getString(RCDevice.ParameterKeys.SIGNALING_DOMAIN, ""));
+      params.put(RCDevice.ParameterKeys.SIGNALING_USERNAME, prefs.getString(RCDevice.ParameterKeys.SIGNALING_USERNAME, "android-sdk"));
+      params.put(RCDevice.ParameterKeys.SIGNALING_PASSWORD, prefs.getString(RCDevice.ParameterKeys.SIGNALING_PASSWORD, "1234"));
+      params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
+      params.put(RCDevice.ParameterKeys.MEDIA_TURN_URL, prefs.getString(RCDevice.ParameterKeys.MEDIA_TURN_URL, ""));
+      params.put(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME, prefs.getString(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME, ""));
+      params.put(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD, prefs.getString(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD, ""));
+      params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false));
+      device = RCClient.createDevice(params, this);
+      device.setPendingIntents(new Intent(getApplicationContext(), CallActivity.class),
+            new Intent(getApplicationContext(), MessageActivity.class));
 
-        // preferences
-        prefs.registerOnSharedPreferenceChangeListener(this);
+      // preferences
+      prefs.registerOnSharedPreferenceChangeListener(this);
 
-        // No longer needed, we'll change with toast
-        // set it to wifi by default to avoid the status message when starting with wifi
-        //previousConnectivityStatus = RCConnectivityStatus.RCConnectivityStatusWiFi;
-    }
+      // No longer needed, we'll change with toast
+      // set it to wifi by default to avoid the status message when starting with wifi
+      //previousConnectivityStatus = RCConnectivityStatus.RCConnectivityStatusWiFi;
+   }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        // The activity is about to become visible.
-        Log.i(TAG, "%% onStart");
-    }
+   @Override
+   protected void onStart()
+   {
+      super.onStart();
+      // The activity is about to become visible.
+      Log.i(TAG, "%% onStart");
+   }
 
-    @Override
-    protected void onResume() {
-        super.onResume();
+   @Override
+   protected void onResume()
+   {
+      super.onResume();
 
-        if (device.getState() == RCDevice.DeviceState.OFFLINE) {
-            getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorTextSecondary)));
-        }
-        else {
-            getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
-        }
+      if (device.getState() == RCDevice.DeviceState.OFFLINE) {
+         getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorTextSecondary)));
+      }
+      else {
+         getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
+      }
 
-        // The activity has become visible (it is now "resumed").
-        Log.i(TAG, "%% onResume");
-    }
+      // The activity has become visible (it is now "resumed").
+      Log.i(TAG, "%% onResume");
+   }
 
-    @Override
-    protected void onPause() {
-        super.onPause();
-        // Another activity is taking focus (this activity is about to be "paused").
-        Log.i(TAG, "%% onPause");
-    }
-    @Override
-    protected void onStop() {
-        super.onStop();
-        // The activity is no longer visible (it is now "stopped")
-        Log.i(TAG, "%% onStop");
-    }
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        // The activity is about to be destroyed.
-        Log.i(TAG, "%% onDestroy");
-        RCClient.shutdown();
-        device = null;
-        prefs.unregisterOnSharedPreferenceChangeListener(this);
-    }
+   @Override
+   protected void onPause()
+   {
+      super.onPause();
+      // Another activity is taking focus (this activity is about to be "paused").
+      Log.i(TAG, "%% onPause");
+   }
 
-    @Override
-    public void onNewIntent(Intent intent) {
-        super.onNewIntent(intent);
-        setIntent(intent);
-    }
+   @Override
+   protected void onStop()
+   {
+      super.onStop();
+      // The activity is no longer visible (it is now "stopped")
+      Log.i(TAG, "%% onStop");
+   }
 
-    /**
-     * MainFragment Callbacks
-     */
-    @Override
-    public void onItemSelected(HashMap<String, String> contact, MainFragment.ContactSelectionType type) {
-        // forward to onActionClicked
-        onActionClicked(ActionFragment.ActionType.ACTION_TYPE_VIDEO_CALL, contact.get("username"), contact.get("sipuri"));
-    }
+   @Override
+   protected void onDestroy()
+   {
+      super.onDestroy();
+      // The activity is about to be destroyed.
+      Log.i(TAG, "%% onDestroy");
+      RCClient.shutdown();
+      device = null;
+      prefs.unregisterOnSharedPreferenceChangeListener(this);
+   }
 
-    public void onContactUpdate(HashMap<String, String> contact, int type)
-    {
-        DialogFragment newFragment = AddUserDialogFragment.newInstance(AddUserDialogFragment.DIALOG_TYPE_UPDATE_CONTACT, contact.get("username"), contact.get("sipuri"));
-        newFragment.show(getFragmentManager(), "dialog");
-    }
+   @Override
+   public void onNewIntent(Intent intent)
+   {
+      super.onNewIntent(intent);
+      setIntent(intent);
+   }
 
-    public void onAccessoryClicked(HashMap<String, String> contact)
-    {
-        DialogFragment actionFragment = ActionFragment.newInstance(contact.get("username"), contact.get("sipuri"));
-        actionFragment.show(getFragmentManager(), "dialog-accessory");
-    }
+   /**
+    * MainFragment Callbacks
+    */
+   @Override
+   public void onItemSelected(HashMap<String, String> contact, MainFragment.ContactSelectionType type)
+   {
+      // forward to onActionClicked
+      onActionClicked(ActionFragment.ActionType.ACTION_TYPE_VIDEO_CALL, contact.get("username"), contact.get("sipuri"));
+   }
+
+   public void onContactUpdate(HashMap<String, String> contact, int type)
+   {
+      DialogFragment newFragment = AddUserDialogFragment.newInstance(AddUserDialogFragment.DIALOG_TYPE_UPDATE_CONTACT, contact.get("username"), contact.get("sipuri"));
+      newFragment.show(getFragmentManager(), "dialog");
+   }
+
+   public void onAccessoryClicked(HashMap<String, String> contact)
+   {
+      DialogFragment actionFragment = ActionFragment.newInstance(contact.get("username"), contact.get("sipuri"));
+      actionFragment.show(getFragmentManager(), "dialog-accessory");
+   }
 
 
-    /**
-     * Callbacks for AddUserDialogFragment
-     */
-    public void onDialogPositiveClick(int type, String username, String sipuri)
-    {
-        listFragment.updateContact(type, username, sipuri);
-    }
+   /**
+    * Callbacks for AddUserDialogFragment
+    */
+   public void onDialogPositiveClick(int type, String username, String sipuri)
+   {
+      listFragment.updateContact(type, username, sipuri);
+   }
 
-    public void onDialogNegativeClick()
-    {
+   public void onDialogNegativeClick()
+   {
 
-    }
+   }
 
-    /**
-     * Callbacks for ActionFragment
-     */
-    public void onActionClicked(ActionFragment.ActionType action, String username, String sipuri)
-    {
-        if (action == ActionFragment.ActionType.ACTION_TYPE_VIDEO_CALL) {
-            Intent intent = new Intent(this, CallActivity.class);
-            intent.setAction(RCDevice.OUTGOING_CALL);
-            intent.putExtra(RCDevice.EXTRA_DID, sipuri);
-            intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, true);
-            startActivityForResult(intent, CONNECTION_REQUEST);
-        }
-        if (action == ActionFragment.ActionType.ACTION_TYPE_AUDIO_CALL) {
-            Intent intent = new Intent(this, CallActivity.class);
-            intent.setAction(RCDevice.OUTGOING_CALL);
-            intent.putExtra(RCDevice.EXTRA_DID, sipuri);
-            intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, false);
-            startActivityForResult(intent, CONNECTION_REQUEST);
-        }
-        if (action == ActionFragment.ActionType.ACTION_TYPE_TEXT_MESSAGE) {
-            Intent intent = new Intent(this, MessageActivity.class);
-            intent.setAction(RCDevice.OPEN_MESSAGE_SCREEN);
-            intent.putExtra(RCDevice.EXTRA_DID, sipuri);
-            startActivity(intent);
-        }
-    }
+   /**
+    * Callbacks for ActionFragment
+    */
+   public void onActionClicked(ActionFragment.ActionType action, String username, String sipuri)
+   {
+      if (action == ActionFragment.ActionType.ACTION_TYPE_VIDEO_CALL) {
+         Intent intent = new Intent(this, CallActivity.class);
+         intent.setAction(RCDevice.OUTGOING_CALL);
+         intent.putExtra(RCDevice.EXTRA_DID, sipuri);
+         intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, true);
+         startActivityForResult(intent, CONNECTION_REQUEST);
+      }
+      if (action == ActionFragment.ActionType.ACTION_TYPE_AUDIO_CALL) {
+         Intent intent = new Intent(this, CallActivity.class);
+         intent.setAction(RCDevice.OUTGOING_CALL);
+         intent.putExtra(RCDevice.EXTRA_DID, sipuri);
+         intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, false);
+         startActivityForResult(intent, CONNECTION_REQUEST);
+      }
+      if (action == ActionFragment.ActionType.ACTION_TYPE_TEXT_MESSAGE) {
+         Intent intent = new Intent(this, MessageActivity.class);
+         intent.setAction(RCDevice.OPEN_MESSAGE_SCREEN);
+         intent.putExtra(RCDevice.EXTRA_DID, sipuri);
+         startActivity(intent);
+      }
+   }
 
-    /**
-     * Main Activity onClick
-     */
-    public void onClick(View view) {
-        if (view.getId() == R.id.imageButton_add) {
-            DialogFragment newFragment = AddUserDialogFragment.newInstance(AddUserDialogFragment.DIALOG_TYPE_ADD_CONTACT, "", "");
-            newFragment.show(getFragmentManager(), "dialog");
-        }
-    }
+   /**
+    * Main Activity onClick
+    */
+   public void onClick(View view)
+   {
+      if (view.getId() == R.id.imageButton_add) {
+         DialogFragment newFragment = AddUserDialogFragment.newInstance(AddUserDialogFragment.DIALOG_TYPE_ADD_CONTACT, "", "");
+         newFragment.show(getFragmentManager(), "dialog");
+      }
+   }
 
-    /**
-     * RCDeviceListener callbacks
-     */
-    public void onStartListening(RCDevice device)
-    {
+   /**
+    * RCDeviceListener callbacks
+    */
+   public void onStartListening(RCDevice device)
+   {
 
-    }
+   }
 
-    public void onStopListening(RCDevice device)
-    {
+   public void onStopListening(RCDevice device)
+   {
 
-    }
+   }
 
-    public void onStopListening(RCDevice device, int errorCode, String errorText)
-    {
-        showOkAlert("RCDevice Error", errorText);
+   public void onStopListening(RCDevice device, int errorCode, String errorText)
+   {
+      showOkAlert("RCDevice Error", errorText);
         /*
         if (errorCode == RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal()) {
             showOkAlert("No Wifi Connectivity", errorText);
@@ -263,115 +276,121 @@ public class MainActivity extends AppCompatActivity
             showOkAlert("Unknown Error", "Unknown Restcomm Client error");
         }
         */
-    }
+   }
 
-    public void onInitialized(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus, int statusCode, String statusText)
-    {
-        if (statusCode == RCClient.ErrorCodes.SUCCESS.ordinal()) {
-            onConnectivityUpdate(device, connectivityStatus);
-        }
-        else if (statusCode == RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY.ordinal()) {
-            onConnectivityUpdate(device, connectivityStatus);
-        }
-        else {
-            showOkAlert("RCDevice Error", statusText);
-        }
+   public void onInitialized(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus, int statusCode, String statusText)
+   {
+      if (statusCode == RCClient.ErrorCodes.SUCCESS.ordinal()) {
+         onConnectivityUpdate(device, connectivityStatus);
+      }
+      else if (statusCode == RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY.ordinal()) {
+         onConnectivityUpdate(device, connectivityStatus);
+      }
+      else {
+         showOkAlert("RCDevice Error", statusText);
+      }
 
-    }
+   }
 
-    public void onConnectivityUpdate(RCDevice device, RCConnectivityStatus connectivityStatus)
-    {
-        String text = "";
-        if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusNone) {
-            text = "Lost connectivity";
-        }
-        if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusWiFi) {
-            text = "Reestablished connectivity (Wifi)";
-        }
-        if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusCellular) {
-            text = "Reestablished connectivity (Cellular)";
-        }
+   public void onConnectivityUpdate(RCDevice device, RCConnectivityStatus connectivityStatus)
+   {
+      String text = "";
+      if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusNone) {
+         text = "Lost connectivity";
+      }
+      if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusWiFi) {
+         text = "Reestablished connectivity (Wifi)";
+      }
+      if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusCellular) {
+         text = "Reestablished connectivity (Cellular)";
+      }
 
-        if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusNone) {
-            getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorTextSecondary)));
-        }
-        else {
-            getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
-        }
+      if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusNone) {
+         getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorTextSecondary)));
+      }
+      else {
+         getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
+      }
 
-        if (connectivityStatus != this.previousConnectivityStatus) {
-            showOkAlert("RCDevice connectivity change", text);
-            this.previousConnectivityStatus = connectivityStatus;
-        }
-    }
+      if (connectivityStatus != this.previousConnectivityStatus) {
+         showOkAlert("RCDevice connectivity change", text);
+         this.previousConnectivityStatus = connectivityStatus;
+      }
+   }
 
-    public boolean receivePresenceEvents(RCDevice device)
-    {
-        return false;
-    }
+   public boolean receivePresenceEvents(RCDevice device)
+   {
+      return false;
+   }
 
-    public void onPresenceChanged(RCDevice device, RCPresenceEvent presenceEvent)
-    {
+   public void onPresenceChanged(RCDevice device, RCPresenceEvent presenceEvent)
+   {
 
-    }
+   }
 
-    /**
-     * Settings Menu callbacks
-     */
-    @Override
-    public void onConfigurationChanged(Configuration newConfig) {
-        super.onConfigurationChanged(newConfig);
-    }
+   /**
+    * Settings Menu callbacks
+    */
+   @Override
+   public void onConfigurationChanged(Configuration newConfig)
+   {
+      super.onConfigurationChanged(newConfig);
+   }
 
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
+   @Override
+   public boolean onCreateOptionsMenu(Menu menu)
+   {
+      // Inflate the menu; this adds items to the action bar if it is present.
+      getMenuInflater().inflate(R.menu.menu_main, menu);
+      return true;
+   }
 
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
-        int id = item.getItemId();
-        if (id == R.id.action_settings) {
-            Intent i = new Intent(this, SettingsActivity.class);
-            startActivity(i);
-        }
-        if (id == R.id.action_about) {
-            DialogFragment newFragment = AboutFragment.newInstance();
-            newFragment.show(getFragmentManager(), "dialog-about");
-        }
-        return super.onOptionsItemSelected(item);
-    }
+   @Override
+   public boolean onOptionsItemSelected(MenuItem item)
+   {
+      // Handle action bar item clicks here. The action bar will
+      // automatically handle clicks on the Home/Up button, so long
+      // as you specify a parent activity in AndroidManifest.xml.
+      int id = item.getItemId();
+      if (id == R.id.action_settings) {
+         Intent i = new Intent(this, SettingsActivity.class);
+         startActivity(i);
+      }
+      if (id == R.id.action_about) {
+         DialogFragment newFragment = AboutFragment.newInstance();
+         newFragment.show(getFragmentManager(), "dialog-about");
+      }
+      return super.onOptionsItemSelected(item);
+   }
 
-    @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
-                                          String key) {
+   @Override
+   public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
+                                         String key)
+   {
 
-    }
+   }
 
-    /**
-     * Helpers
-     */
-    private void showOkAlert(final String title, final String detail) {
-        if (alertDialog.isShowing()) {
-            Log.w(TAG, "Alert already showing, hiding to show new alert");
-            alertDialog.hide();
-        }
+   /**
+    * Helpers
+    */
+   private void showOkAlert(final String title, final String detail)
+   {
+      if (alertDialog.isShowing()) {
+         Log.w(TAG, "Alert already showing, hiding to show new alert");
+         alertDialog.hide();
+      }
 
-        alertDialog.setTitle(title);
-        alertDialog.setMessage(detail);
-        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
-        alertDialog.show();
-    }
+      alertDialog.setTitle(title);
+      alertDialog.setMessage(detail);
+      alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
+         public void onClick(DialogInterface dialog, int which)
+         {
+            dialog.dismiss();
+         }
+      });
+      alertDialog.show();
+   }
 
 }
 

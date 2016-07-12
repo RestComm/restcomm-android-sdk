@@ -37,171 +37,183 @@ import java.util.Map;
 
 
 public class MessageFragment extends ListFragment {
-    private SimpleAdapter listViewAdapter;
-    private ArrayList<Map<String, String>> contactList;
+   private SimpleAdapter listViewAdapter;
+   private ArrayList<Map<String, String>> contactList;
 
-    /**
-     * The serialization (saved instance state) Bundle key representing the
-     * activated item position. Only used on tablets.
-     */
-    private static final String STATE_ACTIVATED_POSITION = "activated_position";
+   /**
+    * The serialization (saved instance state) Bundle key representing the
+    * activated item position. Only used on tablets.
+    */
+   private static final String STATE_ACTIVATED_POSITION = "activated_position";
 
-    /**
-     * The fragment's current callback object, which is notified of list item
-     * clicks.
-     */
-    private Callbacks mCallbacks = null;
+   /**
+    * The fragment's current callback object, which is notified of list item
+    * clicks.
+    */
+   private Callbacks mCallbacks = null;
 
-    /**
-     * The current activated item position. Only used on tablets.
-     */
-    private int mActivatedPosition = ListView.INVALID_POSITION;
+   /**
+    * The current activated item position. Only used on tablets.
+    */
+   private int mActivatedPosition = ListView.INVALID_POSITION;
 
-    /**
-     * A callback interface that all activities containing this fragment must
-     * implement. This mechanism allows activities to be notified of item
-     * selections.
-     */
-    public interface Callbacks {
-        /**
-         * Callback for when an item has been selected.
-         */
-        //public void onItemSelected(HashMap<String, String> contact, ContactSelectionType type);
-        //public void onContactUpdate(HashMap<String, String> contact, int type);
-    }
+   /**
+    * A callback interface that all activities containing this fragment must
+    * implement. This mechanism allows activities to be notified of item
+    * selections.
+    */
+   public interface Callbacks {
+      /**
+       * Callback for when an item has been selected.
+       */
+      //public void onItemSelected(HashMap<String, String> contact, ContactSelectionType type);
+      //public void onContactUpdate(HashMap<String, String> contact, int type);
+   }
 
 
-    /**
-     * Mandatory empty constructor for the fragment manager to instantiate the
-     * fragment (e.g. upon screen orientation changes).
-     */
-    public MessageFragment() {
-    }
+   /**
+    * Mandatory empty constructor for the fragment manager to instantiate the
+    * fragment (e.g. upon screen orientation changes).
+    */
+   public MessageFragment()
+   {
+   }
 
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+   @Override
+   public void onCreate(Bundle savedInstanceState)
+   {
+      super.onCreate(savedInstanceState);
 
-        contactList = new ArrayList<Map<String, String>>();
+      contactList = new ArrayList<Map<String, String>>();
 
-        String[] from = { "username", "message-text" };
-        int[] to = { R.id.message_username, R.id.message_text };
+      String[] from = {"username", "message-text"};
+      int[] to = {R.id.message_username, R.id.message_text};
 
-        listViewAdapter = new SimpleAdapter(getActivity().getApplicationContext(), contactList,
-                R.layout.message_row_layout, from, to);
-        setListAdapter(listViewAdapter);
-    }
+      listViewAdapter = new SimpleAdapter(getActivity().getApplicationContext(), contactList,
+            R.layout.message_row_layout, from, to);
+      setListAdapter(listViewAdapter);
+   }
 
-    @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
+   @Override
+   public void onViewCreated(View view, Bundle savedInstanceState)
+   {
+      super.onViewCreated(view, savedInstanceState);
 
-        // Restore the previously serialized activated item position.
-        if (savedInstanceState != null
-                && savedInstanceState.containsKey(STATE_ACTIVATED_POSITION)) {
-            setActivatedPosition(savedInstanceState.getInt(STATE_ACTIVATED_POSITION));
-        }
+      // Restore the previously serialized activated item position.
+      if (savedInstanceState != null
+            && savedInstanceState.containsKey(STATE_ACTIVATED_POSITION)) {
+         setActivatedPosition(savedInstanceState.getInt(STATE_ACTIVATED_POSITION));
+      }
 
-        registerForContextMenu(getListView());
-    }
+      registerForContextMenu(getListView());
+   }
 
-    @Override
-    public void onAttach(Activity activity) {
-        super.onAttach(activity);
+   @Override
+   public void onAttach(Activity activity)
+   {
+      super.onAttach(activity);
 
-        // Activities containing this fragment must implement its callbacks.
-        if (!(activity instanceof Callbacks)) {
-            throw new IllegalStateException("Activity must implement fragment's callbacks.");
-        }
+      // Activities containing this fragment must implement its callbacks.
+      if (!(activity instanceof Callbacks)) {
+         throw new IllegalStateException("Activity must implement fragment's callbacks.");
+      }
 
-        mCallbacks = (Callbacks) activity;
-    }
+      mCallbacks = (Callbacks) activity;
+   }
 
-    @Override
-    public void onDetach() {
-        super.onDetach();
+   @Override
+   public void onDetach()
+   {
+      super.onDetach();
 
-        // Reset the active callbacks interface to the dummy implementation.
-        mCallbacks = null;
-    }
+      // Reset the active callbacks interface to the dummy implementation.
+      mCallbacks = null;
+   }
 
-    @Override
-    public void onListItemClick(ListView listView, View view, int position, long id) {
-        super.onListItemClick(listView, view, position, id);
+   @Override
+   public void onListItemClick(ListView listView, View view, int position, long id)
+   {
+      super.onListItemClick(listView, view, position, id);
 
-        // no actions for now when tapping on an item
+      // no actions for now when tapping on an item
         /*
         HashMap item = (HashMap)getListView().getItemAtPosition(position);
         // Notify the active callbacks interface (the activity, if the
         // fragment is attached to one) that an item has been selected.
         mCallbacks.onItemSelected(item, ContactSelectionType.VIDEO_CALL);
         */
-    }
+   }
 
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        if (mActivatedPosition != ListView.INVALID_POSITION) {
-            // Serialize and persist the activated item position.
-            outState.putInt(STATE_ACTIVATED_POSITION, mActivatedPosition);
-        }
-    }
+   @Override
+   public void onSaveInstanceState(Bundle outState)
+   {
+      super.onSaveInstanceState(outState);
+      if (mActivatedPosition != ListView.INVALID_POSITION) {
+         // Serialize and persist the activated item position.
+         outState.putInt(STATE_ACTIVATED_POSITION, mActivatedPosition);
+      }
+   }
 
-    /**
-     * Turns on activate-on-click mode. When this mode is on, list items will be
-     * given the 'activated' state when touched.
-     */
-    public void setActivateOnItemClick(boolean activateOnItemClick) {
-        // When setting CHOICE_MODE_SINGLE, ListView will automatically
-        // give items the 'activated' state when touched.
-        getListView().setChoiceMode(activateOnItemClick
-                ? ListView.CHOICE_MODE_SINGLE
-                : ListView.CHOICE_MODE_NONE);
-    }
+   /**
+    * Turns on activate-on-click mode. When this mode is on, list items will be
+    * given the 'activated' state when touched.
+    */
+   public void setActivateOnItemClick(boolean activateOnItemClick)
+   {
+      // When setting CHOICE_MODE_SINGLE, ListView will automatically
+      // give items the 'activated' state when touched.
+      getListView().setChoiceMode(activateOnItemClick
+            ? ListView.CHOICE_MODE_SINGLE
+            : ListView.CHOICE_MODE_NONE);
+   }
 
-    private void setActivatedPosition(int position) {
-        if (position == ListView.INVALID_POSITION) {
-            getListView().setItemChecked(mActivatedPosition, false);
-        } else {
-            getListView().setItemChecked(position, true);
-        }
+   private void setActivatedPosition(int position)
+   {
+      if (position == ListView.INVALID_POSITION) {
+         getListView().setItemChecked(mActivatedPosition, false);
+      }
+      else {
+         getListView().setItemChecked(position, true);
+      }
 
-        mActivatedPosition = position;
-    }
+      mActivatedPosition = position;
+   }
 
-    // Called by Activity when when new message is sent
-    public void addLocalMessage(String message)
-    {
-        HashMap<String, String> item = new HashMap<String, String>();
-        item.put("username", "Me");
-        item.put("message-text", message);
-        contactList.add(item);
-        this.listViewAdapter.notifyDataSetChanged();
-        getListView().setSelection(listViewAdapter.getCount() - 1);
-    }
+   // Called by Activity when when new message is sent
+   public void addLocalMessage(String message)
+   {
+      HashMap<String, String> item = new HashMap<String, String>();
+      item.put("username", "Me");
+      item.put("message-text", message);
+      contactList.add(item);
+      this.listViewAdapter.notifyDataSetChanged();
+      getListView().setSelection(listViewAdapter.getCount() - 1);
+   }
 
-    // Called by Activity when when new message is sent
-    public void addRemoteMessage(String message, String username)
-    {
-        HashMap<String, String> item = new HashMap<String, String>();
-        item.put("username", username);
-        item.put("message-text", message);
-        contactList.add(item);
-        this.listViewAdapter.notifyDataSetChanged();
-        getListView().setSelection(listViewAdapter.getCount() - 1);
-    }
+   // Called by Activity when when new message is sent
+   public void addRemoteMessage(String message, String username)
+   {
+      HashMap<String, String> item = new HashMap<String, String>();
+      item.put("username", username);
+      item.put("message-text", message);
+      contactList.add(item);
+      this.listViewAdapter.notifyDataSetChanged();
+      getListView().setSelection(listViewAdapter.getCount() - 1);
+   }
 
-    // Helper methods
-    private void showOkAlert(final String title, final String detail) {
-        AlertDialog alertDialog = new AlertDialog.Builder(getActivity()).create();
-        alertDialog.setTitle(title);
-        alertDialog.setMessage(detail);
-        alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
-        alertDialog.show();
-    }
+   // Helper methods
+   private void showOkAlert(final String title, final String detail)
+   {
+      AlertDialog alertDialog = new AlertDialog.Builder(getActivity()).create();
+      alertDialog.setTitle(title);
+      alertDialog.setMessage(detail);
+      alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
+         public void onClick(DialogInterface dialog, int which)
+         {
+            dialog.dismiss();
+         }
+      });
+      alertDialog.show();
+   }
 
 }

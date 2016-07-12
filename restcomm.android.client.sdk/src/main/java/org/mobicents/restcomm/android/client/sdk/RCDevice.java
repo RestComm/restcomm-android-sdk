@@ -58,125 +58,126 @@ import org.mobicents.restcomm.android.sipua.impl.SipManager;
  */
 
 public class RCDevice implements UIClient.UIClientListener {
-    /**
-     * @abstract Device state
-     */
-    static DeviceState state;
-    /**
-     * @abstract Device capabilities (<b>Not Implemented yet</b>)
-     */
-    HashMap<DeviceCapability, Object> capabilities;
-    /**
-     * @abstract Listener that will be receiving RCDevice events described at RCDeviceListener
-     */
-    RCDeviceListener listener;
-    /**
-     * @abstract Is sound for incoming connections enabled
-     */
-    boolean incomingSoundEnabled;
-    /**
-     * @abstract Is sound for outgoing connections enabled
-     */
-    boolean outgoingSoundEnabled;
-    /**
-     * @abstract Is sound for disconnect enabled
-     */
-    boolean disconnectSoundEnabled;
+   /**
+    * @abstract Device state
+    */
+   static DeviceState state;
+   /**
+    * @abstract Device capabilities (<b>Not Implemented yet</b>)
+    */
+   HashMap<DeviceCapability, Object> capabilities;
+   /**
+    * @abstract Listener that will be receiving RCDevice events described at RCDeviceListener
+    */
+   RCDeviceListener listener;
+   /**
+    * @abstract Is sound for incoming connections enabled
+    */
+   boolean incomingSoundEnabled;
+   /**
+    * @abstract Is sound for outgoing connections enabled
+    */
+   boolean outgoingSoundEnabled;
+   /**
+    * @abstract Is sound for disconnect enabled
+    */
+   boolean disconnectSoundEnabled;
 
-    /**
-     * Device state
-     */
-    public enum DeviceState {
-        OFFLINE, /**
-         * Device is offline
-         */
-        READY, /**
-         * Device is ready to make and receive connections
-         */
-        BUSY,  /** Device is busy */
-    }
+   /**
+    * Device state
+    */
+   public enum DeviceState {
+      OFFLINE, /**
+       * Device is offline
+       */
+      READY, /**
+       * Device is ready to make and receive connections
+       */
+      BUSY,  /** Device is busy */
+   }
 
-    /**
-     * Device capability (<b>Not Implemented yet</b>)
-     */
-    public enum DeviceCapability {
-        INCOMING,
-        OUTGOING,
-        EXPIRATION,
-        ACCOUNT_SID,
-        APPLICATION_SID,
-        APPLICATION_PARAMETERS,
-        CLIENT_NAME,
-    }
+   /**
+    * Device capability (<b>Not Implemented yet</b>)
+    */
+   public enum DeviceCapability {
+      INCOMING,
+      OUTGOING,
+      EXPIRATION,
+      ACCOUNT_SID,
+      APPLICATION_SID,
+      APPLICATION_PARAMETERS,
+      CLIENT_NAME,
+   }
 
-    /**
-     * Parameter keys for RCClient.createDevice() and RCDevice.updateParams()
-     */
-    public static class ParameterKeys {
-        public static final String SIGNALING_USERNAME = "pref_sip_user";
-        public static final String SIGNALING_DOMAIN = "pref_proxy_domain";
-        public static final String SIGNALING_PASSWORD = "pref_sip_password";
-        public static final String SIGNALING_SECURE_ENABLED = "signaling-secure";
-        public static final String SIGNALING_LOCAL_PORT = "signaling-local-port";
-        public static final String SIGNALING_JAIN_SIP_LOGGING_ENABLED = "jain-sip-logging-enabled";
-        public static final String MEDIA_TURN_ENABLED = "turn-enabled";
-        public static final String MEDIA_TURN_URL = "turn-url";
-        public static final String MEDIA_TURN_USERNAME = "turn-username";
-        public static final String MEDIA_TURN_PASSWORD = "turn-password";
-    }
+   /**
+    * Parameter keys for RCClient.createDevice() and RCDevice.updateParams()
+    */
+   public static class ParameterKeys {
+      public static final String SIGNALING_USERNAME = "pref_sip_user";
+      public static final String SIGNALING_DOMAIN = "pref_proxy_domain";
+      public static final String SIGNALING_PASSWORD = "pref_sip_password";
+      public static final String SIGNALING_SECURE_ENABLED = "signaling-secure";
+      public static final String SIGNALING_LOCAL_PORT = "signaling-local-port";
+      public static final String SIGNALING_JAIN_SIP_LOGGING_ENABLED = "jain-sip-logging-enabled";
+      public static final String MEDIA_TURN_ENABLED = "turn-enabled";
+      public static final String MEDIA_TURN_URL = "turn-url";
+      public static final String MEDIA_TURN_USERNAME = "turn-username";
+      public static final String MEDIA_TURN_PASSWORD = "turn-password";
+   }
 
-    private static final String TAG = "RCDevice";
-    //private static boolean online = false;
-    public static String OUTGOING_CALL = "ACTION_OUTGOING_CALL";
-    public static String INCOMING_CALL = "ACTION_INCOMING_CALL";
-    public static String OPEN_MESSAGE_SCREEN = "ACTION_OPEN_MESSAGE_SCREEN";
-    public static String INCOMING_MESSAGE = "ACTION_INCOMING_MESSAGE";
-    public static String INCOMING_MESSAGE_TEXT = "INCOMING_MESSAGE_TEXT";
-    public static String INCOMING_MESSAGE_PARAMS = "INCOMING_MESSAGE_PARAMS";
-    public static String EXTRA_DID = "com.telestax.restcomm_messenger.DID";
-    public static String EXTRA_VIDEO_ENABLED = "com.telestax.restcomm_messenger.VIDEO_ENABLED";
-    public static String EXTRA_SDP = "com.telestax.restcomm_messenger.SDP";
-    //public static String EXTRA_DEVICE = "com.telestax.restcomm.android.client.sdk.extra-device";
-    //public static String EXTRA_CONNECTION = "com.telestax.restcomm.android.client.sdk.extra-connection";
-    // Parameters passed in the RCDevice constructor
-    HashMap<String, Object> parameters;
-    PendingIntent pendingCallIntent;
-    PendingIntent pendingMessageIntent;
-    HashMap<String, RCConnection> connections;
-    //private RCConnection incomingConnection;
-    private RCDeviceListener.RCConnectivityStatus cachedConnectivityStatus = RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone;
-    private SipProfile sipProfile = null;
-    private UIClient uiClient;
+   private static final String TAG = "RCDevice";
+   //private static boolean online = false;
+   public static String OUTGOING_CALL = "ACTION_OUTGOING_CALL";
+   public static String INCOMING_CALL = "ACTION_INCOMING_CALL";
+   public static String OPEN_MESSAGE_SCREEN = "ACTION_OPEN_MESSAGE_SCREEN";
+   public static String INCOMING_MESSAGE = "ACTION_INCOMING_MESSAGE";
+   public static String INCOMING_MESSAGE_TEXT = "INCOMING_MESSAGE_TEXT";
+   public static String INCOMING_MESSAGE_PARAMS = "INCOMING_MESSAGE_PARAMS";
+   public static String EXTRA_DID = "com.telestax.restcomm_messenger.DID";
+   public static String EXTRA_VIDEO_ENABLED = "com.telestax.restcomm_messenger.VIDEO_ENABLED";
+   public static String EXTRA_SDP = "com.telestax.restcomm_messenger.SDP";
+   //public static String EXTRA_DEVICE = "com.telestax.restcomm.android.client.sdk.extra-device";
+   //public static String EXTRA_CONNECTION = "com.telestax.restcomm.android.client.sdk.extra-connection";
+   // Parameters passed in the RCDevice constructor
+   HashMap<String, Object> parameters;
+   PendingIntent pendingCallIntent;
+   PendingIntent pendingMessageIntent;
+   HashMap<String, RCConnection> connections;
+   //private RCConnection incomingConnection;
+   private RCDeviceListener.RCConnectivityStatus cachedConnectivityStatus = RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone;
+   private SipProfile sipProfile = null;
+   private UIClient uiClient;
 
-    /**
-     * Initialize a new RCDevice object
-     *
-     * @param parameters     RCDevice parameters
-     * @param deviceListener Listener of RCDevice
-     */
-    protected RCDevice(HashMap<String, Object> parameters, RCDeviceListener deviceListener) {
-        RCLogger.i(TAG, "RCDevice(): " + parameters.toString());
-        //this.updateCapabilityToken(capabilityToken);
-        this.listener = deviceListener;
+   /**
+    * Initialize a new RCDevice object
+    *
+    * @param parameters     RCDevice parameters
+    * @param deviceListener Listener of RCDevice
+    */
+   protected RCDevice(HashMap<String, Object> parameters, RCDeviceListener deviceListener)
+   {
+      RCLogger.i(TAG, "RCDevice(): " + parameters.toString());
+      //this.updateCapabilityToken(capabilityToken);
+      this.listener = deviceListener;
 
-        // TODO: check if those headers are needed
-        HashMap<String, String> customHeaders = new HashMap<>();
-        state = DeviceState.OFFLINE;
+      // TODO: check if those headers are needed
+      HashMap<String, String> customHeaders = new HashMap<>();
+      state = DeviceState.OFFLINE;
 
-        // register broadcast receiver for reachability
+      // register broadcast receiver for reachability
         /*
         Context context = RCClient.getContext();
         IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
         context.registerReceiver(this, filter);
         */
 
-        connections = new HashMap<String, RCConnection>();
-        // initialize JAIN SIP if we have connectivity
-        this.parameters = parameters;
-        //reachabilityState = DeviceImpl.checkReachability(RCClient.getContext());
+      connections = new HashMap<String, RCConnection>();
+      // initialize JAIN SIP if we have connectivity
+      this.parameters = parameters;
+      //reachabilityState = DeviceImpl.checkReachability(RCClient.getContext());
 
-        uiClient = new UIClient(this, RCClient.getContext());
-        uiClient.open(parameters);
+      uiClient = new UIClient(this, RCClient.getContext());
+      uiClient.open(parameters);
 
         /*
         boolean connectivity = false;
@@ -185,7 +186,7 @@ public class RCDevice implements UIClient.UIClientListener {
         }
         initializeSignalling(connectivity);
         */
-    }
+   }
 
     /*
     private void initializeSignalling(boolean connectivity) {
@@ -262,33 +263,36 @@ public class RCDevice implements UIClient.UIClientListener {
     }
     */
 
-    // TODO: this is for RCConnection, but see if they can figure out the connectivity in a different way, like asking the signaling thread directly?
-    public RCDeviceListener.RCConnectivityStatus getConnectivityStatus() {
-        return cachedConnectivityStatus;
-    }
+   // TODO: this is for RCConnection, but see if they can figure out the connectivity in a different way, like asking the signaling thread directly?
+   public RCDeviceListener.RCConnectivityStatus getConnectivityStatus()
+   {
+      return cachedConnectivityStatus;
+   }
 
-    // 'Copy' constructor
-    public RCDevice(RCDevice device) {
-        this.incomingSoundEnabled = device.incomingSoundEnabled;
-        this.outgoingSoundEnabled = device.outgoingSoundEnabled;
-        this.disconnectSoundEnabled = device.disconnectSoundEnabled;
-        this.listener = device.listener;
+   // 'Copy' constructor
+   public RCDevice(RCDevice device)
+   {
+      this.incomingSoundEnabled = device.incomingSoundEnabled;
+      this.outgoingSoundEnabled = device.outgoingSoundEnabled;
+      this.disconnectSoundEnabled = device.disconnectSoundEnabled;
+      this.listener = device.listener;
 
-        // Not used yet
-        this.capabilities = null;
-    }
+      // Not used yet
+      this.capabilities = null;
+   }
 
-    /**
-     * Shuts down and release the Device
-     */
-    public void release() {
-        RCLogger.i(TAG, "release()");
-        this.listener = null;
+   /**
+    * Shuts down and release the Device
+    */
+   public void release()
+   {
+      RCLogger.i(TAG, "release()");
+      this.listener = null;
 
-        uiClient.close();
-        // important, otherwise if shutdown and re-initialized the old RCDevice instance will be getting events
-        //RCClient.getContext().unregisterReceiver(this);
-        state = DeviceState.OFFLINE;
+      uiClient.close();
+      // important, otherwise if shutdown and re-initialized the old RCDevice instance will be getting events
+      //RCClient.getContext().unregisterReceiver(this);
+      state = DeviceState.OFFLINE;
 
         /*
         if (DeviceImpl.isInitialized()) {
@@ -314,99 +318,105 @@ public class RCDevice implements UIClient.UIClientListener {
         RCClient.getContext().unregisterReceiver(this);
         state = DeviceState.OFFLINE;
         */
-    }
+   }
 
-    /**
-     * Start listening for incoming connections
-     */
-    public void listen() {
-        RCLogger.i(TAG, "listen()");
+   /**
+    * Start listening for incoming connections
+    */
+   public void listen()
+   {
+      RCLogger.i(TAG, "listen()");
 
-        if (state == DeviceState.READY) {
-            DeviceImpl.GetInstance().Register();
-        }
-    }
+      if (state == DeviceState.READY) {
+         DeviceImpl.GetInstance().Register();
+      }
+   }
 
-    /**
-     * Stop listening for incoming connections
-     */
-    public void unlisten() {
-        RCLogger.i(TAG, "unlisten()");
+   /**
+    * Stop listening for incoming connections
+    */
+   public void unlisten()
+   {
+      RCLogger.i(TAG, "unlisten()");
 
-        if (state == DeviceState.READY) {
-            DeviceImpl.GetInstance().Unregister();
-        }
-    }
+      if (state == DeviceState.READY) {
+         DeviceImpl.GetInstance().Unregister();
+      }
+   }
 
-    /**
-     * Update Device listener to be receiving Device related events. This is
-     * usually needed when we switch activities and want the new activity to receive
-     * events
-     *
-     * @param listener New device listener
-     */
-    public void setDeviceListener(RCDeviceListener listener) {
-        RCLogger.i(TAG, "setDeviceListener()");
+   /**
+    * Update Device listener to be receiving Device related events. This is
+    * usually needed when we switch activities and want the new activity to receive
+    * events
+    *
+    * @param listener New device listener
+    */
+   public void setDeviceListener(RCDeviceListener listener)
+   {
+      RCLogger.i(TAG, "setDeviceListener()");
 
-        this.listener = listener;
-        //DeviceImpl.GetInstance().sipuaConnectionListener = this;
-    }
+      this.listener = listener;
+      //DeviceImpl.GetInstance().sipuaConnectionListener = this;
+   }
 
-    /**
-     * Retrieves the capability token passed to RCClient.createDevice
-     *
-     * @return Capability token
-     */
-    public String getCapabilityToken() {
-        return "";
-    }
+   /**
+    * Retrieves the capability token passed to RCClient.createDevice
+    *
+    * @return Capability token
+    */
+   public String getCapabilityToken()
+   {
+      return "";
+   }
 
-    /**
-     * Updates the capability token (<b>Not implemented yet</b>)
-     */
-    public void updateCapabilityToken(String token) {
+   /**
+    * Updates the capability token (<b>Not implemented yet</b>)
+    */
+   public void updateCapabilityToken(String token)
+   {
 
-    }
+   }
 
-    /**
-     * Create an outgoing connection to an endpoint
-     *
-     * @param parameters Parameters such as the endpoint we want to connect to or SIP custom headers. If
-     *                   you want to pass SIP custom headers, you need to add a separate (String, String) HashMap
-     *                   inside 'parameters' hash and introduce your headers there.
-     *                   For an example please check HelloWorld or Messenger samples.
-     * @param listener   The listener object that will receive events when the connection state changes
-     * @return An RCConnection object representing the new connection or null in case of error. Error
-     * means that RCDevice.state not ready to make a call (this usually means no WiFi available)
-     */
-    public RCConnection connect(Map<String, Object> parameters, RCConnectionListener listener) {
-        RCLogger.i(TAG, "connect(): " + parameters.toString());
+   /**
+    * Create an outgoing connection to an endpoint
+    *
+    * @param parameters Parameters such as the endpoint we want to connect to or SIP custom headers. If
+    *                   you want to pass SIP custom headers, you need to add a separate (String, String) HashMap
+    *                   inside 'parameters' hash and introduce your headers there.
+    *                   For an example please check HelloWorld or Messenger samples.
+    * @param listener   The listener object that will receive events when the connection state changes
+    * @return An RCConnection object representing the new connection or null in case of error. Error
+    * means that RCDevice.state not ready to make a call (this usually means no WiFi available)
+    */
+   public RCConnection connect(Map<String, Object> parameters, RCConnectionListener listener)
+   {
+      RCLogger.i(TAG, "connect(): " + parameters.toString());
 
-        if (DeviceImpl.checkReachability(RCClient.getContext()) == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
-            RCLogger.e(TAG, "connect(): No reachability");
-            // Phone state Intents to capture connection failed event
-            String username = "";
-            if (parameters != null && parameters.get("username") != null)
-                username = parameters.get("username").toString();
-            sendQoSNoConnectionIntent(username, this.getConnectivityStatus().toString());
-            return null;
-        }
+      if (DeviceImpl.checkReachability(RCClient.getContext()) == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
+         RCLogger.e(TAG, "connect(): No reachability");
+         // Phone state Intents to capture connection failed event
+         String username = "";
+         if (parameters != null && parameters.get("username") != null)
+            username = parameters.get("username").toString();
+         sendQoSNoConnectionIntent(username, this.getConnectivityStatus().toString());
+         return null;
+      }
 
-        if (state == DeviceState.READY) {
-            RCLogger.i(TAG, "RCDevice.connect(), with connectivity");
+      if (state == DeviceState.READY) {
+         RCLogger.i(TAG, "RCDevice.connect(), with connectivity");
 
-            //Boolean enableVideo = (Boolean) parameters.get("video-enabled");
-            RCConnection connection = new RCConnection(false, RCConnection.ConnectionState.PENDING, this, uiClient, listener);
-            connection.open(parameters);
+         //Boolean enableVideo = (Boolean) parameters.get("video-enabled");
+         RCConnection connection = new RCConnection(false, RCConnection.ConnectionState.PENDING, this, uiClient, listener);
+         connection.open(parameters);
 
-            // keep connection in the connections hashmap
-            connections.put(connection.getId(), connection);
+         // keep connection in the connections hashmap
+         connections.put(connection.getId(), connection);
 
-            //connection.incoming = false;
-            //connection.state = RCConnection.ConnectionState.PENDING;
-            //connection.device = this;
-            //DeviceImpl.GetInstance().sipuaConnectionListener = connection;
-            //uiClient.setCallListener(connection);
+         //connection.incoming = false;
+         //connection.state = RCConnection.ConnectionState.PENDING;
+         //connection.device = this;
+         //DeviceImpl.GetInstance().sipuaConnectionListener = connection;
+         //uiClient.setCallListener(connection);
 
             /*
             // create a new hash map
@@ -416,157 +426,173 @@ public class RCDevice implements UIClient.UIClientListener {
             }
             */
 
-            //connection.setupWebrtcAndCall((String)parameters.get("username"), sipHeaders, enableVideo.booleanValue());
-            //connection.setupWebrtcAndCall(parameters);
-            state = DeviceState.BUSY;
+         //connection.setupWebrtcAndCall((String)parameters.get("username"), sipHeaders, enableVideo.booleanValue());
+         //connection.setupWebrtcAndCall(parameters);
+         state = DeviceState.BUSY;
 
-            return connection;
-        } else {
-            return null;
-        }
-    }
+         return connection;
+      }
+      else {
+         return null;
+      }
+   }
 
-    /**
-     * Send an instant message to a an endpoint
-     *
-     * @param message    Message text
-     * @param parameters Parameters used for the message, such as 'username' that holds the recepient for the message
-     */
-    public boolean sendMessage(String message, Map<String, String> parameters) {
-        RCLogger.i(TAG, "sendMessage(): message:" + message + "\nparameters: " + parameters.toString());
+   /**
+    * Send an instant message to a an endpoint
+    *
+    * @param message    Message text
+    * @param parameters Parameters used for the message, such as 'username' that holds the recepient for the message
+    */
+   public boolean sendMessage(String message, Map<String, String> parameters)
+   {
+      RCLogger.i(TAG, "sendMessage(): message:" + message + "\nparameters: " + parameters.toString());
 
-        if (state == DeviceState.READY) {
-            DeviceImpl.GetInstance().SendMessage(parameters.get("username"), message);
-            return true;
-        } else {
-            return false;
-        }
-    }
+      if (state == DeviceState.READY) {
+         DeviceImpl.GetInstance().SendMessage(parameters.get("username"), message);
+         return true;
+      }
+      else {
+         return false;
+      }
+   }
 
-    /**
-     * Disconnect all connections
-     */
-    public void disconnectAll() {
-        RCLogger.i(TAG, "disconnectAll()");
+   /**
+    * Disconnect all connections
+    */
+   public void disconnectAll()
+   {
+      RCLogger.i(TAG, "disconnectAll()");
 
-        if (state == DeviceState.BUSY) {
-            // TODO: currently only support one live connection. Maybe would be a better idea to use a separate reference to the active RCConnection
-            RCConnection connection = (RCConnection) DeviceImpl.GetInstance().sipuaConnectionListener;
-            connection.disconnect();
-            state = DeviceState.READY;
-        }
-    }
+      if (state == DeviceState.BUSY) {
+         // TODO: currently only support one live connection. Maybe would be a better idea to use a separate reference to the active RCConnection
+         RCConnection connection = (RCConnection) DeviceImpl.GetInstance().sipuaConnectionListener;
+         connection.disconnect();
+         state = DeviceState.READY;
+      }
+   }
 
-    /**
-     * Retrieve the capabilities
-     *
-     * @return Capabilities
-     */
-    public Map<DeviceCapability, Object> getCapabilities() {
-        HashMap<DeviceCapability, Object> map = new HashMap<DeviceCapability, Object>();
-        return map;
-    }
+   /**
+    * Retrieve the capabilities
+    *
+    * @return Capabilities
+    */
+   public Map<DeviceCapability, Object> getCapabilities()
+   {
+      HashMap<DeviceCapability, Object> map = new HashMap<DeviceCapability, Object>();
+      return map;
+   }
 
-    /**
-     * Retrieve the Device state
-     *
-     * @return State
-     */
-    public DeviceState getState() {
-        return state;
-    }
+   /**
+    * Retrieve the Device state
+    *
+    * @return State
+    */
+   public DeviceState getState()
+   {
+      return state;
+   }
 
-    /**
-     * Set pending intents for incoming calls and messages. In order to be notified of RestComm Client
-     * events you need to associate your Activities with intents and provide one intent for whichever activity
-     * will be receiving calls and another intent for the activity receiving messages. If you use a single Activity
-     * for both then you can pass the same intent both as a callIntent as well as a messageIntent
-     *
-     * @param callIntent:    an intent that will be sent on an incoming call
-     * @param messageIntent: an intent that will be sent on an incoming text message
-     */
-    public void setPendingIntents(Intent callIntent, Intent messageIntent) {
-        RCLogger.i(TAG, "setPendingIntents()");
-        pendingCallIntent = PendingIntent.getActivity(RCClient.getContext(), 0, callIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-        pendingMessageIntent = PendingIntent.getActivity(RCClient.getContext(), 0, messageIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-    }
+   /**
+    * Set pending intents for incoming calls and messages. In order to be notified of RestComm Client
+    * events you need to associate your Activities with intents and provide one intent for whichever activity
+    * will be receiving calls and another intent for the activity receiving messages. If you use a single Activity
+    * for both then you can pass the same intent both as a callIntent as well as a messageIntent
+    *
+    * @param callIntent:    an intent that will be sent on an incoming call
+    * @param messageIntent: an intent that will be sent on an incoming text message
+    */
+   public void setPendingIntents(Intent callIntent, Intent messageIntent)
+   {
+      RCLogger.i(TAG, "setPendingIntents()");
+      pendingCallIntent = PendingIntent.getActivity(RCClient.getContext(), 0, callIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+      pendingMessageIntent = PendingIntent.getActivity(RCClient.getContext(), 0, messageIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+   }
 
-    public RCConnection getPendingConnection() {
-        // TODO: FIX THIS!!!
-        return null;
-    }
+   public RCConnection getPendingConnection()
+   {
+      // TODO: FIX THIS!!!
+      return null;
+   }
 
-    public RCConnection getDevice() {
-        return (RCConnection) DeviceImpl.GetInstance().sipuaConnectionListener;
-    }
+   public RCConnection getDevice()
+   {
+      return (RCConnection) DeviceImpl.GetInstance().sipuaConnectionListener;
+   }
 
-    /**
-     * Should a ringing sound be played in a incoming connection or message
-     *
-     * @param incomingSound Whether or not the sound should be played
-     */
-    public void setIncomingSoundEnabled(boolean incomingSound) {
-        RCLogger.i(TAG, "setIncomingSoundEnabled()");
+   /**
+    * Should a ringing sound be played in a incoming connection or message
+    *
+    * @param incomingSound Whether or not the sound should be played
+    */
+   public void setIncomingSoundEnabled(boolean incomingSound)
+   {
+      RCLogger.i(TAG, "setIncomingSoundEnabled()");
 
-        DeviceImpl.GetInstance().soundManager.setIncoming(incomingSound);
-    }
+      DeviceImpl.GetInstance().soundManager.setIncoming(incomingSound);
+   }
 
-    /**
-     * Retrieve the incoming sound setting
-     *
-     * @return Whether the sound will be played
-     */
-    public boolean isIncomingSoundEnabled() {
-        return DeviceImpl.GetInstance().soundManager.getIncoming();
-    }
+   /**
+    * Retrieve the incoming sound setting
+    *
+    * @return Whether the sound will be played
+    */
+   public boolean isIncomingSoundEnabled()
+   {
+      return DeviceImpl.GetInstance().soundManager.getIncoming();
+   }
 
-    /**
-     * Should a ringing sound be played in an outgoing connection or message
-     *
-     * @param outgoingSound Whether or not the sound should be played
-     */
-    public void setOutgoingSoundEnabled(boolean outgoingSound) {
-        RCLogger.i(TAG, "setOutgoingSoundEnabled()");
-        DeviceImpl.GetInstance().soundManager.setOutgoing(outgoingSound);
-    }
+   /**
+    * Should a ringing sound be played in an outgoing connection or message
+    *
+    * @param outgoingSound Whether or not the sound should be played
+    */
+   public void setOutgoingSoundEnabled(boolean outgoingSound)
+   {
+      RCLogger.i(TAG, "setOutgoingSoundEnabled()");
+      DeviceImpl.GetInstance().soundManager.setOutgoing(outgoingSound);
+   }
 
-    /**
-     * Retrieve the outgoint sound setting
-     *
-     * @return Whether the sound will be played
-     */
-    public boolean isOutgoingSoundEnabled() {
-        return DeviceImpl.GetInstance().soundManager.getOutgoing();
-    }
+   /**
+    * Retrieve the outgoint sound setting
+    *
+    * @return Whether the sound will be played
+    */
+   public boolean isOutgoingSoundEnabled()
+   {
+      return DeviceImpl.GetInstance().soundManager.getOutgoing();
+   }
 
-    /**
-     * Should a disconnect sound be played when disconnecting a connection
-     *
-     * @param disconnectSound Whether or not the sound should be played
-     */
-    public void setDisconnectSoundEnabled(boolean disconnectSound) {
-        RCLogger.i(TAG, "setDisconnectSoundEnabled()");
-        DeviceImpl.GetInstance().soundManager.setDisconnect(disconnectSound);
-    }
+   /**
+    * Should a disconnect sound be played when disconnecting a connection
+    *
+    * @param disconnectSound Whether or not the sound should be played
+    */
+   public void setDisconnectSoundEnabled(boolean disconnectSound)
+   {
+      RCLogger.i(TAG, "setDisconnectSoundEnabled()");
+      DeviceImpl.GetInstance().soundManager.setDisconnect(disconnectSound);
+   }
 
-    /**
-     * Retrieve the disconnect sound setting
-     *
-     * @return Whether the sound will be played
-     */
-    public boolean isDisconnectSoundEnabled() {
-        return DeviceImpl.GetInstance().soundManager.getDisconnect();
-    }
+   /**
+    * Retrieve the disconnect sound setting
+    *
+    * @return Whether the sound will be played
+    */
+   public boolean isDisconnectSoundEnabled()
+   {
+      return DeviceImpl.GetInstance().soundManager.getDisconnect();
+   }
 
-    /**
-     * Update preference parameters such as username/password
-     *
-     * @param params The params to be updated
-     * @return Whether the update was successful or not
-     */
-    public boolean updateParams(HashMap<String, Object> params) {
-        uiClient.reconfigure(params);
-        this.parameters = params;
+   /**
+    * Update preference parameters such as username/password
+    *
+    * @param params The params to be updated
+    * @return Whether the update was successful or not
+    */
+   public boolean updateParams(HashMap<String, Object> params)
+   {
+      uiClient.reconfigure(params);
+      this.parameters = params;
 
         /*
         RCLogger.i(TAG, "updateParams(): " + params.toString());
@@ -604,14 +630,14 @@ public class RCDevice implements UIClient.UIClientListener {
         }
         */
 
-        // TODO: need to provide asynchronous status for this
-        return true;
-    }
+      // TODO: need to provide asynchronous status for this
+      return true;
+   }
 
-    public HashMap<String, Object> getParameters()
-    {
-        return parameters;
-    }
+   public HashMap<String, Object> getParameters()
+   {
+      return parameters;
+   }
 
     /*
     public void updateSipProfile(HashMap<String, Object> params) {
@@ -731,64 +757,70 @@ public class RCDevice implements UIClient.UIClientListener {
     }
     */
 
-    // Helpers
+   // Helpers
 
-    // -- Notify QoS module of Device related event through intents, if the module is available
-    // Phone state Intents to capture incoming call event
-    private void sendQoSIncomingConnectionIntent(String user, RCConnection connection) {
-        Intent intent = new Intent("org.mobicents.restcomm.android.CALL_STATE");
-        intent.putExtra("STATE", "ringing");
-        intent.putExtra("INCOMING", true);
-        intent.putExtra("FROM", user);
-        Context context = RCClient.getContext();
-        try {
-            // Restrict the Intent to MMC Handler running within the same application
-            Class aclass = Class.forName("com.cortxt.app.mmccore.Services.Intents.MMCIntentHandler");
-            intent.setClass(context.getApplicationContext(), aclass);
-            context.sendBroadcast(intent);
-        } catch (ClassNotFoundException e) {
-            // If there is no MMC class isn't here, no intent
-        }
-    }
+   // -- Notify QoS module of Device related event through intents, if the module is available
+   // Phone state Intents to capture incoming call event
+   private void sendQoSIncomingConnectionIntent(String user, RCConnection connection)
+   {
+      Intent intent = new Intent("org.mobicents.restcomm.android.CALL_STATE");
+      intent.putExtra("STATE", "ringing");
+      intent.putExtra("INCOMING", true);
+      intent.putExtra("FROM", user);
+      Context context = RCClient.getContext();
+      try {
+         // Restrict the Intent to MMC Handler running within the same application
+         Class aclass = Class.forName("com.cortxt.app.mmccore.Services.Intents.MMCIntentHandler");
+         intent.setClass(context.getApplicationContext(), aclass);
+         context.sendBroadcast(intent);
+      }
+      catch (ClassNotFoundException e) {
+         // If there is no MMC class isn't here, no intent
+      }
+   }
 
-    private void sendQoSNoConnectionIntent(String user, String message) {
-        Intent intent = new Intent("org.mobicents.restcomm.android.CONNECT_FAILED");
-        intent.putExtra("STATE", "connect failed");
-        intent.putExtra("ERRORTEXT", message);
-        intent.putExtra("ERROR", RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal());
-        intent.putExtra("INCOMING", false);
-        intent.putExtra("USER", user);
-        Context context = RCClient.getContext();
-        try {
-            // Restrict the Intent to MMC Handler running within the same application
-            Class aclass = Class.forName("com.cortxt.app.mmccore.Services.Intents.MMCIntentHandler");
-            intent.setClass(context.getApplicationContext(), aclass);
-            context.sendBroadcast(intent);
-        } catch (ClassNotFoundException e) {
-            // If there is no MMC class isn't here, no intent
-        }
-    }
+   private void sendQoSNoConnectionIntent(String user, String message)
+   {
+      Intent intent = new Intent("org.mobicents.restcomm.android.CONNECT_FAILED");
+      intent.putExtra("STATE", "connect failed");
+      intent.putExtra("ERRORTEXT", message);
+      intent.putExtra("ERROR", RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal());
+      intent.putExtra("INCOMING", false);
+      intent.putExtra("USER", user);
+      Context context = RCClient.getContext();
+      try {
+         // Restrict the Intent to MMC Handler running within the same application
+         Class aclass = Class.forName("com.cortxt.app.mmccore.Services.Intents.MMCIntentHandler");
+         intent.setClass(context.getApplicationContext(), aclass);
+         context.sendBroadcast(intent);
+      }
+      catch (ClassNotFoundException e) {
+         // If there is no MMC class isn't here, no intent
+      }
+   }
 
-    public SipProfile getSipProfile() {
-        return sipProfile;
-    }
+   public SipProfile getSipProfile()
+   {
+      return sipProfile;
+   }
 
-    // -- UIClientListener events for incoming messages from signaling thread
-    // Replies
-    public void onOpenReply(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text) {
-        cachedConnectivityStatus = connectivityStatus;
-        if (status != RCClient.ErrorCodes.SUCCESS) {
-            RCLogger.e(TAG, "onOpenReply(): id: " + id + ", failure - " + text);
+   // -- UIClientListener events for incoming messages from signaling thread
+   // Replies
+   public void onOpenReply(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
+   {
+      cachedConnectivityStatus = connectivityStatus;
+      if (status != RCClient.ErrorCodes.SUCCESS) {
+         RCLogger.e(TAG, "onOpenReply(): id: " + id + ", failure - " + text);
 
-            // TODO: Maybe we should introduce separate message specifically for RCDevice initialization. Using onStopListening() looks weird
-            //listener.onStopListening(this, status.ordinal(), text);
-            listener.onInitialized(this, connectivityStatus, status.ordinal(), text);
-            return;
-        }
+         // TODO: Maybe we should introduce separate message specifically for RCDevice initialization. Using onStopListening() looks weird
+         //listener.onStopListening(this, status.ordinal(), text);
+         listener.onInitialized(this, connectivityStatus, status.ordinal(), text);
+         return;
+      }
 
-        RCLogger.i(TAG, "onOpenReply(): id: " + id + ", success - " + text);
-        state = DeviceState.READY;
-        listener.onInitialized(this, connectivityStatus, RCClient.ErrorCodes.SUCCESS.ordinal(), RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
+      RCLogger.i(TAG, "onOpenReply(): id: " + id + ", success - " + text);
+      state = DeviceState.READY;
+      listener.onInitialized(this, connectivityStatus, RCClient.ErrorCodes.SUCCESS.ordinal(), RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
 
         /*
         final RCDeviceListener.RCConnectivityStatus state = this.reachabilityState;
@@ -800,66 +832,77 @@ public class RCDevice implements UIClient.UIClientListener {
         }
         */
 
-        //uiClient.close();
-    }
+      //uiClient.close();
+   }
 
-    public void onCloseReply(String id, RCClient.ErrorCodes status, String text) {
-        if (status == RCClient.ErrorCodes.SUCCESS) {
-            RCLogger.i(TAG, "onCloseReply(): id: " + id + ", success - " + text);
-            //uiClient.open(parameters, true, SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi);
-        } else {
-            RCLogger.i(TAG, "onCloseReply(): id: " + id + ", failure - " + text);
-        }
-    }
+   public void onCloseReply(String id, RCClient.ErrorCodes status, String text)
+   {
+      if (status == RCClient.ErrorCodes.SUCCESS) {
+         RCLogger.i(TAG, "onCloseReply(): id: " + id + ", success - " + text);
+         //uiClient.open(parameters, true, SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi);
+      }
+      else {
+         RCLogger.i(TAG, "onCloseReply(): id: " + id + ", failure - " + text);
+      }
+   }
 
-    public void onReconfigureReply(String id, RCClient.ErrorCodes status, String text) {
-        if (status == RCClient.ErrorCodes.SUCCESS) {
-            RCLogger.i(TAG, "onReconfigureReply(): id: " + id + ", success - " + text);
-        } else {
-            RCLogger.i(TAG, "onReconfigureReply(): id: " + id + ", failure - " + text);
-        }
-    }
+   public void onReconfigureReply(String id, RCClient.ErrorCodes status, String text)
+   {
+      if (status == RCClient.ErrorCodes.SUCCESS) {
+         RCLogger.i(TAG, "onReconfigureReply(): id: " + id + ", success - " + text);
+      }
+      else {
+         RCLogger.i(TAG, "onReconfigureReply(): id: " + id + ", failure - " + text);
+      }
+   }
 
-    public void onCallReply(String id, RCClient.ErrorCodes status, String text) {
+   public void onCallReply(String id, RCClient.ErrorCodes status, String text)
+   {
 
-    }
+   }
 
-    public void onSendMessageReply(String id, RCClient.ErrorCodes status, String text) {
+   public void onSendMessageReply(String id, RCClient.ErrorCodes status, String text)
+   {
 
-    }
+   }
 
-    // Unsolicited Events
-    public void onCallArrivedEvent(String id, String peer) {
+   // Unsolicited Events
+   public void onCallArrivedEvent(String id, String peer)
+   {
 
-    }
+   }
 
-    public void onMessageArrivedEvent(String id, String peer, String text) {
+   public void onMessageArrivedEvent(String id, String peer, String text)
+   {
 
-    }
+   }
 
-    public void onErrorEvent(String id, RCClient.ErrorCodes status, String text) {
-        if (status == RCClient.ErrorCodes.SUCCESS) {
-            RCLogger.i(TAG, "onErrorEvent(): id: " + id + ", success - " + text);
-        } else {
-            RCLogger.i(TAG, "onErrorEvent(): id: " + id + ", failure - " + text);
-        }
-    }
+   public void onErrorEvent(String id, RCClient.ErrorCodes status, String text)
+   {
+      if (status == RCClient.ErrorCodes.SUCCESS) {
+         RCLogger.i(TAG, "onErrorEvent(): id: " + id + ", success - " + text);
+      }
+      else {
+         RCLogger.i(TAG, "onErrorEvent(): id: " + id + ", failure - " + text);
+      }
+   }
 
-    public void onConnectivityEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus) {
-        RCLogger.i(TAG, "onConnectivityEvent(): id: " + id + ", status - " + connectivityStatus);
-        cachedConnectivityStatus = connectivityStatus;
-        listener.onConnectivityUpdate(this, connectivityStatus);
-    }
+   public void onConnectivityEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus)
+   {
+      RCLogger.i(TAG, "onConnectivityEvent(): id: " + id + ", status - " + connectivityStatus);
+      cachedConnectivityStatus = connectivityStatus;
+      listener.onConnectivityUpdate(this, connectivityStatus);
+   }
 
 
-    // This is for messages that have to do with a call, which are delegated to RCConnection
-    public void onCallRelatedMessage(SignalingMessage signalingMessage)
-    {
-        if (connections.containsKey(signalingMessage.id)) {
-            connections.get(signalingMessage.id).handleSignalingMessage(signalingMessage);
-        }
-        else {
-            throw new RuntimeException("RCConnection doesn't exist for signaling message");
-        }
-    }
+   // This is for messages that have to do with a call, which are delegated to RCConnection
+   public void onCallRelatedMessage(SignalingMessage signalingMessage)
+   {
+      if (connections.containsKey(signalingMessage.id)) {
+         connections.get(signalingMessage.id).handleSignalingMessage(signalingMessage);
+      }
+      else {
+         throw new RuntimeException("RCConnection doesn't exist for signaling message");
+      }
+   }
 }
