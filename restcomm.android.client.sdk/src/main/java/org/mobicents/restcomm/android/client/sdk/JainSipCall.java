@@ -3,11 +3,13 @@ package org.mobicents.restcomm.android.client.sdk;
 import android.gov.nist.javax.sdp.SessionDescriptionImpl;
 import android.gov.nist.javax.sdp.parser.SDPAnnounceParser;
 import android.gov.nist.javax.sip.ResponseEventExt;
+import android.gov.nist.javax.sip.header.Server;
 import android.gov.nist.javax.sip.message.SIPMessage;
 import android.javax.sdp.MediaDescription;
 import android.javax.sdp.SdpException;
 import android.javax.sip.ClientTransaction;
 import android.javax.sip.Dialog;
+import android.javax.sip.DialogState;
 import android.javax.sip.InvalidArgumentException;
 import android.javax.sip.RequestEvent;
 import android.javax.sip.ResponseEvent;
@@ -20,6 +22,8 @@ import android.javax.sip.TransactionUnavailableException;
 import android.javax.sip.address.Address;
 import android.javax.sip.address.SipURI;
 import android.javax.sip.header.CSeqHeader;
+import android.javax.sip.header.ContactHeader;
+import android.javax.sip.header.ContentTypeHeader;
 import android.javax.sip.header.RouteHeader;
 import android.javax.sip.header.ToHeader;
 import android.javax.sip.message.Request;
@@ -38,11 +42,13 @@ public class JainSipCall {
    public interface JainSipCallListener {
       void onCallRingingEvent(String callId);  // onPrivateCallConnectorCallRingingEvent
 
-      void onCallPeerHangupEvent(String callId);  // either when we receive 200 OK in our BYE, or we send 200 OK to peer's BYE, onPrivateCallConnectorCallHangupEvent
+//      void onCallPeerHangupEvent(String callId);  // either when we receive 200 OK in our BYE, or we send 200 OK to peer's BYE, onPrivateCallConnectorCallHangupEvent
 
       void onCallPeerRingingEvent(String callId);  // ringback, onPrivateCallConnectorCallRingingBackEvent
 
-      void onCallConnectedEvent(String callId, String sdpAnswer);
+      void onCallOutgoingConnectedEvent(String callId, String sdpAnswer);
+
+      void onCallIncomingConnectedEvent(String callId);
 
       void onCallLocalDisconnectedEvent(String callId);
 
@@ -77,6 +83,7 @@ public class JainSipCall {
    // make a call with the given jobId, using given parameters
    public void open(String jobId, HashMap<String, Object> parameters)
    {
+      RCLogger.i(TAG, "open(): id: " + jobId);
       try {
          //this.jobId = jobId;
          Transaction transaction = jainSipCallInvite(jobId, parameters);
@@ -88,11 +95,48 @@ public class JainSipCall {
       }
    }
 
-   // close/hangup and existing call
-   public void close(JainSipJob jainSipJob)
+   // make a call with the given jobId, using given parameters
+   public void accept(JainSipJob jainSipJob, HashMap<String, Object> parameters)
    {
+      RCLogger.i(TAG, "accept(): id: " + jainSipJob.id);
       try {
-         jainSipCallHangup(jainSipJob, jainSipClient.configuration);
+         jainSipCallAccept(jainSipJob, parameters);
+      }
+      catch (JainSipException e) {
+         listener.onCallErrorEvent(jainSipJob.id, e.errorCode, e.errorText);
+         jainSipClient.jainSipJobManager.remove(jainSipJob.id);
+      }
+   }
+
+   // Close an existing call. The actual SIP request emitted depends on current state: a. If its an early incoming call we Decline, b. If its an early outgoing
+   // call we Cancel and c. On any other case we Bye
+   public void disconnect(JainSipJob jainSipJob)
+   {
+      RCLogger.i(TAG, "close(): id: " + jainSipJob.id);
+      try {
+         if (jainSipJob.transaction.getDialog().getState() == DialogState.EARLY) {
+            if (jainSipJob.transaction.getDialog().isServer()) {
+               // server transaction (i.e. incoming call)
+               RCLogger.i(TAG, "close(): id " + jainSipJob.id + " - Early dialog state for incoming call, sending Decline");
+               jainSipCallDecline(jainSipJob);
+
+               /*
+               listener.onCallLocalDisconnectedEvent(jainSipJob.id);
+               // we are done with this call, let's remove job
+               jainSipClient.jainSipJobManager.remove(jainSipJob.id);
+               */
+            }
+            else {
+               // client transaction (i.e. outgoing call)
+               RCLogger.i(TAG, "close(): id " + jainSipJob.id + " - Early dialog state for outgoing call, sending Cancel");
+               // if we haven't received 200 OK to our invite yet, we need to cancel
+               jainSipCallCancel(jainSipJob);
+            }
+         }
+         else {
+            RCLogger.i(TAG, "close(): id " + jainSipJob.id + " - Confirmed dialog state, sending Bye");
+            jainSipCallHangup(jainSipJob, jainSipClient.configuration);
+         }
       }
       catch (JainSipException e) {
          listener.onCallErrorEvent(jainSipJob.id, e.errorCode, e.errorText);
@@ -126,6 +170,28 @@ public class JainSipCall {
       return transaction;
    }
 
+   public void jainSipCallAccept(JainSipJob jainSipJob, HashMap<String, Object> parameters) throws JainSipException
+   {
+      RCLogger.i(TAG, "jainSipCallAccept(): id: " + jainSipJob.id);
+      try {
+         ServerTransaction transaction = (ServerTransaction) jainSipJob.transaction;
+         Response response = jainSipClient.jainSipMessageBuilder.buildInvite200OK(transaction, (String) parameters.get("sdp"), jainSipClient.jainSipListeningPoint,
+               jainSipClient.jainSipClientContext);
+
+         RCLogger.v(TAG, "Sending SIP response: \n" + response.toString());
+         transaction.sendResponse(response);
+      }
+      catch (JainSipException e) {
+         throw new JainSipException(e.errorCode, e.errorText);
+      }
+      catch (Exception e) {
+         RCLogger.e(TAG, "jainSipCallAccept(): " + e.getMessage());
+         e.printStackTrace();
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_ACCEPT_FAILED,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_ACCEPT_FAILED));
+      }
+   }
+
    public ClientTransaction jainSipCallHangup(JainSipJob jainSipJob, HashMap<String, Object> clientConfiguration) throws JainSipException
    {
       RCLogger.i(TAG, "jainSipCallHangup(): id: " + jainSipJob.id);
@@ -145,11 +211,49 @@ public class JainSipCall {
       catch (SipException e) {
          RCLogger.e(TAG, "jainSipCallHangup(): " + e.getMessage());
          e.printStackTrace();
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT));
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_HANGUP_FAILED,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_HANGUP_FAILED));
       }
       catch (Exception e) {
          throw new RuntimeException("SIP transaction error");
+      }
+   }
+
+   public ClientTransaction jainSipCallCancel(JainSipJob jainSipJob) throws JainSipException
+   {
+      RCLogger.i(TAG, "jainSipCallCancel(): id: " + jainSipJob.id);
+      try {
+         final Request request = ((ClientTransaction) jainSipJob.transaction).createCancel();
+         RCLogger.v(TAG, "Sending SIP response: \n" + request.toString());
+
+         ClientTransaction cancelTransaction = jainSipClient.jainSipProvider.getNewClientTransaction(request);
+         //jainSipJob.updateTransaction(cancelTransaction);
+         cancelTransaction.sendRequest();
+         return cancelTransaction;
+      }
+      catch (SipException e) {
+         RCLogger.e(TAG, "jainSipCallCancel(): " + e.getMessage());
+         e.printStackTrace();
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_HANGUP_FAILED,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_HANGUP_FAILED));
+      }
+   }
+
+   public void jainSipCallDecline(JainSipJob jainSipJob) throws JainSipException
+   {
+      RCLogger.i(TAG, "jainSipCallReject(): id: " + jainSipJob.id);
+
+      try {
+         Response responseDecline = jainSipClient.jainSipMessageBuilder.jainSipMessageFactory.createResponse(Response.DECLINE, jainSipJob.transaction.getRequest());
+         RCLogger.v(TAG, "Sending SIP response: \n" + responseDecline.toString());
+         ((ServerTransaction) jainSipJob.transaction).sendResponse(responseDecline);
+
+      }
+      catch (Exception e) {
+         RCLogger.e(TAG, "jainSipCallDecline(): " + e.getMessage());
+         e.printStackTrace();
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_DECLINE_FAILED,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_DECLINE_FAILED));
       }
    }
 
@@ -191,7 +295,7 @@ public class JainSipCall {
                // also send a 487 Request Terminated response to the original INVITE request
                Request originalInviteRequest = jainSipJob.transaction.getRequest();
                Response originalInviteResponse = jainSipClient.jainSipMessageBuilder.jainSipMessageFactory.createResponse(Response.REQUEST_TERMINATED, originalInviteRequest);
-               ((ServerTransaction)jainSipJob.transaction).sendResponse(originalInviteResponse);
+               ((ServerTransaction) jainSipJob.transaction).sendResponse(originalInviteResponse);
             }
             listener.onCallCancelledEvent(jainSipJob.id);
 
@@ -208,12 +312,27 @@ public class JainSipCall {
                serverTransaction = jainSipClient.jainSipProvider.getNewServerTransaction(request);
             }
 
-            Response response = jainSipClient.jainSipMessageBuilder.jainSipMessageFactory.createResponse(Response.TRYING, request);
+            jainSipJob.updateTransaction(serverTransaction);
+            Response response = jainSipClient.jainSipMessageBuilder.jainSipMessageFactory.createResponse(Response.RINGING, request);
             RCLogger.v(TAG, "Sending SIP response: \n" + response.toString());
             serverTransaction.sendResponse(response);
 
             String sdpOffer = new String(request.getRawContent(), "UTF-8");
             listener.onCallArrivedEvent(jainSipJob.id, ((SIPMessage) request).getFrom().getAddress().toString(), sdpOffer);
+         }
+         catch (Exception e) {
+            e.printStackTrace();
+         }
+      }
+      else if (method.equals(Request.ACK)) {
+         try {
+            // A dialog transitions to the "confirmed" state when a 2xx final response is received to the INVITE Reques
+            if (serverTransaction.getDialog().getState() == DialogState.CONFIRMED) {
+               listener.onCallIncomingConnectedEvent(jainSipJob.id);
+            }
+            else {
+               RCLogger.e(TAG, "Received ACK for dialog not in Confirmed state: \n" + serverTransaction.getDialog().getState());
+            }
          }
          catch (Exception e) {
             e.printStackTrace();
@@ -239,13 +358,14 @@ public class JainSipCall {
 
                // filter out SDP to return to UI thread
                String sdpAnswer = new String(response.getRawContent(), "UTF-8");
+               // Let's leave this around in case we want to parse the non-webrtc media port in the future
                //SDPAnnounceParser parser = new SDPAnnounceParser(sdpContent);
                //SessionDescriptionImpl sessiondescription = parser.parse();
                //MediaDescription incomingMediaDescriptor = (MediaDescription) sessiondescription.getMediaDescriptions(false).get(0);
                //int rtpPort = incomingMediaDescriptor.getMedia().getMediaPort();
 
                // if its a webrtc call we need to send back the full SDP
-               listener.onCallConnectedEvent(jainSipJob.id, sdpAnswer);
+               listener.onCallOutgoingConnectedEvent(jainSipJob.id, sdpAnswer);
             }
             catch (UnsupportedEncodingException e) {
                throw new RuntimeException("Unsupported encoding for SDP");
@@ -282,7 +402,7 @@ public class JainSipCall {
       }
       else if (response.getStatusCode() == Response.DECLINE || response.getStatusCode() == Response.TEMPORARILY_UNAVAILABLE ||
             (response.getStatusCode() == Response.BUSY_HERE)) {
-         listener.onCallPeerHangupEvent(jainSipJob.id);
+         listener.onCallPeerDisconnectedEvent(jainSipJob.id);
       }
       else if (response.getStatusCode() == Response.NOT_FOUND) {
          listener.onCallErrorEvent(jainSipJob.id, RCClient.ErrorCodes.ERROR_SIGNALING_CALL_SERVICE_UNAVAILABLE,
@@ -292,8 +412,14 @@ public class JainSipCall {
          listener.onCallErrorEvent(jainSipJob.id, RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED,
                RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED));
       }
+      else if (response.getStatusCode() == Response.REQUEST_TERMINATED) {
+         // INVITE was terminated by Cancel
+         listener.onCallLocalDisconnectedEvent(jainSipJob.id);
+         // we are done with this call, let's remove job
+         jainSipClient.jainSipJobManager.remove(jainSipJob.id);
+      }
 
-
+      // Notice that we 're not handling '200 Canceling' response as it doesn't add any value to the SDK, at least for now
    }
 
 }

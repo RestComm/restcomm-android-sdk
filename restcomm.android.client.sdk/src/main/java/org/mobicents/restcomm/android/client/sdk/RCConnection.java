@@ -67,7 +67,7 @@ import java.util.Map;
 import org.mobicents.restcomm.android.client.sdk.util.IceServerFetcher;
 import org.mobicents.restcomm.android.sipua.SipProfile;
 import org.mobicents.restcomm.android.sipua.SipUAConnectionListener;
-import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
+//import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
 import org.mobicents.restcomm.android.sipua.impl.SipEvent;
 import org.mobicents.restcomm.android.sipua.RCLogger;
 
@@ -311,14 +311,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
    }
 
-   private void acceptWebrtc(final String sdp)
-   {
-      if (haveConnectivity()) {
-         DeviceImpl.GetInstance().AcceptWebrtc(sdp);
-         //this.state = state.CONNECTED;
-      }
-   }
-
    /**
     * Ignore incoming connection (<b>Not Implemented yet</b>)
     */
@@ -334,15 +326,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       RCLogger.i(TAG, "reject()");
 
-      if (haveConnectivity()) {
-         DeviceImpl.GetInstance().Reject();
-         this.state = state.DISCONNECTED;
+      uiClient.disconnect(id);
+      this.state = ConnectionState.DISCONNECTED;
 
-         // also update RCDevice state
-         //RCDevice device = RCClient.listDevices().get(0);
-         if (RCDevice.state == RCDevice.DeviceState.BUSY) {
-            RCDevice.state = RCDevice.DeviceState.READY;
-         }
+      // also update RCDevice state
+      //RCDevice device = RCClient.listDevices().get(0);
+      if (RCDevice.state == RCDevice.DeviceState.BUSY) {
+         RCDevice.state = RCDevice.DeviceState.READY;
       }
    }
 
@@ -353,7 +343,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       RCLogger.i(TAG, "disconnect()");
 
-      uiClient.hangup(id);
+      uiClient.disconnect(id);
       /*
       if (haveConnectivity()) {
          if (state == ConnectionState.CONNECTING) {
@@ -438,7 +428,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void sendDigits(String digits)
    {
       RCLogger.i(TAG, "sendDigits(): " + digits);
-      DeviceImpl.GetInstance().SendDTMF(digits);
+      uiClient.sendDTMFDigits(this.id, digits);
+      //DeviceImpl.GetInstance().SendDTMF(digits);
    }
 
    /**
@@ -453,28 +444,31 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       RCLogger.i(TAG, "setConnectionListener()");
 
       this.listener = listener;
-      // TODO: check if commenting out this has any side effects
       //DeviceImpl.GetInstance().sipuaConnectionListener = this;
    }
 
    // -- Call-related messages received from signaling thread are handled here
    public void handleSignalingMessage(SignalingMessage signalingMessage)
    {
-      if (signalingMessage.type == SignalingMessage.MessageType.CALL_CONNECTED_EVENT) {
+      if (signalingMessage.type == SignalingMessage.MessageType.CALL_OUTGOING_CONNECTED_EVENT) {
          // outgoing call is connected (got 200 OK)
          handleConnected(signalingMessage.sdp);
+      }
+      else if (signalingMessage.type == SignalingMessage.MessageType.CALL_INCOMING_CONNECTED_EVENT) {
+         // incoming call arrived
+
       }
       else if (signalingMessage.type == SignalingMessage.MessageType.CALL_EVENT) {
          // incoming call arrived
 
       }
-      else if (signalingMessage.type == SignalingMessage.MessageType.CALL_PEER_HANGUP_EVENT) {
+      else if (signalingMessage.type == SignalingMessage.MessageType.CALL_PEER_DISCONNECT_EVENT) {
          handleDisconnected(true);
       }
       else if (signalingMessage.type == SignalingMessage.MessageType.CALL_PEER_RINGING_EVENT) {
          handleConnecting();
       }
-      else if (signalingMessage.type == SignalingMessage.MessageType.CALL_HANGUP_REPLY) {
+      else if (signalingMessage.type == SignalingMessage.MessageType.CALL_DISCONNECT_REPLY) {
          handleDisconnected(false);
       }
    }
@@ -513,7 +507,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       // differentiate between disconnect and remote cancel events with the same listener method: onDisconnected.
       // In the first case listener will see stat CONNECTED and in the second CONNECTING
 
-      // TODO: we need to move this below so that it is only executed on incoming
       // also update RCDevice state
       //RCDevice device = RCClient.listDevices().get(0);
       if (inboundDisconnect && RCDevice.state == RCDevice.DeviceState.BUSY) {
@@ -968,10 +961,11 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
                             */
             }
             else {
-               // TODO: resume here
-               DeviceImpl.GetInstance().AcceptWebrtc(connection.signalingParameters.generateSipSdp(connection.signalingParameters.answerSdp,
+               HashMap<String, Object> parameters = new HashMap<>();
+               parameters.put("sdp", connection.signalingParameters.generateSipSdp(connection.signalingParameters.answerSdp,
                      connection.signalingParameters.iceCandidates));
-               connection.state = ConnectionState.CONNECTED;
+               uiClient.accept(id, parameters);
+               connection.state = ConnectionState.CONNECTING;
             }
          }
       };

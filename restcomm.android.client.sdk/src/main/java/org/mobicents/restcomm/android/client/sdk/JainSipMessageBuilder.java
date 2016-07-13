@@ -64,7 +64,7 @@ public class JainSipMessageBuilder {
       jainSipMessageFactory = null;
    }
 
-   public Request buildRegister(String id, JainSipClient.JainSipClientListener listener, ListeningPoint listeningPoint, int expires, final String contact, HashMap<String, Object> parameters)
+   public Request buildRegister(String id, JainSipClient.JainSipClientListener listener, ListeningPoint listeningPoint, int expires, HashMap<String, Object> parameters)
    {
       try {
          // Create addresses and via header for the request
@@ -72,7 +72,7 @@ public class JainSipMessageBuilder {
                sipUri2IpAddress((String) parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN)));
          fromAddress.setDisplayName((String) parameters.get(RCDevice.ParameterKeys.SIGNALING_USERNAME));
 
-         Address contactAddress = createContactAddress(listeningPoint, contact, (String) parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN));
+         Address contactAddress = createContactAddress(listeningPoint, (String)parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN), false, null);
 
          // Create callId from the user provided id, to maintain a correlation between UI and signaling thread
          CallIdHeader callIdHeader = jainSipHeaderFactory.createCallIdHeader(id);
@@ -130,8 +130,7 @@ public class JainSipMessageBuilder {
          // Create callId from the user provided id, to maintain a correlation between UI and signaling thread
          CallIdHeader callIdHeader = jainSipHeaderFactory.createCallIdHeader(id);
 
-         CSeqHeader cSeqHeader = jainSipHeaderFactory.createCSeqHeader(1l,
-               Request.INVITE);
+         CSeqHeader cSeqHeader = jainSipHeaderFactory.createCSeqHeader(1l, Request.INVITE);
 
          MaxForwardsHeader maxForwards = jainSipHeaderFactory.createMaxForwardsHeader(70);
 
@@ -165,18 +164,7 @@ public class JainSipMessageBuilder {
          // Create ContentTypeHeader
          ContentTypeHeader contentTypeHeader = jainSipHeaderFactory.createContentTypeHeader("application", "sdp");
 
-         // Create the contact address. If we have Via received/rport populated we need to use those, otherwise just use the local listening point's
-         int contactPort = listeningPoint.getPort();
-         if (clientContext.containsKey("via-rport")) {
-            contactPort = (int) clientContext.get("via-rport");
-         }
-         String contactIPAddress = listeningPoint.getIPAddress();
-         if (clientContext.containsKey("via-received")) {
-            contactIPAddress = (String) clientContext.get("via-received");
-         }
-
-         String contactString = getContactString(contactIPAddress, contactPort, listeningPoint.getTransport());
-         Address contactAddress = jainSipAddressFactory.createAddress(contactString);
+         Address contactAddress = createContactAddress(listeningPoint, (String) parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN), true, clientContext);
 
          ContactHeader contactHeader = jainSipHeaderFactory.createContactHeader(contactAddress);
          callRequest.addHeader(contactHeader);
@@ -202,7 +190,7 @@ public class JainSipMessageBuilder {
       }
    }
 
-   public Request buildBye(android.javax.sip.Dialog dialog, HashMap<String, Object> clientConfiguration)
+   public Request buildBye(android.javax.sip.Dialog dialog, HashMap<String, Object> clientConfiguration) throws JainSipException
    {
       try {
          Request request = dialog.createRequest(Request.BYE);
@@ -217,10 +205,31 @@ public class JainSipMessageBuilder {
          return request;
       }
       catch (SipException e) {
-         throw new RuntimeException("Error creating SIP Bye request");
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_HANGUP_FAILED,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_HANGUP_FAILED));
       }
    }
 
+   public Response buildInvite200OK(ServerTransaction transaction, String sdp, ListeningPoint listeningPoint, HashMap<String, Object> clientContext) throws JainSipException
+   {
+      try {
+         Response response = jainSipMessageFactory.createResponse(Response.OK, transaction.getRequest());
+         Address contactAddress = createContactAddress(listeningPoint, null, true, clientContext);
+         ContactHeader contactHeader = jainSipHeaderFactory.createContactHeader(contactAddress);
+         response.addHeader(contactHeader);
+         ToHeader toHeader = (ToHeader) response.getHeader(ToHeader.NAME);
+         toHeader.setTag(Long.toString(System.currentTimeMillis()));
+         response.addHeader(contactHeader);
+
+         ContentTypeHeader contentTypeHeader = jainSipHeaderFactory.createContentTypeHeader("application", "sdp");
+         response.setContent(sdp.getBytes(), contentTypeHeader);
+         return response;
+      }
+      catch (ParseException e) {
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_ACCEPT_FAILED,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_ACCEPT_FAILED));
+      }
+   }
    /*
    public Response build200OK(Request request)
    {
@@ -290,29 +299,40 @@ public class JainSipMessageBuilder {
    }
 
 
-   public Address createContactAddress(ListeningPoint listeningPoint, String contact, String domain) throws ParseException
+   public Address createContactAddress(ListeningPoint listeningPoint, String domain, boolean rportNatify, HashMap<String, Object> clientContext) throws ParseException
    {
       RCLogger.i(TAG, "createContactAddress()");
-      if (contact == null) {
-         contact = getContactString(listeningPoint, domain);
+      int contactPort = listeningPoint.getPort();
+      String contactIPAddress = listeningPoint.getIPAddress();
+      if (rportNatify) {
+         // Create the contact address. If we have Via received/rport populated we need to use those, otherwise just use the local listening point's
+         if (clientContext.containsKey("via-rport")) {
+            contactPort = (int) clientContext.get("via-rport");
+         }
+         if (clientContext.containsKey("via-received")) {
+            contactIPAddress = (String) clientContext.get("via-received");
+         }
       }
-      return jainSipAddressFactory.createAddress(contact);
+
+      String contactString = getContactString(contactIPAddress, contactPort, listeningPoint.getTransport(), domain);
+
+      return jainSipAddressFactory.createAddress(contactString);
    }
 
    public String getContactString(ListeningPoint listeningPoint, String domain) throws ParseException
    {
-      String contactString;
+      return getContactString(listeningPoint.getIPAddress(), listeningPoint.getPort(), listeningPoint.getTransport(), domain);
+   }
 
-      contactString = getContactString(listeningPoint.getIPAddress(), listeningPoint.getPort(), listeningPoint.getTransport());
+   public String getContactString(String ipAddress, int port, String transport, String domain) throws ParseException
+   {
+      String contactString = "sip:" + ipAddress + ':' + port + ";transport=" + transport;
+
       if (domain != null) {
          contactString += ";registering_acc=" + sipUri2IpAddress(domain);
       }
-      return contactString;
-   }
 
-   public String getContactString(String ipAddress, int port, String transport)
-   {
-      return "sip:" + ipAddress + ':' + port + ";transport=" + transport;
+      return contactString;
    }
 
    // TODO: properly handle exception

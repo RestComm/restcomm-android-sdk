@@ -87,14 +87,6 @@ public class UIClient {
       signalingMessage.setParameters(parameters);
       signalingMessage.setAndroidContext(context);
 
-      // TODO: remove these once reachability is properly handled (probably within the signaling thread)
-      //signalingMessage.connectivity = connectivity;
-      //signalingMessage.networkInterfaceType = networkInterfaceType;
-        /*
-        signalingMessage.setParametersOpen((String)parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN),
-                (String)parameters.get(RCDevice.ParameterKeys.SIGNALING_USERNAME),
-                (String)parameters.get(RCDevice.ParameterKeys.SIGNALING_PASSWORD));
-                */
       Message message = signalingHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
 
@@ -120,21 +112,32 @@ public class UIClient {
       //String id = generateId();
       SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.CALL_REQUEST);
       signalingMessage.setParameters(parameters);
-      // TODO: add message parameters
       Message message = signalingHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
 
       //return id;
    }
 
-   void hangup(String id)
+   void accept(String id, HashMap<String, Object> parameters)
    {
-      SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.CALL_HANGUP_REQUEST);
-      //signalingMessage.setParameters(parameters);
-      // TODO: add message parameters
+      SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.CALL_ACCEPT_REQUEST);
+      signalingMessage.setParameters(parameters);
       Message message = signalingHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
    }
+
+
+   void disconnect(String id)
+   {
+      SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.CALL_DISCONNECT_REQUEST);
+      Message message = signalingHandler.obtainMessage(1, signalingMessage);
+      message.sendToTarget();
+   }
+
+   void sendDTMFDigits(String id, String digits)
+   {
+   }
+
 
    String sendMessage(HashMap<String, String> parameters)
    {

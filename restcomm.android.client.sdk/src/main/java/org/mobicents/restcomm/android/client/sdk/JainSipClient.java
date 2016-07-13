@@ -174,8 +174,8 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
          else {
             // registrar-less, just shutdown and notify UI thread
             try {
-               jainSipUnbind();
-               jainSipStopStack();
+               jainSipClientUnbind();
+               jainSipClientStopStack();
 
                listener.onClientClosedEvent(id, RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
             }
@@ -257,6 +257,22 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
       jainSipCall.open(jobId, parameters);
    }
 
+   void accept(String jobId, HashMap<String, Object> parameters, JainSipCall.JainSipCallListener listener)
+   {
+      RCLogger.i(TAG, "accept(): id: " + jobId + ", parameters: " + parameters.toString());
+
+      if (!notificationManager.haveConnectivity()) {
+         listener.onCallErrorEvent(jobId, RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY, RCClient.errorText(RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY));
+         return;
+      }
+
+      JainSipJob jainSipJob = jainSipJobManager.get(jobId);
+      if (jainSipJob == null) {
+         throw new RuntimeException("Error accepting a call that doesn't exist in Job Manager");
+      }
+      jainSipJob.jainSipCall.accept(jainSipJob, parameters);
+   }
+
    void hangup(String jobId, JainSipCall.JainSipCallListener listener)
    {
       RCLogger.i(TAG, "hangup(): id: " + jobId);
@@ -267,7 +283,7 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
       }
 
       JainSipJob jainSipJob = jainSipJobManager.get(jobId);
-      jainSipJob.jainSipCall.close(jainSipJob);
+      jainSipJob.jainSipCall.disconnect(jainSipJob);
    }
 
    void sendMessage(String id, String peer, String text)
@@ -277,7 +293,7 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
 
    // -- Internal APIs
    // Release JAIN networking facilities
-   public void jainSipUnbind() throws JainSipException
+   public void jainSipClientUnbind() throws JainSipException
    {
       RCLogger.w(TAG, "unbind()");
       if (jainSipListeningPoint != null) {
@@ -300,7 +316,7 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
    }
 
    // Setup JAIN networking facilities
-   public void jainSipBind(HashMap<String, Object> parameters) throws JainSipException
+   public void jainSipClientBind(HashMap<String, Object> parameters) throws JainSipException
    {
       RCLogger.w(TAG, "bind()");
       if (jainSipListeningPoint == null) {
@@ -343,7 +359,7 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
       }
    }
 
-   int jainSipStartStack(String id)
+   int jainSipClientStartStack(String id)
    {
       // TODO: Didn't have that in the past, hope it doesn't cause any issues
       try {
@@ -359,7 +375,7 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
       return RCClient.ErrorCodes.SUCCESS.ordinal();
    }
 
-   void jainSipStopStack()
+   void jainSipClientStopStack()
    {
       jainSipStack.stop();
       jainSipMessageBuilder.shutdown();
@@ -375,7 +391,7 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
       clientOpened = false;
    }
 
-   public ClientTransaction jainSipRegister(String id, final HashMap<String, Object> parameters) throws JainSipException
+   public ClientTransaction jainSipClientRegister(String id, final HashMap<String, Object> parameters) throws JainSipException
    {
       RCLogger.v(TAG, "jainSipRegister()");
 
@@ -395,7 +411,7 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
 
       ClientTransaction transaction = null;
       try {
-         Request registerRequest = jainSipMessageBuilder.buildRegister(id, listener, jainSipListeningPoint, expiry, null, parameters);
+         Request registerRequest = jainSipMessageBuilder.buildRegister(id, listener, jainSipListeningPoint, expiry, parameters);
          if (registerRequest != null) {
             RCLogger.v(TAG, "jainSipRegister(): Sending SIP request: \n" + registerRequest.toString());
 
@@ -425,7 +441,7 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
       return transaction;
    }
 
-   public ClientTransaction jainSipUnregister(String id, final HashMap<String, Object> parameters) throws JainSipException
+   public ClientTransaction jainSipClientUnregister(String id, final HashMap<String, Object> parameters) throws JainSipException
    {
       RCLogger.v(TAG, "jainSipUnregister()");
 
@@ -436,7 +452,7 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
 
       ClientTransaction transaction = null;
       try {
-         Request registerRequest = jainSipMessageBuilder.buildRegister(id, listener, jainSipListeningPoint, 0, null, parameters);
+         Request registerRequest = jainSipMessageBuilder.buildRegister(id, listener, jainSipListeningPoint, 0, parameters);
          if (registerRequest != null) {
             RCLogger.v(TAG, "jainSipUnregister(): Sending SIP request: \n" + registerRequest.toString());
 
@@ -458,6 +474,7 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
       return transaction;
    }
 
+   // Notice that this is used both for registrations and calls
    public void jainSipAuthenticate(String id, JainSipJob jainSipJob, HashMap<String, Object> parameters, ResponseEventExt responseEventExt) throws JainSipException
    {
       try {
@@ -474,7 +491,8 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
             // update previous transaction with authenticationTransaction (remember that previous ended with 407 final response)
             String authCallId = ((CallIdHeader) authenticationTransaction.getRequest().getHeader("Call-ID")).getCallId();
             jainSipJob.updateTransaction(authenticationTransaction);
-            jainSipJob.updateTransactionId(authCallId);
+            // TODO: not sure if this is needed. Auth doesn't change Call-Id, right?
+            jainSipJob.updateCallId(authCallId);
             RCLogger.v(TAG, "Sending SIP request: \n" + authenticationTransaction.getRequest().toString());
             authenticationTransaction.sendRequest();
             jainSipJob.increaseAuthAttempts();
@@ -519,8 +537,8 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
                   e.printStackTrace();
                }
             }
-            else if (method.equals(Request.BYE) || method.equals(Request.CANCEL)) {
-               JainSipJob jainSipJob = jainSipJobManager.getUsingTransactionId(callId);
+            else if (method.equals(Request.BYE) || method.equals(Request.CANCEL) || method.equals(Request.ACK)) {
+               JainSipJob jainSipJob = jainSipJobManager.getUsingCallId(callId);
                if (jainSipJob == null) {
                   // no need to notify UI thread
                   RCLogger.e(TAG, "processRequest(): error, got request for unknown transaction job. Method: " + method);
@@ -533,7 +551,8 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
             if (method.equals(Request.INVITE)) {
                // New INVITE, need to create new job
                JainSipCall jainSipCall = new JainSipCall(JainSipClient.this, (JainSipCall.JainSipCallListener)listener);
-               JainSipJob jainSipJob = jainSipJobManager.add(Long.toString(System.currentTimeMillis()), JainSipJob.Type.TYPE_CALL, serverTransaction, null, jainSipCall);
+               // Remember, this is new dialog and hence serverTransaction is null
+               JainSipJob jainSipJob = jainSipJobManager.add(callId, JainSipJob.Type.TYPE_CALL, null, null, jainSipCall);
 
                jainSipCall.processRequest(jainSipJob, requestEvent);
             }
@@ -554,7 +573,7 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
 
             CallIdHeader callIdHeader = (CallIdHeader) response.getHeader("Call-ID");
             String callId = callIdHeader.getCallId();
-            JainSipJob jainSipJob = jainSipJobManager.getUsingTransactionId(callId);
+            JainSipJob jainSipJob = jainSipJobManager.getUsingCallId(callId);
             if (jainSipJob == null) {
                RCLogger.e(TAG, "processResponse(): error, got response for unknown job");
                return;
@@ -676,7 +695,7 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
             RCLogger.i(TAG, "processTimeout(): method: " + request.getMethod() + " URI: " + request.getRequestURI());
             CallIdHeader callIdHeader = (CallIdHeader) request.getHeader("Call-ID");
             String callId = callIdHeader.getCallId();
-            JainSipJob jainSipJob = jainSipJobManager.getUsingTransactionId(callId);
+            JainSipJob jainSipJob = jainSipJobManager.getUsingCallId(callId);
             if (jainSipJob == null) {
                // transaction is not identified, just emit a log error; don't notify UI thread
                RCLogger.i(TAG, "processTimeout(): transaction not identified");
@@ -720,7 +739,7 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
 
       if (connectivityChange == NotificationManager.ConnectivityChange.OFFLINE) {
          try {
-            jainSipUnbind();
+            jainSipClientUnbind();
             listener.onClientConnectivityEvent(Long.toString(System.currentTimeMillis()), RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone);
          }
          catch (JainSipException e) {

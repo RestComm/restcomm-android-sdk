@@ -71,11 +71,11 @@ public class JainSipJobManager {
       //}
    }
 
-   JainSipJob getUsingTransactionId(String transactionId)
+   JainSipJob getUsingCallId(String callId)
    {
       for (Map.Entry<String, JainSipJob> entry : transactions.entrySet()) {
          JainSipJob transaction = entry.getValue();
-         if (transaction.transactionId.equals(transactionId)) {
+         if (transaction.callId.equals(callId)) {
             return transaction;
          }
       }
