@@ -73,6 +73,11 @@ public class JainSipJob {
        */
       void process(String id, String event, Object arg, RCClient.ErrorCodes statusCode, String statusText)
       {
+         if (states == null) {
+            // if states is null, then it means that no FSM should be used at all
+            return;
+         }
+
          if (JainSipJob.this.id.equals(id)) {
             boolean loop;
             do {

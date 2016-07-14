@@ -23,10 +23,10 @@ public class UIClient {
 
       void onCallReply(String id, RCClient.ErrorCodes status, String text);
 
-      void onSendMessageReply(String id, RCClient.ErrorCodes status, String text);
+      void onMessageReply(String id, RCClient.ErrorCodes status, String text);
 
       // Unsolicited Events
-      void onCallArrivedEvent(String id, String peer);
+      //void onCallArrivedEvent(String id, String peer);
 
       void onMessageArrivedEvent(String id, String peer, String text);
 
@@ -139,11 +139,14 @@ public class UIClient {
    }
 
 
-   String sendMessage(HashMap<String, String> parameters)
+   String sendMessage(HashMap<String, Object> parameters)
    {
       String id = generateId();
 
-      // TODO: add handling
+      SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.MESSAGE_REQUEST);
+      signalingMessage.parameters = parameters;
+      Message message = signalingHandler.obtainMessage(1, signalingMessage);
+      message.sendToTarget();
 
       return id;
    }

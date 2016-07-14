@@ -37,6 +37,12 @@ public class UIHandler extends Handler {
       else if (message.type == SignalingMessage.MessageType.CONNECTIVITY_EVENT) {
          listener.onConnectivityEvent(message.id, message.connectivityStatus);
       }
+      else if (message.type == SignalingMessage.MessageType.MESSAGE_EVENT) {
+         listener.onMessageArrivedEvent(message.id, message.peer, message.messageText);
+      }
+      else if (message.type == SignalingMessage.MessageType.MESSAGE_REPLY) {
+         listener.onMessageReply(message.id, message.status, message.text);
+      }
       else {
          listener.onCallRelatedMessage(message);
       }

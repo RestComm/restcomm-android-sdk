@@ -80,6 +80,7 @@ public class RCClient {
       ERROR_SIGNALING_CALL_ACCEPT_FAILED,
       ERROR_SIGNALING_CALL_HANGUP_FAILED,
       ERROR_SIGNALING_CALL_DECLINE_FAILED,
+      ERROR_SIGNALING_MESSAGE_SEND_FAILED,
       // Note on unhandled: unhandled errors shouldn't occur. If they do we need to evaluate if its because of a bug that needs to be fixed,
       // or because of bad user configuration that wasn't properly identified and hence error-reported, in which case we need to introduce a new error code
       ERROR_SIGNALING_UNHANDLED,
@@ -176,6 +177,9 @@ public class RCClient {
       }
       else if (errorCode == ErrorCodes.ERROR_SIGNALING_CALL_DECLINE_FAILED) {
          return "Failed to decline call";
+      }
+      else if (errorCode == ErrorCodes.ERROR_SIGNALING_MESSAGE_SEND_FAILED) {
+         return "Failed to send message";
       }
       else if (errorCode == ErrorCodes.ERROR_SIGNALING_UNHANDLED) {
          return "Unhandled signaling error occurred";

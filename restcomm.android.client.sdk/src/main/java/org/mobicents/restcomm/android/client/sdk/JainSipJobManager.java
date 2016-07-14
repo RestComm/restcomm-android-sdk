@@ -1,6 +1,7 @@
 package org.mobicents.restcomm.android.client.sdk;
 
 import android.javax.sip.Transaction;
+import android.javax.sip.header.CallIdHeader;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -63,7 +64,8 @@ public class JainSipJobManager {
    {
       for (Map.Entry<String, JainSipJob> entry : transactions.entrySet()) {
          JainSipJob job = entry.getValue();
-         if (job.transaction.getDialog().getCallId().getCallId().equals(callId)) {
+
+         if (((CallIdHeader)job.transaction.getRequest().getHeader("Call-ID")).getCallId().equals(callId)) {
             return job;
          }
       }

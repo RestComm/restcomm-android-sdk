@@ -449,7 +449,11 @@ public class RCDevice implements UIClient.UIClientListener {
       RCLogger.i(TAG, "sendMessage(): message:" + message + "\nparameters: " + parameters.toString());
 
       if (state == DeviceState.READY) {
-         DeviceImpl.GetInstance().SendMessage(parameters.get("username"), message);
+         HashMap<String, Object> messageParameters = new HashMap<>();
+         messageParameters.put("username", parameters.get("username"));
+         messageParameters.put("text-message", message);
+         uiClient.sendMessage(messageParameters);
+         //DeviceImpl.GetInstance().SendMessage(parameters.get("username"), message);
          return true;
       }
       else {
@@ -601,43 +605,10 @@ public class RCDevice implements UIClient.UIClientListener {
    public boolean updateParams(HashMap<String, Object> params)
    {
       uiClient.reconfigure(params);
-      this.parameters = params;
 
-        /*
-        RCLogger.i(TAG, "updateParams(): " + params.toString());
-        boolean status = false;
-
-        if (!params.containsKey(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED)) {
-            if (params.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) && !params.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
-                // we have a new (non empty) domain, need to register
-                updateSipProfile(params);
-                if (reachabilityState != RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
-                    DeviceImpl.GetInstance().Register();
-                    status = true;
-                }
-            } else {
-                // we have an empty domain
-                if (!sipProfile.getRemoteEndpoint().equals("")) {
-                    // previously we had a registrar setup, need to unregister (important: we call updateSipProfile afterwards cause if we do no
-                    // unregister will check the SipProfile, find that domain is empty and skip unregistration
-                    DeviceImpl.GetInstance().Unregister();
-                }
-                // previously we didn't have a registrar setup, no need to do anything
-                updateSipProfile(params);
-                status = true;
-            }
-
-            if (params.containsKey(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED)) {
-                if (reachabilityState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi) {
-                    DeviceImpl.GetInstance().RefreshNetworking(SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi);
-                } else if (reachabilityState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular) {
-                    DeviceImpl.GetInstance().RefreshNetworking(SipManager.NetworkInterfaceType.NetworkInterfaceTypeCellularData);
-                }
-            }
-        } else {
-            DeviceImpl.GetInstance().refreshTls(params);
-        }
-        */
+      // remember that the new parameters can be just a subset of the currently stored in this.parameters, so to update the current parameters we need
+      // to merge them with the new (i.e. keep the old and replace any new keys with new values)
+      this.parameters = JainSipConfiguration.mergeParameters(this.parameters, params);
 
       // TODO: need to provide asynchronous status for this
       return true;
@@ -870,20 +841,24 @@ public class RCDevice implements UIClient.UIClientListener {
 
    }
 
-   public void onSendMessageReply(String id, RCClient.ErrorCodes status, String text)
+   public void onMessageReply(String id, RCClient.ErrorCodes status, String text)
    {
-
+      RCLogger.i(TAG, "onMessageReply(): id: " + id + ", status: " + status + ", text: " + text);
    }
 
    // Unsolicited Events
+   /*
    public void onCallArrivedEvent(String id, String peer)
    {
 
+
    }
+   */
 
    public void onMessageArrivedEvent(String id, String peer, String text)
    {
-
+      RCLogger.i(TAG, "onMessageArrivedEvent(): id: " + id + ", peer: " + peer + ", text: " + text);
+      handleIncomingTextMessage(peer, text);
    }
 
    public void onErrorEvent(String id, RCClient.ErrorCodes status, String text)
@@ -913,9 +888,6 @@ public class RCDevice implements UIClient.UIClientListener {
       else {
          if (signalingMessage.type == SignalingMessage.MessageType.CALL_EVENT) {
             handleIncomingCall(signalingMessage);
-         }
-         else if (signalingMessage.type == SignalingMessage.MessageType.MESSAGE_EVENT) {
-            handleIncomingTextMessage(signalingMessage);
          }
          else {
             throw new RuntimeException("Unexpected signaling message type");
@@ -948,18 +920,18 @@ public class RCDevice implements UIClient.UIClientListener {
       }
    }
 
-   private void handleIncomingTextMessage(SignalingMessage signalingMessage)
+   private void handleIncomingTextMessage(String peer, String text)
    {
       HashMap<String, String> parameters = new HashMap<String, String>();
       // filter out SIP URI stuff and leave just the name
-      String from = signalingMessage.peer.replaceAll("^<", "").replaceAll(">$", "");
+      String from = peer.replaceAll("^<", "").replaceAll(">$", "");
       parameters.put("username", from);
 
       try {
          Intent dataIntent = new Intent();
          dataIntent.setAction(INCOMING_MESSAGE);
          dataIntent.putExtra(INCOMING_MESSAGE_PARAMS, parameters);
-         dataIntent.putExtra(INCOMING_MESSAGE_TEXT, signalingMessage.messageText);
+         dataIntent.putExtra(INCOMING_MESSAGE_TEXT, text);
          pendingMessageIntent.send(RCClient.getContext(), 0, dataIntent);
       }
       catch (PendingIntent.CanceledException e) {

@@ -34,6 +34,8 @@ public class SignalingMessage {
       //CALL_DISCONNECTED_EVENT,
       CALL_CANCELED_EVENT,
 
+      MESSAGE_REQUEST,
+      MESSAGE_REPLY,
       MESSAGE_EVENT,
    }
 

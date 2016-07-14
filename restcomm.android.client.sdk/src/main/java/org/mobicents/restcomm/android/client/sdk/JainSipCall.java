@@ -86,7 +86,6 @@ public class JainSipCall {
    {
       RCLogger.i(TAG, "open(): id: " + jobId);
       try {
-         //this.jobId = jobId;
          Transaction transaction = jainSipCallInvite(jobId, parameters);
          jainSipClient.jainSipJobManager.add(jobId, JainSipJob.Type.TYPE_CALL, transaction, parameters, this);
       }
@@ -294,6 +293,7 @@ public class JainSipCall {
                // also send a 487 Request Terminated response to the original INVITE request
                Request originalInviteRequest = jainSipJob.transaction.getRequest();
                Response originalInviteResponse = jainSipClient.jainSipMessageBuilder.jainSipMessageFactory.createResponse(Response.REQUEST_TERMINATED, originalInviteRequest);
+               RCLogger.v(TAG, "Sending SIP response: \n" + originalInviteResponse.toString());
                ((ServerTransaction) jainSipJob.transaction).sendResponse(originalInviteResponse);
             }
             listener.onCallCancelledEvent(jainSipJob.id);

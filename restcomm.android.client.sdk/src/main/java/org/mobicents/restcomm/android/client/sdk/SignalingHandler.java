@@ -55,6 +55,9 @@ public class SignalingHandler extends Handler implements JainSipClient.JainSipCl
       else if (message.type == SignalingMessage.MessageType.CALL_ACCEPT_REQUEST) {
          jainSipClient.accept(message.id, message.parameters, this);
       }
+      else if (message.type == SignalingMessage.MessageType.MESSAGE_REQUEST) {
+         jainSipClient.sendMessage(message.id, message.parameters);
+      }
    }
 
    // -- JainSipClientListener events
@@ -107,12 +110,20 @@ public class SignalingHandler extends Handler implements JainSipClient.JainSipCl
       message.sendToTarget();
    }
 
-   public void onClientMessageArrivedEvent(String id, String messageText, String peer)
+   public void onClientMessageArrivedEvent(String id, String peer, String messageText)
    {
       SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.MESSAGE_EVENT);
-      //signalingMessage.parameters = parameters;
       signalingMessage.messageText = messageText;
       signalingMessage.peer = peer;
+      Message message = uiHandler.obtainMessage(1, signalingMessage);
+      message.sendToTarget();
+   }
+
+   public void onClientMessageSentEvent(String id, RCClient.ErrorCodes status, String text)
+   {
+      SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.MESSAGE_REPLY);
+      signalingMessage.status = status;
+      signalingMessage.text = text;
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
    }

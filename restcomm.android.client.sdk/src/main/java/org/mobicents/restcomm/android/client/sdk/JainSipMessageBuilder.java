@@ -190,6 +190,63 @@ public class JainSipMessageBuilder {
       }
    }
 
+   public Request buildMessage(String id, String peer, String message, ListeningPoint listeningPoint, HashMap<String, Object> clientConfiguration) throws JainSipException
+   {
+      try {
+         // Create addresses and via header for the request
+         Address fromAddress = jainSipAddressFactory.createAddress("sip:" + clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_USERNAME) + "@" +
+               sipUri2IpAddress((String) clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN)));
+         fromAddress.setDisplayName((String) clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_USERNAME));
+
+         Address toAddress = jainSipAddressFactory.createAddress(peer);
+         URI requestURI = jainSipAddressFactory.createURI(peer);
+
+         // Create callId from the user provided id, to maintain a correlation between UI and signaling thread
+         CallIdHeader callIdHeader = jainSipHeaderFactory.createCallIdHeader(id);
+
+         ArrayList<ViaHeader> viaHeaders = createViaHeaders(listeningPoint);
+         //URI requestURI = jainSipAddressFactory.createAddress((String) parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN)).getURI();
+
+         // Build the request
+         Request request = jainSipMessageFactory.createRequest(requestURI,
+               Request.MESSAGE, callIdHeader,
+               jainSipHeaderFactory.createCSeqHeader(1l, Request.MESSAGE),
+               jainSipHeaderFactory.createFromHeader(fromAddress, Long.toString(System.currentTimeMillis())),
+               jainSipHeaderFactory.createToHeader(toAddress, null), viaHeaders,
+               jainSipHeaderFactory.createMaxForwardsHeader(70));
+
+         SupportedHeader supportedHeader = jainSipHeaderFactory.createSupportedHeader("replaces, outbound");
+         request.addHeader(supportedHeader);
+
+         // Add route header with the proxy first
+         RouteHeader routeHeader = createRouteHeader((String) clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN));
+         request.addFirst(routeHeader);
+
+         ContentTypeHeader contentTypeHeader = jainSipHeaderFactory.createContentTypeHeader("text", "plain");
+         request.setContent(message, contentTypeHeader);
+
+         /* Not needed for Messages
+         Address contactAddress = createContactAddress(listeningPoint, (String) clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN), false, null);
+         ContactHeader contactHeader = jainSipHeaderFactory.createContactHeader(contactAddress);
+         request.addHeader(contactHeader);
+         */
+
+         request.addHeader(createUserAgentHeader());
+
+         return request;
+      }
+      catch (ParseException e) {
+         RCLogger.e(TAG, "buildMessage(): " + e.getMessage());
+         e.printStackTrace();
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID));
+      }
+      catch (Exception e) {
+         RCLogger.e(TAG, "buildMessage(): " + e.getMessage());
+         e.printStackTrace();
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED));
+      }
+   }
+
    public Request buildBye(android.javax.sip.Dialog dialog, HashMap<String, Object> clientConfiguration) throws JainSipException
    {
       try {
@@ -217,6 +274,8 @@ public class JainSipMessageBuilder {
          Address contactAddress = createContactAddress(listeningPoint, null, true, clientContext);
          ContactHeader contactHeader = jainSipHeaderFactory.createContactHeader(contactAddress);
          response.addHeader(contactHeader);
+
+         // Not needed as it is being set when sending 180 Ringing
          //ToHeader toHeader = (ToHeader) response.getHeader(ToHeader.NAME);
          //toHeader.setTag(Long.toString(System.currentTimeMillis()));
          //response.addHeader(contactHeader);
