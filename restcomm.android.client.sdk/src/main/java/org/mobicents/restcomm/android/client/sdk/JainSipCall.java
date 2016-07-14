@@ -24,6 +24,7 @@ import android.javax.sip.address.SipURI;
 import android.javax.sip.header.CSeqHeader;
 import android.javax.sip.header.ContactHeader;
 import android.javax.sip.header.ContentTypeHeader;
+import android.javax.sip.header.Header;
 import android.javax.sip.header.RouteHeader;
 import android.javax.sip.header.ToHeader;
 import android.javax.sip.message.Request;
@@ -104,7 +105,7 @@ public class JainSipCall {
       }
       catch (JainSipException e) {
          listener.onCallErrorEvent(jainSipJob.id, e.errorCode, e.errorText);
-         jainSipClient.jainSipJobManager.remove(jainSipJob.id);
+         //jainSipClient.jainSipJobManager.remove(jainSipJob.id);
       }
    }
 
@@ -120,11 +121,9 @@ public class JainSipCall {
                RCLogger.i(TAG, "close(): id " + jainSipJob.id + " - Early dialog state for incoming call, sending Decline");
                jainSipCallDecline(jainSipJob);
 
-               /*
                listener.onCallLocalDisconnectedEvent(jainSipJob.id);
                // we are done with this call, let's remove job
                jainSipClient.jainSipJobManager.remove(jainSipJob.id);
-               */
             }
             else {
                // client transaction (i.e. outgoing call)
@@ -314,6 +313,12 @@ public class JainSipCall {
 
             jainSipJob.updateTransaction(serverTransaction);
             Response response = jainSipClient.jainSipMessageBuilder.jainSipMessageFactory.createResponse(Response.RINGING, request);
+
+            // Important: we need set the 'tag' for the 'To' (once that happens Dialog transitions to EARLY)
+            ToHeader toHeader = (ToHeader)request.getHeader("To");
+            toHeader.setTag(Long.toString(System.currentTimeMillis()));
+            response.setHeader(toHeader);
+
             RCLogger.v(TAG, "Sending SIP response: \n" + response.toString());
             serverTransaction.sendResponse(response);
 
@@ -326,7 +331,7 @@ public class JainSipCall {
       }
       else if (method.equals(Request.ACK)) {
          try {
-            // A dialog transitions to the "confirmed" state when a 2xx final response is received to the INVITE Reques
+            // A dialog transitions to the "confirmed" state when a 2xx final response is received to the INVITE Request
             if (serverTransaction.getDialog().getState() == DialogState.CONFIRMED) {
                listener.onCallIncomingConnectedEvent(jainSipJob.id);
             }
@@ -383,6 +388,18 @@ public class JainSipCall {
             // we are done with this call, let's remove job
             jainSipClient.jainSipJobManager.remove(jainSipJob.id);
          }
+         else if (method.equals(Request.CANCEL)) {
+            if (responseEvent.getClientTransaction().getDialog().getState() == DialogState.CONFIRMED) {
+               RCLogger.w(TAG, "processResponse(): Cancel reached peer too late, need to send Bye");
+               try {
+                  jainSipCallHangup(jainSipJob, jainSipClient.configuration);
+               }
+               catch (JainSipException e) {
+                  listener.onCallErrorEvent(jainSipJob.id, e.errorCode, e.errorText);
+                  jainSipClient.jainSipJobManager.remove(jainSipJob.id);
+               }
+            }
+         }
       }
       else if (response.getStatusCode() == Response.RINGING) {
          listener.onCallPeerRingingEvent(jainSipJob.id);
@@ -411,6 +428,17 @@ public class JainSipCall {
       else if (response.getStatusCode() == Response.SERVICE_UNAVAILABLE) {
          listener.onCallErrorEvent(jainSipJob.id, RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED,
                RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED));
+      }
+      else if (response.getStatusCode() == Response.REQUEST_TERMINATED) {
+         if (method.equals(Request.INVITE)) {
+            // INVITE was terminated by Cancel
+            listener.onCallLocalDisconnectedEvent(jainSipJob.id);
+            // we are done with this call, let's remove job
+            jainSipClient.jainSipJobManager.remove(jainSipJob.id);
+         }
+         else {
+            RCLogger.e(TAG, "processResponse(): unhandled SIP response: " + response.getStatusCode());
+         }
       }
       else if (response.getStatusCode() == Response.REQUEST_TERMINATED) {
          // INVITE was terminated by Cancel

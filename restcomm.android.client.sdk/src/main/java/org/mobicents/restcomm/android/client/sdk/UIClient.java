@@ -34,7 +34,7 @@ public class UIClient {
 
       void onConnectivityEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus);
 
-      // this are for messages that have to do with a call, which are delegated to RCConnection
+      // Call related events that are delegated to RCConnection
       void onCallRelatedMessage(SignalingMessage message);
 
    }

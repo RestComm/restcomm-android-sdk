@@ -194,8 +194,6 @@ public class SignalingHandler extends Handler implements JainSipClient.JainSipCl
    public void onCallCancelledEvent(String callId)
    {
       SignalingMessage signalingMessage = new SignalingMessage(callId, SignalingMessage.MessageType.CALL_CANCELED_EVENT);
-      //signalingMessage.sdp = sdpOffer;
-      //signalingMessage.peer = peer;
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
    }
@@ -207,6 +205,10 @@ public class SignalingHandler extends Handler implements JainSipClient.JainSipCl
 
    public void onCallErrorEvent(String callId, RCClient.ErrorCodes status, String text)
    {
-
+      SignalingMessage signalingMessage = new SignalingMessage(callId, SignalingMessage.MessageType.CALL_ERROR_EVENT);
+      signalingMessage.status = status;
+      signalingMessage.text = text;
+      Message message = uiHandler.obtainMessage(1, signalingMessage);
+      message.sendToTarget();
    }
 }

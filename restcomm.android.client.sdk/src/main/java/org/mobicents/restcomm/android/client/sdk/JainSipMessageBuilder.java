@@ -217,9 +217,9 @@ public class JainSipMessageBuilder {
          Address contactAddress = createContactAddress(listeningPoint, null, true, clientContext);
          ContactHeader contactHeader = jainSipHeaderFactory.createContactHeader(contactAddress);
          response.addHeader(contactHeader);
-         ToHeader toHeader = (ToHeader) response.getHeader(ToHeader.NAME);
-         toHeader.setTag(Long.toString(System.currentTimeMillis()));
-         response.addHeader(contactHeader);
+         //ToHeader toHeader = (ToHeader) response.getHeader(ToHeader.NAME);
+         //toHeader.setTag(Long.toString(System.currentTimeMillis()));
+         //response.addHeader(contactHeader);
 
          ContentTypeHeader contentTypeHeader = jainSipHeaderFactory.createContentTypeHeader("application", "sdp");
          response.setContent(sdp.getBytes(), contentTypeHeader);

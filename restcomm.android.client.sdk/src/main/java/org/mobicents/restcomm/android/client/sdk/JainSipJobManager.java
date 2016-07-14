@@ -28,12 +28,6 @@ public class JainSipJobManager {
       return jainSipJob;
    }
 
-    /*
-    void add(String id, JainSipJob.Type type, Transaction transaction, HashMap<String, Object> parameters) {
-        add(id, type, transaction, parameters);
-    }
-    */
-
    JainSipJob add(String id, JainSipJob.Type type, HashMap<String, Object> parameters)
    {
       return add(id, type, null, parameters, null);
@@ -43,40 +37,34 @@ public class JainSipJobManager {
    {
       return add(id, type, null, parameters, jainSipCall);
    }
-    /*
-    void add(String id, JainSipJob.Type type, JainSipJob.RegistrationType registrationType, Transaction transaction, HashMap<String, Object> parameters, Runnable onCompletion) {
-        //synchronized (this) {
-        JainSipJob t = new JainSipJob(jainSipClient, id, type, registrationType, transaction, parameters, onCompletion);
-        //HashMap<String, Object> data = new HashMap<>();
-        //data.put("transaction", transaction);
-        //data.put("parameters", parameters);
-        //data.put("type",);
-
-        transactions.put(id, t);
-        //}
-    }
-    */
 
    JainSipJob get(String id)
    {
-      //synchronized (this) {
       if (transactions.containsKey(id)) {
-         // this doesn't seem harmful let's suppress it for now
-         //@SuppressWarnings("unchecked")
          return transactions.get(id);
       }
       else {
          return null;
       }
-      //}
    }
 
-   JainSipJob getUsingCallId(String callId)
+   JainSipJob getByBranchId(String branchId)
    {
       for (Map.Entry<String, JainSipJob> entry : transactions.entrySet()) {
-         JainSipJob transaction = entry.getValue();
-         if (transaction.callId.equals(callId)) {
-            return transaction;
+         JainSipJob job = entry.getValue();
+         if (job.transaction.getBranchId().equals(branchId)) {
+            return job;
+         }
+      }
+      return null;
+   }
+
+   JainSipJob getByCallId(String callId)
+   {
+      for (Map.Entry<String, JainSipJob> entry : transactions.entrySet()) {
+         JainSipJob job = entry.getValue();
+         if (job.transaction.getDialog().getCallId().getCallId().equals(callId)) {
+            return job;
          }
       }
       return null;
@@ -84,20 +72,14 @@ public class JainSipJobManager {
 
    void remove(String id)
    {
-      //synchronized (this) {
       if (transactions.containsKey(id)) {
-         // this doesn't seem harmful let's suppress it for now
-         //@SuppressWarnings("unchecked")
          transactions.remove(id);
       }
-      //}
    }
 
    void removeAll()
    {
-      //synchronized (this) {
       transactions.clear();
-      //}
    }
 
 }

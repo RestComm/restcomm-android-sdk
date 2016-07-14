@@ -19,6 +19,7 @@ import android.javax.sip.SipListener;
 import android.javax.sip.SipProvider;
 import android.javax.sip.SipStack;
 import android.javax.sip.TimeoutEvent;
+import android.javax.sip.Transaction;
 import android.javax.sip.TransactionTerminatedEvent;
 import android.javax.sip.header.CSeqHeader;
 import android.javax.sip.header.CallIdHeader;
@@ -489,10 +490,10 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
                   (ClientTransaction) jainSipJob.transaction, jainSipProvider, 5, true);
 
             // update previous transaction with authenticationTransaction (remember that previous ended with 407 final response)
-            String authCallId = ((CallIdHeader) authenticationTransaction.getRequest().getHeader("Call-ID")).getCallId();
+            //String authCallId = ((CallIdHeader) authenticationTransaction.getRequest().getHeader("Call-ID")).getCallId();
             jainSipJob.updateTransaction(authenticationTransaction);
             // TODO: not sure if this is needed. Auth doesn't change Call-Id, right?
-            jainSipJob.updateCallId(authCallId);
+            //jainSipJob.updateCallId(authCallId);
             RCLogger.v(TAG, "Sending SIP request: \n" + authenticationTransaction.getRequest().toString());
             authenticationTransaction.sendRequest();
             jainSipJob.increaseAuthAttempts();
@@ -538,7 +539,16 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
                }
             }
             else if (method.equals(Request.BYE) || method.equals(Request.CANCEL) || method.equals(Request.ACK)) {
-               JainSipJob jainSipJob = jainSipJobManager.getUsingCallId(callId);
+               JainSipJob jainSipJob;
+               if (method.equals(Request.ACK)) {
+                  // remember that ACK creates new transaction so we won't be able to correlate with JainSipJob with Branch Id,
+                  // we need Call Id that remains the same
+                  jainSipJob = jainSipJobManager.getByCallId(callId);
+               }
+               else {
+                  jainSipJob = jainSipJobManager.getByBranchId(serverTransaction.getBranchId());
+               }
+
                if (jainSipJob == null) {
                   // no need to notify UI thread
                   RCLogger.e(TAG, "processRequest(): error, got request for unknown transaction job. Method: " + method);
@@ -571,9 +581,7 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
             Response response = responseEvent.getResponse();
             RCLogger.v(TAG, "Received SIP response: \n" + response.toString());
 
-            CallIdHeader callIdHeader = (CallIdHeader) response.getHeader("Call-ID");
-            String callId = callIdHeader.getCallId();
-            JainSipJob jainSipJob = jainSipJobManager.getUsingCallId(callId);
+            JainSipJob jainSipJob = jainSipJobManager.getByBranchId(responseEvent.getClientTransaction().getBranchId());
             if (jainSipJob == null) {
                RCLogger.e(TAG, "processResponse(): error, got response for unknown job");
                return;
@@ -591,7 +599,7 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
                         RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_AUTHENTICATION_FORBIDDEN));
                }
                else if (response.getStatusCode() == Response.SERVICE_UNAVAILABLE) {
-                  jainSipJob.processFsm(callId, "register-failure", null, RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_SERVICE_UNAVAILABLE,
+                  jainSipJob.processFsm(jainSipJob.id, "register-failure", null, RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_SERVICE_UNAVAILABLE,
                         RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_SERVICE_UNAVAILABLE));
                }
                else if (response.getStatusCode() == Response.OK) {
@@ -615,7 +623,7 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
                   jainSipJob.processFsm(jainSipJob.id, "register-success", null, RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
                }
             }
-            else if (method.equals(Request.INVITE) || method.equals(Request.BYE)) {
+            else if (method.equals(Request.INVITE) || method.equals(Request.BYE) || method.equals(Request.CANCEL)) {
                // forward to JainSipCall for processing
                jainSipJob.jainSipCall.processResponse(jainSipJob, responseEvent);
             }
@@ -685,17 +693,18 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
          public void run()
          {
             Request request;
+            Transaction transaction;
             if (timeoutEvent.isServerTransaction()) {
                request = timeoutEvent.getServerTransaction().getRequest();
+               transaction = timeoutEvent.getServerTransaction();
             }
             else {
                request = timeoutEvent.getClientTransaction().getRequest();
+               transaction = timeoutEvent.getClientTransaction();
             }
 
             RCLogger.i(TAG, "processTimeout(): method: " + request.getMethod() + " URI: " + request.getRequestURI());
-            CallIdHeader callIdHeader = (CallIdHeader) request.getHeader("Call-ID");
-            String callId = callIdHeader.getCallId();
-            JainSipJob jainSipJob = jainSipJobManager.getUsingCallId(callId);
+            JainSipJob jainSipJob = jainSipJobManager.getByBranchId(transaction.getBranchId());
             if (jainSipJob == null) {
                // transaction is not identified, just emit a log error; don't notify UI thread
                RCLogger.i(TAG, "processTimeout(): transaction not identified");

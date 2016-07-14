@@ -450,6 +450,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    // -- Call-related messages received from signaling thread are handled here
    public void handleSignalingMessage(SignalingMessage signalingMessage)
    {
+      RCLogger.i(TAG, "handleSignalingMessage: type: " + signalingMessage.type);
       if (signalingMessage.type == SignalingMessage.MessageType.CALL_OUTGOING_CONNECTED_EVENT) {
          // outgoing call is connected (got 200 OK)
          handleConnected(signalingMessage.sdp);
@@ -471,6 +472,17 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       else if (signalingMessage.type == SignalingMessage.MessageType.CALL_DISCONNECT_REPLY) {
          handleDisconnected(false);
       }
+      else if (signalingMessage.type == SignalingMessage.MessageType.CALL_ERROR_EVENT) {
+         handleError(signalingMessage.status, signalingMessage.text);
+      }
+      else if (signalingMessage.type == SignalingMessage.MessageType.CALL_CANCELED_EVENT) {
+         handleDisconnected(false);
+      }
+      else {
+         RCLogger.e(TAG, "handleSignalingMessage(): no handler for signaling message");
+
+      }
+
    }
 
    public void handleConnecting()
@@ -489,7 +501,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       RCLogger.i(TAG, "handleConnected()");
 
       //this.state = ConnectionState.CONNECTED;
-      final RCConnection finalConnection = new RCConnection(this);
+      //final RCConnection finalConnection = new RCConnection(this);
 
       // we want to notify webrtc onRemoteDescription *only* on an outgoing call
       if (!this.isIncoming()) {
@@ -505,15 +517,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
       // we 're first notifying listener and then setting new state because we want the listener to be able to
       // differentiate between disconnect and remote cancel events with the same listener method: onDisconnected.
-      // In the first case listener will see stat CONNECTED and in the second CONNECTING
+      // In the first case listener will see state CONNECTED and in the second CONNECTING
 
-      // also update RCDevice state
-      //RCDevice device = RCClient.listDevices().get(0);
       if (inboundDisconnect && RCDevice.state == RCDevice.DeviceState.BUSY) {
          // for outboud disconnect we are handling it in RCConnection.disconnect()
          disconnectWebrtc();
-         RCDevice.state = RCDevice.DeviceState.READY;
       }
+      RCDevice.state = RCDevice.DeviceState.READY;
       listener.onDisconnected(this);
       this.state = ConnectionState.DISCONNECTED;
 
@@ -525,15 +535,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       RCLogger.i(TAG, "handleCancelled()");
 
-      final RCConnection finalConnection = new RCConnection(this);
-
       // also update RCDevice state
       //RCDevice device = RCClient.listDevices().get(0);
       if (RCDevice.state == RCDevice.DeviceState.BUSY) {
          RCDevice.state = RCDevice.DeviceState.READY;
       }
 
-      listener.onCancelled(finalConnection);
+      listener.onCancelled(this);
 
       this.state = ConnectionState.DISCONNECTED;
       // Phone state Intents to capture cancelled event
@@ -560,7 +568,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void handleError(final RCClient.ErrorCodes errorCode, final String errorText)
    {
       final RCConnection connection = this;
-      RCLogger.e(TAG, "onSipUAError(): error code: " + errorCode + "error text: " + errorText);
+      RCLogger.e(TAG, "handleError(): error code: " + errorCode + ", error text: " + errorText);
       disconnect();
       if (connection.listener != null) {
          connection.listener.onDisconnected(connection, errorCode.ordinal(), errorText);

@@ -171,7 +171,7 @@ public class JainSipJob {
                else if (type == Type.TYPE_CLOSE) {
                   if (states[index].equals("unregister")) {
                      try {
-                        transaction = jainSipClient.jainSipClientUnregister(callId, parameters);
+                        transaction = jainSipClient.jainSipClientUnregister(id, parameters);
 
                      }
                      catch (JainSipException e) {
@@ -258,8 +258,7 @@ public class JainSipJob {
                            if (((HashMap<String, Object>) parameters.get("new-parameters")).containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) &&
                                  !((HashMap<String, Object>) parameters.get("new-parameters")).get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
                               // Domain has been provided do the registration
-                              callId = Long.toString(System.currentTimeMillis());
-                              transaction = jainSipClient.jainSipClientRegister(callId, (HashMap<String, Object>) parameters.get("new-parameters"));
+                              transaction = jainSipClient.jainSipClientRegister(Long.toString(System.currentTimeMillis()), (HashMap<String, Object>) parameters.get("new-parameters"));
                            }
                            else {
                               // No domain, need to loop through to next step
@@ -342,14 +341,12 @@ public class JainSipJob {
                         try {
                            jainSipClient.jainSipClientUnbind();
 
-                           //HashMap<String, Object> newParameters = (HashMap<String, Object>) parameters.get("new-parameters");
                            jainSipClient.jainSipClientBind((HashMap<String, Object>) parameters.get("new-parameters"));
 
                            if (((HashMap<String, Object>) parameters.get("new-parameters")).containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) &&
                                  !((HashMap<String, Object>) parameters.get("new-parameters")).get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
                               // Domain has been provided do the registration
-                              callId = Long.toString(System.currentTimeMillis());
-                              transaction = jainSipClient.jainSipClientRegister(callId, (HashMap<String, Object>) parameters.get("new-parameters"));
+                              transaction = jainSipClient.jainSipClientRegister(Long.toString(System.currentTimeMillis()), (HashMap<String, Object>) parameters.get("new-parameters"));
                            }
                            else {
                               // No domain, need to loop through to next step
@@ -527,7 +524,6 @@ public class JainSipJob {
    public enum Type {
       // TODO: remove those when we are done with new logic
       TYPE_REGISTRATION,
-      //TYPE_CALL,
       TYPE_MESSAGE,
 
       //
@@ -542,27 +538,15 @@ public class JainSipJob {
       TYPE_CALL,
    }
 
-    /*
-    public enum RegistrationType {
-        REGISTRATION_INITIAL,
-        REGISTRATION_REFRESH,
-        REGISTRATION_UNREGISTER,
-    }
-    */
-
    // id is a unique identifier for a Job. It is App provided for outgoing requests (typically Unix time with miliseconds, as a string)
    // and SIP Call-Id for incoming requests. Notice that for outgoing requests the App provided id is also used as SIP Call-ID, to make
    // troubleshooting easier
    public String id;
-   // callId is the id for the current sip request/response
-   public String callId;
    public Type type;
-   // callId for the first transaction for this job is the same as the job id,
-   // but as more sip transactions are created for the job, it is updated to reflect the latest sip transaction
+   // current JAIN sip transaction this job is currently executing. Remember that usually one Job is made up of multiple transactions occuring one after another
    public Transaction transaction;
    public HashMap<String, Object> parameters;
    public JainSipCall jainSipCall;
-   //public Runnable onCompletion;
    public int authenticationAttempts;
    public static int MAX_AUTH_ATTEMPTS = 3;
    JainSipClient jainSipClient;
@@ -574,14 +558,11 @@ public class JainSipJob {
               JainSipCall jainSipCall)
    {
       this.id = id;
-      this.callId = id;
       this.type = type;
-      //this.registrationType = registrationType;
       this.transaction = transaction;
       this.parameters = parameters;
       this.authenticationAttempts = 0;
       this.jainSipClient = jainSipClient;
-      //this.onCompletion = onCompletion;
       this.jainSipJobManager = jainSipJobManager;
       this.jainSipFsm = new JainSipFsm(type, jainSipClient);
       this.jainSipCall = jainSipCall;
@@ -610,11 +591,6 @@ public class JainSipJob {
    void updateTransaction(Transaction transaction)
    {
       this.transaction = transaction;
-   }
-
-   void updateCallId(String callId)
-   {
-      this.callId = callId;
    }
 
    // Should we retry authentication if previous failed? We retry a max of MAX_AUTH_ATTEMPTS
