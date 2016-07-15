@@ -134,10 +134,13 @@ public class UIClient {
       message.sendToTarget();
    }
 
-   void sendDTMFDigits(String id, String digits)
+   void sendDigits(String id, String digits)
    {
+      SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.SEND_DIGITS_REQUEST);
+      signalingMessage.dtmfDigits = digits;
+      Message message = signalingHandler.obtainMessage(1, signalingMessage);
+      message.sendToTarget();
    }
-
 
    String sendMessage(HashMap<String, Object> parameters)
    {

@@ -267,6 +267,29 @@ public class JainSipMessageBuilder {
       }
    }
 
+   public Request buildDtmfInfo(android.javax.sip.Dialog dialog, String digits) throws JainSipException
+   {
+      try {
+         Request request = dialog.createRequest(Request.INFO);
+
+         /*
+         // increase Cseq
+         CSeqHeader cseq = (CSeqHeader) jainSipJob.transaction.getRequest().getHeader(CSeqHeader.NAME);
+         long seqNumber = cseq.getSeqNumber();
+         cseq.setSeqNumber(++seqNumber);
+         request.setHeader(cseq);
+         */
+
+         request.setContent("Signal=" + digits + "\r\nDuration=100\r\n",
+               jainSipHeaderFactory.createContentTypeHeader("application", "dtmf-relay"));
+         return request;
+      }
+      catch (Exception e) {
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_DTMF_DIGITS_FAILED,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_DTMF_DIGITS_FAILED));
+      }
+   }
+
    public Response buildInvite200OK(ServerTransaction transaction, String sdp, ListeningPoint listeningPoint, HashMap<String, Object> clientContext) throws JainSipException
    {
       try {

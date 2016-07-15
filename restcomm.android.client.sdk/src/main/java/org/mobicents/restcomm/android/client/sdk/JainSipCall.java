@@ -68,6 +68,8 @@ public class JainSipCall {
       void onCallErrorEvent(String callId, RCClient.ErrorCodes status, String text);  // onPrivateCallConnectorCallOpenErrorEvent
 
       void onCallArrivedEvent(String id, String peer, String sdpOffer);
+
+      void onCallDigitsEvent(String callId, RCClient.ErrorCodes status, String text);
    }
 
    JainSipClient jainSipClient;
@@ -105,6 +107,23 @@ public class JainSipCall {
       catch (JainSipException e) {
          listener.onCallErrorEvent(jainSipJob.id, e.errorCode, e.errorText);
          //jainSipClient.jainSipJobManager.remove(jainSipJob.id);
+      }
+   }
+
+   // Send DTMF digits over this call
+   public void sendDigits(JainSipJob jainSipJob, String digits)
+   {
+      RCLogger.i(TAG, "sendDigits(): id: " + jainSipJob.id + ", digits: " + digits);
+      if (!jainSipClient.notificationManager.haveConnectivity()) {
+         listener.onCallDigitsEvent(jainSipJob.id, RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY, RCClient.errorText(RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY));
+         return;
+      }
+
+      try {
+         jainSipCallSendDigits(jainSipJob, digits);
+      }
+      catch (JainSipException e) {
+         listener.onCallDigitsEvent(jainSipJob.id, e.errorCode, e.errorText);
       }
    }
 
@@ -255,6 +274,26 @@ public class JainSipCall {
       }
    }
 
+   public ClientTransaction jainSipCallSendDigits(JainSipJob jainSipJob, String digits) throws JainSipException
+   {
+      RCLogger.v(TAG, "jainSipCallSendDigits()");
+
+      try {
+         Dialog dialog = jainSipJob.transaction.getDialog();
+         Request request = jainSipClient.jainSipMessageBuilder.buildDtmfInfo(dialog, digits);
+         RCLogger.v(TAG, "Sending SIP request: \n" + request.toString());
+         ClientTransaction transaction = jainSipClient.jainSipProvider.getNewClientTransaction(request);
+         dialog.sendRequest(transaction);
+         return transaction;
+      }
+      catch (Exception e) {
+         RCLogger.e(TAG, "jainSipCallSendDigits(): " + e.getMessage());
+         e.printStackTrace();
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_DTMF_DIGITS_FAILED,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_DTMF_DIGITS_FAILED));
+      }
+   }
+
    // Let's follow the naming conventions of SipListener, even though JainSipCall doesn't implement it, to keep it easier to follow
    public void processRequest(JainSipJob jainSipJob, final RequestEvent requestEvent)
    {
@@ -315,7 +354,7 @@ public class JainSipCall {
             Response response = jainSipClient.jainSipMessageBuilder.jainSipMessageFactory.createResponse(Response.RINGING, request);
 
             // Important: we need set the 'tag' for the 'To' (once that happens Dialog transitions to EARLY)
-            ToHeader toHeader = (ToHeader)request.getHeader("To");
+            ToHeader toHeader = (ToHeader)request.getHeader(ToHeader.NAME);
             toHeader.setTag(Long.toString(System.currentTimeMillis()));
             response.setHeader(toHeader);
 
@@ -399,6 +438,9 @@ public class JainSipCall {
                   jainSipClient.jainSipJobManager.remove(jainSipJob.id);
                }
             }
+         }
+         else if (method.equals(Request.INFO)) {
+            listener.onCallDigitsEvent(jainSipJob.id, RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
          }
       }
       else if (response.getStatusCode() == Response.RINGING) {

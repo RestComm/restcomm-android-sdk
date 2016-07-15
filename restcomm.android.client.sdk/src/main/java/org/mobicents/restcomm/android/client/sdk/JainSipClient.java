@@ -291,6 +291,14 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
       jainSipJob.jainSipCall.disconnect(jainSipJob);
    }
 
+   void sendDigits(String jobId, String digits)
+   {
+      RCLogger.i(TAG, "sendDigits(): id: " + jobId + ", digits: " + digits);
+
+      JainSipJob jainSipJob = jainSipJobManager.get(jobId);
+      jainSipJob.jainSipCall.sendDigits(jainSipJob, digits);
+   }
+
    void sendMessage(String id, HashMap<String, Object> parameters)
    {
       RCLogger.i(TAG, "call(): id: " + id + ", parameters: " + parameters.toString());
@@ -666,7 +674,8 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
                   jainSipJob.processFsm(jainSipJob.id, "register-success", null, RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
                }
             }
-            else if (method.equals(Request.INVITE) || method.equals(Request.BYE) || method.equals(Request.CANCEL)) {
+            else if (method.equals(Request.INVITE) || method.equals(Request.BYE) || method.equals(Request.CANCEL) ||
+                  method.equals(Request.INFO)) {
                // forward to JainSipCall for processing
                jainSipJob.jainSipCall.processResponse(jainSipJob, responseEvent);
             }

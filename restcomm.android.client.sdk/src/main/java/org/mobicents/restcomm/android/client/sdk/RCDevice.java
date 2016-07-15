@@ -38,7 +38,7 @@ import org.mobicents.restcomm.android.sipua.RCLogger;
 
 import org.mobicents.restcomm.android.sipua.SipProfile;
 import org.mobicents.restcomm.android.sipua.SipUADeviceListener;
-import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
+//import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
 import org.mobicents.restcomm.android.sipua.impl.SipEvent;
 import org.mobicents.restcomm.android.sipua.impl.SipManager;
 
@@ -329,7 +329,8 @@ public class RCDevice implements UIClient.UIClientListener {
       RCLogger.i(TAG, "listen()");
 
       if (state == DeviceState.READY) {
-         DeviceImpl.GetInstance().Register();
+         // TODO: implement with new signaling
+
       }
    }
 
@@ -341,7 +342,7 @@ public class RCDevice implements UIClient.UIClientListener {
       RCLogger.i(TAG, "unlisten()");
 
       if (state == DeviceState.READY) {
-         DeviceImpl.GetInstance().Unregister();
+         // TODO: implement with new signaling
       }
    }
 
@@ -393,7 +394,7 @@ public class RCDevice implements UIClient.UIClientListener {
    {
       RCLogger.i(TAG, "connect(): " + parameters.toString());
 
-      if (DeviceImpl.checkReachability(RCClient.getContext()) == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
+      if (cachedConnectivityStatus == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
          RCLogger.e(TAG, "connect(): No reachability");
          // Phone state Intents to capture connection failed event
          String username = "";
@@ -469,9 +470,9 @@ public class RCDevice implements UIClient.UIClientListener {
       RCLogger.i(TAG, "disconnectAll()");
 
       if (state == DeviceState.BUSY) {
-         // TODO: currently only support one live connection. Maybe would be a better idea to use a separate reference to the active RCConnection
-         RCConnection connection = (RCConnection) DeviceImpl.GetInstance().sipuaConnectionListener;
-         connection.disconnect();
+         // TODO: implement with new signaling
+         //RCConnection connection = (RCConnection) DeviceImpl.GetInstance().sipuaConnectionListener;
+         //connection.disconnect();
          state = DeviceState.READY;
       }
    }
@@ -527,11 +528,14 @@ public class RCDevice implements UIClient.UIClientListener {
       return null;
    }
 
+   /*
+   // TODO: check if this is needed
    public RCConnection getDevice()
    {
-      return (RCConnection) DeviceImpl.GetInstance().sipuaConnectionListener;
+      //return (RCConnection) DeviceImpl.GetInstance().sipuaConnectionListener;
+      return null;
    }
-
+   */
    /**
     * Should a ringing sound be played in a incoming connection or message
     *
@@ -540,8 +544,8 @@ public class RCDevice implements UIClient.UIClientListener {
    public void setIncomingSoundEnabled(boolean incomingSound)
    {
       RCLogger.i(TAG, "setIncomingSoundEnabled()");
-
-      DeviceImpl.GetInstance().soundManager.setIncoming(incomingSound);
+      // TODO: implement with new signaling
+      //DeviceImpl.GetInstance().soundManager.setIncoming(incomingSound);
    }
 
    /**
@@ -551,7 +555,9 @@ public class RCDevice implements UIClient.UIClientListener {
     */
    public boolean isIncomingSoundEnabled()
    {
-      return DeviceImpl.GetInstance().soundManager.getIncoming();
+      // TODO: implement with new signaling
+      //return DeviceImpl.GetInstance().soundManager.getIncoming();
+      return true;
    }
 
    /**
@@ -562,7 +568,8 @@ public class RCDevice implements UIClient.UIClientListener {
    public void setOutgoingSoundEnabled(boolean outgoingSound)
    {
       RCLogger.i(TAG, "setOutgoingSoundEnabled()");
-      DeviceImpl.GetInstance().soundManager.setOutgoing(outgoingSound);
+      // TODO: implement with new signaling
+      //DeviceImpl.GetInstance().soundManager.setOutgoing(outgoingSound);
    }
 
    /**
@@ -572,7 +579,9 @@ public class RCDevice implements UIClient.UIClientListener {
     */
    public boolean isOutgoingSoundEnabled()
    {
-      return DeviceImpl.GetInstance().soundManager.getOutgoing();
+      // TODO: implement with new signaling
+      //return DeviceImpl.GetInstance().soundManager.getOutgoing();
+      return true;
    }
 
    /**
@@ -583,7 +592,8 @@ public class RCDevice implements UIClient.UIClientListener {
    public void setDisconnectSoundEnabled(boolean disconnectSound)
    {
       RCLogger.i(TAG, "setDisconnectSoundEnabled()");
-      DeviceImpl.GetInstance().soundManager.setDisconnect(disconnectSound);
+      // TODO: implement with new signaling
+      //DeviceImpl.GetInstance().soundManager.setDisconnect(disconnectSound);
    }
 
    /**
@@ -593,7 +603,9 @@ public class RCDevice implements UIClient.UIClientListener {
     */
    public boolean isDisconnectSoundEnabled()
    {
-      return DeviceImpl.GetInstance().soundManager.getDisconnect();
+      // TODO: implement with new signaling
+      //return DeviceImpl.GetInstance().soundManager.getDisconnect();
+      return true;
    }
 
    /**

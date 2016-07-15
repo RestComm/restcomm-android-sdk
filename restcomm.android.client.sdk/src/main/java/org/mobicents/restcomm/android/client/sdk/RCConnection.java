@@ -428,7 +428,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void sendDigits(String digits)
    {
       RCLogger.i(TAG, "sendDigits(): " + digits);
-      uiClient.sendDTMFDigits(this.id, digits);
+      uiClient.sendDigits(this.id, digits);
       //DeviceImpl.GetInstance().SendDTMF(digits);
    }
 
@@ -477,6 +477,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
       else if (signalingMessage.type == SignalingMessage.MessageType.CALL_CANCELED_EVENT) {
          handleDisconnected(false);
+      }
+      else if (signalingMessage.type == SignalingMessage.MessageType.SEND_DIGITS_RESPONSE) {
+         handleDigitsSent(signalingMessage.status, signalingMessage.text);
       }
       else {
          RCLogger.e(TAG, "handleSignalingMessage(): no handler for signaling message");
@@ -531,6 +534,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       sendQoSConnectionIntent("disconnected");
    }
 
+   public void handleDigitsSent(RCClient.ErrorCodes statusCode, String statusText)
+   {
+      RCLogger.i(TAG, "handleDigitsSent(): status: " + statusCode + ", text: " + statusText);
+
+      // TODO: handle this
+   }
+
    public void handleCancelled()
    {
       RCLogger.i(TAG, "handleCancelled()");
@@ -565,7 +575,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       sendQoSConnectionIntent("declined");
    }
 
-   public void handleError(final RCClient.ErrorCodes errorCode, final String errorText)
+   public void handleError(RCClient.ErrorCodes errorCode, String errorText)
    {
       final RCConnection connection = this;
       RCLogger.e(TAG, "handleError(): error code: " + errorCode + ", error text: " + errorText);

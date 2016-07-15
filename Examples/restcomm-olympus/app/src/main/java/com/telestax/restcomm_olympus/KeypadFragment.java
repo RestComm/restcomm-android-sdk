@@ -198,7 +198,7 @@ public class KeypadFragment extends Fragment implements View.OnClickListener {
       }
       else if (v.getId() == R.id.imageButton_9) {
          toneGenerator.startTone(ToneGenerator.TONE_DTMF_9, 300);
-         connection.sendDigits("8");
+         connection.sendDigits("9");
       }
       else if (v.getId() == R.id.imageButton_0) {
          toneGenerator.startTone(ToneGenerator.TONE_DTMF_0, 300);

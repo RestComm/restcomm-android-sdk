@@ -37,6 +37,9 @@ public class SignalingMessage {
       MESSAGE_REQUEST,
       MESSAGE_REPLY,
       MESSAGE_EVENT,
+
+      SEND_DIGITS_REQUEST,
+      SEND_DIGITS_RESPONSE,
    }
 
     /*
@@ -62,6 +65,8 @@ public class SignalingMessage {
    // incoming messages
    public String messageText;
    public String peer;
+   // DTMF digits
+   public String dtmfDigits;
 
    // let's enforce id and type, to make sure we always get them
    public SignalingMessage(String id, MessageType type)

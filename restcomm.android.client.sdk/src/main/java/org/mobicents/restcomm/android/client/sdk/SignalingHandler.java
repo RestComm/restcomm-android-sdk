@@ -58,6 +58,9 @@ public class SignalingHandler extends Handler implements JainSipClient.JainSipCl
       else if (message.type == SignalingMessage.MessageType.MESSAGE_REQUEST) {
          jainSipClient.sendMessage(message.id, message.parameters);
       }
+      else if (message.type == SignalingMessage.MessageType.SEND_DIGITS_REQUEST) {
+         jainSipClient.sendDigits(message.id, message.dtmfDigits);
+      }
    }
 
    // -- JainSipClientListener events
@@ -217,6 +220,15 @@ public class SignalingHandler extends Handler implements JainSipClient.JainSipCl
    public void onCallErrorEvent(String callId, RCClient.ErrorCodes status, String text)
    {
       SignalingMessage signalingMessage = new SignalingMessage(callId, SignalingMessage.MessageType.CALL_ERROR_EVENT);
+      signalingMessage.status = status;
+      signalingMessage.text = text;
+      Message message = uiHandler.obtainMessage(1, signalingMessage);
+      message.sendToTarget();
+   }
+
+   public void onCallDigitsEvent(String callId, RCClient.ErrorCodes status, String text)
+   {
+      SignalingMessage signalingMessage = new SignalingMessage(callId, SignalingMessage.MessageType.SEND_DIGITS_RESPONSE);
       signalingMessage.status = status;
       signalingMessage.text = text;
       Message message = uiHandler.obtainMessage(1, signalingMessage);
