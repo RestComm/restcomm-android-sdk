@@ -1,3 +1,5 @@
+package org.mobicents.restcomm.android.client.sdk;
+
 /*
  * TeleStax, Open Source Cloud Communications
  * Copyright 2011-2015, Telestax Inc and individual contributors
@@ -20,19 +22,35 @@
  *
  */
 
-package org.mobicents.restcomm.android.sipua;
 
-public class NotInitializedException  extends Exception{
-	 /**
-	 * 
-	 */
-	private static final long serialVersionUID = 8276497401862424419L;
+import android.gov.nist.javax.sip.clientauthutils.UserCredentials;
 
-	public NotInitializedException(String message) {
-	        super(message);
-	    }
 
-	    public NotInitializedException(String message, Throwable throwable) {
-	        super(message, throwable);
-	    }
+public class UserCredentialsImpl implements UserCredentials {
+   private String userName;
+   private String sipDomain;
+   private String password;
+
+   public UserCredentialsImpl(String userName, String sipDomain, String password)
+   {
+      this.userName = userName;
+      this.sipDomain = sipDomain;
+      this.password = password;
+   }
+
+   public String getPassword()
+   {
+      return password;
+   }
+
+   public String getSipDomain()
+   {
+      return sipDomain;
+   }
+
+   public String getUserName()
+   {
+      return userName;
+   }
+
 }

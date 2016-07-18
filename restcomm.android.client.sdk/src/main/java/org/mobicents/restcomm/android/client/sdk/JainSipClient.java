@@ -8,7 +8,6 @@ import android.gov.nist.javax.sip.message.SIPMessage;
 import android.javax.sip.ClientTransaction;
 import android.javax.sip.DialogTerminatedEvent;
 import android.javax.sip.IOExceptionEvent;
-import android.javax.sip.InvalidArgumentException;
 import android.javax.sip.ListeningPoint;
 import android.javax.sip.ObjectInUseException;
 import android.javax.sip.RequestEvent;
@@ -35,16 +34,11 @@ import android.os.SystemClock;
 import android.text.format.Formatter;
 
 import org.apache.http.conn.util.InetAddressUtils;
-import org.mobicents.restcomm.android.sipua.RCLogger;
-import org.mobicents.restcomm.android.sipua.impl.AccountManagerImpl;
-import org.mobicents.restcomm.android.sipua.impl.SecurityHelper;
 
 import java.io.File;
-import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
-import java.text.ParseException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;

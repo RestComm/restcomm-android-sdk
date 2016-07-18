@@ -2,8 +2,6 @@ package org.mobicents.restcomm.android.client.sdk;
 
 import android.content.Context;
 
-import org.mobicents.restcomm.android.sipua.impl.SipManager;
-
 import java.util.HashMap;
 
 // Structure signaling messages exchanged between UI and signaling thread

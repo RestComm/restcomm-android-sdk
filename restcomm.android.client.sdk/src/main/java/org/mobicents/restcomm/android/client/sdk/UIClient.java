@@ -5,8 +5,6 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.Message;
 
-import org.mobicents.restcomm.android.sipua.impl.SipManager;
-
 import java.util.HashMap;
 
 // Client object that will send all asynchronous requests from UI towards signaling thread

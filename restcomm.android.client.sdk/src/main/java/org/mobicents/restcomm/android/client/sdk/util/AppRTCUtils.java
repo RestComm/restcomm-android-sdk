@@ -29,7 +29,8 @@ package org.mobicents.restcomm.android.client.sdk.util;
 
 import android.os.Build;
 
-import org.mobicents.restcomm.android.sipua.RCLogger;
+import org.mobicents.restcomm.android.client.sdk.RCLogger;
+
 
 /**
  * AppRTCUtils provides helper functions for managing thread safety.
@@ -73,13 +74,13 @@ public final class AppRTCUtils {
   /** Information about the current build, taken from system properties. */
   public static void logDeviceInfo(String tag) {
     RCLogger.d(tag, "Android SDK: " + Build.VERSION.SDK_INT + ", "
-            + "Release: " + Build.VERSION.RELEASE + ", "
-            + "Brand: " + Build.BRAND + ", "
-            + "Device: " + Build.DEVICE + ", "
-            + "Id: " + Build.ID + ", "
-            + "Hardware: " + Build.HARDWARE + ", "
-            + "Manufacturer: " + Build.MANUFACTURER + ", "
-            + "Model: " + Build.MODEL + ", "
-            + "Product: " + Build.PRODUCT);
+          + "Release: " + Build.VERSION.RELEASE + ", "
+          + "Brand: " + Build.BRAND + ", "
+          + "Device: " + Build.DEVICE + ", "
+          + "Id: " + Build.ID + ", "
+          + "Hardware: " + Build.HARDWARE + ", "
+          + "Manufacturer: " + Build.MANUFACTURER + ", "
+          + "Model: " + Build.MODEL + ", "
+          + "Product: " + Build.PRODUCT);
   }
 }

@@ -31,8 +31,6 @@ import android.javax.sip.message.Request;
 import android.javax.sip.message.Response;
 import android.os.SystemClock;
 
-import org.mobicents.restcomm.android.sipua.RCLogger;
-
 import java.io.UnsupportedEncodingException;
 import java.text.ParseException;
 import java.util.HashMap;

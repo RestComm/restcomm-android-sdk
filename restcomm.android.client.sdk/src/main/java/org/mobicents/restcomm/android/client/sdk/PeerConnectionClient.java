@@ -51,7 +51,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.mobicents.restcomm.android.sipua.RCLogger;
 
 /**
  * Peer connection client implementation.

@@ -34,8 +34,6 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 
-import org.mobicents.restcomm.android.sipua.RCLogger;
-
 //import org.appspot.apprtc.util.AppRTCUtils;
 import org.mobicents.restcomm.android.client.sdk.util.AppRTCUtils;
 

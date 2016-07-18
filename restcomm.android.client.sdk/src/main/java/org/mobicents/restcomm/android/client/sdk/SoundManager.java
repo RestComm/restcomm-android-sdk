@@ -20,28 +20,12 @@
  *
  */
 
-package org.mobicents.restcomm.android.sipua.impl;
+package org.mobicents.restcomm.android.client.sdk;
 
-import java.net.InetAddress;
-import java.net.SocketException;
-import java.net.UnknownHostException;
-import java.util.Timer;
-import java.util.TimerTask;
-
-import android.app.PendingIntent;
 import android.content.Context;
-import android.content.Intent;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
-import android.net.rtp.AudioCodec;
-import android.net.rtp.AudioGroup;
-import android.net.rtp.AudioStream;
-import android.net.rtp.RtpStream;
 import android.os.Handler;
-import android.util.Log;
-
-import org.mobicents.restcomm.android.sipua.RCLogger;
-import org.mobicents.restcomm.android.client.sdk.R;
 
 public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 	Context appContext;

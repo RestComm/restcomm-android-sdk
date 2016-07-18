@@ -30,7 +30,7 @@ package org.mobicents.restcomm.android.client.sdk.util;
 import android.os.Handler;
 import android.os.Looper;
 
-import org.mobicents.restcomm.android.sipua.RCLogger;
+import org.mobicents.restcomm.android.client.sdk.RCLogger;
 
 import java.util.concurrent.Executor;
 

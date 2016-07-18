@@ -27,8 +27,6 @@
 
 package org.mobicents.restcomm.android.client.sdk;
 
-import org.mobicents.restcomm.android.sipua.RCLogger;
-
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;

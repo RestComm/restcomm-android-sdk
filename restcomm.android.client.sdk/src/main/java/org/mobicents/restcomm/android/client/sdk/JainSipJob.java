@@ -3,9 +3,6 @@ package org.mobicents.restcomm.android.client.sdk;
 import android.gov.nist.javax.sip.ResponseEventExt;
 import android.javax.sip.Transaction;
 
-import org.mobicents.restcomm.android.sipua.RCLogger;
-import org.mobicents.restcomm.android.sipua.impl.SipManager;
-
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.HashMap;

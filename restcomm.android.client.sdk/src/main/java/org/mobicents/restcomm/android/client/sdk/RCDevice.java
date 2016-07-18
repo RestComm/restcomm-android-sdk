@@ -27,20 +27,8 @@ import java.util.Iterator;
 import java.util.Map;
 
 import android.app.PendingIntent;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.net.ConnectivityManager;
-import android.os.Handler;
-
-import org.mobicents.restcomm.android.sipua.RCLogger;
-
-import org.mobicents.restcomm.android.sipua.SipProfile;
-import org.mobicents.restcomm.android.sipua.SipUADeviceListener;
-//import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
-import org.mobicents.restcomm.android.sipua.impl.SipEvent;
-import org.mobicents.restcomm.android.sipua.impl.SipManager;
 
 /**
  * RCDevice Represents an abstraction of a communications device able to make and receive calls, send and receive messages etc. Remember that
@@ -146,7 +134,6 @@ public class RCDevice implements UIClient.UIClientListener {
    HashMap<String, RCConnection> connections;
    //private RCConnection incomingConnection;
    private RCDeviceListener.RCConnectivityStatus cachedConnectivityStatus = RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone;
-   private SipProfile sipProfile = null;
    private UIClient uiClient;
 
    /**
@@ -773,11 +760,6 @@ public class RCDevice implements UIClient.UIClientListener {
       catch (ClassNotFoundException e) {
          // If there is no MMC class isn't here, no intent
       }
-   }
-
-   public SipProfile getSipProfile()
-   {
-      return sipProfile;
    }
 
    // -- UIClientListener events for incoming messages from signaling thread

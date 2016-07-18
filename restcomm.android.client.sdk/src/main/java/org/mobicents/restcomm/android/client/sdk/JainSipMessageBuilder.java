@@ -30,7 +30,6 @@ import android.javax.sip.message.MessageFactory;
 import android.javax.sip.message.Request;
 import android.javax.sip.message.Response;
 
-import org.mobicents.restcomm.android.sipua.RCLogger;
 
 import java.text.ParseException;
 import java.util.ArrayList;

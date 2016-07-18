@@ -65,11 +65,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.mobicents.restcomm.android.client.sdk.util.IceServerFetcher;
-import org.mobicents.restcomm.android.sipua.SipProfile;
-import org.mobicents.restcomm.android.sipua.SipUAConnectionListener;
-//import org.mobicents.restcomm.android.sipua.impl.DeviceImpl;
-import org.mobicents.restcomm.android.sipua.impl.SipEvent;
-import org.mobicents.restcomm.android.sipua.RCLogger;
 
 import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;

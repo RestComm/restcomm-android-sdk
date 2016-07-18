@@ -9,8 +9,6 @@ import android.net.NetworkInfo;
 import android.os.Handler;
 import android.util.Log;
 
-import org.mobicents.restcomm.android.sipua.RCLogger;
-import org.mobicents.restcomm.android.sipua.impl.SipManager;
 
 class NotificationManager extends BroadcastReceiver {
 

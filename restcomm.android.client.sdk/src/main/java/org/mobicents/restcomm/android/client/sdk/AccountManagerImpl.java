@@ -1,3 +1,5 @@
+package org.mobicents.restcomm.android.client.sdk;
+
 /*
  * TeleStax, Open Source Cloud Communications
  * Copyright 2011-2015, Telestax Inc and individual contributors
@@ -20,36 +22,29 @@
  *
  */
 
-package org.mobicents.restcomm.android.sipua;
 
-import org.mobicents.restcomm.android.sipua.impl.SipManager;
-import org.mobicents.restcomm.android.sipua.impl.SoundManager;
+import android.gov.nist.javax.sip.clientauthutils.AccountManager;
+import android.gov.nist.javax.sip.clientauthutils.UserCredentials;
 
-import android.media.AudioManager;
+import android.javax.sip.ClientTransaction;
 
-import java.util.HashMap;
 
-public interface IDevice  extends ISipEventListener{
+public class AccountManagerImpl implements AccountManager {
 
-	void Register();
+   String Username;
+   String Password;
+   String RemoteIp;
 
-	void Call(String to, HashMap<String, String> sipHeaders);
+   public AccountManagerImpl(String username, String RemoteIp, String password)
+   {
+      this.Username = username;
+      this.Password = password;
+      this.RemoteIp = RemoteIp;
 
-	void Accept();
+   }
 
-	void Reject();
-
-	void Cancel();
-
-	void Hangup();
-
-	void SendMessage(String to, String message);
-
-	void SendDTMF(String digit);
-
-	void Mute(boolean muted);
-	
-	SipManager GetSipManager();
-	SoundManager getSoundManager();
-
+   public UserCredentials getCredentials(ClientTransaction challengedTransaction, String realm)
+   {
+      return new UserCredentialsImpl(Username, RemoteIp, Password);
+   }
 }

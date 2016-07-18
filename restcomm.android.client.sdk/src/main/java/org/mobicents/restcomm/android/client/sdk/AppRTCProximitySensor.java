@@ -34,10 +34,6 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Build;
 
-import org.mobicents.restcomm.android.sipua.RCLogger;
-
-//import org.appspot.apprtc.util.AppRTCUtils;
-//import org.appspot.apprtc.util.AppRTCUtils.NonThreadSafe;
 import org.mobicents.restcomm.android.client.sdk.util.AppRTCUtils;
 import org.mobicents.restcomm.android.client.sdk.util.AppRTCUtils.NonThreadSafe;
 
