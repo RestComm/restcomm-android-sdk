@@ -1,6 +1,4 @@
-package org.mobicents.restcomm.android.client.sdk;
-
-import android.util.Log;
+package org.mobicents.restcomm.android.client.sdk.SignalingClient;
 
 import org.webrtc.IceCandidate;
 import org.webrtc.PeerConnection;
@@ -9,11 +7,10 @@ import org.webrtc.SessionDescription;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-class SignalingParameters {
+public class SignalingParameters {
    private static final String TAG = "SignalingParameters";
 
    public List<PeerConnection.IceServer> iceServers;

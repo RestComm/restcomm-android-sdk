@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.mobicents.restcomm.android.client.sdk;
+package org.mobicents.restcomm.android.client.sdk.MediaClient;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -35,7 +35,8 @@ import android.content.pm.PackageManager;
 import android.media.AudioManager;
 
 //import org.appspot.apprtc.util.AppRTCUtils;
-import org.mobicents.restcomm.android.client.sdk.util.AppRTCUtils;
+import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
+import org.mobicents.restcomm.android.client.sdk.MediaClient.util.AppRTCUtils;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -44,7 +45,7 @@ import java.util.Set;
 /**
  * AppRTCAudioManager manages all audio related parts of the AppRTC demo.
  */
-class AppRTCAudioManager {
+public class AppRTCAudioManager {
    private static final String TAG = "AppRTCAudioManager";
 
    /**
@@ -119,7 +120,7 @@ class AppRTCAudioManager {
    /**
     * Construction
     */
-   static AppRTCAudioManager create(Context context,
+   public static AppRTCAudioManager create(Context context,
                                     Runnable deviceStateChangeListener)
    {
       return new AppRTCAudioManager(context, deviceStateChangeListener);

@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.mobicents.restcomm.android.client.sdk;
+package org.mobicents.restcomm.android.client.sdk.MediaClient;
 
 import android.content.Context;
 import android.hardware.Sensor;
@@ -34,8 +34,9 @@ import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Build;
 
-import org.mobicents.restcomm.android.client.sdk.util.AppRTCUtils;
-import org.mobicents.restcomm.android.client.sdk.util.AppRTCUtils.NonThreadSafe;
+import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
+import org.mobicents.restcomm.android.client.sdk.MediaClient.util.AppRTCUtils;
+import org.mobicents.restcomm.android.client.sdk.MediaClient.util.AppRTCUtils.NonThreadSafe;
 
 /**
  * AppRTCProximitySensor manages functions related to the proximity sensor in

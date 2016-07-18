@@ -30,6 +30,11 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 
+import org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipConfiguration;
+import org.mobicents.restcomm.android.client.sdk.SignalingClient.SignalingMessage;
+import org.mobicents.restcomm.android.client.sdk.SignalingClient.UIClient;
+import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
+
 /**
  * RCDevice Represents an abstraction of a communications device able to make and receive calls, send and receive messages etc. Remember that
  * in order to be notified of RestComm Client events you need to set a listener to RCDevice and implement the applicable methods, and also 'register'

@@ -52,11 +52,8 @@ package org.mobicents.restcomm.android.client.sdk;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.opengl.GLSurfaceView;
 import android.os.Handler;
-import android.os.Message;
 import android.view.Gravity;
-import android.view.View;
 import android.widget.Toast;
 
 import java.util.HashMap;
@@ -64,8 +61,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.mobicents.restcomm.android.client.sdk.util.IceServerFetcher;
+import org.mobicents.restcomm.android.client.sdk.MediaClient.AppRTCAudioManager;
+import org.mobicents.restcomm.android.client.sdk.MediaClient.PeerConnectionClient;
+import org.mobicents.restcomm.android.client.sdk.SignalingClient.SignalingMessage;
+import org.mobicents.restcomm.android.client.sdk.SignalingClient.SignalingParameters;
+import org.mobicents.restcomm.android.client.sdk.SignalingClient.UIClient;
+import org.mobicents.restcomm.android.client.sdk.MediaClient.util.IceServerFetcher;
 
+import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
 import org.webrtc.PeerConnection;

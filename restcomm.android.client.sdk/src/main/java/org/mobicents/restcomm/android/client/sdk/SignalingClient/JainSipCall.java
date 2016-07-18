@@ -1,38 +1,24 @@
-package org.mobicents.restcomm.android.client.sdk;
+package org.mobicents.restcomm.android.client.sdk.SignalingClient;
 
-import android.gov.nist.javax.sdp.SessionDescriptionImpl;
-import android.gov.nist.javax.sdp.parser.SDPAnnounceParser;
 import android.gov.nist.javax.sip.ResponseEventExt;
-import android.gov.nist.javax.sip.header.Server;
 import android.gov.nist.javax.sip.message.SIPMessage;
-import android.javax.sdp.MediaDescription;
-import android.javax.sdp.SdpException;
 import android.javax.sip.ClientTransaction;
 import android.javax.sip.Dialog;
 import android.javax.sip.DialogState;
-import android.javax.sip.InvalidArgumentException;
 import android.javax.sip.RequestEvent;
 import android.javax.sip.ResponseEvent;
 import android.javax.sip.ServerTransaction;
 import android.javax.sip.SipException;
-import android.javax.sip.SipProvider;
 import android.javax.sip.Transaction;
-import android.javax.sip.TransactionDoesNotExistException;
-import android.javax.sip.TransactionUnavailableException;
-import android.javax.sip.address.Address;
-import android.javax.sip.address.SipURI;
 import android.javax.sip.header.CSeqHeader;
-import android.javax.sip.header.ContactHeader;
-import android.javax.sip.header.ContentTypeHeader;
-import android.javax.sip.header.Header;
-import android.javax.sip.header.RouteHeader;
 import android.javax.sip.header.ToHeader;
 import android.javax.sip.message.Request;
 import android.javax.sip.message.Response;
-import android.os.SystemClock;
+
+import org.mobicents.restcomm.android.client.sdk.RCClient;
+import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
 import java.io.UnsupportedEncodingException;
-import java.text.ParseException;
 import java.util.HashMap;
 
 // Represents a call

@@ -1,4 +1,4 @@
-package org.mobicents.restcomm.android.client.sdk;
+package org.mobicents.restcomm.android.client.sdk.SignalingClient;
 
 import android.content.Context;
 import android.gov.nist.javax.sip.ResponseEventExt;
@@ -34,6 +34,10 @@ import android.os.SystemClock;
 import android.text.format.Formatter;
 
 import org.apache.http.conn.util.InetAddressUtils;
+import org.mobicents.restcomm.android.client.sdk.RCClient;
+import org.mobicents.restcomm.android.client.sdk.RCDevice;
+import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
+import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
 import java.io.File;
 import java.net.InetAddress;

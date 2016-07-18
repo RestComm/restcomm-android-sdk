@@ -20,12 +20,15 @@
  *
  */
 
-package org.mobicents.restcomm.android.client.sdk;
+package org.mobicents.restcomm.android.client.sdk.SignalingClient;
 
 import android.content.Context;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 import android.os.Handler;
+
+import org.mobicents.restcomm.android.client.sdk.R;
+import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
 public class SoundManager implements AudioManager.OnAudioFocusChangeListener {
 	Context appContext;

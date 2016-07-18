@@ -25,12 +25,12 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.mobicents.restcomm.android.client.sdk.util;
+package org.mobicents.restcomm.android.client.sdk.MediaClient.util;
 
 import android.os.Handler;
 import android.os.Looper;
 
-import org.mobicents.restcomm.android.client.sdk.RCLogger;
+import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
 import java.util.concurrent.Executor;
 

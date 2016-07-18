@@ -25,7 +25,7 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.mobicents.restcomm.android.client.sdk.util;
+package org.mobicents.restcomm.android.client.sdk.MediaClient.util;
 
 import java.io.IOException;
 import java.io.InputStream;

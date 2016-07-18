@@ -1,11 +1,14 @@
-package org.mobicents.restcomm.android.client.sdk;
+package org.mobicents.restcomm.android.client.sdk.SignalingClient;
 
 import android.content.Context;
+
+import org.mobicents.restcomm.android.client.sdk.RCClient;
+import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
 
 import java.util.HashMap;
 
 // Structure signaling messages exchanged between UI and signaling thread
-class SignalingMessage {
+public class SignalingMessage {
    public enum MessageType {
       OPEN_REQUEST,
       OPEN_REPLY,

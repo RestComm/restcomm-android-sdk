@@ -1,11 +1,11 @@
-package org.mobicents.restcomm.android.client.sdk;
+package org.mobicents.restcomm.android.client.sdk.SignalingClient;
 
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
-import android.util.Log;
 
-import java.util.HashMap;
+import org.mobicents.restcomm.android.client.sdk.RCClient;
+import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
 
 class SignalingHandler extends Handler implements JainSipClient.JainSipClientListener, JainSipCall.JainSipCallListener {
    JainSipClient jainSipClient;

@@ -1,9 +1,13 @@
-package org.mobicents.restcomm.android.client.sdk;
+package org.mobicents.restcomm.android.client.sdk.SignalingClient;
 
 import android.gov.nist.javax.sip.ResponseEventExt;
 import android.javax.sip.Transaction;
 
-import java.text.ParseException;
+import org.mobicents.restcomm.android.client.sdk.RCClient;
+import org.mobicents.restcomm.android.client.sdk.RCDevice;
+import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
+import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
+
 import java.util.Arrays;
 import java.util.HashMap;
 

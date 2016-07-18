@@ -27,6 +27,7 @@ import java.util.HashMap;
 
 import android.content.Context;
 
+import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
 
 /**

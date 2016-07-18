@@ -1,9 +1,9 @@
-package org.mobicents.restcomm.android.client.sdk;
+package org.mobicents.restcomm.android.client.sdk.SignalingClient;
 
 import java.util.HashMap;
 import java.util.Map;
 
-class JainSipConfiguration {
+public class JainSipConfiguration {
 
    // compares old and new parameters and returns a map with new keys as well as modified keys
    static HashMap<String, Object> modifiedParameters(HashMap<String, Object> oldParameters, HashMap<String, Object> newParameters)
@@ -18,7 +18,7 @@ class JainSipConfiguration {
       return modifiedParameters;
    }
 
-   static HashMap<String, Object> mergeParameters(HashMap<String, Object> baseParameters, HashMap<String, Object> newParameters)
+   public static HashMap<String, Object> mergeParameters(HashMap<String, Object> baseParameters, HashMap<String, Object> newParameters)
    {
       HashMap<String, Object> mergedParameters = new HashMap<String, Object>();
       mergedParameters.putAll(baseParameters);

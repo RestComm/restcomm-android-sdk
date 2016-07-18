@@ -20,7 +20,7 @@
  *
  */
 
-package org.mobicents.restcomm.android.client.sdk;
+package org.mobicents.restcomm.android.client.sdk.util;
 
 import android.util.Log;
 

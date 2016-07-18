@@ -1,6 +1,5 @@
-package org.mobicents.restcomm.android.client.sdk;
+package org.mobicents.restcomm.android.client.sdk.SignalingClient;
 
-import android.app.Dialog;
 import android.javax.sip.InvalidArgumentException;
 import android.javax.sip.ListeningPoint;
 import android.javax.sip.PeerUnavailableException;
@@ -12,24 +11,23 @@ import android.javax.sip.address.Address;
 import android.javax.sip.address.AddressFactory;
 import android.javax.sip.address.SipURI;
 import android.javax.sip.address.URI;
-import android.javax.sip.header.CSeqHeader;
-import android.javax.sip.header.CallIdHeader;
 import android.javax.sip.header.ContactHeader;
 import android.javax.sip.header.ContentTypeHeader;
 import android.javax.sip.header.ExpiresHeader;
-import android.javax.sip.header.FromHeader;
 import android.javax.sip.header.Header;
 import android.javax.sip.header.HeaderFactory;
-import android.javax.sip.header.MaxForwardsHeader;
 import android.javax.sip.header.RouteHeader;
 import android.javax.sip.header.SupportedHeader;
-import android.javax.sip.header.ToHeader;
 import android.javax.sip.header.UserAgentHeader;
 import android.javax.sip.header.ViaHeader;
 import android.javax.sip.message.MessageFactory;
 import android.javax.sip.message.Request;
 import android.javax.sip.message.Response;
 
+
+import org.mobicents.restcomm.android.client.sdk.RCClient;
+import org.mobicents.restcomm.android.client.sdk.RCDevice;
+import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
 import java.text.ParseException;
 import java.util.ArrayList;

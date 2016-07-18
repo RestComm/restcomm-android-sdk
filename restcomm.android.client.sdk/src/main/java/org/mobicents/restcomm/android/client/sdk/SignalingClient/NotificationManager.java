@@ -1,4 +1,4 @@
-package org.mobicents.restcomm.android.client.sdk;
+package org.mobicents.restcomm.android.client.sdk.SignalingClient;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -8,6 +8,9 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.Handler;
 import android.util.Log;
+
+import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
+import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
 
 class NotificationManager extends BroadcastReceiver {

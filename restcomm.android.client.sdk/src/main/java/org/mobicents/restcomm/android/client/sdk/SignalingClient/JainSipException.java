@@ -1,4 +1,6 @@
-package org.mobicents.restcomm.android.client.sdk;
+package org.mobicents.restcomm.android.client.sdk.SignalingClient;
+
+import org.mobicents.restcomm.android.client.sdk.RCClient;
 
 class JainSipException extends Exception {
    RCClient.ErrorCodes errorCode;

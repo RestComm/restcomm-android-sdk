@@ -1,9 +1,7 @@
-package org.mobicents.restcomm.android.client.sdk;
+package org.mobicents.restcomm.android.client.sdk.SignalingClient;
 
 import android.os.Handler;
 import android.os.HandlerThread;
-import android.os.Looper;
-import android.util.Log;
 
 class SignalingHandlerThread extends HandlerThread {
    Handler signalingHandler;

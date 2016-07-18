@@ -1,4 +1,4 @@
-package org.mobicents.restcomm.android.client.sdk;
+package org.mobicents.restcomm.android.client.sdk.SignalingClient;
 
 import android.os.Handler;
 import android.os.Message;

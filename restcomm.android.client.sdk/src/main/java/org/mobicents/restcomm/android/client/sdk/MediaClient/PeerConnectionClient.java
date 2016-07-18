@@ -8,14 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-package org.mobicents.restcomm.android.client.sdk;
+package org.mobicents.restcomm.android.client.sdk.MediaClient;
 
 import android.content.Context;
 import android.os.ParcelFileDescriptor;
 import android.os.Environment;
-import android.util.Log;
 
 //import org.appspot.apprtc.AppRTCClient.SignalingParameters;
+import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
+import org.mobicents.restcomm.android.client.sdk.SignalingClient.SignalingParameters;
 import org.webrtc.AudioTrack;
 import org.webrtc.CameraEnumerationAndroid;
 import org.webrtc.DataChannel;
@@ -41,11 +42,9 @@ import org.webrtc.voiceengine.WebRtcAudioManager;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.EnumSet;
 import java.util.LinkedList;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.regex.Matcher;
@@ -59,7 +58,7 @@ import java.util.regex.Pattern;
  * All PeerConnectionEvents callbacks are invoked from the same looper thread.
  * This class is a singleton.
  */
-class PeerConnectionClient {
+public class PeerConnectionClient {
    public static final String VIDEO_TRACK_ID = "ARDAMSv0";
    public static final String AUDIO_TRACK_ID = "ARDAMSa0";
    private static final String TAG = "PCRTCClient";
