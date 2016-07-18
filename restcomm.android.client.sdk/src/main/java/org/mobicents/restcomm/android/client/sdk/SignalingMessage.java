@@ -7,7 +7,7 @@ import org.mobicents.restcomm.android.sipua.impl.SipManager;
 import java.util.HashMap;
 
 // Structure signaling messages exchanged between UI and signaling thread
-public class SignalingMessage {
+class SignalingMessage {
    public enum MessageType {
       OPEN_REQUEST,
       OPEN_REPLY,

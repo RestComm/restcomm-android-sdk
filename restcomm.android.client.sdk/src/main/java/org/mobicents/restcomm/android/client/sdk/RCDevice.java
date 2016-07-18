@@ -413,23 +413,6 @@ public class RCDevice implements UIClient.UIClientListener {
 
          // keep connection in the connections hashmap
          connections.put(connection.getId(), connection);
-
-         //connection.incoming = false;
-         //connection.state = RCConnection.ConnectionState.PENDING;
-         //connection.device = this;
-         //DeviceImpl.GetInstance().sipuaConnectionListener = connection;
-         //uiClient.setCallListener(connection);
-
-            /*
-            // create a new hash map
-            HashMap<String, String> sipHeaders = null;
-            if (parameters.containsKey("sip-headers")) {
-                sipHeaders = (HashMap<String, String>) parameters.get("sip-headers");
-            }
-            */
-
-         //connection.setupWebrtcAndCall((String)parameters.get("username"), sipHeaders, enableVideo.booleanValue());
-         //connection.setupWebrtcAndCall(parameters);
          state = DeviceState.BUSY;
 
          return connection;
@@ -454,7 +437,6 @@ public class RCDevice implements UIClient.UIClientListener {
          messageParameters.put("username", parameters.get("username"));
          messageParameters.put("text-message", message);
          uiClient.sendMessage(messageParameters);
-         //DeviceImpl.GetInstance().SendMessage(parameters.get("username"), message);
          return true;
       }
       else {
@@ -470,9 +452,11 @@ public class RCDevice implements UIClient.UIClientListener {
       RCLogger.i(TAG, "disconnectAll()");
 
       if (state == DeviceState.BUSY) {
-         // TODO: implement with new signaling
-         //RCConnection connection = (RCConnection) DeviceImpl.GetInstance().sipuaConnectionListener;
-         //connection.disconnect();
+         for (Map.Entry<String, RCConnection> entry : connections.entrySet()) {
+            RCConnection connection = entry.getValue();
+            connection.disconnect();
+         }
+         connections.clear();
          state = DeviceState.READY;
       }
    }

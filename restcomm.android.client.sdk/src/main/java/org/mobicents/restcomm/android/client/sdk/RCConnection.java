@@ -344,18 +344,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       RCLogger.i(TAG, "disconnect()");
 
       uiClient.disconnect(id);
-      /*
-      if (haveConnectivity()) {
-         if (state == ConnectionState.CONNECTING) {
-            DeviceImpl.GetInstance().Cancel();
-         }
-         else if (state == ConnectionState.CONNECTED) {
-            DeviceImpl.GetInstance().Hangup();
-         }
-      }
-      */
+
       // also update RCDevice state
-      //RCDevice device = RCClient.listDevices().get(0);
       if (RCDevice.state == RCDevice.DeviceState.BUSY) {
          RCDevice.state = RCDevice.DeviceState.READY;
       }

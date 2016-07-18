@@ -3,7 +3,7 @@ package org.mobicents.restcomm.android.client.sdk;
 import java.util.HashMap;
 import java.util.Map;
 
-public class JainSipConfiguration {
+class JainSipConfiguration {
 
    // compares old and new parameters and returns a map with new keys as well as modified keys
    static HashMap<String, Object> modifiedParameters(HashMap<String, Object> oldParameters, HashMap<String, Object> newParameters)

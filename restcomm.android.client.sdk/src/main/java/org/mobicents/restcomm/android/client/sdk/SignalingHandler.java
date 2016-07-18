@@ -7,7 +7,7 @@ import android.util.Log;
 
 import java.util.HashMap;
 
-public class SignalingHandler extends Handler implements JainSipClient.JainSipClientListener, JainSipCall.JainSipCallListener {
+class SignalingHandler extends Handler implements JainSipClient.JainSipClientListener, JainSipCall.JainSipCallListener {
    JainSipClient jainSipClient;
    Handler uiHandler;
    private static final String TAG = "SignalingHandler";

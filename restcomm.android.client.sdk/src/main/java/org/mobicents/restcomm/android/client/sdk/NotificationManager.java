@@ -12,7 +12,7 @@ import android.util.Log;
 import org.mobicents.restcomm.android.sipua.RCLogger;
 import org.mobicents.restcomm.android.sipua.impl.SipManager;
 
-public class NotificationManager extends BroadcastReceiver {
+class NotificationManager extends BroadcastReceiver {
 
    // Define NotificationManager events
    public interface NotificationManagerListener {

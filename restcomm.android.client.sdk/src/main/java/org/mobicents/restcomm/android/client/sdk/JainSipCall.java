@@ -38,7 +38,7 @@ import java.text.ParseException;
 import java.util.HashMap;
 
 // Represents a call
-public class JainSipCall {
+class JainSipCall {
    // Interface the JainSipCall listener needs to implement, to get events from us
    public interface JainSipCallListener {
       void onCallRingingEvent(String callId);  // onPrivateCallConnectorCallRingingEvent
@@ -92,6 +92,7 @@ public class JainSipCall {
          jainSipClient.jainSipJobManager.add(jobId, JainSipJob.Type.TYPE_CALL, transaction, parameters, this);
       }
       catch (JainSipException e) {
+         e.printStackTrace();
          listener.onCallErrorEvent(jobId, e.errorCode, e.errorText);
          jainSipClient.jainSipJobManager.remove(jobId);
       }
@@ -105,8 +106,8 @@ public class JainSipCall {
          jainSipCallAccept(jainSipJob, parameters);
       }
       catch (JainSipException e) {
+         e.printStackTrace();
          listener.onCallErrorEvent(jainSipJob.id, e.errorCode, e.errorText);
-         //jainSipClient.jainSipJobManager.remove(jainSipJob.id);
       }
    }
 
@@ -123,6 +124,7 @@ public class JainSipCall {
          jainSipCallSendDigits(jainSipJob, digits);
       }
       catch (JainSipException e) {
+         e.printStackTrace();
          listener.onCallDigitsEvent(jainSipJob.id, e.errorCode, e.errorText);
       }
    }
@@ -156,6 +158,7 @@ public class JainSipCall {
          }
       }
       catch (JainSipException e) {
+         e.printStackTrace();
          listener.onCallErrorEvent(jainSipJob.id, e.errorCode, e.errorText);
          jainSipClient.jainSipJobManager.remove(jainSipJob.id);
       }
@@ -168,7 +171,7 @@ public class JainSipCall {
       ClientTransaction transaction = null;
 
       try {
-         Request inviteRequest = jainSipClient.jainSipMessageBuilder.buildInvite(id, listener, jainSipClient.jainSipListeningPoint, parameters, jainSipClient.configuration, jainSipClient.jainSipClientContext);
+         Request inviteRequest = jainSipClient.jainSipMessageBuilder.buildInviteRequest(jainSipClient.jainSipListeningPoint, parameters, jainSipClient.configuration, jainSipClient.jainSipClientContext);
          RCLogger.v(TAG, "Sending SIP request: \n" + inviteRequest.toString());
          transaction = jainSipClient.jainSipProvider.getNewClientTransaction(inviteRequest);
          transaction.sendRequest();
@@ -178,8 +181,6 @@ public class JainSipCall {
       }
       catch (Exception e) {
          // DNS error (error resolving registrar URI)
-         RCLogger.e(TAG, "jainSipCallInvite(): " + e.getMessage());
-         e.printStackTrace();
          throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT,
                RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT));
       }
@@ -192,7 +193,7 @@ public class JainSipCall {
       RCLogger.i(TAG, "jainSipCallAccept(): id: " + jainSipJob.id);
       try {
          ServerTransaction transaction = (ServerTransaction) jainSipJob.transaction;
-         Response response = jainSipClient.jainSipMessageBuilder.buildInvite200OK(transaction, (String) parameters.get("sdp"), jainSipClient.jainSipListeningPoint,
+         Response response = jainSipClient.jainSipMessageBuilder.buildInvite200OKResponse(transaction, (String) parameters.get("sdp"), jainSipClient.jainSipListeningPoint,
                jainSipClient.jainSipClientContext);
 
          RCLogger.v(TAG, "Sending SIP response: \n" + response.toString());
@@ -202,8 +203,6 @@ public class JainSipCall {
          throw new JainSipException(e.errorCode, e.errorText);
       }
       catch (Exception e) {
-         RCLogger.e(TAG, "jainSipCallAccept(): " + e.getMessage());
-         e.printStackTrace();
          throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_ACCEPT_FAILED,
                RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_ACCEPT_FAILED));
       }
@@ -214,7 +213,7 @@ public class JainSipCall {
       RCLogger.i(TAG, "jainSipCallHangup(): id: " + jainSipJob.id);
       Request byeRequest = null;
       try {
-         byeRequest = jainSipClient.jainSipMessageBuilder.buildBye(jainSipJob.transaction.getDialog(), clientConfiguration);
+         byeRequest = jainSipClient.jainSipMessageBuilder.buildByeRequest(jainSipJob.transaction.getDialog(), clientConfiguration);
          RCLogger.v(TAG, "Sending SIP request: \n" + byeRequest.toString());
 
          ClientTransaction transaction = jainSipClient.jainSipProvider.getNewClientTransaction(byeRequest);
@@ -226,8 +225,6 @@ public class JainSipCall {
          return transaction;
       }
       catch (SipException e) {
-         RCLogger.e(TAG, "jainSipCallHangup(): " + e.getMessage());
-         e.printStackTrace();
          throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_HANGUP_FAILED,
                RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_HANGUP_FAILED));
       }
@@ -249,8 +246,6 @@ public class JainSipCall {
          return cancelTransaction;
       }
       catch (SipException e) {
-         RCLogger.e(TAG, "jainSipCallCancel(): " + e.getMessage());
-         e.printStackTrace();
          throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_HANGUP_FAILED,
                RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_HANGUP_FAILED));
       }
@@ -261,14 +256,12 @@ public class JainSipCall {
       RCLogger.i(TAG, "jainSipCallReject(): id: " + jainSipJob.id);
 
       try {
-         Response responseDecline = jainSipClient.jainSipMessageBuilder.jainSipMessageFactory.createResponse(Response.DECLINE, jainSipJob.transaction.getRequest());
+         Response responseDecline = jainSipClient.jainSipMessageBuilder.buildResponse(Response.DECLINE, jainSipJob.transaction.getRequest());
          RCLogger.v(TAG, "Sending SIP response: \n" + responseDecline.toString());
          ((ServerTransaction) jainSipJob.transaction).sendResponse(responseDecline);
 
       }
       catch (Exception e) {
-         RCLogger.e(TAG, "jainSipCallDecline(): " + e.getMessage());
-         e.printStackTrace();
          throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_DECLINE_FAILED,
                RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_DECLINE_FAILED));
       }
@@ -280,15 +273,13 @@ public class JainSipCall {
 
       try {
          Dialog dialog = jainSipJob.transaction.getDialog();
-         Request request = jainSipClient.jainSipMessageBuilder.buildDtmfInfo(dialog, digits);
+         Request request = jainSipClient.jainSipMessageBuilder.buildDtmfInfoRequest(dialog, digits);
          RCLogger.v(TAG, "Sending SIP request: \n" + request.toString());
          ClientTransaction transaction = jainSipClient.jainSipProvider.getNewClientTransaction(request);
          dialog.sendRequest(transaction);
          return transaction;
       }
       catch (Exception e) {
-         RCLogger.e(TAG, "jainSipCallSendDigits(): " + e.getMessage());
-         e.printStackTrace();
          throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_DTMF_DIGITS_FAILED,
                RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_DTMF_DIGITS_FAILED));
       }
@@ -303,7 +294,7 @@ public class JainSipCall {
 
       if (method.equals(Request.BYE)) {
          try {
-            Response response = jainSipClient.jainSipMessageBuilder.jainSipMessageFactory.createResponse(Response.OK, request);
+            Response response = jainSipClient.jainSipMessageBuilder.buildResponse(Response.OK, request);
             RCLogger.v(TAG, "Sending SIP response: \n" + response.toString());
             serverTransaction.sendResponse(response);
 
@@ -324,14 +315,14 @@ public class JainSipCall {
             }
             */
 
-            Response response = jainSipClient.jainSipMessageBuilder.jainSipMessageFactory.createResponse(Response.OK, request);
+            Response response = jainSipClient.jainSipMessageBuilder.buildResponse(Response.OK, request);
             RCLogger.v(TAG, "Sending SIP response: \n" + response.toString());
             serverTransaction.sendResponse(response);
 
             if (jainSipJob.transaction != null) {
                // also send a 487 Request Terminated response to the original INVITE request
                Request originalInviteRequest = jainSipJob.transaction.getRequest();
-               Response originalInviteResponse = jainSipClient.jainSipMessageBuilder.jainSipMessageFactory.createResponse(Response.REQUEST_TERMINATED, originalInviteRequest);
+               Response originalInviteResponse = jainSipClient.jainSipMessageBuilder.buildResponse(Response.REQUEST_TERMINATED, originalInviteRequest);
                RCLogger.v(TAG, "Sending SIP response: \n" + originalInviteResponse.toString());
                ((ServerTransaction) jainSipJob.transaction).sendResponse(originalInviteResponse);
             }
@@ -351,7 +342,7 @@ public class JainSipCall {
             }
 
             jainSipJob.updateTransaction(serverTransaction);
-            Response response = jainSipClient.jainSipMessageBuilder.jainSipMessageFactory.createResponse(Response.RINGING, request);
+            Response response = jainSipClient.jainSipMessageBuilder.buildResponse(Response.RINGING, request);
 
             // Important: we need set the 'tag' for the 'To' (once that happens Dialog transitions to EARLY)
             ToHeader toHeader = (ToHeader)request.getHeader(ToHeader.NAME);

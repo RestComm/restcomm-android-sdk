@@ -5,7 +5,7 @@ import android.os.Message;
 
 // Attached to UI thread, handles incoming messages from signaling thread. These can either be replies to previous requests towards signaling thread or
 // unsolicited events (like incoming calls or messages)
-public class UIHandler extends Handler {
+class UIHandler extends Handler {
    UIClient.UIClientListener listener;
 
    public UIHandler(UIClient.UIClientListener listener)

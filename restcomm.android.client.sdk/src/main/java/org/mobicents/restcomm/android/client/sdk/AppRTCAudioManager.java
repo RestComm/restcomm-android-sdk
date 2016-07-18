@@ -46,7 +46,7 @@ import java.util.Set;
 /**
  * AppRTCAudioManager manages all audio related parts of the AppRTC demo.
  */
-public class AppRTCAudioManager {
+class AppRTCAudioManager {
    private static final String TAG = "AppRTCAudioManager";
 
    /**

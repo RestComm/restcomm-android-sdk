@@ -10,7 +10,7 @@ import org.mobicents.restcomm.android.sipua.impl.SipManager;
 import java.util.HashMap;
 
 // Client object that will send all asynchronous requests from UI towards signaling thread
-public class UIClient {
+class UIClient {
 
    // Interface the UIClient listener needs to implement, to get events from us
    public interface UIClientListener {

@@ -1,6 +1,6 @@
 package org.mobicents.restcomm.android.client.sdk;
 
-public class JainSipException extends Exception {
+class JainSipException extends Exception {
    RCClient.ErrorCodes errorCode;
    String errorText;
 

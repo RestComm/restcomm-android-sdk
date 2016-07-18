@@ -5,7 +5,7 @@ import android.os.HandlerThread;
 import android.os.Looper;
 import android.util.Log;
 
-public class SignalingHandlerThread extends HandlerThread {
+class SignalingHandlerThread extends HandlerThread {
    Handler signalingHandler;
    private static final String TAG = "SignalingHandlerThread";
    //Handler uiHandler;

@@ -13,7 +13,7 @@ import java.util.Vector;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class SignalingParameters {
+class SignalingParameters {
    private static final String TAG = "SignalingParameters";
 
    public List<PeerConnection.IceServer> iceServers;

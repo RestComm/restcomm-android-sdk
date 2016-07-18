@@ -20,7 +20,6 @@ import android.javax.sip.message.MessageFactory;
 import android.javax.sip.message.Request;
 import android.os.AsyncTask;
 
-import org.mobicents.restcomm.android.client.sdk.JainSipClient;
 import org.mobicents.restcomm.android.sipua.RCLogger;
 
 public class Register {

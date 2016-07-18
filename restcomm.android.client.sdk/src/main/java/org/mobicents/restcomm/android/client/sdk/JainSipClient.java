@@ -51,7 +51,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 
-public class JainSipClient implements SipListener, NotificationManager.NotificationManagerListener {
+class JainSipClient implements SipListener, NotificationManager.NotificationManagerListener {
 
    // Interface the JainSipClient listener needs to implement, to get events from us
    public interface JainSipClientListener {
@@ -147,14 +147,16 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
 
       try {
          jainSipStack = jainSipFactory.createSipStack(properties);
-         jainSipMessageBuilder.initialize(jainSipFactory);
          jainSipJobManager.add(id, JainSipJob.Type.TYPE_OPEN, configuration);
       }
       catch (SipException e) {
+         throw new RuntimeException(RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_SIP_STACK_BOOTSTRAP));
+         /*
          listener.onClientOpenedEvent(id, notificationManager.getConnectivityStatus(), RCClient.ErrorCodes.ERROR_SIGNALING_SIP_STACK_BOOTSTRAP,
                RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_SIP_STACK_BOOTSTRAP));
          RCLogger.e(TAG, "open(): " + e.getMessage());
          e.printStackTrace();
+         */
       }
    }
 
@@ -366,6 +368,7 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
             jainSipListeningPoint = jainSipStack.createListeningPoint(getIPAddress(true), port, transport);
             jainSipProvider = jainSipStack.createSipProvider(jainSipListeningPoint);
             jainSipProvider.addSipListener(this);
+            jainSipMessageBuilder.initialize(jainSipFactory, jainSipProvider);
          }
          catch (SocketException e) {
             RCLogger.i(TAG, "register(): " + e.getMessage());
@@ -437,7 +440,7 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
 
       ClientTransaction transaction = null;
       try {
-         Request registerRequest = jainSipMessageBuilder.buildRegister(id, listener, jainSipListeningPoint, expiry, parameters);
+         Request registerRequest = jainSipMessageBuilder.buildRegisterRequest(jainSipListeningPoint, expiry, parameters);
          if (registerRequest != null) {
             RCLogger.v(TAG, "jainSipRegister(): Sending SIP request: \n" + registerRequest.toString());
 
@@ -447,8 +450,6 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
          }
       }
       catch (SipException e) {
-         RCLogger.e(TAG, "jainSipRegister(): " + e.getMessage());
-         e.printStackTrace();
          throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT));
       }
 
@@ -478,7 +479,7 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
 
       ClientTransaction transaction = null;
       try {
-         Request registerRequest = jainSipMessageBuilder.buildRegister(id, listener, jainSipListeningPoint, 0, parameters);
+         Request registerRequest = jainSipMessageBuilder.buildRegisterRequest(jainSipListeningPoint, 0, parameters);
          if (registerRequest != null) {
             RCLogger.v(TAG, "jainSipUnregister(): Sending SIP request: \n" + registerRequest.toString());
 
@@ -488,8 +489,6 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
          }
       }
       catch (SipException e) {
-         RCLogger.e(TAG, "jainSipUnregister(): " + e.getMessage());
-         e.printStackTrace();
          throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT,
                RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT));
       }
@@ -505,7 +504,7 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
       RCLogger.v(TAG, "jainSipClientSendMessage()");
 
       try {
-         Request request = jainSipMessageBuilder.buildMessage(id, (String) parameters.get("username"),
+         Request request = jainSipMessageBuilder.buildMessageRequest(id, (String) parameters.get("username"),
                (String) parameters.get("text-message"), jainSipListeningPoint, configuration);
          RCLogger.v(TAG, "jainSipClientSendMessage(): Sending SIP request: \n" + request.toString());
 
@@ -514,16 +513,8 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
          return transaction;
       }
       catch (SipException e) {
-         RCLogger.e(TAG, "jainSipClientSendMessage(): " + e.getMessage());
-         e.printStackTrace();
          throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_MESSAGE_SEND_FAILED,
                RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_MESSAGE_SEND_FAILED));
-         /*
-         RCLogger.e(TAG, "jainSipUnregister(): " + e.getMessage());
-         e.printStackTrace();
-         listener.onClientMessageSentEvent(id, RCClient.ErrorCodes.ERROR_SIGNALING_MESSAGE_SEND_FAILED,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_MESSAGE_SEND_FAILED));
-               */
       }
    }
 
@@ -533,7 +524,7 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
       try {
          AuthenticationHelper authenticationHelper = ((SipStackExt) jainSipStack).getAuthenticationHelper(
                new AccountManagerImpl((String) parameters.get(RCDevice.ParameterKeys.SIGNALING_USERNAME),
-                     responseEventExt.getRemoteIpAddress(), (String) parameters.get(RCDevice.ParameterKeys.SIGNALING_PASSWORD)), jainSipMessageBuilder.jainSipHeaderFactory);
+                     responseEventExt.getRemoteIpAddress(), (String) parameters.get(RCDevice.ParameterKeys.SIGNALING_PASSWORD)), jainSipMessageBuilder.getHeaderFactory());
 
          // we 're subtracting one since the first attempt has already taken place
          // (that way we are enforcing MAX_AUTH_ATTEMPTS at most)
@@ -556,8 +547,6 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
          }
       }
       catch (Exception e) {
-         RCLogger.e(TAG, "jainSipAuthenticate(): " + e.getMessage());
-         e.printStackTrace();
          throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED));
       }
    }
@@ -593,8 +582,7 @@ public class JainSipClient implements SipListener, NotificationManager.Notificat
                      serverTransaction = jainSipProvider.getNewServerTransaction(request);
                   }
 
-                  Response response = jainSipMessageBuilder.jainSipMessageFactory.createResponse(Response.OK, request);
-                  //Response response = jainSipMessageBuilder.build200OK(request);
+                  Response response = jainSipMessageBuilder.buildResponse(Response.OK, request);
                   RCLogger.v(TAG, "Sending SIP response: \n" + response.toString());
                   serverTransaction.sendResponse(response);
                   String messageText = ((SIPMessage)request).getMessageContent();

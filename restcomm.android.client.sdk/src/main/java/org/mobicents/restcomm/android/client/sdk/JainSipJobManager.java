@@ -8,7 +8,7 @@ import java.util.Map;
 
 // Handles live JAIN SIP transactions. Each transaction is stored in 'transactions' map identified by an 'id' provided by the caller (in our RCDevice or RCConnection)
 // and keeps information such as the JAIN SIP Transaction (Client or Server) amongst other things
-public class JainSipJobManager {
+class JainSipJobManager {
    // TODO: consider using interface instead
    JainSipClient jainSipClient;
    HashMap<String, JainSipJob> transactions;

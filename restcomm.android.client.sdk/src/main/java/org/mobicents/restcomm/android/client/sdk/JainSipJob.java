@@ -10,9 +10,9 @@ import java.text.ParseException;
 import java.util.Arrays;
 import java.util.HashMap;
 
-public class JainSipJob {
+class JainSipJob {
    // Each transaction is associated with an FSM
-   public class JainSipFsm {
+   class JainSipFsm {
       String[] states;
       JainSipJob.Type type;
       JainSipClient jainSipClient;
@@ -111,6 +111,7 @@ public class JainSipJob {
                         }
                      }
                      catch (JainSipException e) {
+                        e.printStackTrace();
                         jainSipClient.listener.onClientOpenedEvent(id, jainSipClient.notificationManager.getConnectivityStatus(), e.errorCode, e.errorText);
                         jainSipJobManager.remove(id);
                      }
@@ -144,6 +145,7 @@ public class JainSipJob {
                         transaction = jainSipClient.jainSipClientRegister(id, parameters);
                      }
                      catch (JainSipException e) {
+                        e.printStackTrace();
                         jainSipClient.listener.onClientErrorEvent(id, e.errorCode, e.errorText);
                         jainSipJobManager.remove(id);
                      }
@@ -156,6 +158,7 @@ public class JainSipJob {
                            jainSipClient.jainSipAuthenticate(id, JainSipJob.this, parameters, responseEventExt);
                         }
                         catch (JainSipException e) {
+                           e.printStackTrace();
                            jainSipClient.listener.onClientErrorEvent(id, e.errorCode, e.errorText);
                            jainSipJobManager.remove(id);
                         }
@@ -180,6 +183,7 @@ public class JainSipJob {
 
                      }
                      catch (JainSipException e) {
+                        e.printStackTrace();
                         jainSipClient.listener.onClientClosedEvent(id, e.errorCode, e.errorText);
                      }
                   }
@@ -209,6 +213,7 @@ public class JainSipJob {
                            jainSipClient.listener.onClientClosedEvent(id, RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
                         }
                         catch (JainSipException e) {
+                           e.printStackTrace();
                            jainSipClient.listener.onClientClosedEvent(id, e.errorCode, e.errorText);
                         }
                         jainSipJobManager.remove(id);
@@ -246,6 +251,7 @@ public class JainSipJob {
                            jainSipClient.jainSipAuthenticate(id, JainSipJob.this, (HashMap<String, Object>) parameters.get("old-parameters"), responseEventExt);
                         }
                         catch (JainSipException e) {
+                           e.printStackTrace();
                            jainSipClient.listener.onClientReconfigureEvent(id, e.errorCode, e.errorText);
                         }
                      }
@@ -271,6 +277,7 @@ public class JainSipJob {
                            }
                         }
                         catch (JainSipException e) {
+                           e.printStackTrace();
                            jainSipClient.listener.onClientReconfigureEvent(id, e.errorCode, e.errorText);
                         }
                      }
@@ -283,6 +290,7 @@ public class JainSipJob {
                            jainSipClient.jainSipAuthenticate(id, JainSipJob.this, (HashMap<String, Object>) parameters.get("new-parameters"), responseEventExt);
                         }
                         catch (JainSipException e) {
+                           e.printStackTrace();
                            jainSipClient.listener.onClientReconfigureEvent(id, e.errorCode, e.errorText);
                            jainSipJobManager.remove(id);
                         }
@@ -319,6 +327,7 @@ public class JainSipJob {
                         }
                      }
                      catch (JainSipException e) {
+                        e.printStackTrace();
                         RCLogger.w(TAG, "process(): unregister failed: " + Arrays.toString(Thread.currentThread().getStackTrace()));
                      }
                   }
@@ -330,6 +339,7 @@ public class JainSipJob {
                            jainSipClient.jainSipAuthenticate(id, JainSipJob.this, (HashMap<String, Object>) parameters.get("old-parameters"), responseEventExt);
                         }
                         catch (JainSipException e) {
+                           e.printStackTrace();
                            jainSipClient.listener.onClientReconfigureEvent(id, e.errorCode, e.errorText);
                         }
                      }
@@ -359,6 +369,7 @@ public class JainSipJob {
                            }
                         }
                         catch (JainSipException e) {
+                           e.printStackTrace();
                            jainSipClient.listener.onClientReconfigureEvent(id, e.errorCode, e.errorText);
                            jainSipJobManager.remove(id);
                         }
@@ -372,6 +383,7 @@ public class JainSipJob {
                            jainSipClient.jainSipAuthenticate(id, JainSipJob.this, (HashMap<String, Object>) parameters.get("new-parameters"), responseEventExt);
                         }
                         catch (JainSipException e) {
+                           e.printStackTrace();
                            jainSipClient.listener.onClientReconfigureEvent(id, e.errorCode, e.errorText);
                         }
                      }
@@ -406,6 +418,7 @@ public class JainSipJob {
                         }
                      }
                      catch (JainSipException e) {
+                        e.printStackTrace();
                         RCLogger.e(TAG, "process(): register failed: " + Arrays.toString(Thread.currentThread().getStackTrace()));
                         jainSipClient.listener.onClientErrorEvent(id, e.errorCode, e.errorText);
                      }
@@ -456,6 +469,7 @@ public class JainSipJob {
                         }
                      }
                      catch (JainSipException e) {
+                        e.printStackTrace();
                         jainSipClient.listener.onClientErrorEvent(id, e.errorCode, e.errorText);
                      }
                   }
@@ -467,6 +481,7 @@ public class JainSipJob {
                            jainSipClient.jainSipAuthenticate(id, JainSipJob.this, parameters, responseEventExt);
                         }
                         catch (JainSipException e) {
+                           e.printStackTrace();
                            RCLogger.e(TAG, "process(): auth failed: " + Arrays.toString(Thread.currentThread().getStackTrace()));
                            jainSipClient.listener.onClientErrorEvent(id, e.errorCode, e.errorText);
                         }
