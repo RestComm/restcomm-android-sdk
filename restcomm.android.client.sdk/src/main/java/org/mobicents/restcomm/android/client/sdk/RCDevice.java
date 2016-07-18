@@ -157,104 +157,13 @@ public class RCDevice implements UIClient.UIClientListener {
       HashMap<String, String> customHeaders = new HashMap<>();
       state = DeviceState.OFFLINE;
 
-      // register broadcast receiver for reachability
-        /*
-        Context context = RCClient.getContext();
-        IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
-        context.registerReceiver(this, filter);
-        */
-
       connections = new HashMap<String, RCConnection>();
       // initialize JAIN SIP if we have connectivity
       this.parameters = parameters;
-      //reachabilityState = DeviceImpl.checkReachability(RCClient.getContext());
 
       uiClient = new UIClient(this, RCClient.getContext());
       uiClient.open(parameters);
-
-        /*
-        boolean connectivity = false;
-        if (reachabilityState != RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
-            connectivity = true;
-        }
-        initializeSignalling(connectivity);
-        */
    }
-
-    /*
-    private void initializeSignalling(boolean connectivity) {
-        RCLogger.i(TAG, "initializeSignalling()");
-        sipProfile = new SipProfile();
-        updateSipProfile(parameters);
-        DeviceImpl deviceImpl = DeviceImpl.GetInstance();
-
-        DeviceImpl.GetInstance().sipuaDeviceListener = this;
-        // register after initialization
-        if (connectivity) {
-            if (!parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) ||
-                    parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) && parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
-                // registrarless; we can transition to ready right away (i.e. without waiting for Restcomm to reply to REGISTER)
-                state = DeviceState.READY;
-            } else {
-                DeviceImpl.GetInstance().Register();
-            }
-        }
-    }
-    */
-
-    /*
-    private void onReachabilityChanged(final RCDeviceListener.RCConnectivityStatus newState) {
-        if (newState == reachabilityState) {
-            RCLogger.w(TAG, "Reachability event, but remained the same: " + newState);
-            return;
-        }
-
-        if (newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone && state != DeviceState.OFFLINE) {
-            RCLogger.w(TAG, "Reachability changed; no connectivity");
-            DeviceImpl.GetInstance().unbind();
-            state = DeviceState.OFFLINE;
-            reachabilityState = newState;
-            this.listener.onConnectivityUpdate(this, newState);
-            return;
-        }
-
-        // old state wifi and new state mobile or the reverse; need to shutdown and restart network facilities
-        if ((reachabilityState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi && newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular) ||
-                (reachabilityState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular && newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi)) {
-            if (state != DeviceState.OFFLINE) {
-                RCLogger.w(TAG, "Reachability action: switch between wifi and mobile. Device state: " + state);
-                // refresh JAIN networking facilities so that we use the new available interface
-                if (newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi) {
-                    DeviceImpl.GetInstance().RefreshNetworking(SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi);
-                } else {
-                    DeviceImpl.GetInstance().RefreshNetworking(SipManager.NetworkInterfaceType.NetworkInterfaceTypeCellularData);
-                }
-                reachabilityState = newState;
-                this.listener.onConnectivityUpdate(this, newState);
-                return;
-            }
-        }
-
-        if ((newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi || newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular)
-                && state == DeviceState.OFFLINE) {
-            RCLogger.w(TAG, "Reachability action: wifi/mobile available. Device state: " + state);
-            if (newState == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi) {
-                DeviceImpl.GetInstance().bind(SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi);
-            } else {
-                DeviceImpl.GetInstance().bind(SipManager.NetworkInterfaceType.NetworkInterfaceTypeCellularData);
-            }
-            reachabilityState = newState;
-            if (!parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) ||
-                    parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) && parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
-                // registrarless; we can transition to ready right away (i.e. without waiting for Restcomm to reply to REGISTER)
-                state = DeviceState.READY;
-                this.listener.onConnectivityUpdate(this, newState);
-            } else {
-                DeviceImpl.GetInstance().Register();
-            }
-        }
-    }
-    */
 
    // TODO: this is for RCConnection, but see if they can figure out the connectivity in a different way, like asking the signaling thread directly?
    public RCDeviceListener.RCConnectivityStatus getConnectivityStatus()
@@ -283,34 +192,7 @@ public class RCDevice implements UIClient.UIClientListener {
       this.listener = null;
 
       uiClient.close();
-      // important, otherwise if shutdown and re-initialized the old RCDevice instance will be getting events
-      //RCClient.getContext().unregisterReceiver(this);
       state = DeviceState.OFFLINE;
-
-        /*
-        if (DeviceImpl.isInitialized()) {
-            if (state != DeviceState.OFFLINE) {
-                DeviceImpl.GetInstance().Unregister();
-                // allow for the unregister to be serviced before we shut down the stack (delay 2 secs)
-                // TODO: a better way to do this would be to wait for the response to the unregistration
-                // before we shutdown
-                Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
-                Runnable myRunnable = new Runnable() {
-                    @Override
-                    public void run() {
-                        DeviceImpl.GetInstance().Shutdown();
-                    }
-                };
-                mainHandler.postDelayed(myRunnable, 500);
-            } else {
-                // we are offline, no need for unregister
-                DeviceImpl.GetInstance().Shutdown();
-            }
-        }
-        // important, otherwise if shutdown and re-initialized the old RCDevice instance will be getting events
-        RCClient.getContext().unregisterReceiver(this);
-        state = DeviceState.OFFLINE;
-        */
    }
 
    /**
@@ -350,7 +232,6 @@ public class RCDevice implements UIClient.UIClientListener {
       RCLogger.i(TAG, "setDeviceListener()");
 
       this.listener = listener;
-      //DeviceImpl.GetInstance().sipuaConnectionListener = this;
    }
 
    /**
@@ -399,7 +280,6 @@ public class RCDevice implements UIClient.UIClientListener {
       if (state == DeviceState.READY) {
          RCLogger.i(TAG, "RCDevice.connect(), with connectivity");
 
-         //Boolean enableVideo = (Boolean) parameters.get("video-enabled");
          RCConnection connection = new RCConnection(null, false, RCConnection.ConnectionState.PENDING, this, uiClient, listener);
          connection.open(parameters);
 
@@ -504,14 +384,6 @@ public class RCDevice implements UIClient.UIClientListener {
       return null;
    }
 
-   /*
-   // TODO: check if this is needed
-   public RCConnection getDevice()
-   {
-      //return (RCConnection) DeviceImpl.GetInstance().sipuaConnectionListener;
-      return null;
-   }
-   */
    /**
     * Should a ringing sound be played in a incoming connection or message
     *
@@ -607,166 +479,6 @@ public class RCDevice implements UIClient.UIClientListener {
       return parameters;
    }
 
-    /*
-    public void updateSipProfile(HashMap<String, Object> params) {
-        sipProfile.setSipProfile(params);
-    }
-
-    public void onSipUAConnectionArrived(SipEvent event) {
-        RCLogger.i(TAG, "onSipUAConnectionArrived()");
-
-        incomingConnection = new RCConnection();
-        incomingConnection.incoming = true;
-        incomingConnection.state = RCConnection.ConnectionState.CONNECTING;
-        incomingConnection.incomingCallSdp = event.sdp;
-        incomingConnection.device = this;
-        incomingConnection.remoteMediaType = RCConnection.sdp2Mediatype(event.sdp);
-        DeviceImpl.GetInstance().sipuaConnectionListener = incomingConnection;
-        state = DeviceState.BUSY;
-
-        // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
-        final SipEvent finalEvent = event;
-        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
-        Runnable myRunnable = new Runnable() {
-            @Override
-            public void run() {
-                // bring the App to front
-                try {
-                    Intent dataIntent = new Intent();
-                    dataIntent.setAction(INCOMING_CALL);
-                    dataIntent.putExtra(RCDevice.EXTRA_DID, finalEvent.from);
-                    dataIntent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, (incomingConnection.remoteMediaType == RCConnection.ConnectionMediaType.AUDIO_VIDEO));
-                    pendingCallIntent.send(RCClient.getContext(), 0, dataIntent);
-
-                    // Phone state Intents to capture incoming phone call event
-                    sendQoSIncomingConnectionIntent(finalEvent.from, incomingConnection);
-                } catch (PendingIntent.CanceledException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-        mainHandler.post(myRunnable);
-    }
-
-    public void onSipUAMessageArrived(SipEvent event) {
-        RCLogger.i(TAG, "onSipUAMessageArrived()");
-
-        HashMap<String, String> parameters = new HashMap<String, String>();
-        // filter out SIP URI stuff and leave just the name
-        String from = event.from.replaceAll("^<", "").replaceAll(">$", "");
-        //String from = event.from.replaceAll("^<sip:", "").replaceAll("@.*$", "");
-        parameters.put("username", from);
-
-        final String finalContent = new String(event.content);
-        final HashMap<String, String> finalParameters = new HashMap<String, String>(parameters);
-        final RCDevice device = this;
-        // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
-        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
-        Runnable myRunnable = new Runnable() {
-            @Override
-            public void run() {
-                // bring the App to front
-                try {
-                    Intent dataIntent = new Intent();
-                    dataIntent.setAction(INCOMING_MESSAGE);
-                    dataIntent.putExtra(INCOMING_MESSAGE_PARAMS, finalParameters);
-                    dataIntent.putExtra(INCOMING_MESSAGE_TEXT, finalContent);
-                    pendingMessageIntent.send(RCClient.getContext(), 0, dataIntent);
-                } catch (PendingIntent.CanceledException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-        mainHandler.post(myRunnable);
-    }
-
-    public void onSipUAError(final RCClient.ErrorCodes errorCode, final String errorText) {
-        RCLogger.i(TAG, "onSipUAError()");
-
-        final RCDevice device = this;
-        // Important: need to fire the event in UI context cause currently we might be in JAIN SIP thread
-        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
-        Runnable myRunnable = new Runnable() {
-            @Override
-            public void run() {
-                if (device.listener != null) {
-                    if (errorCode == RCClient.ErrorCodes.SIGNALLING_REGISTER_AUTH_ERROR ||
-                            errorCode == RCClient.ErrorCodes.SIGNALLING_REGISTER_ERROR) {
-                        state = DeviceState.OFFLINE;
-                        device.listener.onConnectivityUpdate(device, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone);
-                    }
-                    device.listener.onStopListening(device, errorCode.ordinal(), errorText);
-                }
-            }
-        };
-        mainHandler.post(myRunnable);
-    }
-
-    public void onSipUARegisterSuccess(SipEvent event) {
-        RCLogger.i(TAG, "onSipUARegisterSuccess()");
-
-        final RCDevice device = this;
-        final RCDeviceListener.RCConnectivityStatus state = this.reachabilityState;
-
-        // Important: need to fire the event in UI context cause currently we might be in JAIN SIP thread
-        Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
-        Runnable myRunnable = new Runnable() {
-            @Override
-            public void run() {
-                if (device.listener != null) {
-                    if (device.state == DeviceState.OFFLINE) {
-                        device.state = DeviceState.READY;
-                        device.listener.onConnectivityUpdate(device, state);
-                    }
-                }
-            }
-        };
-        mainHandler.post(myRunnable);
-    }
-    */
-
-   // Helpers
-
-   // -- Notify QoS module of Device related event through intents, if the module is available
-   // Phone state Intents to capture incoming call event
-   private void sendQoSIncomingConnectionIntent(String user, RCConnection connection)
-   {
-      Intent intent = new Intent("org.mobicents.restcomm.android.CALL_STATE");
-      intent.putExtra("STATE", "ringing");
-      intent.putExtra("INCOMING", true);
-      intent.putExtra("FROM", user);
-      Context context = RCClient.getContext();
-      try {
-         // Restrict the Intent to MMC Handler running within the same application
-         Class aclass = Class.forName("com.cortxt.app.mmccore.Services.Intents.MMCIntentHandler");
-         intent.setClass(context.getApplicationContext(), aclass);
-         context.sendBroadcast(intent);
-      }
-      catch (ClassNotFoundException e) {
-         // If there is no MMC class isn't here, no intent
-      }
-   }
-
-   private void sendQoSNoConnectionIntent(String user, String message)
-   {
-      Intent intent = new Intent("org.mobicents.restcomm.android.CONNECT_FAILED");
-      intent.putExtra("STATE", "connect failed");
-      intent.putExtra("ERRORTEXT", message);
-      intent.putExtra("ERROR", RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal());
-      intent.putExtra("INCOMING", false);
-      intent.putExtra("USER", user);
-      Context context = RCClient.getContext();
-      try {
-         // Restrict the Intent to MMC Handler running within the same application
-         Class aclass = Class.forName("com.cortxt.app.mmccore.Services.Intents.MMCIntentHandler");
-         intent.setClass(context.getApplicationContext(), aclass);
-         context.sendBroadcast(intent);
-      }
-      catch (ClassNotFoundException e) {
-         // If there is no MMC class isn't here, no intent
-      }
-   }
-
    // -- UIClientListener events for incoming messages from signaling thread
    // Replies
    public void onOpenReply(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
@@ -784,18 +496,6 @@ public class RCDevice implements UIClient.UIClientListener {
       RCLogger.i(TAG, "onOpenReply(): id: " + id + ", success - " + text);
       state = DeviceState.READY;
       listener.onInitialized(this, connectivityStatus, RCClient.ErrorCodes.SUCCESS.ordinal(), RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
-
-        /*
-        final RCDeviceListener.RCConnectivityStatus state = this.reachabilityState;
-        if (this.listener != null) {
-            if (this.state == DeviceState.OFFLINE) {
-                this.state = DeviceState.READY;
-                this.listener.onConnectivityUpdate(this, state);
-            }
-        }
-        */
-
-      //uiClient.close();
    }
 
    public void onCloseReply(String id, RCClient.ErrorCodes status, String text)
@@ -827,6 +527,8 @@ public class RCDevice implements UIClient.UIClientListener {
    public void onMessageReply(String id, RCClient.ErrorCodes status, String text)
    {
       RCLogger.i(TAG, "onMessageReply(): id: " + id + ", status: " + status + ", text: " + text);
+
+      listener.onMessageSent(this, status.ordinal(), text);
    }
 
    // Unsolicited Events
@@ -920,5 +622,53 @@ public class RCDevice implements UIClient.UIClientListener {
       catch (PendingIntent.CanceledException e) {
          e.printStackTrace();
       }
+   }
+
+   // Helpers
+
+   // -- Notify QoS module of Device related event through intents, if the module is available
+   // Phone state Intents to capture incoming call event
+   private void sendQoSIncomingConnectionIntent(String user, RCConnection connection)
+   {
+      Intent intent = new Intent("org.mobicents.restcomm.android.CALL_STATE");
+      intent.putExtra("STATE", "ringing");
+      intent.putExtra("INCOMING", true);
+      intent.putExtra("FROM", user);
+      Context context = RCClient.getContext();
+      try {
+         // Restrict the Intent to MMC Handler running within the same application
+         Class aclass = Class.forName("com.cortxt.app.mmccore.Services.Intents.MMCIntentHandler");
+         intent.setClass(context.getApplicationContext(), aclass);
+         context.sendBroadcast(intent);
+      }
+      catch (ClassNotFoundException e) {
+         // If there is no MMC class isn't here, no intent
+      }
+   }
+
+   private void sendQoSNoConnectionIntent(String user, String message)
+   {
+      Intent intent = new Intent("org.mobicents.restcomm.android.CONNECT_FAILED");
+      intent.putExtra("STATE", "connect failed");
+      intent.putExtra("ERRORTEXT", message);
+      intent.putExtra("ERROR", RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal());
+      intent.putExtra("INCOMING", false);
+      intent.putExtra("USER", user);
+      Context context = RCClient.getContext();
+      try {
+         // Restrict the Intent to MMC Handler running within the same application
+         Class aclass = Class.forName("com.cortxt.app.mmccore.Services.Intents.MMCIntentHandler");
+         intent.setClass(context.getApplicationContext(), aclass);
+         context.sendBroadcast(intent);
+      }
+      catch (ClassNotFoundException e) {
+         // If there is no MMC class isn't here, no intent
+      }
+   }
+
+   void removeConnection(String id)
+   {
+      RCLogger.i(TAG, "removeConnection(): id: " + id + ", total connections before removal: " + connections.size());
+      connections.remove(id);
    }
 }

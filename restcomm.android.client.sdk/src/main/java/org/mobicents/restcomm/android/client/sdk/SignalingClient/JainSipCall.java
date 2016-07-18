@@ -27,7 +27,7 @@ class JainSipCall {
    public interface JainSipCallListener {
       void onCallRingingEvent(String callId);  // onPrivateCallConnectorCallRingingEvent
 
-//      void onCallPeerHangupEvent(String callId);  // either when we receive 200 OK in our BYE, or we send 200 OK to peer's BYE, onPrivateCallConnectorCallHangupEvent
+      //void onCallPeerHangupEvent(String callId);  // either when we receive 200 OK in our BYE, or we send 200 OK to peer's BYE, onPrivateCallConnectorCallHangupEvent
 
       void onCallPeerRingingEvent(String callId);  // ringback, onPrivateCallConnectorCallRingingBackEvent
 
@@ -39,11 +39,11 @@ class JainSipCall {
 
       void onCallPeerDisconnectedEvent(String callId);
 
-      void onCallInProgressEvent(String callId);  // SIP code 183, onPrivateCallConnectorCallInProgressEvent
+      //void onCallInProgressEvent(String callId);  // SIP code 183, onPrivateCallConnectorCallInProgressEvent
 
-      void onCallPeerSdpAnswerEvent(String callId);  // onPrivateCallConnectorRemoteSdpAnswerEvent
+      //void onCallPeerSdpAnswerEvent(String callId);  // onPrivateCallConnectorRemoteSdpAnswerEvent
 
-      void onCallPeerSdpOfferEvent(String callId);  // onPrivateCallConnectorRemoteSdpOfferEvent
+      //void onCallPeerSdpOfferEvent(String callId);  // onPrivateCallConnectorRemoteSdpOfferEvent
 
       void onCallCancelledEvent(String callId);  // cancel was received and answered, onPrivateCallConnectorCallCanceledEvent
 
@@ -72,7 +72,7 @@ class JainSipCall {
    {
       RCLogger.i(TAG, "open(): id: " + jobId);
       try {
-         Transaction transaction = jainSipCallInvite(jobId, parameters);
+         Transaction transaction = jainSipCallInvite(parameters);
          jainSipClient.jainSipJobManager.add(jobId, JainSipJob.Type.TYPE_CALL, transaction, parameters, this);
       }
       catch (JainSipException e) {
@@ -148,7 +148,8 @@ class JainSipCall {
       }
    }
 
-   public ClientTransaction jainSipCallInvite(String id, final HashMap<String, Object> parameters) throws JainSipException
+   // ------ Internal APIs
+   public ClientTransaction jainSipCallInvite(final HashMap<String, Object> parameters) throws JainSipException
    {
       RCLogger.v(TAG, "jainSipCallInvite()");
 
@@ -424,7 +425,7 @@ class JainSipCall {
       if (response.getStatusCode() == Response.PROXY_AUTHENTICATION_REQUIRED || response.getStatusCode() == Response.UNAUTHORIZED) {
          try {
             // important we pass the jainSipClient params in jainSipAuthenticate (instead of jainSipJob.parameters that has the call parameters), because this is where usename/pass reside
-            jainSipClient.jainSipAuthenticate(jainSipJob.id, jainSipJob, jainSipClient.configuration, responseEventExt);
+            jainSipClient.jainSipAuthenticate(jainSipJob, jainSipClient.configuration, responseEventExt);
          }
          catch (JainSipException e) {
             listener.onCallErrorEvent(jainSipJob.id, e.errorCode, e.errorText);

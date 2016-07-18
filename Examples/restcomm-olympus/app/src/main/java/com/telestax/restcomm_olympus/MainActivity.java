@@ -287,9 +287,16 @@ public class MainActivity extends AppCompatActivity
          onConnectivityUpdate(device, connectivityStatus);
       }
       else {
-         showOkAlert("RCDevice Error", statusText);
+         showOkAlert("RCDevice Initialization Error", statusText);
       }
 
+   }
+
+   public void onReleased(RCDevice device, int statusCode, String statusText)
+   {
+      if (statusCode != RCClient.ErrorCodes.SUCCESS.ordinal()) {
+         showOkAlert("RCDevice Release Error", statusText);
+      }
    }
 
    public void onConnectivityUpdate(RCDevice device, RCConnectivityStatus connectivityStatus)
@@ -317,6 +324,12 @@ public class MainActivity extends AppCompatActivity
          this.previousConnectivityStatus = connectivityStatus;
       }
    }
+
+   public void onMessageSent(RCDevice device, int statusCode, String statusText)
+   {
+
+   }
+
 
    public boolean receivePresenceEvents(RCDevice device)
    {

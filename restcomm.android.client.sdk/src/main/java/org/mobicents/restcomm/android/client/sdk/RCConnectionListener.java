@@ -32,35 +32,44 @@ public interface RCConnectionListener {
     *
     * @param connection Connection
     */
-   public abstract void onConnecting(RCConnection connection);
+   void onConnecting(RCConnection connection);
 
    /**
     * Connection just connected. This can be either an incoming or outgoing connection
     *
     * @param connection Connection
     */
-   public abstract void onConnected(RCConnection connection);
+   void onConnected(RCConnection connection);
 
    /**
     * Established connection just got disconnected. Can be either incoming or outgoing connection
     *
     * @param connection Connection
     */
-   public abstract void onDisconnected(RCConnection connection);
+   void onDisconnected(RCConnection connection);
+
+   /**
+    * DTMF digit successfully sent
+    *
+    * @param connection Connection
+    * @param statusCode  Status Code
+    * @param statusText  Status Text
+    */
+   void onDigitSent(RCConnection connection, int statusCode, String statusText);
 
    /**
     * Incoming connection was just cancelled by remote party
     *
     * @param connection Connection
     */
-   public abstract void onCancelled(RCConnection connection);
+   void onCancelled(RCConnection connection);
 
    /**
     * Incoming connection was just declined by remote party
     *
     * @param connection Connection
     */
-   public abstract void onDeclined(RCConnection connection);
+   void onDeclined(RCConnection connection);
 
    /**
     * Connection just disconnected with an error
@@ -69,6 +78,6 @@ public interface RCConnectionListener {
     * @param errorCode  Error Code
     * @param errorText  Error Text
     */
-   public abstract void onDisconnected(RCConnection connection, int errorCode, String errorText);
+   void onDisconnected(RCConnection connection, int errorCode, String errorText);
 }
 

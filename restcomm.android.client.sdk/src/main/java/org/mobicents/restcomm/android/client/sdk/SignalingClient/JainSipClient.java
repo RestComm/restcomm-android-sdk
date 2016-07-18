@@ -278,7 +278,7 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
       jainSipJob.jainSipCall.accept(jainSipJob, parameters);
    }
 
-   void hangup(String jobId, JainSipCall.JainSipCallListener listener)
+   void disconnect(String jobId, JainSipCall.JainSipCallListener listener)
    {
       RCLogger.i(TAG, "hangup(): id: " + jobId);
 
@@ -309,7 +309,7 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
       }
 
       try {
-         Transaction transaction = jainSipClientSendMessage(id, parameters);
+         Transaction transaction = jainSipClientSendMessage(parameters);
          jainSipJobManager.add(id, JainSipJob.Type.TYPE_MESSAGE, transaction, parameters, null);
       }
       catch (JainSipException e) {
@@ -317,30 +317,7 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
       }
    }
 
-   // -- Internal APIs
-   // Release JAIN networking facilities
-   public void jainSipClientUnbind() throws JainSipException
-   {
-      RCLogger.w(TAG, "unbind()");
-      if (jainSipListeningPoint != null) {
-         try {
-            jainSipProvider.removeSipListener(this);
-            if (jainSipProvider.getListeningPoints().length > 1) {
-               RCLogger.e(TAG, "unbind(): Listening Point count > 1: " + jainSipProvider.getListeningPoints().length);
-            }
-            jainSipStack.deleteSipProvider(jainSipProvider);
-            jainSipStack.deleteListeningPoint(jainSipListeningPoint);
-
-            jainSipListeningPoint = null;
-         }
-         catch (ObjectInUseException e) {
-            RCLogger.e(TAG, "unbind(): " + e.getMessage());
-            e.printStackTrace();
-            throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED));
-         }
-      }
-   }
-
+   // ------ Internal APIs
    // Setup JAIN networking facilities
    public void jainSipClientBind(HashMap<String, Object> parameters) throws JainSipException
    {
@@ -386,7 +363,30 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
       }
    }
 
-   int jainSipClientStartStack(String id)
+   // Release JAIN networking facilities
+   public void jainSipClientUnbind() throws JainSipException
+   {
+      RCLogger.w(TAG, "unbind()");
+      if (jainSipListeningPoint != null) {
+         try {
+            jainSipProvider.removeSipListener(this);
+            if (jainSipProvider.getListeningPoints().length > 1) {
+               RCLogger.e(TAG, "unbind(): Listening Point count > 1: " + jainSipProvider.getListeningPoints().length);
+            }
+            jainSipStack.deleteSipProvider(jainSipProvider);
+            jainSipStack.deleteListeningPoint(jainSipListeningPoint);
+
+            jainSipListeningPoint = null;
+         }
+         catch (ObjectInUseException e) {
+            RCLogger.e(TAG, "unbind(): " + e.getMessage());
+            e.printStackTrace();
+            throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED));
+         }
+      }
+   }
+
+   int jainSipClientStartStack()
    {
       // TODO: Didn't have that in the past, hope it doesn't cause any issues
       try {
@@ -418,9 +418,11 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
       clientOpened = false;
    }
 
-   public ClientTransaction jainSipClientRegister(String id, final HashMap<String, Object> parameters) throws JainSipException
+   public ClientTransaction jainSipClientRegister(final HashMap<String, Object> parameters) throws JainSipException
    {
       RCLogger.v(TAG, "jainSipRegister()");
+      // Debug purposes to track the JainSipJob objects
+      RCLogger.v(TAG, "jainSipRegister(), job count: " + jainSipJobManager.jobs.size());
 
       if (!notificationManager.haveConnectivity()) {
          throw new JainSipException(RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY,
@@ -466,7 +468,7 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
       return transaction;
    }
 
-   public ClientTransaction jainSipClientUnregister(String id, final HashMap<String, Object> parameters) throws JainSipException
+   public ClientTransaction jainSipClientUnregister(final HashMap<String, Object> parameters) throws JainSipException
    {
       RCLogger.v(TAG, "jainSipUnregister()");
 
@@ -497,12 +499,12 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
       return transaction;
    }
 
-   public Transaction jainSipClientSendMessage(String id, final HashMap<String, Object> parameters) throws JainSipException
+   public Transaction jainSipClientSendMessage(final HashMap<String, Object> parameters) throws JainSipException
    {
       RCLogger.v(TAG, "jainSipClientSendMessage()");
 
       try {
-         Request request = jainSipMessageBuilder.buildMessageRequest(id, (String) parameters.get("username"),
+         Request request = jainSipMessageBuilder.buildMessageRequest((String) parameters.get("username"),
                (String) parameters.get("text-message"), jainSipListeningPoint, configuration);
          RCLogger.v(TAG, "jainSipClientSendMessage(): Sending SIP request: \n" + request.toString());
 
@@ -517,7 +519,7 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
    }
 
    // Notice that this is used both for registrations and calls
-   public void jainSipAuthenticate(String id, JainSipJob jainSipJob, HashMap<String, Object> parameters, ResponseEventExt responseEventExt) throws JainSipException
+   public void jainSipAuthenticate(JainSipJob jainSipJob, HashMap<String, Object> parameters, ResponseEventExt responseEventExt) throws JainSipException
    {
       try {
          AuthenticationHelper authenticationHelper = ((SipStackExt) jainSipStack).getAuthenticationHelper(
@@ -549,7 +551,7 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
       }
    }
 
-   // -- SipListener events
+   // ------ SipListener events
    // Remember that SipListener events run in a separate thread created by JAIN SIP, which makes sharing of resources between our signaling thread and this
    // JAIN SIP thread a bit difficult. To avoid that let's do the actual handling of these events in the signaling thread.
    public void processRequest(final RequestEvent requestEvent)
@@ -668,7 +670,7 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
             else if (method.equals(Request.MESSAGE)) {
                if (response.getStatusCode() == Response.PROXY_AUTHENTICATION_REQUIRED || response.getStatusCode() == Response.UNAUTHORIZED) {
                   try {
-                     jainSipAuthenticate(jainSipJob.id, jainSipJob, configuration, responseEventExt);
+                     jainSipAuthenticate(jainSipJob, configuration, responseEventExt);
                   }
                   catch (JainSipException e) {
                      listener.onClientMessageSentEvent(jainSipJob.id, e.errorCode, e.errorText);
@@ -709,22 +711,19 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
         */
    }
 
-   public void processIOException(IOExceptionEvent exceptionEvent)
+   public void processIOException(final IOExceptionEvent exceptionEvent)
    {
       Runnable runnable = new Runnable() {
          @Override
          public void run()
          {
             // TODO:
+            RCLogger.e(TAG, "SipManager.processIOException: " + exceptionEvent.toString() + "\n" +
+                  "\thost: " + exceptionEvent.getHost() + "\n" +
+                  "\tport: " + exceptionEvent.getPort());
          }
       };
       signalingHandler.post(runnable);
-
-        /*
-                RCLogger.e(TAG, "SipManager.processIOException: " + exceptionEvent.toString() + "\n" +
-                        "\thost: " + exceptionEvent.getHost() + "\n" +
-                        "\tport: " + exceptionEvent.getPort());
-        */
    }
 
    public void processTransactionTerminated(TransactionTerminatedEvent transactionTerminatedEvent)
@@ -734,6 +733,7 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
          public void run()
          {
             // TODO:
+            RCLogger.i(TAG, "processTransactionTerminated()");
          }
       };
       signalingHandler.post(runnable);
@@ -800,7 +800,7 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
       signalingHandler.post(runnable);
    }
 
-   // -- NotificationManagerListener events
+   // ------ NotificationManagerListener events
    public void onConnectivityChange(NotificationManager.ConnectivityChange connectivityChange)
    {
       // No matter the connectivity change, cancel any pending scheduled registrations

@@ -11,20 +11,20 @@ import java.util.Map;
 class JainSipJobManager {
    // TODO: consider using interface instead
    JainSipClient jainSipClient;
-   HashMap<String, JainSipJob> transactions;
+   HashMap<String, JainSipJob> jobs;
 
 
    JainSipJobManager(JainSipClient jainSipClient)
    {
       this.jainSipClient = jainSipClient;
-      transactions = new HashMap<>();
+      jobs = new HashMap<>();
    }
 
    JainSipJob add(String id, JainSipJob.Type type, Transaction transaction, HashMap<String, Object> parameters, JainSipCall jainSipCall)
    {
       //JainSipJob jainSipJob = new JainSipJob(this, jainSipClient, id, type, registrationType, transaction, parameters);
       JainSipJob jainSipJob = new JainSipJob(this, jainSipClient, id, type, transaction, parameters, jainSipCall);
-      transactions.put(id, jainSipJob);
+      jobs.put(id, jainSipJob);
       jainSipJob.processFsm(id, "", null, null, null);
       return jainSipJob;
    }
@@ -41,8 +41,8 @@ class JainSipJobManager {
 
    JainSipJob get(String id)
    {
-      if (transactions.containsKey(id)) {
-         return transactions.get(id);
+      if (jobs.containsKey(id)) {
+         return jobs.get(id);
       }
       else {
          return null;
@@ -51,7 +51,7 @@ class JainSipJobManager {
 
    JainSipJob getByBranchId(String branchId)
    {
-      for (Map.Entry<String, JainSipJob> entry : transactions.entrySet()) {
+      for (Map.Entry<String, JainSipJob> entry : jobs.entrySet()) {
          JainSipJob job = entry.getValue();
          if (job.transaction.getBranchId().equals(branchId)) {
             return job;
@@ -62,7 +62,7 @@ class JainSipJobManager {
 
    JainSipJob getByCallId(String callId)
    {
-      for (Map.Entry<String, JainSipJob> entry : transactions.entrySet()) {
+      for (Map.Entry<String, JainSipJob> entry : jobs.entrySet()) {
          JainSipJob job = entry.getValue();
 
          if (((CallIdHeader)job.transaction.getRequest().getHeader("Call-ID")).getCallId().equals(callId)) {
@@ -74,14 +74,14 @@ class JainSipJobManager {
 
    void remove(String id)
    {
-      if (transactions.containsKey(id)) {
-         transactions.remove(id);
+      if (jobs.containsKey(id)) {
+         jobs.remove(id);
       }
    }
 
    void removeAll()
    {
-      transactions.clear();
+      jobs.clear();
    }
 
 }

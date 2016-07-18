@@ -89,7 +89,7 @@ class JainSipJob {
                if (type == Type.TYPE_OPEN) {
                   if (states[index].equals("start-bind-register")) {
                      try {
-                        jainSipClient.jainSipClientStartStack(JainSipJob.this.id);
+                        jainSipClient.jainSipClientStartStack();
 
                         if (!jainSipClient.notificationManager.haveConnectivity()) {
                            jainSipClient.listener.onClientOpenedEvent(id, jainSipClient.notificationManager.getConnectivityStatus(),
@@ -102,7 +102,7 @@ class JainSipJob {
 
                         if (parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) && !parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
                            // Domain has been provided do the registration
-                           transaction = jainSipClient.jainSipClientRegister(id, parameters);
+                           transaction = jainSipClient.jainSipClientRegister(parameters);
                         }
                         else {
                            // No Domain there we are done here
@@ -122,7 +122,7 @@ class JainSipJob {
                      if (event.equals("auth-required")) {
                         ResponseEventExt responseEventExt = (ResponseEventExt) arg;
                         try {
-                           jainSipClient.jainSipAuthenticate(id, JainSipJob.this, parameters, responseEventExt);
+                           jainSipClient.jainSipAuthenticate(JainSipJob.this, parameters, responseEventExt);
                         }
                         catch (JainSipException e) {
                            jainSipClient.listener.onClientOpenedEvent(id, jainSipClient.notificationManager.getConnectivityStatus(), e.errorCode, e.errorText);
@@ -143,7 +143,7 @@ class JainSipJob {
                else if (type == Type.TYPE_REGISTER_REFRESH) {
                   if (states[index].equals("register")) {
                      try {
-                        transaction = jainSipClient.jainSipClientRegister(id, parameters);
+                        transaction = jainSipClient.jainSipClientRegister(parameters);
                      }
                      catch (JainSipException e) {
                         e.printStackTrace();
@@ -156,7 +156,7 @@ class JainSipJob {
                      if (event.equals("auth-required")) {
                         ResponseEventExt responseEventExt = (ResponseEventExt) arg;
                         try {
-                           jainSipClient.jainSipAuthenticate(id, JainSipJob.this, parameters, responseEventExt);
+                           jainSipClient.jainSipAuthenticate(JainSipJob.this, parameters, responseEventExt);
                         }
                         catch (JainSipException e) {
                            e.printStackTrace();
@@ -180,7 +180,7 @@ class JainSipJob {
                else if (type == Type.TYPE_CLOSE) {
                   if (states[index].equals("unregister")) {
                      try {
-                        transaction = jainSipClient.jainSipClientUnregister(id, parameters);
+                        transaction = jainSipClient.jainSipClientUnregister(parameters);
 
                      }
                      catch (JainSipException e) {
@@ -193,7 +193,7 @@ class JainSipJob {
                      if (event.equals("auth-required")) {
                         ResponseEventExt responseEventExt = (ResponseEventExt) arg;
                         try {
-                           jainSipClient.jainSipAuthenticate(id, JainSipJob.this, parameters, responseEventExt);
+                           jainSipClient.jainSipAuthenticate(JainSipJob.this, parameters, responseEventExt);
                         }
                         catch (JainSipException e) {
                            jainSipClient.listener.onClientClosedEvent(id, e.errorCode, e.errorText);
@@ -233,7 +233,7 @@ class JainSipJob {
                         if (((HashMap<String, Object>) parameters.get("old-parameters")).containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) &&
                               !((HashMap<String, Object>) parameters.get("old-parameters")).get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
                            // Domain has been provided do the registration
-                           transaction = jainSipClient.jainSipClientUnregister(id, (HashMap<String, Object>) parameters.get("old-parameters"));
+                           transaction = jainSipClient.jainSipClientUnregister((HashMap<String, Object>) parameters.get("old-parameters"));
                         }
                         else {
                            // No Domain, need to loop through to next step
@@ -249,7 +249,7 @@ class JainSipJob {
                      if (event.equals("auth-required")) {
                         ResponseEventExt responseEventExt = (ResponseEventExt) arg;
                         try {
-                           jainSipClient.jainSipAuthenticate(id, JainSipJob.this, (HashMap<String, Object>) parameters.get("old-parameters"), responseEventExt);
+                           jainSipClient.jainSipAuthenticate(JainSipJob.this, (HashMap<String, Object>) parameters.get("old-parameters"), responseEventExt);
                         }
                         catch (JainSipException e) {
                            e.printStackTrace();
@@ -270,7 +270,7 @@ class JainSipJob {
                            if (((HashMap<String, Object>) parameters.get("new-parameters")).containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) &&
                                  !((HashMap<String, Object>) parameters.get("new-parameters")).get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
                               // Domain has been provided do the registration
-                              transaction = jainSipClient.jainSipClientRegister(Long.toString(System.currentTimeMillis()), (HashMap<String, Object>) parameters.get("new-parameters"));
+                              transaction = jainSipClient.jainSipClientRegister((HashMap<String, Object>) parameters.get("new-parameters"));
                            }
                            else {
                               // No domain, need to loop through to next step
@@ -288,7 +288,7 @@ class JainSipJob {
                      if (event.equals("auth-required")) {
                         ResponseEventExt responseEventExt = (ResponseEventExt) arg;
                         try {
-                           jainSipClient.jainSipAuthenticate(id, JainSipJob.this, (HashMap<String, Object>) parameters.get("new-parameters"), responseEventExt);
+                           jainSipClient.jainSipAuthenticate(JainSipJob.this, (HashMap<String, Object>) parameters.get("new-parameters"), responseEventExt);
                         }
                         catch (JainSipException e) {
                            e.printStackTrace();
@@ -320,7 +320,7 @@ class JainSipJob {
                         if (((HashMap<String, Object>) parameters.get("old-parameters")).containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) &&
                               !((HashMap<String, Object>) parameters.get("old-parameters")).get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
                            // Domain has been provided do the registration
-                           transaction = jainSipClient.jainSipClientUnregister(id, (HashMap<String, Object>) parameters.get("old-parameters"));
+                           transaction = jainSipClient.jainSipClientUnregister((HashMap<String, Object>) parameters.get("old-parameters"));
                         }
                         else {
                            // No domain, need to loop through to next step
@@ -337,7 +337,7 @@ class JainSipJob {
                      if (event.equals("auth-required")) {
                         ResponseEventExt responseEventExt = (ResponseEventExt) arg;
                         try {
-                           jainSipClient.jainSipAuthenticate(id, JainSipJob.this, (HashMap<String, Object>) parameters.get("old-parameters"), responseEventExt);
+                           jainSipClient.jainSipAuthenticate(JainSipJob.this, (HashMap<String, Object>) parameters.get("old-parameters"), responseEventExt);
                         }
                         catch (JainSipException e) {
                            e.printStackTrace();
@@ -362,7 +362,7 @@ class JainSipJob {
                            if (((HashMap<String, Object>) parameters.get("new-parameters")).containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) &&
                                  !((HashMap<String, Object>) parameters.get("new-parameters")).get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
                               // Domain has been provided do the registration
-                              transaction = jainSipClient.jainSipClientRegister(Long.toString(System.currentTimeMillis()), (HashMap<String, Object>) parameters.get("new-parameters"));
+                              transaction = jainSipClient.jainSipClientRegister((HashMap<String, Object>) parameters.get("new-parameters"));
                            }
                            else {
                               // No domain, need to loop through to next step
@@ -381,7 +381,7 @@ class JainSipJob {
                      if (event.equals("auth-required")) {
                         ResponseEventExt responseEventExt = (ResponseEventExt) arg;
                         try {
-                           jainSipClient.jainSipAuthenticate(id, JainSipJob.this, (HashMap<String, Object>) parameters.get("new-parameters"), responseEventExt);
+                           jainSipClient.jainSipAuthenticate(JainSipJob.this, (HashMap<String, Object>) parameters.get("new-parameters"), responseEventExt);
                         }
                         catch (JainSipException e) {
                            e.printStackTrace();
@@ -409,7 +409,7 @@ class JainSipJob {
 
                         if (parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) && !parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
                            // Domain has been provided do the registration
-                           transaction = jainSipClient.jainSipClientRegister(id, parameters);
+                           transaction = jainSipClient.jainSipClientRegister(parameters);
                         }
                         else {
                            // No domain, need to loop through to next step
@@ -429,7 +429,7 @@ class JainSipJob {
                      if (event.equals("auth-required")) {
                         ResponseEventExt responseEventExt = (ResponseEventExt) arg;
                         try {
-                           jainSipClient.jainSipAuthenticate(id, JainSipJob.this, parameters, responseEventExt);
+                           jainSipClient.jainSipAuthenticate(JainSipJob.this, parameters, responseEventExt);
                         }
                         catch (JainSipException e) {
                            RCLogger.e(TAG, "process(): auth failed: " + Arrays.toString(Thread.currentThread().getStackTrace()));
@@ -460,7 +460,7 @@ class JainSipJob {
 
                         if (parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) && !parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
                            // Domain has been provided do the registration
-                           transaction = jainSipClient.jainSipClientRegister(id, parameters);
+                           transaction = jainSipClient.jainSipClientRegister(parameters);
                         }
                         else {
                            // No Domain there we are done here
@@ -479,7 +479,7 @@ class JainSipJob {
                      if (event.equals("auth-required")) {
                         ResponseEventExt responseEventExt = (ResponseEventExt) arg;
                         try {
-                           jainSipClient.jainSipAuthenticate(id, JainSipJob.this, parameters, responseEventExt);
+                           jainSipClient.jainSipAuthenticate(JainSipJob.this, parameters, responseEventExt);
                         }
                         catch (JainSipException e) {
                            e.printStackTrace();

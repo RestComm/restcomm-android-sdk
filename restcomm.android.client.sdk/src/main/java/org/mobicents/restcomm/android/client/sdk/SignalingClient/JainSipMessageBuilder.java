@@ -192,7 +192,7 @@ class JainSipMessageBuilder {
       }
    }
 
-   public Request buildMessageRequest(String id, String toSipUri, String message, ListeningPoint listeningPoint, HashMap<String, Object> clientConfiguration) throws JainSipException
+   public Request buildMessageRequest(String toSipUri, String message, ListeningPoint listeningPoint, HashMap<String, Object> clientConfiguration) throws JainSipException
    {
       try {
          Request request = buildBaseRequest(Request.MESSAGE, (String) clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_USERNAME),

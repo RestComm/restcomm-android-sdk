@@ -422,6 +422,11 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         pendingConnection = null;
     }
 
+    public void onDigitSent(RCConnection connection, int statusCode, String statusText)
+    {
+
+    }
+
     // Helpers
     private void showOkAlert(final String title, final String detail) {
         if (activityVisible) {

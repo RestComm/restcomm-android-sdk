@@ -343,12 +343,14 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
       uiClient.disconnect(id);
 
+      /*
       // also update RCDevice state
       if (RCDevice.state == RCDevice.DeviceState.BUSY) {
          RCDevice.state = RCDevice.DeviceState.READY;
       }
-
+      */
       disconnectWebrtc();
+
    }
 
    /**
@@ -511,12 +513,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       // In the first case listener will see state CONNECTED and in the second CONNECTING
 
       if (inboundDisconnect && RCDevice.state == RCDevice.DeviceState.BUSY) {
-         // for outboud disconnect we are handling it in RCConnection.disconnect()
+         // for outbound disconnect we are handling it in RCConnection.disconnect()
          disconnectWebrtc();
       }
       RCDevice.state = RCDevice.DeviceState.READY;
       listener.onDisconnected(this);
       this.state = ConnectionState.DISCONNECTED;
+      device.removeConnection(id);
 
       // Phone state Intents to capture normal disconnect event
       sendQoSConnectionIntent("disconnected");
@@ -525,10 +528,12 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void handleDigitsSent(RCClient.ErrorCodes statusCode, String statusText)
    {
       RCLogger.i(TAG, "handleDigitsSent(): status: " + statusCode + ", text: " + statusText);
+      listener.onDigitSent(this, statusCode.ordinal(), statusText);
 
       // TODO: handle this
    }
 
+   /*
    public void handleCancelled()
    {
       RCLogger.i(TAG, "handleCancelled()");
@@ -545,6 +550,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       // Phone state Intents to capture cancelled event
       sendQoSConnectionIntent("cancelled");
    }
+   */
 
    public void handleDeclined()
    {

@@ -229,6 +229,19 @@ public class MessageActivity extends AppCompatActivity
 
    }
 
+   public void onMessageSent(RCDevice device, int statusCode, String statusText)
+   {
+
+   }
+
+   public void onReleased(RCDevice device, int statusCode, String statusText)
+   {
+      if (statusCode != RCClient.ErrorCodes.SUCCESS.ordinal()) {
+         showOkAlert("RCDevice Error", statusText);
+      }
+   }
+
+
    public boolean receivePresenceEvents(RCDevice device)
    {
       return false;

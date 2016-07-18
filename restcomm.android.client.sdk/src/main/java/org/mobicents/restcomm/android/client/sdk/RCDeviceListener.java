@@ -40,6 +40,9 @@ public interface RCDeviceListener {
     * RCDevice initialized successfully
     *
     * @param device Device of interest
+    * @param connectivityStatus Connectivity status
+    * @param statusCode Status code
+    * @param statusText Status text
     */
    void onInitialized(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus, int statusCode, String statusText);
 
@@ -64,6 +67,24 @@ public interface RCDeviceListener {
     * @param device Device of interest
     */
    void onStopListening(RCDevice device);
+
+   /**
+    * RCDevice was released
+    *
+    * @param device Device of interest
+    * @param statusCode Error code for the error
+    * @param statusText Error text for the error
+    */
+   void onReleased(RCDevice device, int statusCode, String statusText);
+
+   /**
+    * RCDevice text message has been sent
+    *
+    * @param device Device of interest
+    * @param statusCode Status code
+    * @param statusText Status text
+    */
+   void onMessageSent(RCDevice device, int statusCode, String statusText);
 
    /**
     * RCDevice stopped listening for incoming connections due to error
