@@ -29,10 +29,10 @@ class UIHandler extends Handler {
          listener.onCloseReply(message.id, message.status, message.text);
       }
       else if (message.type == SignalingMessage.MessageType.RECONFIGURE_REPLY) {
-         listener.onReconfigureReply(message.id, message.status, message.text);
+         listener.onReconfigureReply(message.id, message.connectivityStatus, message.status, message.text);
       }
       else if (message.type == SignalingMessage.MessageType.ERROR_EVENT) {
-         listener.onErrorEvent(message.id, message.status, message.text);
+         listener.onErrorEvent(message.id, message.connectivityStatus, message.status, message.text);
       }
       else if (message.type == SignalingMessage.MessageType.CONNECTIVITY_EVENT) {
          listener.onConnectivityEvent(message.id, message.connectivityStatus);
@@ -43,9 +43,11 @@ class UIHandler extends Handler {
       else if (message.type == SignalingMessage.MessageType.MESSAGE_REPLY) {
          listener.onMessageReply(message.id, message.status, message.text);
       }
+      else if (message.type == SignalingMessage.MessageType.REGISTERING_EVENT) {
+         listener.onRegisteringEvent(message.id);
+      }
       else {
          listener.onCallRelatedMessage(message);
       }
    }
-
 }

@@ -44,7 +44,7 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
          jainSipClient.close(message.id);
       }
       if (message.type == SignalingMessage.MessageType.RECONFIGURE_REQUEST) {
-         jainSipClient.reconfigure(message.id, message.androidContext, message.parameters, this);
+         jainSipClient.reconfigure(message.id, message.parameters, this);
       }
       else if (message.type == SignalingMessage.MessageType.CALL_REQUEST) {
          jainSipClient.call(message.id, message.parameters, this);
@@ -75,12 +75,13 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
       message.sendToTarget();
    }
 
-   public void onClientErrorEvent(String id, RCClient.ErrorCodes status, String text)
+   public void onClientErrorEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
       //listener.onOpenReply(id, status, text);
       SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.ERROR_EVENT);
       signalingMessage.status = status;
       signalingMessage.text = text;
+      signalingMessage.connectivityStatus = connectivityStatus;
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
    }
@@ -95,12 +96,13 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
       message.sendToTarget();
    }
 
-   public void onClientReconfigureEvent(String id, RCClient.ErrorCodes status, String text)
+   public void onClientReconfigureEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
       //listener.onOpenReply(id, RCClient.ErrorCodes.SUCCESS, "Success");
       SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.RECONFIGURE_REPLY);
       signalingMessage.status = status;  //RCClient.ErrorCodes.SUCCESS;
       signalingMessage.text = text;  //"Success";
+      signalingMessage.connectivityStatus = connectivityStatus;
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
    }
@@ -127,6 +129,13 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
       SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.MESSAGE_REPLY);
       signalingMessage.status = status;
       signalingMessage.text = text;
+      Message message = uiHandler.obtainMessage(1, signalingMessage);
+      message.sendToTarget();
+   }
+
+   public void onClientRegisteringEvent(String id)
+   {
+      SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.REGISTERING_EVENT);
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
    }

@@ -122,6 +122,9 @@ class JainSipMessageBuilder {
          e.printStackTrace();
          throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID));
       }
+      catch (JainSipException e) {
+         throw e;
+      }
       catch (Exception e) {
          e.printStackTrace();
          throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED));
@@ -141,6 +144,9 @@ class JainSipMessageBuilder {
          request.addHeader(createUserAgentHeader());
 
          return request;
+      }
+      catch (JainSipException e) {
+         throw e;
       }
       catch (Exception e) {
          //throw new RuntimeException("Error building Register request");
@@ -340,10 +346,16 @@ class JainSipMessageBuilder {
    }
 
    // convert sip uri, like  sip:cloud.restcomm.com:5060 -> cloud.restcomm.com
-   public String sipUri2IpAddress(String sipUri) throws ParseException
+   public String sipUri2IpAddress(String sipUri) throws ParseException, JainSipException
    {
-      Address address = jainSipAddressFactory.createAddress(sipUri);
-      return ((SipURI) address.getURI()).getHost();
+      try {
+         Address address = jainSipAddressFactory.createAddress(sipUri);
+         return ((SipURI) address.getURI()).getHost();
+      }
+      catch (ClassCastException e) {
+         e.printStackTrace();
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_URI_INVALID, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_URI_INVALID));
+      }
    }
 
    public ArrayList<ViaHeader> createViaHeaders(ListeningPoint listeningPoint) throws ParseException
@@ -364,7 +376,7 @@ class JainSipMessageBuilder {
    }
 
 
-   public Address createContactAddress(ListeningPoint listeningPoint, String domain, HashMap<String, Object> clientContext) throws ParseException
+   public Address createContactAddress(ListeningPoint listeningPoint, String domain, HashMap<String, Object> clientContext) throws ParseException, JainSipException
    {
       RCLogger.i(TAG, "createContactAddress()");
       int contactPort = listeningPoint.getPort();
@@ -385,12 +397,12 @@ class JainSipMessageBuilder {
       return jainSipAddressFactory.createAddress(contactString);
    }
 
-   public String getContactString(ListeningPoint listeningPoint, String domain) throws ParseException
+   public String getContactString(ListeningPoint listeningPoint, String domain) throws ParseException, JainSipException
    {
       return getContactString(listeningPoint.getIPAddress(), listeningPoint.getPort(), listeningPoint.getTransport(), domain);
    }
 
-   public String getContactString(String ipAddress, int port, String transport, String domain) throws ParseException
+   public String getContactString(String ipAddress, int port, String transport, String domain) throws ParseException, JainSipException
    {
       String contactString = "sip:" + ipAddress + ':' + port + ";transport=" + transport;
 

@@ -268,13 +268,11 @@ public class RCDevice implements UIClient.UIClientListener {
       RCLogger.i(TAG, "connect(): " + parameters.toString());
 
       if (cachedConnectivityStatus == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
-         RCLogger.e(TAG, "connect(): No reachability");
          // Phone state Intents to capture connection failed event
          String username = "";
          if (parameters != null && parameters.get("username") != null)
             username = parameters.get("username").toString();
          sendQoSNoConnectionIntent(username, this.getConnectivityStatus().toString());
-         return null;
       }
 
       if (state == DeviceState.READY) {
@@ -509,20 +507,27 @@ public class RCDevice implements UIClient.UIClientListener {
       }
    }
 
-   public void onReconfigureReply(String id, RCClient.ErrorCodes status, String text)
+   public void onReconfigureReply(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
+      cachedConnectivityStatus = connectivityStatus;
       if (status == RCClient.ErrorCodes.SUCCESS) {
          RCLogger.i(TAG, "onReconfigureReply(): id: " + id + ", success - " + text);
+         state = DeviceState.READY;
+         listener.onStartListening(this, connectivityStatus);
       }
       else {
          RCLogger.i(TAG, "onReconfigureReply(): id: " + id + ", failure - " + text);
+         state = DeviceState.OFFLINE;
+         listener.onStopListening(this, status.ordinal(), text);
       }
    }
 
+   /*
    public void onCallReply(String id, RCClient.ErrorCodes status, String text)
    {
 
    }
+   */
 
    public void onMessageReply(String id, RCClient.ErrorCodes status, String text)
    {
@@ -540,19 +545,29 @@ public class RCDevice implements UIClient.UIClientListener {
    }
    */
 
+   public void onRegisteringEvent(String id)
+   {
+      RCLogger.i(TAG, "onRegisteringEvent(): id: " + id);
+      state = DeviceState.OFFLINE;
+      listener.onStopListening(this, RCClient.ErrorCodes.SUCCESS.ordinal(), "Trying to register with Service");
+   }
+
+
    public void onMessageArrivedEvent(String id, String peer, String text)
    {
       RCLogger.i(TAG, "onMessageArrivedEvent(): id: " + id + ", peer: " + peer + ", text: " + text);
       handleIncomingTextMessage(peer, text);
    }
 
-   public void onErrorEvent(String id, RCClient.ErrorCodes status, String text)
+   public void onErrorEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
+      cachedConnectivityStatus = connectivityStatus;
       if (status == RCClient.ErrorCodes.SUCCESS) {
          RCLogger.i(TAG, "onErrorEvent(): id: " + id + ", success - " + text);
       }
       else {
          RCLogger.i(TAG, "onErrorEvent(): id: " + id + ", failure - " + text);
+         listener.onStopListening(this, status.ordinal(), text);
       }
    }
 

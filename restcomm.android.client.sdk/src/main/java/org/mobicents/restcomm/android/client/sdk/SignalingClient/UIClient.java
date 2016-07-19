@@ -19,9 +19,9 @@ public class UIClient {
 
       void onCloseReply(String id, RCClient.ErrorCodes status, String text);
 
-      void onReconfigureReply(String id, RCClient.ErrorCodes status, String text);
+      void onReconfigureReply(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text);
 
-      void onCallReply(String id, RCClient.ErrorCodes status, String text);
+      //void onCallReply(String id, RCClient.ErrorCodes status, String text);
 
       void onMessageReply(String id, RCClient.ErrorCodes status, String text);
 
@@ -30,13 +30,15 @@ public class UIClient {
 
       void onMessageArrivedEvent(String id, String peer, String text);
 
-      void onErrorEvent(String id, RCClient.ErrorCodes status, String text);
+      void onErrorEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text);
 
       void onConnectivityEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus);
 
       // Call related events that are delegated to RCConnection
       void onCallRelatedMessage(SignalingMessage message);
 
+      // Event to convey trying to Register, so that UI can convey that to user (typically by changing RCDevice state to Offline, until register response arrives)
+      void onRegisteringEvent(String id);
    }
 
    /*

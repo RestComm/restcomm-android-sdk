@@ -1,7 +1,9 @@
 package org.mobicents.restcomm.android.client.sdk.SignalingClient;
 
 import android.gov.nist.javax.sip.ResponseEventExt;
+import android.javax.sip.ObjectInUseException;
 import android.javax.sip.Transaction;
+import android.os.SystemClock;
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
@@ -43,10 +45,10 @@ class JainSipJob {
             states = new String[]{"unregister", "auth", "shutdown"};
          }
          else if (type == Type.TYPE_RECONFIGURE) {
-            states = new String[]{"unregister", "auth", "register", "auth", "notify"};
+            states = new String[]{"unregister", "auth-1", "register", "auth-2", "notify"};
          }
          else if (type == Type.TYPE_RECONFIGURE_RELOAD_NETWORKING) {
-            states = new String[]{"unregister", "auth", "unbind-bind-register", "auth", "notify"};
+            states = new String[]{"unregister", "auth-1", "unbind-bind-register", "auth-2", "notify"};
          }
          else if (type == Type.TYPE_RELOAD_NETWORKING) {
             states = new String[]{"unbind-bind-register", "auth", "notify"};
@@ -87,12 +89,20 @@ class JainSipJob {
                   RCLogger.e(TAG, "process(): no more states to process");
                }
                if (type == Type.TYPE_OPEN) {
+                  // no matter what state we are in if we get a timeout we need to just bail
+                  if (event.equals("timeout")) {
+                     jainSipClient.listener.onClientOpenedEvent(id, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone,
+                           RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_TIMEOUT,
+                           RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_TIMEOUT));
+                     jainSipJobManager.remove(id);
+                     return;
+                  }
                   if (states[index].equals("start-bind-register")) {
                      try {
                         jainSipClient.jainSipClientStartStack();
 
                         if (!jainSipClient.notificationManager.haveConnectivity()) {
-                           jainSipClient.listener.onClientOpenedEvent(id, jainSipClient.notificationManager.getConnectivityStatus(),
+                           jainSipClient.listener.onClientOpenedEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
                                  RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY,
                                  RCClient.errorText(RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY));
                            jainSipJobManager.remove(id);
@@ -102,18 +112,18 @@ class JainSipJob {
 
                         if (parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) && !parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
                            // Domain has been provided do the registration
-                           transaction = jainSipClient.jainSipClientRegister(parameters);
+                           transaction = jainSipClient.jainSipClientRegister(JainSipJob.this, parameters);
                         }
                         else {
                            // No Domain there we are done here
-                           jainSipClient.listener.onClientOpenedEvent(id, jainSipClient.notificationManager.getConnectivityStatus(),
+                           jainSipClient.listener.onClientOpenedEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
                                  RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
                            jainSipJobManager.remove(id);
                         }
                      }
                      catch (JainSipException e) {
                         e.printStackTrace();
-                        jainSipClient.listener.onClientOpenedEvent(id, jainSipClient.notificationManager.getConnectivityStatus(), e.errorCode, e.errorText);
+                        jainSipClient.listener.onClientOpenedEvent(id, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone, e.errorCode, e.errorText);
                         jainSipJobManager.remove(id);
                      }
                   }
@@ -125,7 +135,7 @@ class JainSipJob {
                            jainSipClient.jainSipAuthenticate(JainSipJob.this, parameters, responseEventExt);
                         }
                         catch (JainSipException e) {
-                           jainSipClient.listener.onClientOpenedEvent(id, jainSipClient.notificationManager.getConnectivityStatus(), e.errorCode, e.errorText);
+                           jainSipClient.listener.onClientOpenedEvent(id, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone, e.errorCode, e.errorText);
                            jainSipJobManager.remove(id);
                         }
                      }
@@ -134,20 +144,36 @@ class JainSipJob {
                      }
                   }
                   else if (states[index].equals("notify")) {
+                     if (event.equals("register-failure")) {
+                        jainSipClient.listener.onClientOpenedEvent(id, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone, statusCode, statusText);
+                     }
+                     if (event.equals("register-success")) {
+                        jainSipClient.listener.onClientOpenedEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                              statusCode, statusText);
+                     }
+
                      if (event.equals("register-success") || event.equals("register-failure")) {
-                        jainSipClient.listener.onClientOpenedEvent(id, jainSipClient.notificationManager.getConnectivityStatus(), statusCode, statusText);
                         jainSipJobManager.remove(id);
                      }
                   }
                }
                else if (type == Type.TYPE_REGISTER_REFRESH) {
+                  // no matter what state we are in if we get a timeout we need to just bail
+                  if (event.equals("timeout")) {
+                     jainSipClient.listener.onClientErrorEvent(id, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone,
+                           RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_TIMEOUT,
+                           RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_TIMEOUT));
+                     jainSipJobManager.remove(id);
+                     return;
+                  }
+
                   if (states[index].equals("register")) {
                      try {
-                        transaction = jainSipClient.jainSipClientRegister(parameters);
+                        transaction = jainSipClient.jainSipClientRegister(JainSipJob.this, parameters);
                      }
                      catch (JainSipException e) {
                         e.printStackTrace();
-                        jainSipClient.listener.onClientErrorEvent(id, e.errorCode, e.errorText);
+                        jainSipClient.listener.onClientErrorEvent(id, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone, e.errorCode, e.errorText);
                         jainSipJobManager.remove(id);
                      }
                   }
@@ -160,7 +186,7 @@ class JainSipJob {
                         }
                         catch (JainSipException e) {
                            e.printStackTrace();
-                           jainSipClient.listener.onClientErrorEvent(id, e.errorCode, e.errorText);
+                           jainSipClient.listener.onClientErrorEvent(id, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone, e.errorCode, e.errorText);
                            jainSipJobManager.remove(id);
                         }
                      }
@@ -170,7 +196,7 @@ class JainSipJob {
                   }
                   else if (states[index].equals("notify")) {
                      if (event.equals("register-failure")) {
-                        jainSipClient.listener.onClientErrorEvent(id, statusCode, statusText);
+                        jainSipClient.listener.onClientErrorEvent(id, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone, statusCode, statusText);
                      }
                      if (event.equals("register-success") || event.equals("register-failure")) {
                         jainSipJobManager.remove(id);
@@ -181,11 +207,50 @@ class JainSipJob {
                   if (states[index].equals("unregister")) {
                      try {
                         transaction = jainSipClient.jainSipClientUnregister(parameters);
+                        final String finalId = id;
+
+                        // Schedule a check to see if we managed to close the signaling facilities. If not then we need to force closing.
+                        // The reason we need that is for example if the unregister times out, which in SIP takes 32 seconds. This means
+                        // that after the App is left the SIP stack will remain alive for 32 secs, which means that if user tries to re-open
+                        // the stack it will fail.
+                        Runnable runnable = new Runnable() {
+                           @Override
+                           public void run()
+                           {
+                              if (jainSipClient.jainSipJobManager.get(finalId) != null) {
+                                 RCLogger.e(TAG, "process(): Unregister is taking too long. Forcing signaling facilities to stop");
+                                 // failed to unregister; we need to unbind & stop stack or at next initialization we will fail
+                                 try {
+                                    // don't forget to terminate the transaction, or else the timeout will fire and will be useless
+                                    transaction.terminate();
+                                    jainSipClient.jainSipClientUnbind();
+                                    jainSipClient.jainSipClientStopStack();
+                                 }
+                                 catch (Exception e) {
+                                    e.printStackTrace();
+                                    // at this point we can't recover
+                                    throw new RuntimeException("Failed to release signaling facilities");
+                                 }
+                              }
+                           }
+                        };
+                        jainSipClient.signalingHandler.postDelayed(runnable, JainSipClient.FORCE_CLOSE_INTERVAL);
 
                      }
                      catch (JainSipException e) {
                         e.printStackTrace();
                         jainSipClient.listener.onClientClosedEvent(id, e.errorCode, e.errorText);
+
+                        // failed to unregister; we need to unbind & stop stack or at next initialization we will fail
+                        try {
+                           jainSipClient.jainSipClientUnbind();
+                           jainSipClient.jainSipClientStopStack();
+                        }
+                        catch (JainSipException inner) {
+                           // at this point we can't recover
+                           throw new RuntimeException("Failed to unbind signaling facilities");
+                        }
+                        jainSipJobManager.remove(id);
                      }
                   }
                   else if (states[index].equals("auth")) {
@@ -197,6 +262,16 @@ class JainSipJob {
                         }
                         catch (JainSipException e) {
                            jainSipClient.listener.onClientClosedEvent(id, e.errorCode, e.errorText);
+
+                           // failed to unregister; we need to unbind & stop stack or at next initialization we will fail
+                           try {
+                              jainSipClient.jainSipClientUnbind();
+                              jainSipClient.jainSipClientStopStack();
+                           }
+                           catch (JainSipException inner) {
+                              // at this point we can't recover
+                              throw new RuntimeException("Failed to unbind signaling facilities");
+                           }
                         }
                      }
                      else {
@@ -204,10 +279,7 @@ class JainSipJob {
                      }
                   }
                   else if (states[index].equals("shutdown")) {
-                     if (event.equals("register-failure")) {
-                        RCLogger.w(TAG, "process(): unregister failed: " + Arrays.toString(Thread.currentThread().getStackTrace()));
-                     }
-                     else if (event.equals("register-success") || event.equals("register-failure")) {
+                     if (event.equals("register-success") || event.equals("register-failure")) {
                         try {
                            jainSipClient.jainSipClientUnbind();
                            jainSipClient.jainSipClientStopStack();
@@ -222,9 +294,29 @@ class JainSipJob {
                   }
                }
                else if (type == Type.TYPE_RECONFIGURE) {
+                  if (event.equals("timeout")) {
+                     // Important: if time out occurred on unregister we need to ignore and jump to register step. Take for example a case
+                     // where the user does such a setup that registration fails and then they change again to a valid settings. In this case
+                     // the first registration will timeout, but we don't care, we still need to continue with the register step
+                     if (states[index].equals("auth-1")) {
+                        // timeout occured in unregister
+                        RCLogger.w(TAG, "process(): unregister timed out in reconfigure, ignoring unregister step");
+                        index += 1;
+                        event = "register-failure";
+                     }
+                     else {
+                        jainSipClient.listener.onClientReconfigureEvent(id, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone,
+                              RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_TIMEOUT,
+                              RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_TIMEOUT));
+                        jainSipJobManager.remove(id);
+                        return;
+                     }
+                  }
+
                   if (states[index].equals("unregister")) {
                      if (!jainSipClient.notificationManager.haveConnectivity()) {
-                        jainSipClient.listener.onClientErrorEvent(id, RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY,
+                        jainSipClient.listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                              RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY,
                               RCClient.errorText(RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY));
                         jainSipJobManager.remove(id);
                         return;
@@ -241,10 +333,18 @@ class JainSipJob {
                         }
                      }
                      catch (JainSipException e) {
-                        RCLogger.w(TAG, "process(): unregister failed: " + Arrays.toString(Thread.currentThread().getStackTrace()));
+                        RCLogger.w(TAG, "process(): unregister failed: ");
+                        e.printStackTrace();
+
+                        // we failed to unregister, but this is a valid use case (like when user provides wrong domain). We need
+                        // to avoid authentication and jump to registration with new settings
+                        // TODO: this is a pretty messy way to convey that we want to jump 1 step
+                        index += 1;
+                        loop = true;
+                        event = "register-failure";
                      }
                   }
-                  else if (states[index].equals("auth")) {
+                  else if (states[index].equals("auth-1")) {
                      // the auth step is optional hence we check if auth-required event was passed by the caller, if not we loop around to visit next state
                      if (event.equals("auth-required")) {
                         ResponseEventExt responseEventExt = (ResponseEventExt) arg;
@@ -253,7 +353,8 @@ class JainSipJob {
                         }
                         catch (JainSipException e) {
                            e.printStackTrace();
-                           jainSipClient.listener.onClientReconfigureEvent(id, e.errorCode, e.errorText);
+                           jainSipClient.listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                                 e.errorCode, e.errorText);
                         }
                      }
                      else {
@@ -270,7 +371,7 @@ class JainSipJob {
                            if (((HashMap<String, Object>) parameters.get("new-parameters")).containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) &&
                                  !((HashMap<String, Object>) parameters.get("new-parameters")).get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
                               // Domain has been provided do the registration
-                              transaction = jainSipClient.jainSipClientRegister((HashMap<String, Object>) parameters.get("new-parameters"));
+                              transaction = jainSipClient.jainSipClientRegister(JainSipJob.this, (HashMap<String, Object>) parameters.get("new-parameters"));
                            }
                            else {
                               // No domain, need to loop through to next step
@@ -279,11 +380,13 @@ class JainSipJob {
                         }
                         catch (JainSipException e) {
                            e.printStackTrace();
-                           jainSipClient.listener.onClientReconfigureEvent(id, e.errorCode, e.errorText);
+                           jainSipClient.listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                                 e.errorCode, e.errorText);
+                           jainSipJobManager.remove(id);
                         }
                      }
                   }
-                  else if (states[index].equals("auth")) {
+                  else if (states[index].equals("auth-2")) {
                      // the auth step is optional hence we check if auth-required event was passed by the caller, if not we loop around to visit next state
                      if (event.equals("auth-required")) {
                         ResponseEventExt responseEventExt = (ResponseEventExt) arg;
@@ -292,7 +395,8 @@ class JainSipJob {
                         }
                         catch (JainSipException e) {
                            e.printStackTrace();
-                           jainSipClient.listener.onClientReconfigureEvent(id, e.errorCode, e.errorText);
+                           jainSipClient.listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                                 e.errorCode, e.errorText);
                            jainSipJobManager.remove(id);
                         }
                      }
@@ -302,7 +406,8 @@ class JainSipJob {
                   }
                   else if (states[index].equals("notify")) {
                      if (event.equals("register-success") || event.equals("register-failure")) {
-                        jainSipClient.listener.onClientReconfigureEvent(id, statusCode, statusText);
+                        jainSipClient.listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                              statusCode, statusText);
                         jainSipJobManager.remove(id);
                      }
                   }
@@ -310,12 +415,12 @@ class JainSipJob {
                else if (type == Type.TYPE_RECONFIGURE_RELOAD_NETWORKING) {
                   if (states[index].equals("unregister")) {
                      if (!jainSipClient.notificationManager.haveConnectivity()) {
-                        jainSipClient.listener.onClientErrorEvent(id, RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY,
+                        jainSipClient.listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                              RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY,
                               RCClient.errorText(RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY));
                         jainSipJobManager.remove(id);
                         return;
                      }
-
                      try {
                         if (((HashMap<String, Object>) parameters.get("old-parameters")).containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) &&
                               !((HashMap<String, Object>) parameters.get("old-parameters")).get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
@@ -330,9 +435,16 @@ class JainSipJob {
                      catch (JainSipException e) {
                         e.printStackTrace();
                         RCLogger.w(TAG, "process(): unregister failed: " + Arrays.toString(Thread.currentThread().getStackTrace()));
+
+                        // we failed to unregister, but this is a valid use case (like when user provides wrong domain). We need
+                        // to avoid authentication and jump to registration with new settings
+                        // TODO: this is a pretty messy way to convey that we want to jump 1 step
+                        index += 1;
+                        loop = true;
+                        event = "register-failure";
                      }
                   }
-                  else if (states[index].equals("auth")) {
+                  else if (states[index].equals("auth-1")) {
                      // the auth step is optional hence we check if auth-required event was passed by the caller, if not we loop around to visit next state
                      if (event.equals("auth-required")) {
                         ResponseEventExt responseEventExt = (ResponseEventExt) arg;
@@ -341,7 +453,8 @@ class JainSipJob {
                         }
                         catch (JainSipException e) {
                            e.printStackTrace();
-                           jainSipClient.listener.onClientReconfigureEvent(id, e.errorCode, e.errorText);
+                           jainSipClient.listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                                 e.errorCode, e.errorText);
                         }
                      }
                      else {
@@ -362,7 +475,7 @@ class JainSipJob {
                            if (((HashMap<String, Object>) parameters.get("new-parameters")).containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) &&
                                  !((HashMap<String, Object>) parameters.get("new-parameters")).get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
                               // Domain has been provided do the registration
-                              transaction = jainSipClient.jainSipClientRegister((HashMap<String, Object>) parameters.get("new-parameters"));
+                              transaction = jainSipClient.jainSipClientRegister(JainSipJob.this, (HashMap<String, Object>) parameters.get("new-parameters"));
                            }
                            else {
                               // No domain, need to loop through to next step
@@ -371,12 +484,13 @@ class JainSipJob {
                         }
                         catch (JainSipException e) {
                            e.printStackTrace();
-                           jainSipClient.listener.onClientReconfigureEvent(id, e.errorCode, e.errorText);
+                           jainSipClient.listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                                 e.errorCode, e.errorText);
                            jainSipJobManager.remove(id);
                         }
                      }
                   }
-                  else if (states[index].equals("auth")) {
+                  else if (states[index].equals("auth-2")) {
                      // the auth step is optional hence we check if auth-required event was passed by the caller, if not we loop around to visit next state
                      if (event.equals("auth-required")) {
                         ResponseEventExt responseEventExt = (ResponseEventExt) arg;
@@ -385,7 +499,8 @@ class JainSipJob {
                         }
                         catch (JainSipException e) {
                            e.printStackTrace();
-                           jainSipClient.listener.onClientReconfigureEvent(id, e.errorCode, e.errorText);
+                           jainSipClient.listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                                 e.errorCode, e.errorText);
                         }
                      }
                      else {
@@ -394,7 +509,8 @@ class JainSipJob {
                   }
                   else if (states[index].equals("notify")) {
                      if (event.equals("register-success") || event.equals("register-failure")) {
-                        jainSipClient.listener.onClientReconfigureEvent(id, statusCode, statusText);
+                        jainSipClient.listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                              statusCode, statusText);
                         jainSipJobManager.remove(id);
                      }
                   }
@@ -409,7 +525,7 @@ class JainSipJob {
 
                         if (parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) && !parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
                            // Domain has been provided do the registration
-                           transaction = jainSipClient.jainSipClientRegister(parameters);
+                           transaction = jainSipClient.jainSipClientRegister(JainSipJob.this, parameters);
                         }
                         else {
                            // No domain, need to loop through to next step
@@ -421,7 +537,7 @@ class JainSipJob {
                      catch (JainSipException e) {
                         e.printStackTrace();
                         RCLogger.e(TAG, "process(): register failed: " + Arrays.toString(Thread.currentThread().getStackTrace()));
-                        jainSipClient.listener.onClientErrorEvent(id, e.errorCode, e.errorText);
+                        jainSipClient.listener.onClientErrorEvent(id, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone, e.errorCode, e.errorText);
                      }
                   }
                   else if (states[index].equals("auth")) {
@@ -433,7 +549,7 @@ class JainSipJob {
                         }
                         catch (JainSipException e) {
                            RCLogger.e(TAG, "process(): auth failed: " + Arrays.toString(Thread.currentThread().getStackTrace()));
-                           jainSipClient.listener.onClientErrorEvent(id, e.errorCode, e.errorText);
+                           jainSipClient.listener.onClientErrorEvent(id, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone, e.errorCode, e.errorText);
                         }
                      }
                      else {
@@ -447,7 +563,7 @@ class JainSipJob {
                         jainSipJobManager.remove(id);
                      }
                      if (event.equals("register-failure")) {
-                        jainSipClient.listener.onClientErrorEvent(id, statusCode, statusText);
+                        jainSipClient.listener.onClientErrorEvent(id, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone, statusCode, statusText);
                         jainSipJobManager.remove(id);
                      }
                   }
@@ -460,7 +576,7 @@ class JainSipJob {
 
                         if (parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) && !parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
                            // Domain has been provided do the registration
-                           transaction = jainSipClient.jainSipClientRegister(parameters);
+                           transaction = jainSipClient.jainSipClientRegister(JainSipJob.this, parameters);
                         }
                         else {
                            // No Domain there we are done here
@@ -471,7 +587,7 @@ class JainSipJob {
                      }
                      catch (JainSipException e) {
                         e.printStackTrace();
-                        jainSipClient.listener.onClientErrorEvent(id, e.errorCode, e.errorText);
+                        jainSipClient.listener.onClientErrorEvent(id, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone, e.errorCode, e.errorText);
                      }
                   }
                   else if (states[index].equals("auth")) {
@@ -484,7 +600,7 @@ class JainSipJob {
                         catch (JainSipException e) {
                            e.printStackTrace();
                            RCLogger.e(TAG, "process(): auth failed: " + Arrays.toString(Thread.currentThread().getStackTrace()));
-                           jainSipClient.listener.onClientErrorEvent(id, e.errorCode, e.errorText);
+                           jainSipClient.listener.onClientErrorEvent(id, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone, e.errorCode, e.errorText);
                         }
                      }
                      else {
@@ -498,7 +614,7 @@ class JainSipJob {
                         jainSipJobManager.remove(id);
                      }
                      if (event.equals("register-failure")) {
-                        jainSipClient.listener.onClientErrorEvent(id, statusCode, statusText);
+                        jainSipClient.listener.onClientErrorEvent(id, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone, statusCode, statusText);
                         jainSipJobManager.remove(id);
                      }
                   }
@@ -543,11 +659,6 @@ class JainSipJob {
    }
 
    public enum Type {
-      // TODO: remove those when we are done with new logic
-      TYPE_REGISTRATION,
-      TYPE_MESSAGE,
-
-      //
       TYPE_OPEN,
       TYPE_REGISTER_REFRESH,
       TYPE_CLOSE,
@@ -555,8 +666,8 @@ class JainSipJob {
       TYPE_RECONFIGURE_RELOAD_NETWORKING,
       TYPE_RELOAD_NETWORKING,
       TYPE_START_NETWORKING,
-
       TYPE_CALL,
+      TYPE_MESSAGE,
    }
 
    // id is a unique identifier for a Job. It is App provided for outgoing requests (typically Unix time with miliseconds, as a string)

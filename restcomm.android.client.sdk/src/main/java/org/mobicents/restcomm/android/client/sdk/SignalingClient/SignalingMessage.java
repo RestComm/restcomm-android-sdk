@@ -22,6 +22,7 @@ public class SignalingMessage {
       CALL_EVENT,
       ERROR_EVENT,
       CONNECTIVITY_EVENT,
+      REGISTERING_EVENT,
 
       CALL_PEER_RINGING_EVENT,
       CALL_PEER_DISCONNECT_EVENT,

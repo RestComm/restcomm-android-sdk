@@ -118,7 +118,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
         // Get Intent parameters.
         final Intent intent = getIntent();
-        if (intent.getAction() == RCDevice.OUTGOING_CALL) {
+        if (intent.getAction().equals(RCDevice.OUTGOING_CALL)) {
             btnAnswer.setVisibility(View.INVISIBLE);
             btnAnswerAudio.setVisibility(View.INVISIBLE);
         } else {
@@ -134,6 +134,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         btnMuteAudio.setVisibility(View.INVISIBLE);
         btnMuteVideo.setVisibility(View.INVISIBLE);
         btnKeypad.setVisibility(View.INVISIBLE);
+
+        activityVisible = true;
 
         // open keypad
         FragmentTransaction ft = getFragmentManager().beginTransaction();
@@ -216,7 +218,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
             if (connection == null) {
                 Log.e(TAG, "Error: error connecting");
-                showOkAlert("RCDevice Error", "No Wifi connectivity");
+                showOkAlert("RCDevice Error", "Device is Offline");
                 return;
             }
         }
@@ -449,7 +451,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
     @Override
     public void onFragmentInteraction(String action) {
-        if (action == "cancel") {
+        if (action.equals("cancel")) {
             FragmentTransaction ft = getFragmentManager().beginTransaction();
             ft.hide(keypadFragment);
             ft.commit();

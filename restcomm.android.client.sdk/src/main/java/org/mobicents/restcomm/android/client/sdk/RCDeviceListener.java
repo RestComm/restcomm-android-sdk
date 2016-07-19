@@ -55,11 +55,12 @@ public interface RCDeviceListener {
    //void onInitializationFailure(int errorCode, String errorText);
 
    /**
-    * RCDevice started listening for incoming connections (<b>Not Implemented yet</b>)
+    * RCDevice started listening for incoming connections
     *
     * @param device Device of interest
+    * @param connectivityStatus Connectivity status when started listening
     */
-   void onStartListening(RCDevice device);
+   void onStartListening(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus);
 
    /**
     * RCDevice stopped listening for incoming connections

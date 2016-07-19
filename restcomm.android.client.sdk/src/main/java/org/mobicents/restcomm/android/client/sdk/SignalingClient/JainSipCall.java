@@ -214,6 +214,7 @@ class JainSipCall {
                RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_HANGUP_FAILED));
       }
       catch (Exception e) {
+         e.printStackTrace();
          throw new RuntimeException("SIP transaction error");
       }
    }

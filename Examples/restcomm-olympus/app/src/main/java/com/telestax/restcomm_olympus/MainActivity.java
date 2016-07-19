@@ -38,6 +38,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.Toast;
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
@@ -252,9 +253,9 @@ public class MainActivity extends AppCompatActivity
    /**
     * RCDeviceListener callbacks
     */
-   public void onStartListening(RCDevice device)
+   public void onStartListening(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus)
    {
-
+      handleConnectivityUpdate(connectivityStatus, null);
    }
 
    public void onStopListening(RCDevice device)
@@ -264,7 +265,15 @@ public class MainActivity extends AppCompatActivity
 
    public void onStopListening(RCDevice device, int errorCode, String errorText)
    {
-      showOkAlert("RCDevice Error", errorText);
+      //showOkAlert("RCDevice Error", errorText);
+      //Toast.makeText(getApplicationContext(), "RCDevice Error: " + errorText, Toast.LENGTH_SHORT).show();
+
+      if (errorCode == RCClient.ErrorCodes.SUCCESS.ordinal()) {
+         handleConnectivityUpdate(RCConnectivityStatus.RCConnectivityStatusNone, "RCDevice: " + errorText);
+      }
+      else {
+         handleConnectivityUpdate(RCConnectivityStatus.RCConnectivityStatusNone, "RCDevice Error: " + errorText);
+      }
         /*
         if (errorCode == RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal()) {
             showOkAlert("No Wifi Connectivity", errorText);
@@ -281,13 +290,17 @@ public class MainActivity extends AppCompatActivity
    public void onInitialized(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus, int statusCode, String statusText)
    {
       if (statusCode == RCClient.ErrorCodes.SUCCESS.ordinal()) {
-         onConnectivityUpdate(device, connectivityStatus);
+         handleConnectivityUpdate(connectivityStatus, "RCDevice Initialized, using: " + connectivityStatus);
       }
       else if (statusCode == RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY.ordinal()) {
-         onConnectivityUpdate(device, connectivityStatus);
+         // This is not really an error, since if connectivity comes back the RCDevice will resume automatically
+         handleConnectivityUpdate(connectivityStatus, null);
       }
       else {
-         showOkAlert("RCDevice Initialization Error", statusText);
+         //Toast.makeText(getApplicationContext(), "RCDevice Initialization Error: " + statusText, Toast.LENGTH_LONG).show();
+         //showOkAlert("RCDevice Initialization Error", statusText);
+         //handleConnectivityUpdate(connectivityStatus, "RCDevice Initialization Error: " + statusText);
+         Toast.makeText(getApplicationContext(), "RCDevice Initialization Error: " + statusText, Toast.LENGTH_SHORT).show();
       }
 
    }
@@ -295,21 +308,31 @@ public class MainActivity extends AppCompatActivity
    public void onReleased(RCDevice device, int statusCode, String statusText)
    {
       if (statusCode != RCClient.ErrorCodes.SUCCESS.ordinal()) {
-         showOkAlert("RCDevice Release Error", statusText);
+         //showOkAlert("RCDevice Release Error", statusText);
+         Toast.makeText(getApplicationContext(), "RCDevice Release Error: " + statusText, Toast.LENGTH_SHORT).show();
+      }
+      else {
+         handleConnectivityUpdate(RCConnectivityStatus.RCConnectivityStatusNone, "RCDevice Released: " + statusText);
       }
    }
 
    public void onConnectivityUpdate(RCDevice device, RCConnectivityStatus connectivityStatus)
    {
-      String text = "";
-      if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusNone) {
-         text = "Lost connectivity";
-      }
-      if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusWiFi) {
-         text = "Reestablished connectivity (Wifi)";
-      }
-      if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusCellular) {
-         text = "Reestablished connectivity (Cellular)";
+      handleConnectivityUpdate(connectivityStatus, null);
+   }
+
+   public void handleConnectivityUpdate(RCConnectivityStatus connectivityStatus, String text)
+   {
+      if (text == null) {
+         if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusNone) {
+            text = "RCDevice connectivity change: Lost connectivity";
+         }
+         if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusWiFi) {
+            text = "RCDevice connectivity change: Reestablished connectivity (Wifi)";
+         }
+         if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusCellular) {
+            text = "RCDevice connectivity change: Reestablished connectivity (Cellular)";
+         }
       }
 
       if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusNone) {
@@ -319,17 +342,17 @@ public class MainActivity extends AppCompatActivity
          getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
       }
 
-      if (connectivityStatus != this.previousConnectivityStatus) {
-         showOkAlert("RCDevice connectivity change", text);
+      //if (connectivityStatus != this.previousConnectivityStatus) {
+         //showOkAlert("RCDevice connectivity change", text);
+         Toast.makeText(getApplicationContext(), text, Toast.LENGTH_SHORT).show();
          this.previousConnectivityStatus = connectivityStatus;
-      }
+      //}
    }
 
    public void onMessageSent(RCDevice device, int statusCode, String statusText)
    {
 
    }
-
 
    public boolean receivePresenceEvents(RCDevice device)
    {
@@ -387,6 +410,7 @@ public class MainActivity extends AppCompatActivity
    /**
     * Helpers
     */
+   /*
    private void showOkAlert(final String title, final String detail)
    {
       if (alertDialog.isShowing()) {
@@ -404,6 +428,7 @@ public class MainActivity extends AppCompatActivity
       });
       alertDialog.show();
    }
+   */
 
 }
 

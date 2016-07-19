@@ -55,17 +55,20 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
    public interface JainSipClientListener {
       void onClientOpenedEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text);  // on successful/unsuccessful register, onPrivateClientConnectorOpenedEvent
 
-      void onClientErrorEvent(String id, RCClient.ErrorCodes status, String text);  // mostly on unsuccessful register, onPrivateClientConnectorOpenErrorEvent
+      void onClientErrorEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text);  // mostly on unsuccessful register, onPrivateClientConnectorOpenErrorEvent
 
       void onClientClosedEvent(String id, RCClient.ErrorCodes status, String text);  // on successful unregister, onPrivateClientConnectorClosedEvent
 
-      void onClientReconfigureEvent(String id, RCClient.ErrorCodes status, String text);  // on successful register, onPrivateClientConnectorOpenedEvent
+      void onClientReconfigureEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text);  // on successful register, onPrivateClientConnectorOpenedEvent
 
       void onClientConnectivityEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus);
 
       void onClientMessageArrivedEvent(String id, String peer, String messageText);
 
       void onClientMessageSentEvent(String id, RCClient.ErrorCodes status, String text);
+
+      // Event to convey trying to Register, so that UI can convey that to user
+      void onClientRegisteringEvent(String id);
    }
 
    public JainSipClientListener listener;
@@ -89,6 +92,8 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
    // and full expiry (in this example, a random between [30, 60] seconds) to avoid having all android clients refreshing all at
    // the same time and stressing Restcomm. Actually this is how Sofia SIP in restcomm-ios-sdk does it by default.
    final int REGISTER_REFRESH_MINUS_INTERVAL = 10;
+   // how long after we force close the client if it takes too long to process JainSipClient.close()
+   static final int FORCE_CLOSE_INTERVAL = 3000;
 
    // JAIN SIP entities
    public SipFactory jainSipFactory;
@@ -107,7 +112,8 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
       RCLogger.i(TAG, "open(): " + configuration.toString());
 
       if (clientOpened) {
-         listener.onClientOpenedEvent(id, notificationManager.getConnectivityStatus(), RCClient.ErrorCodes.ERROR_DEVICE_ALREADY_OPENED,
+         listener.onClientOpenedEvent(id, NotificationManager.networkStatus2ConnectivityStatus(notificationManager.getNetworkStatus()),
+               RCClient.ErrorCodes.ERROR_DEVICE_ALREADY_OPENED,
                RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_ALREADY_OPENED));
          return;
       }
@@ -148,12 +154,11 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
          jainSipJobManager.add(id, JainSipJob.Type.TYPE_OPEN, configuration);
       }
       catch (SipException e) {
+         e.printStackTrace();
          throw new RuntimeException(RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_SIP_STACK_BOOTSTRAP));
          /*
          listener.onClientOpenedEvent(id, notificationManager.getConnectivityStatus(), RCClient.ErrorCodes.ERROR_SIGNALING_SIP_STACK_BOOTSTRAP,
                RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_SIP_STACK_BOOTSTRAP));
-         RCLogger.e(TAG, "open(): " + e.getMessage());
-         e.printStackTrace();
          */
       }
    }
@@ -196,7 +201,7 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
       }
    }
 
-   void reconfigure(String id, Context androidContext, HashMap<String, Object> parameters, JainSipClientListener listener)
+   void reconfigure(String id, HashMap<String, Object> parameters, JainSipClientListener listener)
    {
       RCLogger.i(TAG, "reconfigure(): " + parameters.toString());
 
@@ -204,7 +209,8 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
       HashMap<String, Object> modifiedParameters = JainSipConfiguration.modifiedParameters(this.configuration, parameters);
 
       if (modifiedParameters.size() == 0) {
-         listener.onClientReconfigureEvent(id, RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
+         listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(notificationManager.getNetworkStatus()),
+               RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
          return;
       }
 
@@ -245,10 +251,12 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
          jainSipJobManager.add(id, JainSipJob.Type.TYPE_RECONFIGURE, multipleParameters);
       }
       else {
-         listener.onClientReconfigureEvent(id, RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
+         listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(notificationManager.getNetworkStatus()),
+               RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
       }
    }
 
+   // ------ Call-related calls
    void call(String jobId, HashMap<String, Object> parameters, JainSipCall.JainSipCallListener listener)
    {
       RCLogger.i(TAG, "call(): id: " + jobId + ", parameters: " + parameters.toString());
@@ -418,7 +426,7 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
       clientOpened = false;
    }
 
-   public ClientTransaction jainSipClientRegister(final HashMap<String, Object> parameters) throws JainSipException
+   public ClientTransaction jainSipClientRegister(JainSipJob jainSipJob, final HashMap<String, Object> parameters) throws JainSipException
    {
       RCLogger.v(TAG, "jainSipRegister()");
       // Debug purposes to track the JainSipJob objects
@@ -438,18 +446,23 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
          }
       }
 
-      ClientTransaction transaction = null;
+      ClientTransaction transaction;
       try {
          Request registerRequest = jainSipMessageBuilder.buildRegisterRequest(jainSipListeningPoint, expiry, parameters);
-         if (registerRequest != null) {
-            RCLogger.v(TAG, "jainSipRegister(): Sending SIP request: \n" + registerRequest.toString());
+         RCLogger.v(TAG, "jainSipRegister(): Sending SIP request: \n" + registerRequest.toString());
 
-            // Remember that this might block waiting for DNS server
-            transaction = this.jainSipProvider.getNewClientTransaction(registerRequest);
-            transaction.sendRequest();
+         // only notify on registering on specific types of jobs, otherwise we would swamp the App with notifications
+         if (jainSipJob.type == JainSipJob.Type.TYPE_RECONFIGURE || jainSipJob.type == JainSipJob.Type.TYPE_RECONFIGURE_RELOAD_NETWORKING ||
+               jainSipJob.type == JainSipJob.Type.TYPE_START_NETWORKING || jainSipJob.type == JainSipJob.Type.TYPE_RELOAD_NETWORKING) {
+            listener.onClientRegisteringEvent(jainSipJob.id);
          }
+
+         // Remember that this might block waiting for DNS server
+         transaction = this.jainSipProvider.getNewClientTransaction(registerRequest);
+         transaction.sendRequest();
       }
       catch (SipException e) {
+         e.printStackTrace();
          throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT));
       }
 
@@ -480,13 +493,11 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
       ClientTransaction transaction = null;
       try {
          Request registerRequest = jainSipMessageBuilder.buildRegisterRequest(jainSipListeningPoint, 0, parameters);
-         if (registerRequest != null) {
-            RCLogger.v(TAG, "jainSipUnregister(): Sending SIP request: \n" + registerRequest.toString());
+         RCLogger.v(TAG, "jainSipUnregister(): Sending SIP request: \n" + registerRequest.toString());
 
-            // Remember that this might block waiting for DNS server
-            transaction = this.jainSipProvider.getNewClientTransaction(registerRequest);
-            transaction.sendRequest();
-         }
+         // Remember that this might block waiting for DNS server
+         transaction = this.jainSipProvider.getNewClientTransaction(registerRequest);
+         transaction.sendRequest();
       }
       catch (SipException e) {
          throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT,
@@ -771,30 +782,22 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
                return;
             }
 
-            if (jainSipJob.type == JainSipJob.Type.TYPE_REGISTRATION) {
-               // TODO: need to handle registration refreshes
-               jainSipJob.processFsm(jainSipJob.id, "timeout", null, RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_TIMEOUT,
-                     RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_TIMEOUT));
-               //jainSipJobManager.remove(callId);
-            }
-            else if (jainSipJob.type == JainSipJob.Type.TYPE_CALL) {
+            if (jainSipJob.type == JainSipJob.Type.TYPE_CALL) {
                // TODO: call JainSipCall.processTimeout()
             }
             else if (jainSipJob.type == JainSipJob.Type.TYPE_MESSAGE) {
                // TODO: call JainSipMessage.processTimeout()
             }
-
-                /*
-                RCLogger.i(TAG, "processTimeout(): method: " + request.getMethod() + " URI: " + request.getRequestURI());
-                if (request.getMethod() == Request.INVITE) {
-                    dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_CALL, RCClient.ErrorCodes.SIGNALLING_TIMEOUT,
-                            "Timed out waiting on " + request.getMethod());
-                }
-                else {
-                    dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_NON_CALL, RCClient.ErrorCodes.SIGNALLING_TIMEOUT,
-                            "Timed out waiting on " + request.getMethod());
-                }
-                */
+            else {
+               // register, register refresh, reconfigure, etc
+               jainSipJob.processFsm(jainSipJob.id, "timeout", null, RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_TIMEOUT,
+                     RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_TIMEOUT));
+               /*
+               if (jainSipJob.type == JainSipJob.Type.TYPE_REGISTRATION || jainSipJob.type == JainSipJob.Type.TYPE_REGISTER_REFRESH ||
+                     jainSipJob.type == JainSipJob.Type.TYPE_RECONFIGURE) {
+               }
+               */
+            }
          }
       };
       signalingHandler.post(runnable);
@@ -846,14 +849,14 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
    public String getIPAddress(boolean useIPv4) throws SocketException
    {
       RCLogger.i(TAG, "getIPAddress()");
-      if (notificationManager.getConnectivityStatus() == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi) {
+      if (notificationManager.getNetworkStatus() == NotificationManager.NetworkStatus.NetworkStatusWiFi) {
          WifiManager wifiMgr = (WifiManager) androidContext.getSystemService(Context.WIFI_SERVICE);
          WifiInfo wifiInfo = wifiMgr.getConnectionInfo();
          int ip = wifiInfo.getIpAddress();
          return Formatter.formatIpAddress(ip);
       }
 
-      if (notificationManager.getConnectivityStatus() == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular) {
+      if (notificationManager.getNetworkStatus() == NotificationManager.NetworkStatus.NetworkStatusCellular) {
          List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
          for (NetworkInterface intf : interfaces) {
             if (!intf.getName().matches("wlan.*")) {

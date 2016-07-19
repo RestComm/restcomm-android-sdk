@@ -141,10 +141,10 @@ public class RCClient {
          return "Error authenticating with Service";
       }
       else if (errorCode == ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT) {
-         return "Could not connect with Service";
+         return "Could not connect to Service";
       }
       else if (errorCode == ErrorCodes.ERROR_SIGNALING_REGISTER_URI_INVALID) {
-         return "Register URI is invalid";
+         return "Register Domain URI is invalid";
       }
       else if (errorCode == ErrorCodes.ERROR_SIGNALING_NETWORK_INTERFACE) {
          return "Error retrieving local network interface information";

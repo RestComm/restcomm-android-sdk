@@ -20,6 +20,12 @@ class NotificationManager extends BroadcastReceiver {
       void onConnectivityChange(ConnectivityChange connectivityChange);
    }
 
+   enum NetworkStatus {
+      NetworkStatusNone,
+      NetworkStatusWiFi,
+      NetworkStatusCellular,
+   }
+
    public enum ConnectivityChange {
       OFFLINE,
       OFFLINE_TO_WIFI,
@@ -31,7 +37,7 @@ class NotificationManager extends BroadcastReceiver {
    Context androidContext;
    NotificationManagerListener listener;
    static final String TAG = "NotificationManager";
-   RCDeviceListener.RCConnectivityStatus connectivityStatus;
+   NetworkStatus networksStatus;
 
 
    NotificationManager(Context androidContext, Handler handler, NotificationManagerListener listener)
@@ -40,7 +46,7 @@ class NotificationManager extends BroadcastReceiver {
       this.listener = listener;
       IntentFilter filter = new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION);
       // initialize current connectivity status
-      connectivityStatus = checkConnectivity(androidContext);
+      networksStatus = checkConnectivity(androidContext);
       // register for connectivity related events
       androidContext.registerReceiver(this, filter, null, handler);
    }
@@ -57,52 +63,52 @@ class NotificationManager extends BroadcastReceiver {
       ConnectivityChange connectivityChange = ConnectivityChange.OFFLINE;
 
       // retrieve new connectivity status
-      RCDeviceListener.RCConnectivityStatus newConnectivityStatus = checkConnectivity(context);
+      NetworkStatus newConnectivityStatus = checkConnectivity(context);
 
-      if (newConnectivityStatus == connectivityStatus) {
+      if (newConnectivityStatus == networksStatus) {
          RCLogger.w(TAG, "Connectivity event, but remained the same: " + newConnectivityStatus);
          return;
       }
 
-      if (newConnectivityStatus == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
-         RCLogger.w(TAG, "Connectivity event; lost connectivity from: " + connectivityStatus);
+      if (newConnectivityStatus == NetworkStatus.NetworkStatusNone) {
+         RCLogger.w(TAG, "Connectivity event; lost connectivity from: " + networksStatus);
          connectivityChange = ConnectivityChange.OFFLINE;
       }
 
       // old state wifi and new state mobile or the reverse; need to shutdown and restart network facilities
-      if (connectivityStatus == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi &&
-            newConnectivityStatus == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular) {
+      if (networksStatus == NetworkStatus.NetworkStatusWiFi &&
+            newConnectivityStatus == NetworkStatus.NetworkStatusCellular) {
          RCLogger.w(TAG, "Connectivity event: switch from wifi to cellular data");
          connectivityChange = ConnectivityChange.WIFI_TO_CELLULAR_DATA;
       }
 
 
-      if (connectivityStatus == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular &&
-            newConnectivityStatus == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi) {
+      if (networksStatus == NetworkStatus.NetworkStatusCellular &&
+            newConnectivityStatus == NetworkStatus.NetworkStatusWiFi) {
          RCLogger.w(TAG, "Connectivity event: switch from cellular data to wifi");
          connectivityChange = ConnectivityChange.CELLULAR_DATA_TO_WIFI;
       }
 
-      if (connectivityStatus == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone &&
-            newConnectivityStatus == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi) {
+      if (networksStatus == NetworkStatus.NetworkStatusNone &&
+            newConnectivityStatus == NetworkStatus.NetworkStatusWiFi) {
          RCLogger.w(TAG, "Connectivity event: wifi available");
          connectivityChange = ConnectivityChange.OFFLINE_TO_WIFI;
       }
 
-      if (connectivityStatus == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone &&
-            newConnectivityStatus == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular) {
+      if (networksStatus == NetworkStatus.NetworkStatusNone &&
+            newConnectivityStatus == NetworkStatus.NetworkStatusCellular) {
          RCLogger.w(TAG, "Connectivity event: cellular data available");
          connectivityChange = ConnectivityChange.OFFLINE_TO_CELLULAR_DATA;
       }
 
       // update current connectivity status
-      connectivityStatus = newConnectivityStatus;
+      networksStatus = newConnectivityStatus;
 
       // notify listener of the change
       listener.onConnectivityChange(connectivityChange);
    }
 
-   static public RCDeviceListener.RCConnectivityStatus checkConnectivity(Context context)
+   static public NetworkStatus checkConnectivity(Context context)
    {
       ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 
@@ -110,21 +116,35 @@ class NotificationManager extends BroadcastReceiver {
       if (activeNetwork != null) {
          if (activeNetwork.getType() == ConnectivityManager.TYPE_WIFI && activeNetwork.isConnected()) {
             RCLogger.w(TAG, "Connectivity event: WIFI");
-            return RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi;
+            return NetworkStatus.NetworkStatusWiFi;
          }
 
          if (activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE && activeNetwork.isConnected()) {
             Log.w(TAG, "Connectivity event: CELLULAR DATA");
-            return RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular;
+            return NetworkStatus.NetworkStatusCellular;
          }
       }
       RCLogger.w(TAG, "Connectivity event: NONE");
-      return RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone;
+      return NetworkStatus.NetworkStatusNone;
+   }
+
+   // convert from NetworkStatus -> ConnectivityStatus
+   static public RCDeviceListener.RCConnectivityStatus networkStatus2ConnectivityStatus(NetworkStatus networkStatus)
+   {
+      if (networkStatus == NetworkStatus.NetworkStatusNone) {
+         return RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone;
+      }
+      else if (networkStatus == NetworkStatus.NetworkStatusWiFi) {
+         return RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi;
+      }
+      else {
+         return RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular;
+      }
    }
 
    boolean haveConnectivity()
    {
-      if (connectivityStatus != RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
+      if (networksStatus != NetworkStatus.NetworkStatusNone) {
          return true;
       }
       else {
@@ -132,8 +152,8 @@ class NotificationManager extends BroadcastReceiver {
       }
    }
 
-   RCDeviceListener.RCConnectivityStatus getConnectivityStatus()
+   NetworkStatus getNetworkStatus()
    {
-      return connectivityStatus;
+      return networksStatus;
    }
 }
