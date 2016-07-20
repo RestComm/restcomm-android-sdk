@@ -30,7 +30,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 
-import org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipConfiguration;
+import org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient.JainSipConfiguration;
 import org.mobicents.restcomm.android.client.sdk.SignalingClient.SignalingMessage;
 import org.mobicents.restcomm.android.client.sdk.SignalingClient.UIClient;
 import org.mobicents.restcomm.android.client.sdk.util.RCLogger;

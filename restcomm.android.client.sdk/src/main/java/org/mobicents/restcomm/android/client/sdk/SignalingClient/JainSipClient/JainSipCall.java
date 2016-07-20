@@ -1,4 +1,4 @@
-package org.mobicents.restcomm.android.client.sdk.SignalingClient;
+package org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient;
 
 import android.gov.nist.javax.sip.ResponseEventExt;
 import android.gov.nist.javax.sip.message.SIPMessage;
@@ -22,7 +22,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
 
 // Represents a call
-class JainSipCall {
+public class JainSipCall {
    // Interface the JainSipCall listener needs to implement, to get events from us
    public interface JainSipCallListener {
       void onCallRingingEvent(String callId);  // onPrivateCallConnectorCallRingingEvent
@@ -99,7 +99,7 @@ class JainSipCall {
    public void sendDigits(JainSipJob jainSipJob, String digits)
    {
       RCLogger.i(TAG, "sendDigits(): id: " + jainSipJob.id + ", digits: " + digits);
-      if (!jainSipClient.notificationManager.haveConnectivity()) {
+      if (!jainSipClient.jainSipNotificationManager.haveConnectivity()) {
          listener.onCallDigitsEvent(jainSipJob.id, RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY, RCClient.errorText(RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY));
          return;
       }

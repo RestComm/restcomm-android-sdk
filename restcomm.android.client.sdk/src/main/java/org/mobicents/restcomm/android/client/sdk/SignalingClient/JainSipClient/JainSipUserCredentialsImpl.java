@@ -1,4 +1,4 @@
-package org.mobicents.restcomm.android.client.sdk.SignalingClient;
+package org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient;
 
 /*
  * TeleStax, Open Source Cloud Communications
@@ -23,28 +23,34 @@ package org.mobicents.restcomm.android.client.sdk.SignalingClient;
  */
 
 
-import android.gov.nist.javax.sip.clientauthutils.AccountManager;
 import android.gov.nist.javax.sip.clientauthutils.UserCredentials;
 
-import android.javax.sip.ClientTransaction;
 
+public class JainSipUserCredentialsImpl implements UserCredentials {
+   private String userName;
+   private String sipDomain;
+   private String password;
 
-public class AccountManagerImpl implements AccountManager {
-
-   String Username;
-   String Password;
-   String RemoteIp;
-
-   public AccountManagerImpl(String username, String RemoteIp, String password)
+   public JainSipUserCredentialsImpl(String userName, String sipDomain, String password)
    {
-      this.Username = username;
-      this.Password = password;
-      this.RemoteIp = RemoteIp;
-
+      this.userName = userName;
+      this.sipDomain = sipDomain;
+      this.password = password;
    }
 
-   public UserCredentials getCredentials(ClientTransaction challengedTransaction, String realm)
+   public String getPassword()
    {
-      return new UserCredentialsImpl(Username, RemoteIp, Password);
+      return password;
    }
+
+   public String getSipDomain()
+   {
+      return sipDomain;
+   }
+
+   public String getUserName()
+   {
+      return userName;
+   }
+
 }

@@ -1,4 +1,4 @@
-package org.mobicents.restcomm.android.client.sdk.SignalingClient;
+package org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient;
 
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -13,9 +13,9 @@ import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
 import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
 
-class NotificationManager extends BroadcastReceiver {
+class JainSipNotificationManager extends BroadcastReceiver {
 
-   // Define NotificationManager events
+   // Define JainSipNotificationManager events
    public interface NotificationManagerListener {
       void onConnectivityChange(ConnectivityChange connectivityChange);
    }
@@ -36,11 +36,11 @@ class NotificationManager extends BroadcastReceiver {
 
    Context androidContext;
    NotificationManagerListener listener;
-   static final String TAG = "NotificationManager";
+   static final String TAG = "JainSipNotificationManager";
    NetworkStatus networksStatus;
 
 
-   NotificationManager(Context androidContext, Handler handler, NotificationManagerListener listener)
+   JainSipNotificationManager(Context androidContext, Handler handler, NotificationManagerListener listener)
    {
       this.androidContext = androidContext;
       this.listener = listener;

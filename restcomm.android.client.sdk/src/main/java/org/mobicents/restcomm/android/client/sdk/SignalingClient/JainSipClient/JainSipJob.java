@@ -1,9 +1,7 @@
-package org.mobicents.restcomm.android.client.sdk.SignalingClient;
+package org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient;
 
 import android.gov.nist.javax.sip.ResponseEventExt;
-import android.javax.sip.ObjectInUseException;
 import android.javax.sip.Transaction;
-import android.os.SystemClock;
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
@@ -101,8 +99,8 @@ class JainSipJob {
                      try {
                         jainSipClient.jainSipClientStartStack();
 
-                        if (!jainSipClient.notificationManager.haveConnectivity()) {
-                           jainSipClient.listener.onClientOpenedEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                        if (!jainSipClient.jainSipNotificationManager.haveConnectivity()) {
+                           jainSipClient.listener.onClientOpenedEvent(id, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipClient.jainSipNotificationManager.getNetworkStatus()),
                                  RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY,
                                  RCClient.errorText(RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY));
                            jainSipJobManager.remove(id);
@@ -116,7 +114,7 @@ class JainSipJob {
                         }
                         else {
                            // No Domain there we are done here
-                           jainSipClient.listener.onClientOpenedEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                           jainSipClient.listener.onClientOpenedEvent(id, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipClient.jainSipNotificationManager.getNetworkStatus()),
                                  RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
                            jainSipJobManager.remove(id);
                         }
@@ -148,7 +146,7 @@ class JainSipJob {
                         jainSipClient.listener.onClientOpenedEvent(id, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone, statusCode, statusText);
                      }
                      if (event.equals("register-success")) {
-                        jainSipClient.listener.onClientOpenedEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                        jainSipClient.listener.onClientOpenedEvent(id, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipClient.jainSipNotificationManager.getNetworkStatus()),
                               statusCode, statusText);
                      }
 
@@ -314,8 +312,8 @@ class JainSipJob {
                   }
 
                   if (states[index].equals("unregister")) {
-                     if (!jainSipClient.notificationManager.haveConnectivity()) {
-                        jainSipClient.listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                     if (!jainSipClient.jainSipNotificationManager.haveConnectivity()) {
+                        jainSipClient.listener.onClientReconfigureEvent(id, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipClient.jainSipNotificationManager.getNetworkStatus()),
                               RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY,
                               RCClient.errorText(RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY));
                         jainSipJobManager.remove(id);
@@ -353,7 +351,7 @@ class JainSipJob {
                         }
                         catch (JainSipException e) {
                            e.printStackTrace();
-                           jainSipClient.listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                           jainSipClient.listener.onClientReconfigureEvent(id, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipClient.jainSipNotificationManager.getNetworkStatus()),
                                  e.errorCode, e.errorText);
                         }
                      }
@@ -380,7 +378,7 @@ class JainSipJob {
                         }
                         catch (JainSipException e) {
                            e.printStackTrace();
-                           jainSipClient.listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                           jainSipClient.listener.onClientReconfigureEvent(id, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipClient.jainSipNotificationManager.getNetworkStatus()),
                                  e.errorCode, e.errorText);
                            jainSipJobManager.remove(id);
                         }
@@ -395,7 +393,7 @@ class JainSipJob {
                         }
                         catch (JainSipException e) {
                            e.printStackTrace();
-                           jainSipClient.listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                           jainSipClient.listener.onClientReconfigureEvent(id, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipClient.jainSipNotificationManager.getNetworkStatus()),
                                  e.errorCode, e.errorText);
                            jainSipJobManager.remove(id);
                         }
@@ -406,7 +404,7 @@ class JainSipJob {
                   }
                   else if (states[index].equals("notify")) {
                      if (event.equals("register-success") || event.equals("register-failure")) {
-                        jainSipClient.listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                        jainSipClient.listener.onClientReconfigureEvent(id, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipClient.jainSipNotificationManager.getNetworkStatus()),
                               statusCode, statusText);
                         jainSipJobManager.remove(id);
                      }
@@ -414,8 +412,8 @@ class JainSipJob {
                }
                else if (type == Type.TYPE_RECONFIGURE_RELOAD_NETWORKING) {
                   if (states[index].equals("unregister")) {
-                     if (!jainSipClient.notificationManager.haveConnectivity()) {
-                        jainSipClient.listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                     if (!jainSipClient.jainSipNotificationManager.haveConnectivity()) {
+                        jainSipClient.listener.onClientReconfigureEvent(id, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipClient.jainSipNotificationManager.getNetworkStatus()),
                               RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY,
                               RCClient.errorText(RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY));
                         jainSipJobManager.remove(id);
@@ -453,7 +451,7 @@ class JainSipJob {
                         }
                         catch (JainSipException e) {
                            e.printStackTrace();
-                           jainSipClient.listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                           jainSipClient.listener.onClientReconfigureEvent(id, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipClient.jainSipNotificationManager.getNetworkStatus()),
                                  e.errorCode, e.errorText);
                         }
                      }
@@ -484,7 +482,7 @@ class JainSipJob {
                         }
                         catch (JainSipException e) {
                            e.printStackTrace();
-                           jainSipClient.listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                           jainSipClient.listener.onClientReconfigureEvent(id, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipClient.jainSipNotificationManager.getNetworkStatus()),
                                  e.errorCode, e.errorText);
                            jainSipJobManager.remove(id);
                         }
@@ -499,7 +497,7 @@ class JainSipJob {
                         }
                         catch (JainSipException e) {
                            e.printStackTrace();
-                           jainSipClient.listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                           jainSipClient.listener.onClientReconfigureEvent(id, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipClient.jainSipNotificationManager.getNetworkStatus()),
                                  e.errorCode, e.errorText);
                         }
                      }
@@ -509,7 +507,7 @@ class JainSipJob {
                   }
                   else if (states[index].equals("notify")) {
                      if (event.equals("register-success") || event.equals("register-failure")) {
-                        jainSipClient.listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(jainSipClient.notificationManager.getNetworkStatus()),
+                        jainSipClient.listener.onClientReconfigureEvent(id, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipClient.jainSipNotificationManager.getNetworkStatus()),
                               statusCode, statusText);
                         jainSipJobManager.remove(id);
                      }

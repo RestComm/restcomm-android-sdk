@@ -1,4 +1,4 @@
-package org.mobicents.restcomm.android.client.sdk.SignalingClient;
+package org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient;
 
 import android.javax.sip.Transaction;
 import android.javax.sip.header.CallIdHeader;

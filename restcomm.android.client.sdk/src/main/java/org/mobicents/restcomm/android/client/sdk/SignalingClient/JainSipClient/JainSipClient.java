@@ -1,4 +1,4 @@
-package org.mobicents.restcomm.android.client.sdk.SignalingClient;
+package org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient;
 
 import android.content.Context;
 import android.gov.nist.javax.sip.ResponseEventExt;
@@ -49,7 +49,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 
-class JainSipClient implements SipListener, NotificationManager.NotificationManagerListener {
+public class JainSipClient implements SipListener, JainSipNotificationManager.NotificationManagerListener {
 
    // Interface the JainSipClient listener needs to implement, to get events from us
    public interface JainSipClientListener {
@@ -74,7 +74,7 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
    public JainSipClientListener listener;
    JainSipMessageBuilder jainSipMessageBuilder;
    JainSipJobManager jainSipJobManager;
-   NotificationManager notificationManager;
+   JainSipNotificationManager jainSipNotificationManager;
    Context androidContext;
    HashMap<String, Object> configuration;
    // any client context that is not configuration related, like the rport
@@ -101,18 +101,18 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
    public ListeningPoint jainSipListeningPoint;
    public SipProvider jainSipProvider;
 
-   JainSipClient(Handler signalingHandler)
+   public JainSipClient(Handler signalingHandler)
    {
       this.signalingHandler = signalingHandler;
    }
 
    // -- Published API
-   void open(String id, Context androidContext, HashMap<String, Object> configuration, JainSipClientListener listener)
+   public void open(String id, Context androidContext, HashMap<String, Object> configuration, JainSipClientListener listener)
    {
       RCLogger.i(TAG, "open(): " + configuration.toString());
 
       if (clientOpened) {
-         listener.onClientOpenedEvent(id, NotificationManager.networkStatus2ConnectivityStatus(notificationManager.getNetworkStatus()),
+         listener.onClientOpenedEvent(id, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipNotificationManager.getNetworkStatus()),
                RCClient.ErrorCodes.ERROR_DEVICE_ALREADY_OPENED,
                RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_ALREADY_OPENED));
          return;
@@ -123,7 +123,7 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
       this.configuration = configuration;
       jainSipMessageBuilder = new JainSipMessageBuilder();
       jainSipJobManager = new JainSipJobManager(this);
-      notificationManager = new NotificationManager(androidContext, signalingHandler, this);
+      jainSipNotificationManager = new JainSipNotificationManager(androidContext, signalingHandler, this);
       jainSipClientContext = new HashMap<String, Object>();
 
       jainSipFactory = SipFactory.getInstance();
@@ -136,8 +136,8 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
       // Setup TLS even if currently we aren't using it, so that if user changes the setting later
       // the SIP stack is ready to support it
       String keystoreFilename = "restcomm-android.keystore";
-      HashMap<String, String> securityParameters = SecurityHelper.generateKeystore(androidContext, keystoreFilename);
-      SecurityHelper.setProperties(properties, securityParameters.get("keystore-path"), securityParameters.get("keystore-password"));
+      HashMap<String, String> securityParameters = JainSipSecurityHelper.generateKeystore(androidContext, keystoreFilename);
+      JainSipSecurityHelper.setProperties(properties, securityParameters.get("keystore-path"), securityParameters.get("keystore-password"));
 
       if (configuration.containsKey(RCDevice.ParameterKeys.SIGNALING_JAIN_SIP_LOGGING_ENABLED) &&
             configuration.get(RCDevice.ParameterKeys.SIGNALING_JAIN_SIP_LOGGING_ENABLED) == true) {
@@ -157,13 +157,13 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
          e.printStackTrace();
          throw new RuntimeException(RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_SIP_STACK_BOOTSTRAP));
          /*
-         listener.onClientOpenedEvent(id, notificationManager.getConnectivityStatus(), RCClient.ErrorCodes.ERROR_SIGNALING_SIP_STACK_BOOTSTRAP,
+         listener.onClientOpenedEvent(id, jainSipNotificationManager.getConnectivityStatus(), RCClient.ErrorCodes.ERROR_SIGNALING_SIP_STACK_BOOTSTRAP,
                RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_SIP_STACK_BOOTSTRAP));
          */
       }
    }
 
-   void close(final String id)
+   public void close(final String id)
    {
       RCLogger.v(TAG, "close(): " + id);
 
@@ -174,7 +174,7 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
          // TODO: close any active calls
          //
 
-         notificationManager.close();
+         jainSipNotificationManager.close();
          jainSipJobManager.removeAll();
 
          if (configuration.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) && !configuration.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
@@ -201,7 +201,7 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
       }
    }
 
-   void reconfigure(String id, HashMap<String, Object> parameters, JainSipClientListener listener)
+   public void reconfigure(String id, HashMap<String, Object> parameters, JainSipClientListener listener)
    {
       RCLogger.i(TAG, "reconfigure(): " + parameters.toString());
 
@@ -209,7 +209,7 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
       HashMap<String, Object> modifiedParameters = JainSipConfiguration.modifiedParameters(this.configuration, parameters);
 
       if (modifiedParameters.size() == 0) {
-         listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(notificationManager.getNetworkStatus()),
+         listener.onClientReconfigureEvent(id, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipNotificationManager.getNetworkStatus()),
                RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
          return;
       }
@@ -251,17 +251,17 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
          jainSipJobManager.add(id, JainSipJob.Type.TYPE_RECONFIGURE, multipleParameters);
       }
       else {
-         listener.onClientReconfigureEvent(id, NotificationManager.networkStatus2ConnectivityStatus(notificationManager.getNetworkStatus()),
+         listener.onClientReconfigureEvent(id, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipNotificationManager.getNetworkStatus()),
                RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
       }
    }
 
    // ------ Call-related calls
-   void call(String jobId, HashMap<String, Object> parameters, JainSipCall.JainSipCallListener listener)
+   public void call(String jobId, HashMap<String, Object> parameters, JainSipCall.JainSipCallListener listener)
    {
       RCLogger.i(TAG, "call(): id: " + jobId + ", parameters: " + parameters.toString());
 
-      if (!notificationManager.haveConnectivity()) {
+      if (!jainSipNotificationManager.haveConnectivity()) {
          listener.onCallErrorEvent(jobId, RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY, RCClient.errorText(RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY));
          return;
       }
@@ -270,11 +270,11 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
       jainSipCall.open(jobId, parameters);
    }
 
-   void accept(String jobId, HashMap<String, Object> parameters, JainSipCall.JainSipCallListener listener)
+   public void accept(String jobId, HashMap<String, Object> parameters, JainSipCall.JainSipCallListener listener)
    {
       RCLogger.i(TAG, "accept(): id: " + jobId + ", parameters: " + parameters.toString());
 
-      if (!notificationManager.haveConnectivity()) {
+      if (!jainSipNotificationManager.haveConnectivity()) {
          listener.onCallErrorEvent(jobId, RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY, RCClient.errorText(RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY));
          return;
       }
@@ -286,11 +286,11 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
       jainSipJob.jainSipCall.accept(jainSipJob, parameters);
    }
 
-   void disconnect(String jobId, JainSipCall.JainSipCallListener listener)
+   public void disconnect(String jobId, JainSipCall.JainSipCallListener listener)
    {
       RCLogger.i(TAG, "hangup(): id: " + jobId);
 
-      if (!notificationManager.haveConnectivity()) {
+      if (!jainSipNotificationManager.haveConnectivity()) {
          listener.onCallErrorEvent(jobId, RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY, RCClient.errorText(RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY));
          return;
       }
@@ -299,7 +299,7 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
       jainSipJob.jainSipCall.disconnect(jainSipJob);
    }
 
-   void sendDigits(String jobId, String digits)
+   public void sendDigits(String jobId, String digits)
    {
       RCLogger.i(TAG, "sendDigits(): id: " + jobId + ", digits: " + digits);
 
@@ -307,11 +307,11 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
       jainSipJob.jainSipCall.sendDigits(jainSipJob, digits);
    }
 
-   void sendMessage(String id, HashMap<String, Object> parameters)
+   public void sendMessage(String id, HashMap<String, Object> parameters)
    {
       RCLogger.i(TAG, "call(): id: " + id + ", parameters: " + parameters.toString());
 
-      if (!notificationManager.haveConnectivity()) {
+      if (!jainSipNotificationManager.haveConnectivity()) {
          listener.onClientMessageSentEvent(id, RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY, RCClient.errorText(RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY));
          return;
       }
@@ -331,7 +331,7 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
    {
       RCLogger.w(TAG, "bind()");
       if (jainSipListeningPoint == null) {
-         if (!notificationManager.haveConnectivity()) {
+         if (!jainSipNotificationManager.haveConnectivity()) {
             throw new JainSipException(RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY,
                   RCClient.errorText(RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY));
          }
@@ -432,7 +432,7 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
       // Debug purposes to track the JainSipJob objects
       RCLogger.v(TAG, "jainSipRegister(), job count: " + jainSipJobManager.jobs.size());
 
-      if (!notificationManager.haveConnectivity()) {
+      if (!jainSipNotificationManager.haveConnectivity()) {
          throw new JainSipException(RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY,
                RCClient.errorText(RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY));
       }
@@ -485,7 +485,7 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
    {
       RCLogger.v(TAG, "jainSipUnregister()");
 
-      if (!notificationManager.haveConnectivity()) {
+      if (!jainSipNotificationManager.haveConnectivity()) {
          throw new JainSipException(RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY,
                RCClient.errorText(RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY));
       }
@@ -534,7 +534,7 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
    {
       try {
          AuthenticationHelper authenticationHelper = ((SipStackExt) jainSipStack).getAuthenticationHelper(
-               new AccountManagerImpl((String) parameters.get(RCDevice.ParameterKeys.SIGNALING_USERNAME),
+               new JainSipAccountManagerImpl((String) parameters.get(RCDevice.ParameterKeys.SIGNALING_USERNAME),
                      responseEventExt.getRemoteIpAddress(), (String) parameters.get(RCDevice.ParameterKeys.SIGNALING_PASSWORD)), jainSipMessageBuilder.getHeaderFactory());
 
          // we 're subtracting one since the first attempt has already taken place
@@ -804,12 +804,12 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
    }
 
    // ------ NotificationManagerListener events
-   public void onConnectivityChange(NotificationManager.ConnectivityChange connectivityChange)
+   public void onConnectivityChange(JainSipNotificationManager.ConnectivityChange connectivityChange)
    {
       // No matter the connectivity change, cancel any pending scheduled registrations
       signalingHandler.removeCallbacksAndMessages(REGISTER_REFRESH_HANDLER_TOKEN);
 
-      if (connectivityChange == NotificationManager.ConnectivityChange.OFFLINE) {
+      if (connectivityChange == JainSipNotificationManager.ConnectivityChange.OFFLINE) {
          try {
             jainSipClientUnbind();
             listener.onClientConnectivityEvent(Long.toString(System.currentTimeMillis()), RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone);
@@ -820,10 +820,10 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
             listener.onClientConnectivityEvent(Long.toString(System.currentTimeMillis()), RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone);
          }
       }
-      else if (connectivityChange == NotificationManager.ConnectivityChange.OFFLINE_TO_WIFI ||
-            connectivityChange == NotificationManager.ConnectivityChange.OFFLINE_TO_CELLULAR_DATA) {
+      else if (connectivityChange == JainSipNotificationManager.ConnectivityChange.OFFLINE_TO_WIFI ||
+            connectivityChange == JainSipNotificationManager.ConnectivityChange.OFFLINE_TO_CELLULAR_DATA) {
          HashMap<String, Object> parameters = new HashMap<>(this.configuration);
-         if (connectivityChange == NotificationManager.ConnectivityChange.OFFLINE_TO_WIFI) {
+         if (connectivityChange == JainSipNotificationManager.ConnectivityChange.OFFLINE_TO_WIFI) {
             parameters.put("connectivity-status", RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi);
          }
          else {
@@ -831,10 +831,10 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
          }
          jainSipJobManager.add(Long.toString(System.currentTimeMillis()), JainSipJob.Type.TYPE_START_NETWORKING, parameters);
       }
-      else if (connectivityChange == NotificationManager.ConnectivityChange.CELLULAR_DATA_TO_WIFI ||
-            connectivityChange == NotificationManager.ConnectivityChange.WIFI_TO_CELLULAR_DATA) {
+      else if (connectivityChange == JainSipNotificationManager.ConnectivityChange.CELLULAR_DATA_TO_WIFI ||
+            connectivityChange == JainSipNotificationManager.ConnectivityChange.WIFI_TO_CELLULAR_DATA) {
          HashMap<String, Object> parameters = new HashMap<>(this.configuration);
-         if (connectivityChange == NotificationManager.ConnectivityChange.CELLULAR_DATA_TO_WIFI) {
+         if (connectivityChange == JainSipNotificationManager.ConnectivityChange.CELLULAR_DATA_TO_WIFI) {
             parameters.put("connectivity-status", RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi);
          }
          else {
@@ -849,14 +849,14 @@ class JainSipClient implements SipListener, NotificationManager.NotificationMana
    public String getIPAddress(boolean useIPv4) throws SocketException
    {
       RCLogger.i(TAG, "getIPAddress()");
-      if (notificationManager.getNetworkStatus() == NotificationManager.NetworkStatus.NetworkStatusWiFi) {
+      if (jainSipNotificationManager.getNetworkStatus() == JainSipNotificationManager.NetworkStatus.NetworkStatusWiFi) {
          WifiManager wifiMgr = (WifiManager) androidContext.getSystemService(Context.WIFI_SERVICE);
          WifiInfo wifiInfo = wifiMgr.getConnectionInfo();
          int ip = wifiInfo.getIpAddress();
          return Formatter.formatIpAddress(ip);
       }
 
-      if (notificationManager.getNetworkStatus() == NotificationManager.NetworkStatus.NetworkStatusCellular) {
+      if (jainSipNotificationManager.getNetworkStatus() == JainSipNotificationManager.NetworkStatus.NetworkStatusCellular) {
          List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
          for (NetworkInterface intf : interfaces) {
             if (!intf.getName().matches("wlan.*")) {

@@ -20,7 +20,7 @@
  *
  */
 
-package org.mobicents.restcomm.android.client.sdk.SignalingClient;
+package org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient;
 
 import android.content.Context;
 import android.util.Log;
@@ -56,7 +56,7 @@ import java.util.Properties;
 
 import javax.security.auth.x500.X500Principal;
 
-public class SecurityHelper {
+public class JainSipSecurityHelper {
     private static final String TAG = "RCDevice";
 
     static {

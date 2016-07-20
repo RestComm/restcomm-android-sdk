@@ -6,6 +6,8 @@ import android.os.Message;
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
+import org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient.JainSipCall;
+import org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient.JainSipClient;
 
 class SignalingHandler extends Handler implements JainSipClient.JainSipClientListener, JainSipCall.JainSipCallListener {
    JainSipClient jainSipClient;
