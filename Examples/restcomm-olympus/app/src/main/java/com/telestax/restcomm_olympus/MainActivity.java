@@ -106,6 +106,7 @@ public class MainActivity extends AppCompatActivity
       params.put(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME, prefs.getString(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME, ""));
       params.put(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD, prefs.getString(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD, ""));
       params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false));
+      params.put(RCDevice.ParameterKeys.SIGNALING_JAIN_SIP_LOGGING_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_JAIN_SIP_LOGGING_ENABLED, true));
       device = RCClient.createDevice(params, this);
       device.setPendingIntents(new Intent(getApplicationContext(), CallActivity.class),
             new Intent(getApplicationContext(), MessageActivity.class));
@@ -300,7 +301,7 @@ public class MainActivity extends AppCompatActivity
          //Toast.makeText(getApplicationContext(), "RCDevice Initialization Error: " + statusText, Toast.LENGTH_LONG).show();
          //showOkAlert("RCDevice Initialization Error", statusText);
          //handleConnectivityUpdate(connectivityStatus, "RCDevice Initialization Error: " + statusText);
-         Toast.makeText(getApplicationContext(), "RCDevice Initialization Error: " + statusText, Toast.LENGTH_SHORT).show();
+         Toast.makeText(getApplicationContext(), "RCDevice Initialization Error: " + statusText, Toast.LENGTH_LONG).show();
       }
 
    }
@@ -309,7 +310,7 @@ public class MainActivity extends AppCompatActivity
    {
       if (statusCode != RCClient.ErrorCodes.SUCCESS.ordinal()) {
          //showOkAlert("RCDevice Release Error", statusText);
-         Toast.makeText(getApplicationContext(), "RCDevice Release Error: " + statusText, Toast.LENGTH_SHORT).show();
+         Toast.makeText(getApplicationContext(), "RCDevice Release Error: " + statusText, Toast.LENGTH_LONG).show();
       }
       else {
          handleConnectivityUpdate(RCConnectivityStatus.RCConnectivityStatusNone, "RCDevice Released: " + statusText);
@@ -344,7 +345,7 @@ public class MainActivity extends AppCompatActivity
 
       //if (connectivityStatus != this.previousConnectivityStatus) {
          //showOkAlert("RCDevice connectivity change", text);
-         Toast.makeText(getApplicationContext(), text, Toast.LENGTH_SHORT).show();
+         Toast.makeText(getApplicationContext(), text, Toast.LENGTH_LONG).show();
          this.previousConnectivityStatus = connectivityStatus;
       //}
    }

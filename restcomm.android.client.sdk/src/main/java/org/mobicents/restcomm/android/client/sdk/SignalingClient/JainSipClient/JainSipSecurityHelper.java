@@ -57,7 +57,7 @@ import java.util.Properties;
 import javax.security.auth.x500.X500Principal;
 
 public class JainSipSecurityHelper {
-    private static final String TAG = "RCDevice";
+    private static final String TAG = "JainSipSecurityHelper";
 
     static {
         // IMPORTANT: make the SpongyCastle implementation take preference

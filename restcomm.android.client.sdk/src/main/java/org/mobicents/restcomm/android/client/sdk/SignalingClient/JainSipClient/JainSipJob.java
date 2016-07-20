@@ -259,8 +259,6 @@ class JainSipJob {
                            jainSipClient.jainSipAuthenticate(JainSipJob.this, parameters, responseEventExt);
                         }
                         catch (JainSipException e) {
-                           jainSipClient.listener.onClientClosedEvent(id, e.errorCode, e.errorText);
-
                            // failed to unregister; we need to unbind & stop stack or at next initialization we will fail
                            try {
                               jainSipClient.jainSipClientUnbind();
@@ -270,6 +268,7 @@ class JainSipJob {
                               // at this point we can't recover
                               throw new RuntimeException("Failed to unbind signaling facilities");
                            }
+                           jainSipClient.listener.onClientClosedEvent(id, e.errorCode, e.errorText);
                         }
                      }
                      else {
@@ -285,7 +284,9 @@ class JainSipJob {
                         }
                         catch (JainSipException e) {
                            e.printStackTrace();
-                           jainSipClient.listener.onClientClosedEvent(id, e.errorCode, e.errorText);
+                           // at this point we can't recover
+                           throw new RuntimeException("Failed to unbind signaling facilities");
+                           //jainSipClient.listener.onClientClosedEvent(id, e.errorCode, e.errorText);
                         }
                         jainSipJobManager.remove(id);
                      }

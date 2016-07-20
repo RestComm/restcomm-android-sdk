@@ -161,8 +161,8 @@ public class RCDevice implements UIClient.UIClientListener {
       // initialize JAIN SIP if we have connectivity
       this.parameters = parameters;
 
-      uiClient = new UIClient(this, RCClient.getContext());
-      uiClient.open(parameters);
+      uiClient = UIClient.getInstance();
+      uiClient.open(this, RCClient.getContext(), parameters);
    }
 
    // TODO: this is for RCConnection, but see if they can figure out the connectivity in a different way, like asking the signaling thread directly?

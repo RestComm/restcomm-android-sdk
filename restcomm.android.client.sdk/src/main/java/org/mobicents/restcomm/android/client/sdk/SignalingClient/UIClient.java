@@ -6,11 +6,12 @@ import android.os.Message;
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
+import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
 import java.util.HashMap;
 
-// Client object that will send all asynchronous requests from UI towards signaling thread
-public class UIClient {
+// Client singleton that will send all asynchronous requests from UI towards signaling thread
+public class UIClient extends Handler {
 
    // Interface the UIClient listener needs to implement, to get events from us
    public interface UIClientListener {
@@ -48,32 +49,74 @@ public class UIClient {
        void onCallConnectedEvent(String jobId, String sdpAnswer);
    }
    */
+
+   private static final UIClient instance = new UIClient();
+   UIClient.UIClientListener listener;
+   private static final String TAG = "UIClient";
+
    // handler at signaling thread to send messages to
    SignalingHandlerThread signalingHandlerThread;
    Handler signalingHandler;
-   UIHandler uiHandler;
+   //UIHandler uiHandler;
    Context context;
 
+   // private constructor to avoid client applications to use constructor
+   private UIClient()
+   {
+      super();
+
+      // create signaling handler thread and handler/signal
+      signalingHandlerThread = new SignalingHandlerThread(this);
+      signalingHandler = signalingHandlerThread.getHandler();
+   }
+
+   public static UIClient getInstance()
+   {
+      return instance;
+   }
+
+   @Override
+   public void handleMessage(Message inputMessage)
+   {
+      // Gets the image task from the incoming Message object.
+      SignalingMessage message = (SignalingMessage) inputMessage.obj;
+
+      RCLogger.i(TAG, "handleMessage: type: " + message.type + ", id: " + message.id);
+
+      if (message.type == SignalingMessage.MessageType.OPEN_REPLY) {
+         listener.onOpenReply(message.id, message.connectivityStatus, message.status, message.text);
+      }
+      else if (message.type == SignalingMessage.MessageType.CLOSE_REPLY) {
+         listener.onCloseReply(message.id, message.status, message.text);
+      }
+      else if (message.type == SignalingMessage.MessageType.RECONFIGURE_REPLY) {
+         listener.onReconfigureReply(message.id, message.connectivityStatus, message.status, message.text);
+      }
+      else if (message.type == SignalingMessage.MessageType.ERROR_EVENT) {
+         listener.onErrorEvent(message.id, message.connectivityStatus, message.status, message.text);
+      }
+      else if (message.type == SignalingMessage.MessageType.CONNECTIVITY_EVENT) {
+         listener.onConnectivityEvent(message.id, message.connectivityStatus);
+      }
+      else if (message.type == SignalingMessage.MessageType.MESSAGE_EVENT) {
+         listener.onMessageArrivedEvent(message.id, message.peer, message.messageText);
+      }
+      else if (message.type == SignalingMessage.MessageType.MESSAGE_REPLY) {
+         listener.onMessageReply(message.id, message.status, message.text);
+      }
+      else if (message.type == SignalingMessage.MessageType.REGISTERING_EVENT) {
+         listener.onRegisteringEvent(message.id);
+      }
+      else {
+         listener.onCallRelatedMessage(message);
+      }
+   }
+   /*
    public UIClient(UIClientListener listener, Context context)
    {
-      uiHandler = new UIHandler(listener);
-      this.context = context;
 
-      signalingHandlerThread = new SignalingHandlerThread(uiHandler);
-      signalingHandler = signalingHandlerThread.getHandler();
-
-      ///// Defines a Handler object that's attached to the UI thread
-        /*
-        handler = new Handler(context.getMainLooper()) {
-            @Override
-            public void handleMessage(Message inputMessage) {
-                // Gets the image task from the incoming Message object.
-                SipProfile profile = (SipProfile) inputMessage.obj;
-            }
-        };
-        */
-      /////
    }
+   */
 
     /*
     void setCallListener(UICallListener callListener)
@@ -82,8 +125,12 @@ public class UIClient {
     }
     */
 
-   public String open(HashMap<String, Object> parameters)
+   public String open(UIClientListener listener, Context context, HashMap<String, Object> parameters)
    {
+      //uiHandler = new UIHandler(listener);
+      this.context = context;
+      this.listener = listener;
+
       String id = generateId();
       SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.OPEN_REQUEST);
       signalingMessage.setParameters(parameters);

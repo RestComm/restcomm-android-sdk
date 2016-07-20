@@ -11,4 +11,15 @@ class JainSipException extends Exception {
       this.errorCode = errorCode;
       this.errorText = errorText;
    }
+
+   // initialize an exception, but also chain another exception to it
+   JainSipException(RCClient.ErrorCodes errorCode, String errorText, Throwable throwable)
+   {
+      this.errorCode = errorCode;
+      this.errorText = errorText;
+
+      this.initCause(throwable);
+   }
+
+
 }

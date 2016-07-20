@@ -119,15 +119,15 @@ class JainSipMessageBuilder {
          return request;
       }
       catch (ParseException e) {
-         e.printStackTrace();
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID));
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID), e);
       }
       catch (JainSipException e) {
          throw e;
       }
       catch (Exception e) {
-         e.printStackTrace();
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED));
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED), e);
       }
    }
 
@@ -150,7 +150,8 @@ class JainSipMessageBuilder {
       }
       catch (Exception e) {
          //throw new RuntimeException("Error building Register request");
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED));
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED), e);
       }
    }
 
@@ -183,18 +184,19 @@ class JainSipMessageBuilder {
             }
             catch (ParseException e) {
                throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_PARSE_CUSTOM_SIP_HEADERS,
-                     RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_PARSE_CUSTOM_SIP_HEADERS));
+                     RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_PARSE_CUSTOM_SIP_HEADERS), e);
             }
          }
 
          return request;
       }
       catch (ParseException e) {
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID));
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID), e);
       }
       catch (Exception e) {
-         e.printStackTrace();
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED));
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED), e);
       }
    }
 
@@ -216,10 +218,12 @@ class JainSipMessageBuilder {
          return request;
       }
       catch (ParseException e) {
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID));
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID), e);
       }
       catch (Exception e) {
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED));
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED), e);
       }
    }
 
@@ -239,7 +243,7 @@ class JainSipMessageBuilder {
       }
       catch (SipException e) {
          throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_HANGUP_FAILED,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_HANGUP_FAILED));
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_HANGUP_FAILED), e);
       }
    }
 
@@ -262,7 +266,7 @@ class JainSipMessageBuilder {
       }
       catch (Exception e) {
          throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_DTMF_DIGITS_FAILED,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_DTMF_DIGITS_FAILED));
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_DTMF_DIGITS_FAILED), e);
       }
    }
 
@@ -285,7 +289,7 @@ class JainSipMessageBuilder {
       }
       catch (ParseException e) {
          throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_ACCEPT_FAILED,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_ACCEPT_FAILED));
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_ACCEPT_FAILED), e);
       }
    }
 
@@ -297,7 +301,7 @@ class JainSipMessageBuilder {
          RCLogger.v(TAG, "Sending SIP response: \n" + response.toString());
          return response;
       } catch (ParseException e) {
-         throw new RuntimeException("Error creating Decline response");
+         throw new RuntimeException("Error creating Decline response", e);
       }
    }
 
@@ -325,7 +329,7 @@ class JainSipMessageBuilder {
          return jainSipHeaderFactory.createRouteHeader(routeAddress);
       }
       catch (ParseException e) {
-         throw new RuntimeException("Error creating SIP Route header");
+         throw new RuntimeException("Error creating SIP Route header", e);
       }
    }
 
@@ -353,8 +357,8 @@ class JainSipMessageBuilder {
          return ((SipURI) address.getURI()).getHost();
       }
       catch (ClassCastException e) {
-         e.printStackTrace();
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_URI_INVALID, RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_URI_INVALID));
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_URI_INVALID,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_URI_INVALID), e);
       }
    }
 
@@ -370,7 +374,7 @@ class JainSipMessageBuilder {
          viaHeaders.add(viaHeader);
       }
       catch (InvalidArgumentException e) {
-         e.printStackTrace();
+         throw new RuntimeException("Failed to create Via headers", e);
       }
       return viaHeaders;
    }
@@ -424,7 +428,7 @@ class JainSipMessageBuilder {
          header = jainSipHeaderFactory.createUserAgentHeader(userAgentTokens);
       }
       catch (ParseException e) {
-         throw new RuntimeException("Error creating User Agent header");
+         throw new RuntimeException("Error creating User Agent header", e);
       }
 
       return header;

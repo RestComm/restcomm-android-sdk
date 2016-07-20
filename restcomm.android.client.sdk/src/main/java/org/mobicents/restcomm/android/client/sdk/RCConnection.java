@@ -440,7 +440,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    // -- Call-related messages received from signaling thread are handled here
    public void handleSignalingMessage(SignalingMessage signalingMessage)
    {
-      RCLogger.i(TAG, "handleSignalingMessage: type: " + signalingMessage.type);
+      RCLogger.i(TAG, "handleSignalingMessage: type: " + signalingMessage.type + ", id: " + signalingMessage.id);
       if (signalingMessage.type == SignalingMessage.MessageType.CALL_OUTGOING_CONNECTED_EVENT) {
          // outgoing call is connected (got 200 OK)
          handleConnected(signalingMessage.sdp);

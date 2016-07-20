@@ -80,7 +80,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
    // any client context that is not configuration related, like the rport
    HashMap<String, Object> jainSipClientContext;
    //boolean clientConnected = false;
-   boolean clientOpened = false;
+   static boolean clientOpened = false;
    static final String TAG = "JainSipClient";
    // android handler token to identify registration refresh posts
    final int REGISTER_REFRESH_HANDLER_TOKEN = 1;
@@ -111,10 +111,10 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
    {
       RCLogger.i(TAG, "open(): " + configuration.toString());
 
-      if (clientOpened) {
-         listener.onClientOpenedEvent(id, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipNotificationManager.getNetworkStatus()),
-               RCClient.ErrorCodes.ERROR_DEVICE_ALREADY_OPENED,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_ALREADY_OPENED));
+      if (JainSipClient.clientOpened) {
+         listener.onClientOpenedEvent(id, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone,
+               RCClient.ErrorCodes.ERROR_DEVICE_ALREADY_OPEN,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_ALREADY_OPEN));
          return;
       }
 
@@ -167,7 +167,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
    {
       RCLogger.v(TAG, "close(): " + id);
 
-      if (clientOpened) {
+      if (JainSipClient.clientOpened) {
          // cancel any pending scheduled registrations
          //signalingHandler.removeCallbacksAndMessages(REGISTER_REFRESH_HANDLER_TOKEN);
 
@@ -399,7 +399,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       // TODO: Didn't have that in the past, hope it doesn't cause any issues
       try {
          jainSipStack.start();
-         clientOpened = true;
+         JainSipClient.clientOpened = true;
 
       }
       catch (SipException e) {
@@ -423,7 +423,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
         jainSipFsm = null;
         */
 
-      clientOpened = false;
+      JainSipClient.clientOpened = false;
    }
 
    public ClientTransaction jainSipClientRegister(JainSipJob jainSipJob, final HashMap<String, Object> parameters) throws JainSipException

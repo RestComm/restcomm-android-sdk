@@ -61,7 +61,7 @@ public class RCClient {
       // New errors
       SUCCESS,
       ERROR_NO_CONNECTIVITY,
-      ERROR_DEVICE_ALREADY_OPENED,
+      ERROR_DEVICE_ALREADY_OPEN,
       ERROR_SIGNALING_SIP_STACK_BOOTSTRAP,
       ERROR_SIGNALING_NETWORK_BINDING,
       ERROR_SIGNALING_REGISTER_AUTHENTICATION_MAX_RETRIES_REACHED,
@@ -122,8 +122,8 @@ public class RCClient {
       else if (errorCode == ErrorCodes.ERROR_NO_CONNECTIVITY) {
          return "Device has no connectivity";
       }
-      else if (errorCode == ErrorCodes.ERROR_DEVICE_ALREADY_OPENED) {
-         return "Device has already been opened";
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_ALREADY_OPEN) {
+         return "Initialization failed; device is already open";
       }
       else if (errorCode == ErrorCodes.ERROR_SIGNALING_SIP_STACK_BOOTSTRAP) {
          return "Error bootstraping signaling stack";

@@ -3,11 +3,13 @@ package org.mobicents.restcomm.android.client.sdk.SignalingClient;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
+import android.util.Log;
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
 import org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient.JainSipCall;
 import org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient.JainSipClient;
+import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
 class SignalingHandler extends Handler implements JainSipClient.JainSipClientListener, JainSipCall.JainSipCallListener {
    JainSipClient jainSipClient;
@@ -18,10 +20,8 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
    {
       // instantiate parent Handler, and pass non UI looper remember by default associates this handler with the Looper for the current thread, hence signaling thread
       super(looper);
-
-      jainSipClient = new JainSipClient(this);
       this.uiHandler = uiHandler;
-      //this.listener = listener;
+      jainSipClient = null;
    }
 
    @Override
@@ -39,7 +39,21 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
         }
         */
 
+      RCLogger.i(TAG, "handleMessage: type: " + message.type + ", id: " + message.id);
+
+      if (message.type != SignalingMessage.MessageType.OPEN_REQUEST && jainSipClient == null) {
+         // wrong usage of API
+         throw new RuntimeException("JainSipClient has not been initialized");
+      }
+
       if (message.type == SignalingMessage.MessageType.OPEN_REQUEST) {
+         if (jainSipClient != null) {
+            onClientOpenedEvent(message.id, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone,
+                  RCClient.ErrorCodes.ERROR_DEVICE_ALREADY_OPEN,
+                  RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_ALREADY_OPEN));
+            return;
+         }
+         jainSipClient = new JainSipClient(this);
          jainSipClient.open(message.id, message.androidContext, message.parameters, this);
       }
       else if (message.type == SignalingMessage.MessageType.CLOSE_REQUEST) {
@@ -96,6 +110,9 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
       signalingMessage.text = text;  //"Success";
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
+
+      // remove reference so that it can be GC'd
+      this.jainSipClient = null;
    }
 
    public void onClientReconfigureEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
