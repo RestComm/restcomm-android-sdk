@@ -350,7 +350,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
       */
       disconnectWebrtc();
-
    }
 
    /**
@@ -552,6 +551,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    }
    */
 
+   /*
    public void handleDeclined()
    {
       RCLogger.i(TAG, "handleDeclined");
@@ -568,6 +568,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       // Phone state Intents to capture declined event
       sendQoSConnectionIntent("declined");
    }
+   */
 
    public void handleError(RCClient.ErrorCodes errorCode, String errorText)
    {
@@ -596,10 +597,10 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
       else {
          if (this.listener != null) {
-            this.listener.onDisconnected(this, RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal(), RCClient.errorText(RCClient.ErrorCodes.NO_CONNECTIVITY));
+            this.listener.onDisconnected(this, RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY.ordinal(), RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY));
          }
          // Phone state Intents to capture dropped call due to no connectivity
-         sendQoSDisconnectErrorIntent(RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal(), RCClient.errorText(RCClient.ErrorCodes.NO_CONNECTIVITY));
+         sendQoSDisconnectErrorIntent(RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY.ordinal(), RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY));
          return false;
       }
    }
@@ -609,7 +610,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       return id;
    }
 
-   // -- WebRTC stuff:
+   // ------ WebRTC stuff:
    // IceServerFetcher callbacks
    @Override
    public void onIceServersReady(final LinkedList<PeerConnection.IceServer> iceServers)
@@ -653,7 +654,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          @Override
          public void run()
          {
-            RCConnection.this.listener.onDisconnected(RCConnection.this, RCClient.ErrorCodes.WEBRTC_TURN_ERROR.ordinal(), description);
+            RCConnection.this.listener.onDisconnected(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_WEBRTC_TURN_ERROR.ordinal(), description);
          }
       };
       mainHandler.post(myRunnable);
@@ -1056,10 +1057,10 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             RCLogger.e(TAG, "PeerConnection error: " + description);
             disconnect();
             if (connection.listener != null) {
-               connection.listener.onDisconnected(connection, RCClient.ErrorCodes.WEBRTC_PEERCONNECTION_ERROR.ordinal(), description);
+               connection.listener.onDisconnected(connection, RCClient.ErrorCodes.ERROR_CONNECTION_WEBRTC_PEERCONNECTION_ERROR.ordinal(), description);
             }
             // Phone state Intents to capture dropped call event
-            sendQoSDisconnectErrorIntent(RCClient.ErrorCodes.WEBRTC_PEERCONNECTION_ERROR.ordinal(), description);
+            sendQoSDisconnectErrorIntent(RCClient.ErrorCodes.ERROR_CONNECTION_WEBRTC_PEERCONNECTION_ERROR.ordinal(), description);
          }
       };
       mainHandler.post(myRunnable);

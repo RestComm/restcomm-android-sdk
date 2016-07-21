@@ -100,7 +100,7 @@ public class JainSipCall {
    {
       RCLogger.i(TAG, "sendDigits(): id: " + jainSipJob.id + ", digits: " + digits);
       if (!jainSipClient.jainSipNotificationManager.haveConnectivity()) {
-         listener.onCallDigitsEvent(jainSipJob.id, RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY, RCClient.errorText(RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY));
+         listener.onCallDigitsEvent(jainSipJob.id, RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY, RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY));
          return;
       }
 
@@ -162,12 +162,12 @@ public class JainSipCall {
          transaction.sendRequest();
       }
       catch (JainSipException e) {
-         throw new JainSipException(e.errorCode, e.errorText);
+         throw e;
       }
       catch (Exception e) {
          // DNS error (error resolving registrar URI)
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT));
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_COULD_NOT_CONNECT,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_COULD_NOT_CONNECT), e);
       }
 
       return transaction;
@@ -185,11 +185,11 @@ public class JainSipCall {
          transaction.sendResponse(response);
       }
       catch (JainSipException e) {
-         throw new JainSipException(e.errorCode, e.errorText);
+         throw e;
       }
       catch (Exception e) {
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_ACCEPT_FAILED,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_ACCEPT_FAILED));
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_ACCEPT_FAILED,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_ACCEPT_FAILED), e);
       }
    }
 
@@ -210,12 +210,11 @@ public class JainSipCall {
          return transaction;
       }
       catch (SipException e) {
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_HANGUP_FAILED,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_HANGUP_FAILED));
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_FAILED,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_FAILED), e);
       }
       catch (Exception e) {
-         e.printStackTrace();
-         throw new RuntimeException("SIP transaction error");
+         throw new RuntimeException("SIP transaction error", e);
       }
    }
 
@@ -232,8 +231,8 @@ public class JainSipCall {
          return cancelTransaction;
       }
       catch (SipException e) {
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_HANGUP_FAILED,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_HANGUP_FAILED));
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_FAILED,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_FAILED), e);
       }
    }
 
@@ -248,8 +247,8 @@ public class JainSipCall {
 
       }
       catch (Exception e) {
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_DECLINE_FAILED,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_DECLINE_FAILED));
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_DECLINE_FAILED,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_DECLINE_FAILED), e);
       }
    }
 
@@ -266,8 +265,8 @@ public class JainSipCall {
          return transaction;
       }
       catch (Exception e) {
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_DTMF_DIGITS_FAILED,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_DTMF_DIGITS_FAILED));
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_DTMF_DIGITS_FAILED,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_DTMF_DIGITS_FAILED), e);
       }
    }
 
@@ -388,15 +387,12 @@ public class JainSipCall {
                // if its a webrtc call we need to send back the full SDP
                listener.onCallOutgoingConnectedEvent(jainSipJob.id, sdpAnswer);
             }
-            catch (UnsupportedEncodingException e) {
-               throw new RuntimeException("Unsupported encoding for SDP");
-            }
             catch (SipException e) {
-               listener.onCallErrorEvent(jainSipJob.id, RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT,
-                     RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT));
+               listener.onCallErrorEvent(jainSipJob.id, RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_COULD_NOT_CONNECT,
+                     RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_COULD_NOT_CONNECT));
             }
             catch (Exception e) {
-               throw new RuntimeException("Error creating SIP Ack for Invite");
+               e.printStackTrace();
             }
          }
          else if (method.equals(Request.BYE)) {
@@ -433,20 +429,20 @@ public class JainSipCall {
          }
       }
       else if (response.getStatusCode() == Response.FORBIDDEN) {
-         listener.onCallErrorEvent(jainSipJob.id, RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_AUTHENTICATION_FORBIDDEN,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_AUTHENTICATION_FORBIDDEN));
+         listener.onCallErrorEvent(jainSipJob.id, RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_AUTHENTICATION_FORBIDDEN,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_AUTHENTICATION_FORBIDDEN));
       }
       else if (response.getStatusCode() == Response.DECLINE || response.getStatusCode() == Response.TEMPORARILY_UNAVAILABLE ||
             (response.getStatusCode() == Response.BUSY_HERE)) {
          listener.onCallPeerDisconnectedEvent(jainSipJob.id);
       }
       else if (response.getStatusCode() == Response.NOT_FOUND) {
-         listener.onCallErrorEvent(jainSipJob.id, RCClient.ErrorCodes.ERROR_SIGNALING_CALL_SERVICE_UNAVAILABLE,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_SERVICE_UNAVAILABLE));
+         listener.onCallErrorEvent(jainSipJob.id, RCClient.ErrorCodes.ERROR_CONNECTION_PEER_NOT_FOUND,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_PEER_NOT_FOUND));
       }
       else if (response.getStatusCode() == Response.SERVICE_UNAVAILABLE) {
-         listener.onCallErrorEvent(jainSipJob.id, RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED));
+         listener.onCallErrorEvent(jainSipJob.id, RCClient.ErrorCodes.ERROR_CONNECTION_SERVICE_UNAVAILABLE,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_SERVICE_UNAVAILABLE));
       }
       else if (response.getStatusCode() == Response.REQUEST_TERMINATED) {
          if (method.equals(Request.INVITE)) {

@@ -119,15 +119,16 @@ class JainSipMessageBuilder {
          return request;
       }
       catch (ParseException e) {
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID), e);
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_URI_INVALID,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_URI_INVALID), e);
       }
       catch (JainSipException e) {
          throw e;
       }
       catch (Exception e) {
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED), e);
+         // TODO: let's emit a RuntimeException for now so that we get a loud and clear indication of issues involved in the field and then
+         // we can adjust and only do a e.printStackTrace()
+         throw new RuntimeException("Failed to build base SIP request", e);
       }
    }
 
@@ -149,9 +150,9 @@ class JainSipMessageBuilder {
          throw e;
       }
       catch (Exception e) {
-         //throw new RuntimeException("Error building Register request");
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED), e);
+         // TODO: let's emit a RuntimeException for now so that we get a loud and clear indication of issues involved in the field and then
+         // we can adjust and only do a e.printStackTrace()
+         throw new RuntimeException("Failed to build SIP Register request", e);
       }
    }
 
@@ -171,10 +172,6 @@ class JainSipMessageBuilder {
          byte[] contents = ((String) parameters.get("sdp")).getBytes();
          request.setContent(contents, contentTypeHeader);
 
-         // TODO: what should that have?
-         Header callInfoHeader = jainSipHeaderFactory.createHeader("Call-Info", "<http://www.antd.nist.gov>");
-         request.addHeader(callInfoHeader);
-
          request.addHeader(createUserAgentHeader());
 
          // add custom sip headers if applicable
@@ -183,20 +180,21 @@ class JainSipMessageBuilder {
                addCustomHeaders(request, (HashMap<String, String>) parameters.get("sip-headers"));
             }
             catch (ParseException e) {
-               throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_PARSE_CUSTOM_SIP_HEADERS,
-                     RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_PARSE_CUSTOM_SIP_HEADERS), e);
+               throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_PARSE_CUSTOM_SIP_HEADERS,
+                     RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_PARSE_CUSTOM_SIP_HEADERS), e);
             }
          }
 
          return request;
       }
       catch (ParseException e) {
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID), e);
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_URI_INVALID,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_URI_INVALID), e);
       }
       catch (Exception e) {
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED), e);
+         // TODO: let's emit a RuntimeException for now so that we get a loud and clear indication of issues involved in the field and then
+         // we can adjust and only do a e.printStackTrace()
+         throw new RuntimeException("Failed to build SIP Invite request", e);
       }
    }
 
@@ -218,12 +216,13 @@ class JainSipMessageBuilder {
          return request;
       }
       catch (ParseException e) {
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID), e);
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_URI_INVALID,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_URI_INVALID), e);
       }
       catch (Exception e) {
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_UNHANDLED), e);
+         // TODO: let's emit a RuntimeException for now so that we get a loud and clear indication of issues involved in the field and then
+         // we can adjust and only do a e.printStackTrace()
+         throw new RuntimeException("Failed to build SIP Message request", e);
       }
    }
 
@@ -242,8 +241,8 @@ class JainSipMessageBuilder {
          return request;
       }
       catch (SipException e) {
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_HANGUP_FAILED,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_HANGUP_FAILED), e);
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_FAILED,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_FAILED), e);
       }
    }
 
@@ -265,8 +264,8 @@ class JainSipMessageBuilder {
          return request;
       }
       catch (Exception e) {
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_DTMF_DIGITS_FAILED,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_DTMF_DIGITS_FAILED), e);
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_DTMF_DIGITS_FAILED,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_DTMF_DIGITS_FAILED), e);
       }
    }
 
@@ -288,8 +287,8 @@ class JainSipMessageBuilder {
          return response;
       }
       catch (ParseException e) {
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_ACCEPT_FAILED,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_CALL_ACCEPT_FAILED), e);
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_ACCEPT_FAILED,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_ACCEPT_FAILED), e);
       }
    }
 
@@ -357,8 +356,8 @@ class JainSipMessageBuilder {
          return ((SipURI) address.getURI()).getHost();
       }
       catch (ClassCastException e) {
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_URI_INVALID,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_REGISTER_URI_INVALID), e);
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_URI_INVALID,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_URI_INVALID), e);
       }
    }
 
@@ -417,7 +416,6 @@ class JainSipMessageBuilder {
       return contactString;
    }
 
-   // TODO: properly handle exception
    public UserAgentHeader createUserAgentHeader()
    {
       RCLogger.i(TAG, "createUserAgentHeader()");

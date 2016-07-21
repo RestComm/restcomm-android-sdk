@@ -41,6 +41,7 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
 
       RCLogger.i(TAG, "handleMessage: type: " + message.type + ", id: " + message.id);
 
+      // all requests apart from OPEN_REQUEST require an initialized jainSipClient
       if (message.type != SignalingMessage.MessageType.OPEN_REQUEST && jainSipClient == null) {
          // wrong usage of API
          throw new RuntimeException("JainSipClient has not been initialized");

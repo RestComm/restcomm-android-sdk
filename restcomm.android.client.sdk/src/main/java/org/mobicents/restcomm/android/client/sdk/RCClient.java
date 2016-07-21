@@ -43,153 +43,92 @@ public class RCClient {
    private static boolean initialized = false;
 
    public enum ErrorCodes {
-      GENERIC_ERROR,
-      CONNECTION_DECLINED,
-      CONNECTION_TIMEOUT,
-      NO_CONNECTIVITY,
-      WEBRTC_PEERCONNECTION_ERROR,
-      WEBRTC_TURN_ERROR,
-      SIGNALLING_SIPURI_PARSE_ERROR,
-      SIGNALLING_DNS_ERROR,
-      SIGNALLING_DESTINATION_NOT_FOUND,
-      SIGNALLING_TIMEOUT,
-      SIGNALLING_REGISTER_ERROR,
-      SIGNALLING_REGISTER_AUTH_ERROR,
-      SIGNALLING_CALL_ERROR,
-      SIGNALLING_INSTANT_MESSAGE_ERROR,
-
-      // New errors
       SUCCESS,
-      ERROR_NO_CONNECTIVITY,
+      ERROR_DEVICE_NO_CONNECTIVITY,
       ERROR_DEVICE_ALREADY_OPEN,
-      ERROR_SIGNALING_SIP_STACK_BOOTSTRAP,
-      ERROR_SIGNALING_NETWORK_BINDING,
-      ERROR_SIGNALING_REGISTER_AUTHENTICATION_MAX_RETRIES_REACHED,
-      ERROR_SIGNALING_REGISTER_AUTHENTICATION_FORBIDDEN,
-      ERROR_SIGNALING_REGISTER_TIMEOUT,
-      ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT,
-      ERROR_SIGNALING_REGISTER_URI_INVALID,
-      ERROR_SIGNALING_NETWORK_INTERFACE,
-      ERROR_SIGNALING_REGISTER_SERVICE_UNAVAILABLE,
-      ERROR_SIGNALING_UNREGISTER_SERVICE_UNAVAILABLE,
-      ERROR_SIGNALING_CALL_URI_INVALID,
-      ERROR_SIGNALING_CALL_PEER_UNAVAILABLE,
-      ERROR_SIGNALING_CALL_PEER_NOT_FOUND,
-      ERROR_SIGNALING_CALL_SERVICE_UNAVAILABLE,
-      ERROR_SIGNALING_PARSE_CUSTOM_SIP_HEADERS,
-      ERROR_SIGNALING_CALL_ACCEPT_FAILED,
-      ERROR_SIGNALING_CALL_HANGUP_FAILED,
-      ERROR_SIGNALING_CALL_DECLINE_FAILED,
-      ERROR_SIGNALING_MESSAGE_SEND_FAILED,
-      ERROR_SIGNALING_DTMF_DIGITS_FAILED,
-      // Note on unhandled: unhandled errors shouldn't occur. If they do we need to evaluate if its because of a bug that needs to be fixed,
-      // or because of bad user configuration that wasn't properly identified and hence error-reported, in which case we need to introduce a new error code
-      ERROR_SIGNALING_UNHANDLED,
-
-
-      ERROR_SIGNALING_TODO,
+      ERROR_DEVICE_REGISTER_AUTHENTICATION_FORBIDDEN,
+      ERROR_DEVICE_REGISTER_TIMEOUT,
+      ERROR_DEVICE_REGISTER_COULD_NOT_CONNECT,
+      ERROR_DEVICE_REGISTER_URI_INVALID,
+      ERROR_DEVICE_REGISTER_SERVICE_UNAVAILABLE,
+      ERROR_CONNECTION_URI_INVALID,
+      ERROR_CONNECTION_PEER_UNAVAILABLE,
+      ERROR_CONNECTION_PEER_NOT_FOUND,
+      ERROR_CONNECTION_SERVICE_UNAVAILABLE,
+      ERROR_CONNECTION_PARSE_CUSTOM_SIP_HEADERS,
+      ERROR_CONNECTION_ACCEPT_FAILED,
+      ERROR_CONNECTION_DISCONNECT_FAILED,
+      ERROR_CONNECTION_DECLINE_FAILED,
+      ERROR_CONNECTION_DTMF_DIGITS_FAILED,
+      ERROR_CONNECTION_WEBRTC_PEERCONNECTION_ERROR,
+      ERROR_CONNECTION_WEBRTC_TURN_ERROR,
+      ERROR_MESSAGE_SEND_FAILED,
    }
 
    public static String errorText(ErrorCodes errorCode)
    {
-
-      if (errorCode == ErrorCodes.CONNECTION_DECLINED) {
-         return "Connection declined";
-      }
-      else if (errorCode == ErrorCodes.CONNECTION_TIMEOUT) {
-         return "Connection timed out";
-      }
-      else if (errorCode == ErrorCodes.NO_CONNECTIVITY) {
-         return "No Wifi connectivity";
-      }
-      else if (errorCode == ErrorCodes.WEBRTC_PEERCONNECTION_ERROR) {
-         return "Webrtc Peer Connection error";
-      }
-      else if (errorCode == ErrorCodes.SIGNALLING_SIPURI_PARSE_ERROR) {
-         return "Error parsing SIP URI";
-      }
-      else if (errorCode == ErrorCodes.SIGNALLING_DNS_ERROR) {
-         return "Error in DNS resolving";
-      }
-      else if (errorCode == ErrorCodes.WEBRTC_TURN_ERROR) {
-         return "Error retrieving TURN servers";
-      }
-
-      // New errors
-      else if (errorCode == ErrorCodes.SUCCESS) {
+      if (errorCode == ErrorCodes.SUCCESS) {
          return "Success";
       }
-      else if (errorCode == ErrorCodes.ERROR_NO_CONNECTIVITY) {
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY) {
          return "Device has no connectivity";
       }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_ALREADY_OPEN) {
-         return "Initialization failed; device is already open";
+         return "Device initialization failed; device is already open";
       }
-      else if (errorCode == ErrorCodes.ERROR_SIGNALING_SIP_STACK_BOOTSTRAP) {
-         return "Error bootstraping signaling stack";
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_REGISTER_TIMEOUT) {
+         return "Device registration with Restcomm timed out";
       }
-      else if (errorCode == ErrorCodes.ERROR_SIGNALING_NETWORK_BINDING) {
-         return "Error setting up networking facilities";
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_REGISTER_AUTHENTICATION_FORBIDDEN) {
+         return "Device failed to authenticate with Service";
       }
-      else if (errorCode == ErrorCodes.ERROR_SIGNALING_REGISTER_TIMEOUT) {
-         return "Registration with Restcomm timed out";
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_REGISTER_COULD_NOT_CONNECT) {
+         return "Device could not connect to Service";
       }
-      else if (errorCode == ErrorCodes.ERROR_SIGNALING_REGISTER_AUTHENTICATION_MAX_RETRIES_REACHED) {
-         return "Error authenticating with Service";
-      }
-      else if (errorCode == ErrorCodes.ERROR_SIGNALING_REGISTER_AUTHENTICATION_FORBIDDEN) {
-         return "Error authenticating with Service";
-      }
-      else if (errorCode == ErrorCodes.ERROR_SIGNALING_REGISTER_COULD_NOT_CONNECT) {
-         return "Could not connect to Service";
-      }
-      else if (errorCode == ErrorCodes.ERROR_SIGNALING_REGISTER_URI_INVALID) {
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_REGISTER_URI_INVALID) {
          return "Register Domain URI is invalid";
       }
-      else if (errorCode == ErrorCodes.ERROR_SIGNALING_NETWORK_INTERFACE) {
-         return "Error retrieving local network interface information";
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_REGISTER_SERVICE_UNAVAILABLE) {
+         return "Device failed to register; service unavailable";
       }
-      else if (errorCode == ErrorCodes.ERROR_SIGNALING_REGISTER_SERVICE_UNAVAILABLE) {
-         return "Error registering; service unavailable";
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_URI_INVALID) {
+         return "Connection URI is invalid";
       }
-      else if (errorCode == ErrorCodes.ERROR_SIGNALING_UNREGISTER_SERVICE_UNAVAILABLE) {
-         return "Error unregistering; service unavailable";
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_PEER_UNAVAILABLE) {
+         return "Failed initiating connection; peer is unavailable";
       }
-      else if (errorCode == ErrorCodes.ERROR_SIGNALING_CALL_URI_INVALID) {
-         return "Call URI is invalid";
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_PEER_NOT_FOUND) {
+         return "Failed initiating connection; peer not found";
       }
-      else if (errorCode == ErrorCodes.ERROR_SIGNALING_CALL_PEER_UNAVAILABLE) {
-         return "Error calling; peer is unavailable";
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_SERVICE_UNAVAILABLE) {
+         return "Failed initiating connection; service is unavailable";
       }
-      else if (errorCode == ErrorCodes.ERROR_SIGNALING_CALL_PEER_NOT_FOUND) {
-         return "Error calling; peer not found";
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_PARSE_CUSTOM_SIP_HEADERS) {
+         return "Failed initiating connection; error parsing custom SIP headers";
       }
-      else if (errorCode == ErrorCodes.ERROR_SIGNALING_CALL_SERVICE_UNAVAILABLE) {
-         return "Error calling; service is unavailable";
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_DISCONNECT_FAILED) {
+         return "Failed to disconnect connection";
       }
-      else if (errorCode == ErrorCodes.ERROR_SIGNALING_PARSE_CUSTOM_SIP_HEADERS) {
-         return "Error parsing custom SIP headers";
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_ACCEPT_FAILED) {
+         return "Failed to accept connection";
       }
-      else if (errorCode == ErrorCodes.ERROR_SIGNALING_CALL_HANGUP_FAILED) {
-         return "Failed to hang up call";
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_DECLINE_FAILED) {
+         return "Failed to decline connection";
       }
-      else if (errorCode == ErrorCodes.ERROR_SIGNALING_CALL_ACCEPT_FAILED) {
-         return "Failed to accept call";
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_DTMF_DIGITS_FAILED) {
+         return "Failed to send DTMF digits over connection";
       }
-      else if (errorCode == ErrorCodes.ERROR_SIGNALING_CALL_DECLINE_FAILED) {
-         return "Failed to decline call";
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_WEBRTC_PEERCONNECTION_ERROR) {
+         return "Webrtc Peer Connection error";
       }
-      else if (errorCode == ErrorCodes.ERROR_SIGNALING_MESSAGE_SEND_FAILED) {
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_WEBRTC_TURN_ERROR) {
+         return "Error retrieving TURN servers";
+      }
+      else if (errorCode == ErrorCodes.ERROR_MESSAGE_SEND_FAILED) {
          return "Failed to send message";
       }
-      else if (errorCode == ErrorCodes.ERROR_SIGNALING_DTMF_DIGITS_FAILED) {
-         return "Failed to send DTMF digits";
-      }
-      else if (errorCode == ErrorCodes.ERROR_SIGNALING_UNHANDLED) {
-         return "Unhandled signaling error occurred";
-      }
 
-      return "Generic Restcomm Client error";
+      return "Unmapped Restcomm Client error";
    }
 
    static ArrayList<RCDevice> list;

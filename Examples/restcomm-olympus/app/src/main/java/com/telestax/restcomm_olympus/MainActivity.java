@@ -266,34 +266,20 @@ public class MainActivity extends AppCompatActivity
 
    public void onStopListening(RCDevice device, int errorCode, String errorText)
    {
-      //showOkAlert("RCDevice Error", errorText);
-      //Toast.makeText(getApplicationContext(), "RCDevice Error: " + errorText, Toast.LENGTH_SHORT).show();
-
       if (errorCode == RCClient.ErrorCodes.SUCCESS.ordinal()) {
          handleConnectivityUpdate(RCConnectivityStatus.RCConnectivityStatusNone, "RCDevice: " + errorText);
       }
       else {
          handleConnectivityUpdate(RCConnectivityStatus.RCConnectivityStatusNone, "RCDevice Error: " + errorText);
       }
-        /*
-        if (errorCode == RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal()) {
-            showOkAlert("No Wifi Connectivity", errorText);
-        }
-        else if (errorCode == RCClient.ErrorCodes.GENERIC_ERROR.ordinal()) {
-            showOkAlert("Generic Error", errorText);
-        }
-        else {
-            showOkAlert("Unknown Error", "Unknown Restcomm Client error");
-        }
-        */
    }
 
    public void onInitialized(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus, int statusCode, String statusText)
    {
       if (statusCode == RCClient.ErrorCodes.SUCCESS.ordinal()) {
-         handleConnectivityUpdate(connectivityStatus, "RCDevice Initialized, using: " + connectivityStatus);
+         handleConnectivityUpdate(connectivityStatus, "RCDevice successfully initialized, using: " + connectivityStatus);
       }
-      else if (statusCode == RCClient.ErrorCodes.ERROR_NO_CONNECTIVITY.ordinal()) {
+      else if (statusCode == RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY.ordinal()) {
          // This is not really an error, since if connectivity comes back the RCDevice will resume automatically
          handleConnectivityUpdate(connectivityStatus, null);
       }

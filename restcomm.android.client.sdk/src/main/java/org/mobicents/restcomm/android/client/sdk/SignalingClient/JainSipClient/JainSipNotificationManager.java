@@ -36,7 +36,7 @@ class JainSipNotificationManager extends BroadcastReceiver {
 
    Context androidContext;
    NotificationManagerListener listener;
-   static final String TAG = "JainSipNotificationManager";
+   static final String TAG = "NotificationManager";
    NetworkStatus networksStatus;
 
 

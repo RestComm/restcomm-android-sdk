@@ -6,11 +6,13 @@ import android.os.Message;
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
+import org.mobicents.restcomm.android.client.sdk.RCMessage;
 import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
 import java.util.HashMap;
 
-// Client singleton that will send all asynchronous requests from UI towards signaling thread
+// Client singleton as well as Handler that will send all asynchronous requests from UI thread towards signaling thread and will
+// receive responses via Handler handleMessage()
 public class UIClient extends Handler {
 
    // Interface the UIClient listener needs to implement, to get events from us
@@ -27,14 +29,15 @@ public class UIClient extends Handler {
       void onMessageReply(String id, RCClient.ErrorCodes status, String text);
 
       // Unsolicited Events
-      //void onCallArrivedEvent(String id, String peer);
+      void onCallArrivedEvent(String id, String peer, String sdpOffer);
 
-      void onMessageArrivedEvent(String id, String peer, String text);
+      void onMessageArrivedEvent(String id, String peer, String messageText);
 
       void onErrorEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text);
 
       void onConnectivityEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus);
 
+      // TODO: this needs redesign
       // Call related events that are delegated to RCConnection
       void onCallRelatedMessage(SignalingMessage message);
 
@@ -50,6 +53,12 @@ public class UIClient extends Handler {
    }
    */
 
+   // ------ Not used yet, we 'll use it when we introduce the new messaging API
+   public interface UIMessageListener {
+      void onMessageSentEvent(String id);
+   }
+
+
    private static final UIClient instance = new UIClient();
    UIClient.UIClientListener listener;
    private static final String TAG = "UIClient";
@@ -59,6 +68,7 @@ public class UIClient extends Handler {
    Handler signalingHandler;
    //UIHandler uiHandler;
    Context context;
+   //HashMap<String, RCMessage> messages;
 
    // private constructor to avoid client applications to use constructor
    private UIClient()
@@ -102,10 +112,21 @@ public class UIClient extends Handler {
          listener.onMessageArrivedEvent(message.id, message.peer, message.messageText);
       }
       else if (message.type == SignalingMessage.MessageType.MESSAGE_REPLY) {
+         /*
+         RCMessage rcMessage = messages.get(message.id);
+         if (rcMessage == null) {
+            throw new RuntimeException("No RCMessage matching incoming message id: " + message.id);
+         }
+
+         rcMessage.onMessageSentEvent(message.id);
+         */
          listener.onMessageReply(message.id, message.status, message.text);
       }
       else if (message.type == SignalingMessage.MessageType.REGISTERING_EVENT) {
          listener.onRegisteringEvent(message.id);
+      }
+      else if (message.type == SignalingMessage.MessageType.CALL_EVENT) {
+         listener.onCallArrivedEvent(message.id, message.peer, message.sdp);
       }
       else {
          listener.onCallRelatedMessage(message);
@@ -191,6 +212,7 @@ public class UIClient extends Handler {
       message.sendToTarget();
    }
 
+   //public String sendMessage(RCMessage rcMessage)
    public String sendMessage(HashMap<String, Object> parameters)
    {
       String id = generateId();
@@ -199,6 +221,8 @@ public class UIClient extends Handler {
       signalingMessage.parameters = parameters;
       Message message = signalingHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
+
+      //messages.put(id, rcMessage);
 
       return id;
    }

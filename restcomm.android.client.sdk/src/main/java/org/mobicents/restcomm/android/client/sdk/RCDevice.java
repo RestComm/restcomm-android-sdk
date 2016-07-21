@@ -293,7 +293,7 @@ public class RCDevice implements UIClient.UIClientListener {
    }
 
    /**
-    * Send an instant message to a an endpoint
+    * Send an instant message to an endpoint
     *
     * @param message    Message text
     * @param parameters Parameters used for the message, such as 'username' that holds the recepient for the message
@@ -306,6 +306,7 @@ public class RCDevice implements UIClient.UIClientListener {
          HashMap<String, Object> messageParameters = new HashMap<>();
          messageParameters.put("username", parameters.get("username"));
          messageParameters.put("text-message", message);
+         //RCMessage message = RCMessage.newInstanceOutgoing(messageParameters, listener);
          uiClient.sendMessage(messageParameters);
          return true;
       }
@@ -372,8 +373,8 @@ public class RCDevice implements UIClient.UIClientListener {
    {
       Iterator it = connections.entrySet().iterator();
       while (it.hasNext()) {
-         Map.Entry pair = (Map.Entry)it.next();
-         RCConnection connection = (RCConnection)pair.getValue();
+         Map.Entry pair = (Map.Entry) it.next();
+         RCConnection connection = (RCConnection) pair.getValue();
          if (connection.incoming && connection.state == RCConnection.ConnectionState.CONNECTING) {
             return connection;
          }
@@ -553,10 +554,25 @@ public class RCDevice implements UIClient.UIClientListener {
    }
 
 
-   public void onMessageArrivedEvent(String id, String peer, String text)
+   public void onMessageArrivedEvent(String id, String peer, String messageText)
    {
-      RCLogger.i(TAG, "onMessageArrivedEvent(): id: " + id + ", peer: " + peer + ", text: " + text);
-      handleIncomingTextMessage(peer, text);
+      RCLogger.i(TAG, "onMessageArrivedEvent(): id: " + id + ", peer: " + peer + ", text: " + messageText);
+
+      HashMap<String, String> parameters = new HashMap<String, String>();
+      // filter out SIP URI stuff and leave just the name
+      String from = peer.replaceAll("^<", "").replaceAll(">$", "");
+      parameters.put("username", from);
+
+      try {
+         Intent dataIntent = new Intent();
+         dataIntent.setAction(INCOMING_MESSAGE);
+         dataIntent.putExtra(INCOMING_MESSAGE_PARAMS, parameters);
+         dataIntent.putExtra(INCOMING_MESSAGE_TEXT, messageText);
+         pendingMessageIntent.send(RCClient.getContext(), 0, dataIntent);
+      }
+      catch (PendingIntent.CanceledException e) {
+         e.printStackTrace();
+      }
    }
 
    public void onErrorEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
@@ -578,6 +594,30 @@ public class RCDevice implements UIClient.UIClientListener {
       listener.onConnectivityUpdate(this, connectivityStatus);
    }
 
+   public void onCallArrivedEvent(String id, String peer, String sdpOffer)
+   {
+      RCConnection connection = new RCConnection(id, true, RCConnection.ConnectionState.CONNECTING, this, uiClient, null);
+      connection.incomingCallSdp = sdpOffer;
+      connection.remoteMediaType = RCConnection.sdp2Mediatype(sdpOffer);
+      // keep connection in the connections hashmap
+      connections.put(id, connection);
+
+      state = DeviceState.BUSY;
+
+      try {
+         Intent dataIntent = new Intent();
+         dataIntent.setAction(INCOMING_CALL);
+         dataIntent.putExtra(RCDevice.EXTRA_DID, peer);
+         dataIntent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, (connection.remoteMediaType == RCConnection.ConnectionMediaType.AUDIO_VIDEO));
+         pendingCallIntent.send(RCClient.getContext(), 0, dataIntent);
+
+         // Phone state Intents to capture incoming phone call event
+         sendQoSIncomingConnectionIntent(peer, connection);
+      }
+      catch (PendingIntent.CanceledException e) {
+         e.printStackTrace();
+      }
+   }
 
    // This is for messages that have to do with a call, which are delegated to RCConnection
    public void onCallRelatedMessage(SignalingMessage signalingMessage)
@@ -586,60 +626,12 @@ public class RCDevice implements UIClient.UIClientListener {
          connections.get(signalingMessage.id).handleSignalingMessage(signalingMessage);
       }
       else {
-         if (signalingMessage.type == SignalingMessage.MessageType.CALL_EVENT) {
-            handleIncomingCall(signalingMessage);
-         }
-         else {
-            throw new RuntimeException("Unexpected signaling message type");
-         }
+         throw new RuntimeException("Unexpected signaling message type");
       }
    }
 
-   private void handleIncomingCall(SignalingMessage signalingMessage)
-   {
-      RCConnection connection = new RCConnection(signalingMessage.id, true, RCConnection.ConnectionState.CONNECTING, this, uiClient, null);
-      connection.incomingCallSdp = signalingMessage.sdp;
-      connection.remoteMediaType = RCConnection.sdp2Mediatype(signalingMessage.sdp);
-      // keep connection in the connections hashmap
-      connections.put(signalingMessage.id, connection);
 
-      state = DeviceState.BUSY;
-
-      try {
-         Intent dataIntent = new Intent();
-         dataIntent.setAction(INCOMING_CALL);
-         dataIntent.putExtra(RCDevice.EXTRA_DID, signalingMessage.peer);
-         dataIntent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, (connection.remoteMediaType == RCConnection.ConnectionMediaType.AUDIO_VIDEO));
-         pendingCallIntent.send(RCClient.getContext(), 0, dataIntent);
-
-         // Phone state Intents to capture incoming phone call event
-         sendQoSIncomingConnectionIntent(signalingMessage.peer, connection);
-      }
-      catch (PendingIntent.CanceledException e) {
-         e.printStackTrace();
-      }
-   }
-
-   private void handleIncomingTextMessage(String peer, String text)
-   {
-      HashMap<String, String> parameters = new HashMap<String, String>();
-      // filter out SIP URI stuff and leave just the name
-      String from = peer.replaceAll("^<", "").replaceAll(">$", "");
-      parameters.put("username", from);
-
-      try {
-         Intent dataIntent = new Intent();
-         dataIntent.setAction(INCOMING_MESSAGE);
-         dataIntent.putExtra(INCOMING_MESSAGE_PARAMS, parameters);
-         dataIntent.putExtra(INCOMING_MESSAGE_TEXT, text);
-         pendingMessageIntent.send(RCClient.getContext(), 0, dataIntent);
-      }
-      catch (PendingIntent.CanceledException e) {
-         e.printStackTrace();
-      }
-   }
-
-   // Helpers
+   // ------ Helpers
 
    // -- Notify QoS module of Device related event through intents, if the module is available
    // Phone state Intents to capture incoming call event
@@ -666,7 +658,7 @@ public class RCDevice implements UIClient.UIClientListener {
       Intent intent = new Intent("org.mobicents.restcomm.android.CONNECT_FAILED");
       intent.putExtra("STATE", "connect failed");
       intent.putExtra("ERRORTEXT", message);
-      intent.putExtra("ERROR", RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal());
+      intent.putExtra("ERROR", RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY.ordinal());
       intent.putExtra("INCOMING", false);
       intent.putExtra("USER", user);
       Context context = RCClient.getContext();
