@@ -328,6 +328,9 @@ class JainSipJob {
                         else {
                            // No Domain, need to loop through to next step
                            loop = true;
+                           // TODO: need to improve
+                           // we need this to properly handle the 'register' step below
+                           event = "register-success";
                         }
                      }
                      catch (JainSipException e) {

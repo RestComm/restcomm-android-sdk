@@ -51,8 +51,11 @@ public class RCClient {
       ERROR_DEVICE_REGISTER_COULD_NOT_CONNECT,
       ERROR_DEVICE_REGISTER_URI_INVALID,
       ERROR_DEVICE_REGISTER_SERVICE_UNAVAILABLE,
+      ERROR_DEVICE_REGISTER_UNTRUSTED_SERVER,
       ERROR_CONNECTION_URI_INVALID,
       ERROR_CONNECTION_PEER_UNAVAILABLE,
+      ERROR_CONNECTION_TIMEOUT,
+      ERROR_CONNECTION_COULD_NOT_CONNECT,
       ERROR_CONNECTION_PEER_NOT_FOUND,
       ERROR_CONNECTION_SERVICE_UNAVAILABLE,
       ERROR_CONNECTION_PARSE_CUSTOM_SIP_HEADERS,
@@ -62,7 +65,9 @@ public class RCClient {
       ERROR_CONNECTION_DTMF_DIGITS_FAILED,
       ERROR_CONNECTION_WEBRTC_PEERCONNECTION_ERROR,
       ERROR_CONNECTION_WEBRTC_TURN_ERROR,
+      ERROR_CONNECTION_UNTRUSTED_SERVICE,
       ERROR_MESSAGE_SEND_FAILED,
+      ERROR_MESSAGE_UNTRUSTED_SERVICE,
    }
 
    public static String errorText(ErrorCodes errorCode)
@@ -83,6 +88,8 @@ public class RCClient {
          return "Device failed to authenticate with Service";
       }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_REGISTER_COULD_NOT_CONNECT) {
+         // returned when there is an issue connecting to the domain URI, like no process listening to the server port,
+         // wrong server domain/ip is used, or domain is not resolvable
          return "Device could not connect to Service";
       }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_REGISTER_URI_INVALID) {
@@ -91,20 +98,31 @@ public class RCClient {
       else if (errorCode == ErrorCodes.ERROR_DEVICE_REGISTER_SERVICE_UNAVAILABLE) {
          return "Device failed to register; service unavailable";
       }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_REGISTER_UNTRUSTED_SERVER) {
+         return "Device failed to register; server is not trusted";
+      }
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_URI_INVALID) {
          return "Connection URI is invalid";
       }
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_PEER_UNAVAILABLE) {
-         return "Failed initiating connection; peer is unavailable";
+         return "Failed to initiate connection; peer is unavailable";
+      }
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_TIMEOUT) {
+         return "Connection timed out";
+      }
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_COULD_NOT_CONNECT) {
+         // returned when there is an issue connecting to the destination URI, like no process listening to the server port,
+         // wrong server domain/ip is used, or domain is not resolvable
+         return "Failed to initiate connection; could not connect to service";
       }
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_PEER_NOT_FOUND) {
-         return "Failed initiating connection; peer not found";
+         return "Failed to initiate connection; peer not found";
       }
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_SERVICE_UNAVAILABLE) {
-         return "Failed initiating connection; service is unavailable";
+         return "Failed to initiate connection; service is unavailable";
       }
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_PARSE_CUSTOM_SIP_HEADERS) {
-         return "Failed initiating connection; error parsing custom SIP headers";
+         return "Failed to initiate connection; error parsing custom SIP headers";
       }
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_DISCONNECT_FAILED) {
          return "Failed to disconnect connection";

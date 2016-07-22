@@ -343,12 +343,11 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
       uiClient.disconnect(id);
 
-      /*
-      // also update RCDevice state
+      // also update RCDevice state. Reason we need that is twofold: a. if a call times out in signaling for a reason it will take around half a minute to
+      // get response from signaling, during which period we won't be able to make a call, b. there are some edge cases where signaling hangs and never times out
       if (RCDevice.state == RCDevice.DeviceState.BUSY) {
          RCDevice.state = RCDevice.DeviceState.READY;
       }
-      */
       disconnectWebrtc();
    }
 
@@ -511,8 +510,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       // differentiate between disconnect and remote cancel events with the same listener method: onDisconnected.
       // In the first case listener will see state CONNECTED and in the second CONNECTING
 
-      if (inboundDisconnect && RCDevice.state == RCDevice.DeviceState.BUSY) {
-         // for outbound disconnect we are handling it in RCConnection.disconnect()
+      //if (inboundDisconnect && RCDevice.state == RCDevice.DeviceState.BUSY) {
+      if (RCDevice.state == RCDevice.DeviceState.BUSY) {
          disconnectWebrtc();
       }
       RCDevice.state = RCDevice.DeviceState.READY;
@@ -574,7 +573,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       final RCConnection connection = this;
       RCLogger.e(TAG, "handleError(): error code: " + errorCode + ", error text: " + errorText);
-      disconnect();
+      //disconnect();
+
+      if (RCDevice.state == RCDevice.DeviceState.BUSY) {
+         RCDevice.state = RCDevice.DeviceState.READY;
+      }
+
+      disconnectWebrtc();
       if (connection.listener != null) {
          connection.listener.onDisconnected(connection, errorCode.ordinal(), errorText);
       }
@@ -817,7 +822,10 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          audioManager.close();
          audioManager = null;
       }
-      rootEglBase.release();
+      if (rootEglBase != null) {
+         rootEglBase.release();
+         rootEglBase = null;
+      }
    }
 
    private void onAudioManagerChangedState()

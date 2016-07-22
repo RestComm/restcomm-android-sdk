@@ -6,7 +6,7 @@ import android.os.Message;
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
-import org.mobicents.restcomm.android.client.sdk.RCMessage;
+//import org.mobicents.restcomm.android.client.sdk.RCMessage;
 import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
 import java.util.HashMap;

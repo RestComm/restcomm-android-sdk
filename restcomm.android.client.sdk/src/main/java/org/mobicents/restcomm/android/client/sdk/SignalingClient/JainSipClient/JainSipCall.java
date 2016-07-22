@@ -9,6 +9,7 @@ import android.javax.sip.RequestEvent;
 import android.javax.sip.ResponseEvent;
 import android.javax.sip.ServerTransaction;
 import android.javax.sip.SipException;
+import android.javax.sip.TimeoutEvent;
 import android.javax.sip.Transaction;
 import android.javax.sip.header.CSeqHeader;
 import android.javax.sip.header.ToHeader;
@@ -92,6 +93,7 @@ public class JainSipCall {
       catch (JainSipException e) {
          e.printStackTrace();
          listener.onCallErrorEvent(jainSipJob.id, e.errorCode, e.errorText);
+         jainSipClient.jainSipJobManager.remove(jainSipJob.id);
       }
    }
 
@@ -103,7 +105,6 @@ public class JainSipCall {
          listener.onCallDigitsEvent(jainSipJob.id, RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY, RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY));
          return;
       }
-
       try {
          jainSipCallSendDigits(jainSipJob, digits);
       }
@@ -119,7 +120,9 @@ public class JainSipCall {
    {
       RCLogger.i(TAG, "close(): id: " + jainSipJob.id);
       try {
-         if (jainSipJob.transaction.getDialog().getState() == DialogState.EARLY) {
+         //RCLogger.i(TAG, "dialog state: " + jainSipJob.transaction.getDialog().getState());
+         if (jainSipJob.transaction.getDialog().getState() == null ||
+               jainSipJob.transaction.getDialog().getState() == DialogState.EARLY) {
             if (jainSipJob.transaction.getDialog().isServer()) {
                // server transaction (i.e. incoming call)
                RCLogger.i(TAG, "close(): id " + jainSipJob.id + " - Early dialog state for incoming call, sending Decline");
@@ -166,8 +169,8 @@ public class JainSipCall {
       }
       catch (Exception e) {
          // DNS error (error resolving registrar URI)
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_COULD_NOT_CONNECT,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_COULD_NOT_CONNECT), e);
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_COULD_NOT_CONNECT,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_COULD_NOT_CONNECT), e);
       }
 
       return transaction;
@@ -288,18 +291,13 @@ public class JainSipCall {
             jainSipClient.jainSipJobManager.remove(jainSipJob.id);
          }
          catch (Exception e) {
-            RCLogger.e(TAG, "processRequest(): Error sending 200 OK to SIP Bye: " + e.getMessage());
-            e.printStackTrace();
+            // TODO: let's emit a RuntimeException for now so that we get a loud and clear indication of issues involved in the field and then
+            // we can adjust and only do a e.printStackTrace()
+            throw new RuntimeException("Failed to respond to Bye request", e);
          }
       }
       else if (method.equals(Request.CANCEL)) {
          try {
-            /* No need, we 'll get NPE anyways
-            if (serverTransaction == null) {
-               throw new RuntimeException("SIP Cancel received but server transaction is null");
-            }
-            */
-
             Response response = jainSipClient.jainSipMessageBuilder.buildResponse(Response.OK, request);
             RCLogger.v(TAG, "Sending SIP response: \n" + response.toString());
             serverTransaction.sendResponse(response);
@@ -316,7 +314,9 @@ public class JainSipCall {
             jainSipClient.jainSipJobManager.remove(jainSipJob.id);
          }
          catch (Exception e) {
-            e.printStackTrace();
+            // TODO: let's emit a RuntimeException for now so that we get a loud and clear indication of issues involved in the field and then
+            // we can adjust and only do a e.printStackTrace()
+            throw new RuntimeException("Failed to respond to Cancel request", e);
          }
       }
       else if (method.equals(Request.INVITE)) {
@@ -341,21 +341,18 @@ public class JainSipCall {
             listener.onCallArrivedEvent(jainSipJob.id, ((SIPMessage) request).getFrom().getAddress().toString(), sdpOffer);
          }
          catch (Exception e) {
-            e.printStackTrace();
+            // TODO: let's emit a RuntimeException for now so that we get a loud and clear indication of issues involved in the field and then
+            // we can adjust and only do a e.printStackTrace()
+            throw new RuntimeException("Failed to send Ringing to incoming Invite", e);
          }
       }
       else if (method.equals(Request.ACK)) {
-         try {
-            // A dialog transitions to the "confirmed" state when a 2xx final response is received to the INVITE Request
-            if (serverTransaction.getDialog().getState() == DialogState.CONFIRMED) {
-               listener.onCallIncomingConnectedEvent(jainSipJob.id);
-            }
-            else {
-               RCLogger.e(TAG, "Received ACK for dialog not in Confirmed state: \n" + serverTransaction.getDialog().getState());
-            }
+         // A dialog transitions to the "confirmed" state when a 2xx final response is received to the INVITE Request
+         if (serverTransaction.getDialog().getState() == DialogState.CONFIRMED) {
+            listener.onCallIncomingConnectedEvent(jainSipJob.id);
          }
-         catch (Exception e) {
-            e.printStackTrace();
+         else {
+            RCLogger.e(TAG, "Received ACK for dialog not in Confirmed state: \n" + serverTransaction.getDialog().getState());
          }
       }
    }
@@ -388,11 +385,13 @@ public class JainSipCall {
                listener.onCallOutgoingConnectedEvent(jainSipJob.id, sdpAnswer);
             }
             catch (SipException e) {
-               listener.onCallErrorEvent(jainSipJob.id, RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_COULD_NOT_CONNECT,
-                     RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_COULD_NOT_CONNECT));
+               listener.onCallErrorEvent(jainSipJob.id, RCClient.ErrorCodes.ERROR_CONNECTION_COULD_NOT_CONNECT,
+                     RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_COULD_NOT_CONNECT));
             }
             catch (Exception e) {
-               e.printStackTrace();
+               // TODO: let's emit a RuntimeException for now so that we get a loud and clear indication of issues involved in the field and then
+               // we can adjust and only do a e.printStackTrace()
+               throw new RuntimeException("Failed to Ack the 200 Ok out outgoing Invite", e);
             }
          }
          else if (method.equals(Request.BYE)) {
@@ -439,10 +438,13 @@ public class JainSipCall {
       else if (response.getStatusCode() == Response.NOT_FOUND) {
          listener.onCallErrorEvent(jainSipJob.id, RCClient.ErrorCodes.ERROR_CONNECTION_PEER_NOT_FOUND,
                RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_PEER_NOT_FOUND));
+         // we don't remove job because right now the flow is such that the client disconnects after this event
+         jainSipClient.jainSipJobManager.remove(jainSipJob.id);
       }
       else if (response.getStatusCode() == Response.SERVICE_UNAVAILABLE) {
          listener.onCallErrorEvent(jainSipJob.id, RCClient.ErrorCodes.ERROR_CONNECTION_SERVICE_UNAVAILABLE,
                RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_SERVICE_UNAVAILABLE));
+         jainSipClient.jainSipJobManager.remove(jainSipJob.id);
       }
       else if (response.getStatusCode() == Response.REQUEST_TERMINATED) {
          if (method.equals(Request.INVITE)) {
@@ -455,14 +457,23 @@ public class JainSipCall {
             RCLogger.e(TAG, "processResponse(): unhandled SIP response: " + response.getStatusCode());
          }
       }
+      /*
       else if (response.getStatusCode() == Response.REQUEST_TERMINATED) {
          // INVITE was terminated by Cancel
          listener.onCallLocalDisconnectedEvent(jainSipJob.id);
          // we are done with this call, let's remove job
          jainSipClient.jainSipJobManager.remove(jainSipJob.id);
       }
+      */
 
       // Notice that we 're not handling '200 Canceling' response as it doesn't add any value to the SDK, at least for now
+   }
+
+   public void processTimeout(JainSipJob jainSipJob, final TimeoutEvent timeoutEvent)
+   {
+      listener.onCallErrorEvent(jainSipJob.id, RCClient.ErrorCodes.ERROR_CONNECTION_TIMEOUT,
+            RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_TIMEOUT));
+      jainSipClient.jainSipJobManager.remove(jainSipJob.id);
    }
 
 }

@@ -158,7 +158,9 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         } else {
             if (connection != null) {
                 // incoming established or outgoing any state (pending, connecting, connected)
-                connection.disconnect();
+                if (connection.getState() == RCConnection.ConnectionState.CONNECTED) {
+                    connection.disconnect();
+                }
                 connection = null;
                 pendingConnection = null;
             }

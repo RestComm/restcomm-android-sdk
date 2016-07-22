@@ -43,6 +43,7 @@ import java.io.File;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.security.cert.CertPathValidatorException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -461,8 +462,14 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
          transaction.sendRequest();
       }
       catch (SipException e) {
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_COULD_NOT_CONNECT,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_COULD_NOT_CONNECT), e);
+         if (e.getMessage().contains("Trust anchor for certification path not found")) {
+            throw new JainSipException(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_UNTRUSTED_SERVER,
+                  RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_UNTRUSTED_SERVER), e);
+         }
+         else {
+            throw new JainSipException(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_COULD_NOT_CONNECT,
+                  RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_COULD_NOT_CONNECT), e);
+         }
       }
 
       // cancel any pending scheduled registrations (in case this is an on-demand registration and we end up posting to handler on top of the old)
@@ -784,7 +791,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
             }
 
             if (jainSipJob.type == JainSipJob.Type.TYPE_CALL) {
-               // TODO: call JainSipCall.processTimeout()
+               jainSipJob.jainSipCall.processTimeout(jainSipJob, timeoutEvent);
             }
             else if (jainSipJob.type == JainSipJob.Type.TYPE_MESSAGE) {
                // TODO: call JainSipMessage.processTimeout()

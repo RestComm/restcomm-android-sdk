@@ -74,7 +74,18 @@ class JainSipMessageBuilder {
    private Request buildBaseRequest(String method, String username, String domain, String toSipUri, ListeningPoint listeningPoint, HashMap<String, Object> clientContext) throws JainSipException
    {
       try {
-         Address fromAddress = jainSipAddressFactory.createAddress("sip:" + username + "@" + sipUri2IpAddress(domain));
+         String fromSipUri;
+         // Add route header with the proxy first, if proxy exists (i.e. )
+         if (domain != null && !domain.equals("")) {
+            // non registrar-less; use username@domain logic
+            fromSipUri = "sip:" + username + "@" + sipUri2IpAddress(domain);
+         }
+         else {
+            // registrar-less
+            fromSipUri = "sip:" + username + "@" + listeningPoint.getIPAddress();
+         }
+
+         Address fromAddress = jainSipAddressFactory.createAddress(fromSipUri);
          fromAddress.setDisplayName(username);
 
          Address toAddress;
@@ -90,7 +101,7 @@ class JainSipMessageBuilder {
             requestUri = jainSipAddressFactory.createAddress(domain).getURI();
          }
 
-         Request request =  jainSipMessageFactory.createRequest(requestUri,
+         Request request = jainSipMessageFactory.createRequest(requestUri,
                method,
                jainSipProvider.getNewCallId(),
                jainSipHeaderFactory.createCSeqHeader(1l, method),
@@ -99,7 +110,7 @@ class JainSipMessageBuilder {
                createViaHeaders(listeningPoint),
                jainSipHeaderFactory.createMaxForwardsHeader(MAX_FORWARDS));
 
-         // Add route header with the proxy first, if proxy exists (i.e. non-registrarless)
+         // Add route header with the proxy first, if proxy exists (i.e. non registrar-less)
          if (domain != null && !domain.equals("")) {
             RouteHeader routeHeader = createRouteHeader(domain);
             request.addFirst(routeHeader);
@@ -132,7 +143,7 @@ class JainSipMessageBuilder {
       }
    }
 
-   public Request buildRegisterRequest(ListeningPoint listeningPoint, int expires, HashMap<String, Object> parameters)  throws JainSipException
+   public Request buildRegisterRequest(ListeningPoint listeningPoint, int expires, HashMap<String, Object> parameters) throws JainSipException
    {
       try {
          Request request = buildBaseRequest(Request.REGISTER, (String) parameters.get(RCDevice.ParameterKeys.SIGNALING_USERNAME),
@@ -157,7 +168,7 @@ class JainSipMessageBuilder {
    }
 
    public Request buildInviteRequest(ListeningPoint listeningPoint, HashMap<String, Object> parameters,
-                              HashMap<String, Object> clientConfiguration, HashMap<String, Object> clientContext) throws JainSipException
+                                     HashMap<String, Object> clientConfiguration, HashMap<String, Object> clientContext) throws JainSipException
    {
       try {
          Request request = buildBaseRequest(Request.INVITE, (String) clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_USERNAME),
@@ -187,6 +198,9 @@ class JainSipMessageBuilder {
 
          return request;
       }
+      catch (JainSipException e) {
+         throw e;
+      }
       catch (ParseException e) {
          throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_URI_INVALID,
                RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_URI_INVALID), e);
@@ -214,6 +228,9 @@ class JainSipMessageBuilder {
          request.addHeader(createUserAgentHeader());
 
          return request;
+      }
+      catch (JainSipException e) {
+         throw e;
       }
       catch (ParseException e) {
          throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_URI_INVALID,
@@ -299,7 +316,8 @@ class JainSipMessageBuilder {
          response = jainSipMessageFactory.createResponse(responseType, request);
          RCLogger.v(TAG, "Sending SIP response: \n" + response.toString());
          return response;
-      } catch (ParseException e) {
+      }
+      catch (ParseException e) {
          throw new RuntimeException("Error creating Decline response", e);
       }
    }
