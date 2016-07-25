@@ -10,7 +10,7 @@ class SignalingHandlerThread extends HandlerThread {
    private static final String TAG = "SignalingHandlerThread";
    //Handler uiHandler;
 
-   SignalingHandlerThread(UIClient uiHandler)
+   SignalingHandlerThread(SignalingClient uiHandler)
    {
       super("signaling-handler-thread");
       //this.uiHandler = uiHandler;

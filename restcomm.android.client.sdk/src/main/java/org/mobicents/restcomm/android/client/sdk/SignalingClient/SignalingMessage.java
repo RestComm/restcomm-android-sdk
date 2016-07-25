@@ -16,42 +16,31 @@ public class SignalingMessage {
       CLOSE_REPLY,
       RECONFIGURE_REQUEST,
       RECONFIGURE_REPLY,
-
-      CALL_REQUEST,
-      //CALL_REPLY,
-      CALL_EVENT,
       ERROR_EVENT,
       CONNECTIVITY_EVENT,
       REGISTERING_EVENT,
 
-      CALL_PEER_RINGING_EVENT,
+      CALL_REQUEST,
+      CALL_INCOMING_EVENT,
+      CALL_OUTGOING_PEER_RINGING_EVENT,
       CALL_PEER_DISCONNECT_EVENT,
       CALL_OUTGOING_CONNECTED_EVENT,
       CALL_INCOMING_CONNECTED_EVENT,
       CALL_ERROR_EVENT,
-
       CALL_ACCEPT_REQUEST,
       CALL_DISCONNECT_REQUEST,
-      CALL_DISCONNECT_REPLY,
-      //CALL_DISCONNECTED_EVENT,
-      CALL_CANCELED_EVENT,
+      CALL_LOCAL_DISCONNECT_EVENT,
+      CALL_INCOMING_CANCELED_EVENT,
+      CALL_SEND_DIGITS_REQUEST,
+      CALL_SEND_DIGITS_EVENT,
 
       MESSAGE_REQUEST,
       MESSAGE_REPLY,
-      MESSAGE_EVENT,
+      MESSAGE_INCOMING_EVENT,
 
-      SEND_DIGITS_REQUEST,
-      SEND_DIGITS_RESPONSE,
    }
 
-    /*
-    public enum MessageStatus {
-        STATUS_SUCCESS,
-        STATUS_FAILURE,
-    }
-    */
-
-   public String id;
+   public String jobId;
    public MessageType type;
    public HashMap<String, Object> parameters;
    public Context androidContext;
@@ -71,9 +60,9 @@ public class SignalingMessage {
    public String dtmfDigits;
 
    // let's enforce id and type, to make sure we always get them
-   public SignalingMessage(String id, MessageType type)
+   public SignalingMessage(String jobId, MessageType type)
    {
-      this.id = id;
+      this.jobId = jobId;
       this.type = type;
    }
 

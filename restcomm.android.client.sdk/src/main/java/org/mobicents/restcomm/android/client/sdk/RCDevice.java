@@ -31,8 +31,8 @@ import android.content.Context;
 import android.content.Intent;
 
 import org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient.JainSipConfiguration;
+import org.mobicents.restcomm.android.client.sdk.SignalingClient.SignalingClient;
 import org.mobicents.restcomm.android.client.sdk.SignalingClient.SignalingMessage;
-import org.mobicents.restcomm.android.client.sdk.SignalingClient.UIClient;
 import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
 /**
@@ -51,7 +51,7 @@ import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
  * @see RCConnection
  */
 
-public class RCDevice implements UIClient.UIClientListener {
+public class RCDevice implements SignalingClient.SignalingClientListener {
    /**
     * @abstract Device state
     */
@@ -139,7 +139,7 @@ public class RCDevice implements UIClient.UIClientListener {
    HashMap<String, RCConnection> connections;
    //private RCConnection incomingConnection;
    private RCDeviceListener.RCConnectivityStatus cachedConnectivityStatus = RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone;
-   private UIClient uiClient;
+   private SignalingClient signalingClient;
 
    /**
     * Initialize a new RCDevice object
@@ -161,8 +161,8 @@ public class RCDevice implements UIClient.UIClientListener {
       // initialize JAIN SIP if we have connectivity
       this.parameters = parameters;
 
-      uiClient = UIClient.getInstance();
-      uiClient.open(this, RCClient.getContext(), parameters);
+      signalingClient = SignalingClient.getInstance();
+      signalingClient.open(this, RCClient.getContext(), parameters);
    }
 
    // TODO: this is for RCConnection, but see if they can figure out the connectivity in a different way, like asking the signaling thread directly?
@@ -191,7 +191,7 @@ public class RCDevice implements UIClient.UIClientListener {
       RCLogger.i(TAG, "release()");
       this.listener = null;
 
-      uiClient.close();
+      signalingClient.close();
       state = DeviceState.OFFLINE;
    }
 
@@ -278,7 +278,7 @@ public class RCDevice implements UIClient.UIClientListener {
       if (state == DeviceState.READY) {
          RCLogger.i(TAG, "RCDevice.connect(), with connectivity");
 
-         RCConnection connection = new RCConnection(null, false, RCConnection.ConnectionState.PENDING, this, uiClient, listener);
+         RCConnection connection = new RCConnection(null, false, RCConnection.ConnectionState.PENDING, this, signalingClient, listener);
          connection.open(parameters);
 
          // keep connection in the connections hashmap
@@ -307,7 +307,7 @@ public class RCDevice implements UIClient.UIClientListener {
          messageParameters.put("username", parameters.get("username"));
          messageParameters.put("text-message", message);
          //RCMessage message = RCMessage.newInstanceOutgoing(messageParameters, listener);
-         uiClient.sendMessage(messageParameters);
+         signalingClient.sendMessage(messageParameters);
          return true;
       }
       else {
@@ -463,7 +463,7 @@ public class RCDevice implements UIClient.UIClientListener {
     */
    public boolean updateParams(HashMap<String, Object> params)
    {
-      uiClient.reconfigure(params);
+      signalingClient.reconfigure(params);
 
       // remember that the new parameters can be just a subset of the currently stored in this.parameters, so to update the current parameters we need
       // to merge them with the new (i.e. keep the old and replace any new keys with new values)
@@ -478,13 +478,13 @@ public class RCDevice implements UIClient.UIClientListener {
       return parameters;
    }
 
-   // -- UIClientListener events for incoming messages from signaling thread
+   // -- SignalingClientListener events for incoming messages from signaling thread
    // Replies
-   public void onOpenReply(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
+   public void onOpenReply(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
       cachedConnectivityStatus = connectivityStatus;
       if (status != RCClient.ErrorCodes.SUCCESS) {
-         RCLogger.e(TAG, "onOpenReply(): id: " + id + ", failure - " + text);
+         RCLogger.e(TAG, "onOpenReply(): id: " + jobId + ", failure - " + text);
 
          // TODO: Maybe we should introduce separate message specifically for RCDevice initialization. Using onStopListening() looks weird
          //listener.onStopListening(this, status.ordinal(), text);
@@ -492,71 +492,71 @@ public class RCDevice implements UIClient.UIClientListener {
          return;
       }
 
-      RCLogger.i(TAG, "onOpenReply(): id: " + id + ", success - " + text);
+      RCLogger.i(TAG, "onOpenReply(): id: " + jobId + ", success - " + text);
       state = DeviceState.READY;
       listener.onInitialized(this, connectivityStatus, RCClient.ErrorCodes.SUCCESS.ordinal(), RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
    }
 
-   public void onCloseReply(String id, RCClient.ErrorCodes status, String text)
+   public void onCloseReply(String jobId, RCClient.ErrorCodes status, String text)
    {
       if (status == RCClient.ErrorCodes.SUCCESS) {
-         RCLogger.i(TAG, "onCloseReply(): id: " + id + ", success - " + text);
-         //uiClient.open(parameters, true, SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi);
+         RCLogger.i(TAG, "onCloseReply(): id: " + jobId + ", success - " + text);
+         //signalingClient.open(parameters, true, SipManager.NetworkInterfaceType.NetworkInterfaceTypeWifi);
       }
       else {
-         RCLogger.i(TAG, "onCloseReply(): id: " + id + ", failure - " + text);
+         RCLogger.i(TAG, "onCloseReply(): id: " + jobId + ", failure - " + text);
       }
    }
 
-   public void onReconfigureReply(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
+   public void onReconfigureReply(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
       cachedConnectivityStatus = connectivityStatus;
       if (status == RCClient.ErrorCodes.SUCCESS) {
-         RCLogger.i(TAG, "onReconfigureReply(): id: " + id + ", success - " + text);
+         RCLogger.i(TAG, "onReconfigureReply(): id: " + jobId + ", success - " + text);
          state = DeviceState.READY;
          listener.onStartListening(this, connectivityStatus);
       }
       else {
-         RCLogger.i(TAG, "onReconfigureReply(): id: " + id + ", failure - " + text);
+         RCLogger.i(TAG, "onReconfigureReply(): id: " + jobId + ", failure - " + text);
          state = DeviceState.OFFLINE;
          listener.onStopListening(this, status.ordinal(), text);
       }
    }
 
    /*
-   public void onCallReply(String id, RCClient.ErrorCodes status, String text)
+   public void onCallReply(String jobId, RCClient.ErrorCodes status, String text)
    {
 
    }
    */
 
-   public void onMessageReply(String id, RCClient.ErrorCodes status, String text)
+   public void onMessageReply(String jobId, RCClient.ErrorCodes status, String text)
    {
-      RCLogger.i(TAG, "onMessageReply(): id: " + id + ", status: " + status + ", text: " + text);
+      RCLogger.i(TAG, "onMessageReply(): id: " + jobId + ", status: " + status + ", text: " + text);
 
       listener.onMessageSent(this, status.ordinal(), text);
    }
 
    // Unsolicited Events
    /*
-   public void onCallArrivedEvent(String id, String peer)
+   public void onCallArrivedEvent(String jobId, String peer)
    {
 
 
    }
    */
 
-   public void onRegisteringEvent(String id)
+   public void onRegisteringEvent(String jobId)
    {
-      RCLogger.i(TAG, "onRegisteringEvent(): id: " + id);
+      RCLogger.i(TAG, "onRegisteringEvent(): id: " + jobId);
       state = DeviceState.OFFLINE;
       listener.onStopListening(this, RCClient.ErrorCodes.SUCCESS.ordinal(), "Trying to register with Service");
    }
 
 
-   public void onMessageArrivedEvent(String id, String peer, String messageText)
+   public void onMessageArrivedEvent(String jobId, String peer, String messageText)
    {
-      RCLogger.i(TAG, "onMessageArrivedEvent(): id: " + id + ", peer: " + peer + ", text: " + messageText);
+      RCLogger.i(TAG, "onMessageArrivedEvent(): id: " + jobId + ", peer: " + peer + ", text: " + messageText);
 
       HashMap<String, String> parameters = new HashMap<String, String>();
       // filter out SIP URI stuff and leave just the name
@@ -575,32 +575,32 @@ public class RCDevice implements UIClient.UIClientListener {
       }
    }
 
-   public void onErrorEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
+   public void onErrorEvent(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
       cachedConnectivityStatus = connectivityStatus;
       if (status == RCClient.ErrorCodes.SUCCESS) {
-         RCLogger.i(TAG, "onErrorEvent(): id: " + id + ", success - " + text);
+         RCLogger.i(TAG, "onErrorEvent(): id: " + jobId + ", success - " + text);
       }
       else {
-         RCLogger.i(TAG, "onErrorEvent(): id: " + id + ", failure - " + text);
+         RCLogger.i(TAG, "onErrorEvent(): id: " + jobId + ", failure - " + text);
          listener.onStopListening(this, status.ordinal(), text);
       }
    }
 
-   public void onConnectivityEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus)
+   public void onConnectivityEvent(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus)
    {
-      RCLogger.i(TAG, "onConnectivityEvent(): id: " + id + ", status - " + connectivityStatus);
+      RCLogger.i(TAG, "onConnectivityEvent(): id: " + jobId + ", status - " + connectivityStatus);
       cachedConnectivityStatus = connectivityStatus;
       listener.onConnectivityUpdate(this, connectivityStatus);
    }
 
-   public void onCallArrivedEvent(String id, String peer, String sdpOffer)
+   public void onCallArrivedEvent(String jobId, String peer, String sdpOffer)
    {
-      RCConnection connection = new RCConnection(id, true, RCConnection.ConnectionState.CONNECTING, this, uiClient, null);
+      RCConnection connection = new RCConnection(jobId, true, RCConnection.ConnectionState.CONNECTING, this, signalingClient, null);
       connection.incomingCallSdp = sdpOffer;
       connection.remoteMediaType = RCConnection.sdp2Mediatype(sdpOffer);
       // keep connection in the connections hashmap
-      connections.put(id, connection);
+      connections.put(jobId, connection);
 
       state = DeviceState.BUSY;
 
@@ -622,8 +622,8 @@ public class RCDevice implements UIClient.UIClientListener {
    // This is for messages that have to do with a call, which are delegated to RCConnection
    public void onCallRelatedMessage(SignalingMessage signalingMessage)
    {
-      if (connections.containsKey(signalingMessage.id)) {
-         connections.get(signalingMessage.id).handleSignalingMessage(signalingMessage);
+      if (connections.containsKey(signalingMessage.jobId)) {
+         connections.get(signalingMessage.jobId).handleSignalingMessage(signalingMessage);
       }
       else {
          throw new RuntimeException("Unexpected signaling message type");
@@ -673,9 +673,9 @@ public class RCDevice implements UIClient.UIClientListener {
       }
    }
 
-   void removeConnection(String id)
+   void removeConnection(String jobId)
    {
-      RCLogger.i(TAG, "removeConnection(): id: " + id + ", total connections before removal: " + connections.size());
-      connections.remove(id);
+      RCLogger.i(TAG, "removeConnection(): id: " + jobId + ", total connections before removal: " + connections.size());
+      connections.remove(jobId);
    }
 }

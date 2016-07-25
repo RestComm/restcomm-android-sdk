@@ -39,7 +39,7 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
         }
         */
 
-      RCLogger.i(TAG, "handleMessage: type: " + message.type + ", id: " + message.id);
+      RCLogger.i(TAG, "handleMessage: type: " + message.type + ", jobId: " + message.jobId);
 
       // all requests apart from OPEN_REQUEST require an initialized jainSipClient
       if (message.type != SignalingMessage.MessageType.OPEN_REQUEST && jainSipClient == null) {
@@ -49,42 +49,42 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
 
       if (message.type == SignalingMessage.MessageType.OPEN_REQUEST) {
          if (jainSipClient != null) {
-            onClientOpenedEvent(message.id, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone,
+            onClientOpenedReply(message.jobId, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone,
                   RCClient.ErrorCodes.ERROR_DEVICE_ALREADY_OPEN,
                   RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_ALREADY_OPEN));
             return;
          }
          jainSipClient = new JainSipClient(this);
-         jainSipClient.open(message.id, message.androidContext, message.parameters, this);
+         jainSipClient.open(message.jobId, message.androidContext, message.parameters, this);
       }
       else if (message.type == SignalingMessage.MessageType.CLOSE_REQUEST) {
-         jainSipClient.close(message.id);
+         jainSipClient.close(message.jobId);
       }
       if (message.type == SignalingMessage.MessageType.RECONFIGURE_REQUEST) {
-         jainSipClient.reconfigure(message.id, message.parameters, this);
+         jainSipClient.reconfigure(message.jobId, message.parameters, this);
       }
       else if (message.type == SignalingMessage.MessageType.CALL_REQUEST) {
-         jainSipClient.call(message.id, message.parameters, this);
+         jainSipClient.call(message.jobId, message.parameters, this);
       }
       else if (message.type == SignalingMessage.MessageType.CALL_DISCONNECT_REQUEST) {
-         jainSipClient.disconnect(message.id, this);
+         jainSipClient.disconnect(message.jobId, this);
       }
       else if (message.type == SignalingMessage.MessageType.CALL_ACCEPT_REQUEST) {
-         jainSipClient.accept(message.id, message.parameters, this);
+         jainSipClient.accept(message.jobId, message.parameters, this);
       }
       else if (message.type == SignalingMessage.MessageType.MESSAGE_REQUEST) {
-         jainSipClient.sendMessage(message.id, message.parameters);
+         jainSipClient.sendMessage(message.jobId, message.parameters);
       }
-      else if (message.type == SignalingMessage.MessageType.SEND_DIGITS_REQUEST) {
-         jainSipClient.sendDigits(message.id, message.dtmfDigits);
+      else if (message.type == SignalingMessage.MessageType.CALL_SEND_DIGITS_REQUEST) {
+         jainSipClient.sendDigits(message.jobId, message.dtmfDigits);
       }
    }
 
    // -- JainSipClientListener events
-   public void onClientOpenedEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
+   public void onClientOpenedReply(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
-      //listener.onOpenReply(id, RCClient.ErrorCodes.SUCCESS, "Success");
-      SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.OPEN_REPLY);
+      //listener.onOpenReply(jobId, RCClient.ErrorCodes.SUCCESS, "Success");
+      SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.OPEN_REPLY);
       signalingMessage.status = status;  //RCClient.ErrorCodes.SUCCESS;
       signalingMessage.text = text;  //"Success";
       signalingMessage.connectivityStatus = connectivityStatus;
@@ -92,10 +92,10 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
       message.sendToTarget();
    }
 
-   public void onClientErrorEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
+   public void onClientErrorReply(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
-      //listener.onOpenReply(id, status, text);
-      SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.ERROR_EVENT);
+      //listener.onOpenReply(jobId, status, text);
+      SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.ERROR_EVENT);
       signalingMessage.status = status;
       signalingMessage.text = text;
       signalingMessage.connectivityStatus = connectivityStatus;
@@ -103,10 +103,10 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
       message.sendToTarget();
    }
 
-   public void onClientClosedEvent(String id, RCClient.ErrorCodes status, String text)
+   public void onClientClosedEvent(String jobId, RCClient.ErrorCodes status, String text)
    {
-      //listener.onCloseReply(id, "Successfully closed client");
-      SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.CLOSE_REPLY);
+      //listener.onCloseReply(jobId, "Successfully closed client");
+      SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CLOSE_REPLY);
       signalingMessage.status = status;  //RCClient.ErrorCodes.SUCCESS;
       signalingMessage.text = text;  //"Success";
       Message message = uiHandler.obtainMessage(1, signalingMessage);
@@ -116,10 +116,10 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
       this.jainSipClient = null;
    }
 
-   public void onClientReconfigureEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
+   public void onClientReconfigureReply(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
-      //listener.onOpenReply(id, RCClient.ErrorCodes.SUCCESS, "Success");
-      SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.RECONFIGURE_REPLY);
+      //listener.onOpenReply(jobId, RCClient.ErrorCodes.SUCCESS, "Success");
+      SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.RECONFIGURE_REPLY);
       signalingMessage.status = status;  //RCClient.ErrorCodes.SUCCESS;
       signalingMessage.text = text;  //"Success";
       signalingMessage.connectivityStatus = connectivityStatus;
@@ -127,137 +127,109 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
       message.sendToTarget();
    }
 
-   public void onClientConnectivityEvent(String id, RCDeviceListener.RCConnectivityStatus connectivityStatus)
+   public void onClientConnectivityEvent(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus)
    {
-      SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.CONNECTIVITY_EVENT);
+      SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CONNECTIVITY_EVENT);
       signalingMessage.connectivityStatus = connectivityStatus;
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
    }
 
-   public void onClientMessageArrivedEvent(String id, String peer, String messageText)
+   public void onClientMessageArrivedEvent(String jobId, String peer, String messageText)
    {
-      SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.MESSAGE_EVENT);
+      SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.MESSAGE_INCOMING_EVENT);
       signalingMessage.messageText = messageText;
       signalingMessage.peer = peer;
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
    }
 
-   public void onClientMessageSentEvent(String id, RCClient.ErrorCodes status, String text)
+   public void onClientMessageSentEvent(String jobId, RCClient.ErrorCodes status, String text)
    {
-      SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.MESSAGE_REPLY);
+      SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.MESSAGE_REPLY);
       signalingMessage.status = status;
       signalingMessage.text = text;
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
    }
 
-   public void onClientRegisteringEvent(String id)
+   public void onClientRegisteringEvent(String jobId)
    {
-      SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.REGISTERING_EVENT);
+      SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.REGISTERING_EVENT);
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
    }
 
    // -- JainSipCallListener events
-   public void onCallArrivedEvent(String id, String peer, String sdpOffer)
+   public void onCallArrivedEvent(String jobId, String peer, String sdpOffer)
    {
-      SignalingMessage signalingMessage = new SignalingMessage(id, SignalingMessage.MessageType.CALL_EVENT);
+      SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CALL_INCOMING_EVENT);
       signalingMessage.sdp = sdpOffer;
       signalingMessage.peer = peer;
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
    }
 
-   public void onCallOutgoingConnectedEvent(String callId, String sdpAnswer)
+   public void onCallOutgoingConnectedEvent(String jobId, String sdpAnswer)
    {
-      SignalingMessage signalingMessage = new SignalingMessage(callId, SignalingMessage.MessageType.CALL_OUTGOING_CONNECTED_EVENT);
+      SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CALL_OUTGOING_CONNECTED_EVENT);
       signalingMessage.sdp = sdpAnswer;
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
    }
 
-   public void onCallIncomingConnectedEvent(String callId)
+   public void onCallIncomingConnectedEvent(String jobId)
    {
-      SignalingMessage signalingMessage = new SignalingMessage(callId, SignalingMessage.MessageType.CALL_INCOMING_CONNECTED_EVENT);
+      SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CALL_INCOMING_CONNECTED_EVENT);
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
    }
 
-   public void onCallPeerDisconnectedEvent(String callId)
+   public void onCallPeerDisconnectedEvent(String jobId)
    {
-      SignalingMessage signalingMessage = new SignalingMessage(callId, SignalingMessage.MessageType.CALL_PEER_DISCONNECT_EVENT);
+      SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CALL_PEER_DISCONNECT_EVENT);
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
    }
 
-   public void onCallLocalDisconnectedEvent(String callId)
+   public void onCallLocalDisconnectedEvent(String jobId)
    {
-      SignalingMessage signalingMessage = new SignalingMessage(callId, SignalingMessage.MessageType.CALL_DISCONNECT_REPLY);
+      SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CALL_LOCAL_DISCONNECT_EVENT);
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
    }
 
-   public void onCallRingingEvent(String callId)
+   public void onCallOutgoingPeerRingingEvent(String jobId)
    {
-   }
-
-   /*
-   public void onCallPeerHangupEvent(String callId)
-   {
-      SignalingMessage signalingMessage = new SignalingMessage(callId, SignalingMessage.MessageType.CALL_PEER_DISCONNECT_EVENT);
-      Message message = uiHandler.obtainMessage(1, signalingMessage);
-      message.sendToTarget();
-   }
-   */
-
-   public void onCallPeerRingingEvent(String callId)
-   {
-      SignalingMessage signalingMessage = new SignalingMessage(callId, SignalingMessage.MessageType.CALL_PEER_RINGING_EVENT);
+      SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CALL_OUTGOING_PEER_RINGING_EVENT);
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
    }
 
-   public void onCallInProgressEvent(String callId)
+   public void onCallIncomingCanceledEvent(String jobId)
    {
-
-   }
-
-   public void onCallPeerSdpAnswerEvent(String callId)
-   {
-
-   }
-
-   public void onCallPeerSdpOfferEvent(String callId)
-   {
-
-   }
-
-   public void onCallCancelledEvent(String callId)
-   {
-      SignalingMessage signalingMessage = new SignalingMessage(callId, SignalingMessage.MessageType.CALL_CANCELED_EVENT);
+      SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CALL_INCOMING_CANCELED_EVENT);
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
    }
 
-   public void onCallIgnoredEvent(String callId)
+   public void onCallIgnoredEvent(String jobId)
    {
 
    }
 
-   public void onCallErrorEvent(String callId, RCClient.ErrorCodes status, String text)
+   public void onCallErrorEvent(String jobId, RCClient.ErrorCodes status, String text)
    {
-      SignalingMessage signalingMessage = new SignalingMessage(callId, SignalingMessage.MessageType.CALL_ERROR_EVENT);
+      SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CALL_ERROR_EVENT);
       signalingMessage.status = status;
       signalingMessage.text = text;
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
    }
 
-   public void onCallDigitsEvent(String callId, RCClient.ErrorCodes status, String text)
+   public void onCallDigitsEvent(String jobId, RCClient.ErrorCodes status, String text)
    {
-      SignalingMessage signalingMessage = new SignalingMessage(callId, SignalingMessage.MessageType.SEND_DIGITS_RESPONSE);
+      SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CALL_SEND_DIGITS_EVENT);
       signalingMessage.status = status;
       signalingMessage.text = text;
       Message message = uiHandler.obtainMessage(1, signalingMessage);

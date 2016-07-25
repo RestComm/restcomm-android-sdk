@@ -65,7 +65,7 @@ import org.mobicents.restcomm.android.client.sdk.MediaClient.AppRTCAudioManager;
 import org.mobicents.restcomm.android.client.sdk.MediaClient.PeerConnectionClient;
 import org.mobicents.restcomm.android.client.sdk.SignalingClient.SignalingMessage;
 import org.mobicents.restcomm.android.client.sdk.SignalingClient.SignalingParameters;
-import org.mobicents.restcomm.android.client.sdk.SignalingClient.UIClient;
+import org.mobicents.restcomm.android.client.sdk.SignalingClient.SignalingClient;
 import org.mobicents.restcomm.android.client.sdk.MediaClient.util.IceServerFetcher;
 
 import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
@@ -166,8 +166,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
     */
    boolean muted;
 
-   public String id;
-   private UIClient uiClient;
+   public String jobId;
+   private SignalingClient signalingClient;
    public RCDevice device = null;
    public String incomingCallSdp = "";
    private EglBase rootEglBase;
@@ -206,26 +206,26 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    }
 
    // Additional constructor
-   public RCConnection(String id, boolean incoming, RCConnection.ConnectionState state, RCDevice device, UIClient uiClient, RCConnectionListener listener)
+   public RCConnection(String jobId, boolean incoming, RCConnection.ConnectionState state, RCDevice device, SignalingClient signalingClient, RCConnectionListener listener)
    {
-      if (id == null) {
-         // create a unique id for the RCConnection, this is used for signaling actions to maintain state
-         this.id = Long.toString(System.currentTimeMillis());
+      if (jobId == null) {
+         // create a unique jobId for the RCConnection, this is used for signaling actions to maintain state
+         this.jobId = Long.toString(System.currentTimeMillis());
       }
       else {
-         this.id = id;
+         this.jobId = jobId;
       }
       this.incoming = incoming;
       this.state = state;
       this.device = device;
-      this.uiClient = uiClient;
+      this.signalingClient = signalingClient;
       this.listener = listener;
    }
 
     /*
     // could not use the previous constructor with connectionListener = null, hence created this:
     public RCConnection() {
-        this.id = Long.toString(System.currentTimeMillis());
+        this.jobId = Long.toString(System.currentTimeMillis());
         RCLogger.i(TAG, "RCConnection()");
         this.listener = null;
     }
@@ -324,7 +324,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       RCLogger.i(TAG, "reject()");
 
-      uiClient.disconnect(id);
+      signalingClient.disconnect(jobId);
       this.state = ConnectionState.DISCONNECTED;
 
       // also update RCDevice state
@@ -341,7 +341,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       RCLogger.i(TAG, "disconnect()");
 
-      uiClient.disconnect(id);
+      signalingClient.disconnect(jobId);
 
       // also update RCDevice state. Reason we need that is twofold: a. if a call times out in signaling for a reason it will take around half a minute to
       // get response from signaling, during which period we won't be able to make a call, b. there are some edge cases where signaling hangs and never times out
@@ -416,7 +416,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void sendDigits(String digits)
    {
       RCLogger.i(TAG, "sendDigits(): " + digits);
-      uiClient.sendDigits(this.id, digits);
+      signalingClient.sendDigits(this.jobId, digits);
       //DeviceImpl.GetInstance().SendDTMF(digits);
    }
 
@@ -438,35 +438,31 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    // -- Call-related messages received from signaling thread are handled here
    public void handleSignalingMessage(SignalingMessage signalingMessage)
    {
-      RCLogger.i(TAG, "handleSignalingMessage: type: " + signalingMessage.type + ", id: " + signalingMessage.id);
+      RCLogger.i(TAG, "handleSignalingMessage: type: " + signalingMessage.type + ", jobId: " + signalingMessage.jobId);
       if (signalingMessage.type == SignalingMessage.MessageType.CALL_OUTGOING_CONNECTED_EVENT) {
          // outgoing call is connected (got 200 OK)
          handleConnected(signalingMessage.sdp);
       }
       else if (signalingMessage.type == SignalingMessage.MessageType.CALL_INCOMING_CONNECTED_EVENT) {
-         // incoming call arrived
-
-      }
-      else if (signalingMessage.type == SignalingMessage.MessageType.CALL_EVENT) {
-         // incoming call arrived
+         // incoming call connected
 
       }
       else if (signalingMessage.type == SignalingMessage.MessageType.CALL_PEER_DISCONNECT_EVENT) {
          handleDisconnected(true);
       }
-      else if (signalingMessage.type == SignalingMessage.MessageType.CALL_PEER_RINGING_EVENT) {
+      else if (signalingMessage.type == SignalingMessage.MessageType.CALL_OUTGOING_PEER_RINGING_EVENT) {
          handleConnecting();
       }
-      else if (signalingMessage.type == SignalingMessage.MessageType.CALL_DISCONNECT_REPLY) {
+      else if (signalingMessage.type == SignalingMessage.MessageType.CALL_LOCAL_DISCONNECT_EVENT) {
          handleDisconnected(false);
       }
       else if (signalingMessage.type == SignalingMessage.MessageType.CALL_ERROR_EVENT) {
          handleError(signalingMessage.status, signalingMessage.text);
       }
-      else if (signalingMessage.type == SignalingMessage.MessageType.CALL_CANCELED_EVENT) {
+      else if (signalingMessage.type == SignalingMessage.MessageType.CALL_INCOMING_CANCELED_EVENT) {
          handleDisconnected(false);
       }
-      else if (signalingMessage.type == SignalingMessage.MessageType.SEND_DIGITS_RESPONSE) {
+      else if (signalingMessage.type == SignalingMessage.MessageType.CALL_SEND_DIGITS_EVENT) {
          handleDigitsSent(signalingMessage.status, signalingMessage.text);
       }
       else {
@@ -517,7 +513,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       RCDevice.state = RCDevice.DeviceState.READY;
       listener.onDisconnected(this);
       this.state = ConnectionState.DISCONNECTED;
-      device.removeConnection(id);
+      device.removeConnection(jobId);
 
       // Phone state Intents to capture normal disconnect event
       sendQoSConnectionIntent("disconnected");
@@ -612,7 +608,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    public String getId()
    {
-      return id;
+      return jobId;
    }
 
    // ------ WebRTC stuff:
@@ -973,7 +969,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
                parameters.put("sdp", connection.signalingParameters.generateSipSdp(connection.signalingParameters.offerSdp, connection.signalingParameters.iceCandidates));
                parameters.put("sip-headers", connection.signalingParameters.sipHeaders);
 
-               uiClient.call(id, parameters);
+               signalingClient.call(jobId, parameters);
                // we have gathered all candidates and SDP. Combine then in SIP SDP and send over to JAIN SIP
                     /*
                     DeviceImpl.GetInstance().CallWebrtc(signalingParameters.sipUrl,
@@ -985,7 +981,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
                HashMap<String, Object> parameters = new HashMap<>();
                parameters.put("sdp", connection.signalingParameters.generateSipSdp(connection.signalingParameters.answerSdp,
                      connection.signalingParameters.iceCandidates));
-               uiClient.accept(id, parameters);
+               signalingClient.accept(jobId, parameters);
                connection.state = ConnectionState.CONNECTING;
             }
          }

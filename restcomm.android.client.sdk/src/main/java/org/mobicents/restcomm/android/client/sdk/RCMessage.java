@@ -23,7 +23,7 @@
 package org.mobicents.restcomm.android.client.sdk;
 
 /*
-import org.mobicents.restcomm.android.client.sdk.SignalingClient.UIClient;
+import org.mobicents.restcomm.android.client.sdk.SignalingClient.SignalingClient;
 import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
 import java.util.HashMap;
@@ -33,7 +33,7 @@ import java.util.Map;
 
 
 // RCMessage represents a text message.
-public class RCMessage implements UIClient.UIMessageListener {
+public class RCMessage implements SignalingClient.UIMessageListener {
 
    // Message State
    public enum MessageState {
@@ -53,8 +53,8 @@ public class RCMessage implements UIClient.UIMessageListener {
    // Listener that will be called on RCMessage events described at RCMessageListener
    RCMessageListener listener;
 
-   //public String id;
-   //private UIClient uiClient;
+   //public String jobId;
+   //private SignalingClient uiClient;
    private static final String TAG = "RCMessage";
 
    public RCMessage(HashMap<String, Object> parameters, boolean incoming, MessageState state, RCMessageListener listener)
@@ -72,7 +72,7 @@ public class RCMessage implements UIClient.UIMessageListener {
       return new RCMessage(parameters, false, MessageState.PENDING, listener);
    }
 
-   public void onMessageSentEvent(String id)
+   public void onMessageSentEvent(String jobId)
    {
       RCLogger.i(TAG, "onMessageSentEvent(): id: " + id);
 

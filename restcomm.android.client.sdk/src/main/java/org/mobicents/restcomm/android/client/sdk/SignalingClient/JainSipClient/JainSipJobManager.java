@@ -20,29 +20,29 @@ class JainSipJobManager {
       jobs = new HashMap<>();
    }
 
-   JainSipJob add(String id, JainSipJob.Type type, Transaction transaction, HashMap<String, Object> parameters, JainSipCall jainSipCall)
+   JainSipJob add(String jobId, JainSipJob.Type type, Transaction transaction, HashMap<String, Object> parameters, JainSipCall jainSipCall)
    {
-      //JainSipJob jainSipJob = new JainSipJob(this, jainSipClient, id, type, registrationType, transaction, parameters);
-      JainSipJob jainSipJob = new JainSipJob(this, jainSipClient, id, type, transaction, parameters, jainSipCall);
-      jobs.put(id, jainSipJob);
-      jainSipJob.processFsm(id, "", null, null, null);
+      //JainSipJob jainSipJob = new JainSipJob(this, jainSipClient, jobId, type, registrationType, transaction, parameters);
+      JainSipJob jainSipJob = new JainSipJob(this, jainSipClient, jobId, type, transaction, parameters, jainSipCall);
+      jobs.put(jobId, jainSipJob);
+      jainSipJob.processFsm(jobId, "", null, null, null);
       return jainSipJob;
    }
 
-   JainSipJob add(String id, JainSipJob.Type type, HashMap<String, Object> parameters)
+   JainSipJob add(String jobId, JainSipJob.Type type, HashMap<String, Object> parameters)
    {
-      return add(id, type, null, parameters, null);
+      return add(jobId, type, null, parameters, null);
    }
 
-   JainSipJob add(String id, JainSipJob.Type type, HashMap<String, Object> parameters, JainSipCall jainSipCall)
+   JainSipJob add(String jobId, JainSipJob.Type type, HashMap<String, Object> parameters, JainSipCall jainSipCall)
    {
-      return add(id, type, null, parameters, jainSipCall);
+      return add(jobId, type, null, parameters, jainSipCall);
    }
 
-   JainSipJob get(String id)
+   JainSipJob get(String jobId)
    {
-      if (jobs.containsKey(id)) {
-         return jobs.get(id);
+      if (jobs.containsKey(jobId)) {
+         return jobs.get(jobId);
       }
       else {
          return null;
@@ -72,10 +72,10 @@ class JainSipJobManager {
       return null;
    }
 
-   void remove(String id)
+   void remove(String jobId)
    {
-      if (jobs.containsKey(id)) {
-         jobs.remove(id);
+      if (jobs.containsKey(jobId)) {
+         jobs.remove(jobId);
       }
    }
 
