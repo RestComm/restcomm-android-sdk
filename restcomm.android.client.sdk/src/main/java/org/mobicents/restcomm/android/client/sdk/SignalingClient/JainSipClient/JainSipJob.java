@@ -11,8 +11,15 @@ import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 import java.util.Arrays;
 import java.util.HashMap;
 
+/**
+ * JainSipJob represents the context of a signaling action until it is either finished or an error occurs
+ */
 class JainSipJob {
-   // Each transaction is associated with an FSM
+
+   /**
+    * Some signaling jobs are also associated with a state machine to be able to properly address invoking the same functionalities in different job contexts
+    * without losing track and at the same time notifying the correct UI entities of job status.
+    */
    class JainSipFsm {
       String[] states;
       JainSipJob.Type type;
@@ -54,9 +61,6 @@ class JainSipJob {
          else if (type == Type.TYPE_START_NETWORKING) {
             states = new String[]{"bind-register", "auth", "notify"};
          }
-         else if (type == Type.TYPE_CALL) {
-            states = new String[]{"invite", "auth", "notify"};
-         }
       }
 
         /*
@@ -74,6 +78,14 @@ class JainSipJob {
        */
       void process(String jobId, String event, Object arg, RCClient.ErrorCodes statusCode, String statusText)
       {
+         if (statusCode == null) {
+            statusCode = RCClient.ErrorCodes.SUCCESS;
+         }
+
+         if (statusText == null) {
+            statusText = RCClient.errorText(RCClient.ErrorCodes.SUCCESS);
+         }
+
          if (states == null) {
             // if states is null, then it means that no FSM should be used at all
             return;
@@ -429,7 +441,10 @@ class JainSipJob {
                         }
                         else {
                            // No domain, need to loop through to next step
+                           // TODO: this is a pretty messy way to convey that we want to jump 1 step
+                           index += 1;
                            loop = true;
+                           event = "register-success";
                         }
                      }
                      catch (JainSipException e) {
@@ -478,7 +493,10 @@ class JainSipJob {
                            }
                            else {
                               // No domain, need to loop through to next step
+                              // TODO: this is a pretty messy way to convey that we want to jump 1 step
+                              index += 1;
                               loop = true;
+                              event = "register-failure";
                            }
                         }
                         catch (JainSipException e) {
@@ -512,6 +530,7 @@ class JainSipJob {
                               statusCode, statusText);
                         jainSipJobManager.remove(jobId);
                      }
+
                   }
                }
                else if (type == Type.TYPE_RELOAD_NETWORKING) {
@@ -621,6 +640,21 @@ class JainSipJob {
             } while (loop);
          }
       }
+
+      @Override
+      public String toString()
+      {
+         StringBuilder result = new StringBuilder();
+         String NEW_LINE = System.getProperty("line.separator");
+
+         result.append(this.getClass().getName() + " Object { ");
+         result.append("Type: " + type + ", ");
+         result.append("Index: " + index + " ");
+         result.append("}");
+
+         return result.toString();
+      }
+
    }
 
    public enum Type {
@@ -665,16 +699,6 @@ class JainSipJob {
       this.jainSipCall = jainSipCall;
    }
 
-    /*
-    JainSipJob(JainSipClient jainSipClient, String jobId, Type type, Transaction transaction, HashMap<String, Object> parameters) {
-        this(jainSipClient, jobId, type, RegistrationType.REGISTRATION_INITIAL, transaction, parameters, null);
-    }
-
-    JainSipJob(JainSipClient jainSipClient, String jobId, Type type, RegistrationType registrationType, Transaction transaction, HashMap<String, Object> parameters) {
-        this(jainSipClient, jobId, type, registrationType, transaction, parameters, null);
-    }
-    */
-
    void start()
    {
 
@@ -705,4 +729,22 @@ class JainSipJob {
    {
       authenticationAttempts += 1;
    }
+
+   @Override
+   public String toString()
+   {
+      StringBuilder result = new StringBuilder();
+      String NEW_LINE = System.getProperty("line.separator");
+
+      result.append(this.getClass().getName() + " Object {" + NEW_LINE);
+      result.append(" Job Id: " + jobId + NEW_LINE);
+      result.append(" Type: " + type + NEW_LINE);
+      result.append(" Transaction: " + transaction + NEW_LINE);
+      result.append(" Parameters: " + parameters + NEW_LINE);
+      result.append(" Fsm: " + jainSipFsm + NEW_LINE);
+      result.append("}");
+
+      return result.toString();
+   }
+
 }

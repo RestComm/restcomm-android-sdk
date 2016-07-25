@@ -11,6 +11,9 @@ import org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient.J
 import org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient.JainSipClient;
 import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
+/**
+ * SignalingHandler takes care of all the messaging from UI thread -> JainSipClient and the opposite
+ */
 class SignalingHandler extends Handler implements JainSipClient.JainSipClientListener, JainSipCall.JainSipCallListener {
    JainSipClient jainSipClient;
    Handler uiHandler;
@@ -144,7 +147,7 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
       message.sendToTarget();
    }
 
-   public void onClientMessageSentEvent(String jobId, RCClient.ErrorCodes status, String text)
+   public void onClientMessageReply(String jobId, RCClient.ErrorCodes status, String text)
    {
       SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.MESSAGE_REPLY);
       signalingMessage.status = status;

@@ -3,8 +3,8 @@ package org.mobicents.restcomm.android.client.sdk.SignalingClient;
 import android.os.Handler;
 import android.os.HandlerThread;
 
-// SignalingHandlerThread facilitates a separate thread that installs a handler and takes care of all signaling actions
-// and responses towards and from JainSipClient
+// SignalingHandlerThread encapsulates the signaling thread (separate from UI thread) and facilitates asynchronous communication between he two.
+// It installs an Android Handler and takes care of all signaling actions from UI thread -> JainSipClient and all responses/events from JainSipClient -> UI thread
 class SignalingHandlerThread extends HandlerThread {
    Handler signalingHandler;
    private static final String TAG = "SignalingHandlerThread";

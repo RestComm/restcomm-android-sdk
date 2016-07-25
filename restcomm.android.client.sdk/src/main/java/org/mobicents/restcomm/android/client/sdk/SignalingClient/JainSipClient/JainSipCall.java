@@ -421,8 +421,8 @@ public class JainSipCall {
          }
       }
       else if (response.getStatusCode() == Response.FORBIDDEN) {
-         listener.onCallErrorEvent(jainSipJob.jobId, RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_AUTHENTICATION_FORBIDDEN,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_AUTHENTICATION_FORBIDDEN));
+         listener.onCallErrorEvent(jainSipJob.jobId, RCClient.ErrorCodes.ERROR_CONNECTION_AUTHENTICATION_FORBIDDEN,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_AUTHENTICATION_FORBIDDEN));
       }
       else if (response.getStatusCode() == Response.DECLINE || response.getStatusCode() == Response.TEMPORARILY_UNAVAILABLE ||
             (response.getStatusCode() == Response.BUSY_HERE)) {

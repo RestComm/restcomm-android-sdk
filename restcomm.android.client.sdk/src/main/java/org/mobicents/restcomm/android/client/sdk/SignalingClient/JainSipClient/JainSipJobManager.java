@@ -84,4 +84,8 @@ class JainSipJobManager {
       jobs.clear();
    }
 
+   String getPrintableJobs()
+   {
+      return "Job count: " + jobs.size() + ", details: " + jobs.toString();
+   }
 }

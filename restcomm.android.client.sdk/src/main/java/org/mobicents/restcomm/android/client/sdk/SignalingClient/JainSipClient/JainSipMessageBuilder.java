@@ -130,8 +130,18 @@ class JainSipMessageBuilder {
          return request;
       }
       catch (ParseException e) {
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_URI_INVALID,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_URI_INVALID), e);
+         if (method.equals(Request.REGISTER)) {
+            throw new JainSipException(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_URI_INVALID,
+                  RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_URI_INVALID), e);
+         }
+         else if (method.equals(Request.INVITE)) {
+            throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_URI_INVALID,
+                  RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_URI_INVALID), e);
+         }
+         else {
+            throw new JainSipException(RCClient.ErrorCodes.ERROR_MESSAGE_URI_INVALID,
+                  RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_URI_INVALID), e);
+         }
       }
       catch (JainSipException e) {
          throw e;
@@ -233,8 +243,8 @@ class JainSipMessageBuilder {
          throw e;
       }
       catch (ParseException e) {
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_URI_INVALID,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_URI_INVALID), e);
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_MESSAGE_URI_INVALID,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_URI_INVALID), e);
       }
       catch (Exception e) {
          // TODO: let's emit a RuntimeException for now so that we get a loud and clear indication of issues involved in the field and then
@@ -314,7 +324,7 @@ class JainSipMessageBuilder {
       Response response;
       try {
          response = jainSipMessageFactory.createResponse(responseType, request);
-         RCLogger.v(TAG, "Sending SIP response: \n" + response.toString());
+         //RCLogger.v(TAG, "Sending SIP response: \n" + response.toString());
          return response;
       }
       catch (ParseException e) {

@@ -12,7 +12,9 @@ import android.util.Log;
 import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
 import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
-
+/**
+ * JainSipNotificationManager listens for Android connectivity changes and notifies NotificationManagerListener (typically JainSipClient)
+ */
 class JainSipNotificationManager extends BroadcastReceiver {
 
    // Define JainSipNotificationManager events

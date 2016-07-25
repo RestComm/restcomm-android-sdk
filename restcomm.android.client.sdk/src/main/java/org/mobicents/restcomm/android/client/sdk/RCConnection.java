@@ -445,7 +445,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
       else if (signalingMessage.type == SignalingMessage.MessageType.CALL_INCOMING_CONNECTED_EVENT) {
          // incoming call connected
-
+         // no need to do anything as the App is notified when ICE is connected
       }
       else if (signalingMessage.type == SignalingMessage.MessageType.CALL_PEER_DISCONNECT_EVENT) {
          handleDisconnected(true);
@@ -655,6 +655,10 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          @Override
          public void run()
          {
+            if (RCDevice.state == RCDevice.DeviceState.BUSY) {
+               RCDevice.state = RCDevice.DeviceState.READY;
+            }
+
             RCConnection.this.listener.onDisconnected(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_WEBRTC_TURN_ERROR.ordinal(), description);
          }
       };

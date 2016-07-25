@@ -12,7 +12,7 @@ import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 import java.util.HashMap;
 
 /**
- * Signaling Client singleton that provides asynchronous access to lower level signaling facilities. Requests are sent via methods
+ * SignalingClient is a singleton that provides asynchronous access to lower level signaling facilities. Requests are sent via methods
  * like open(), close(), etc below towards signaling thread. Responses are received via Handler.handleMessage() from signaling thread
  * and sent for further processing to SignalingClientListener listener for register/configuration specific functionality and to
  * SignalingClientCallListener listener for call related functionality. Hence, users of this API should implement those
@@ -27,6 +27,12 @@ import java.util.HashMap;
  * Notice that some callbacks are called on*Reply() (as opposed to on*Event()). The convention is that those are directly associated
  * to a a simple request (typically non call related) and also carry error status (and possibly connectivity status). In contrast,
  * for call-related functionality separate callbacks are defined for a. success and b. for error codes, since they are much more complicated.
+ *
+ * The whole architecture in a nutshell is as follows. The Android App or a higher level API (like RCDevice/RCConnection) use the SignalingClient API
+ * which underneath creates signaling messages (see SignalingMessage for structure of the messages) and sends them to the Signaling thread
+ * that handles them by dispatching them to JainSipClient that encapsulates JAIN SIP. When a response/event comes in from JAIN SIP to JainSipClient
+ * the reverse happens: a message is created from the Signaling thread to the UI thread and after it is received at handleMessage() the respective
+ * listener callback is used to notify the UI.
  */
 public class SignalingClient extends Handler {
 

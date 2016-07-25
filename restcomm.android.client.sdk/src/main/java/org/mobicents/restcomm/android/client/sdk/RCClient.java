@@ -52,6 +52,8 @@ public class RCClient {
       ERROR_DEVICE_REGISTER_URI_INVALID,
       ERROR_DEVICE_REGISTER_SERVICE_UNAVAILABLE,
       ERROR_DEVICE_REGISTER_UNTRUSTED_SERVER,
+
+      ERROR_CONNECTION_AUTHENTICATION_FORBIDDEN,
       ERROR_CONNECTION_URI_INVALID,
       ERROR_CONNECTION_PEER_UNAVAILABLE,
       ERROR_CONNECTION_TIMEOUT,
@@ -66,7 +68,14 @@ public class RCClient {
       ERROR_CONNECTION_WEBRTC_PEERCONNECTION_ERROR,
       ERROR_CONNECTION_WEBRTC_TURN_ERROR,
       ERROR_CONNECTION_UNTRUSTED_SERVER,
-      ERROR_MESSAGE_SEND_FAILED,
+
+      ERROR_MESSAGE_AUTHENTICATION_FORBIDDEN,
+      ERROR_MESSAGE_URI_INVALID,
+      ERROR_MESSAGE_PEER_UNAVAILABLE,
+      ERROR_MESSAGE_TIMEOUT,
+      ERROR_MESSAGE_COULD_NOT_CONNECT,
+      ERROR_MESSAGE_PEER_NOT_FOUND,
+      ERROR_MESSAGE_SERVICE_UNAVAILABLE,
       ERROR_MESSAGE_UNTRUSTED_SERVER,
    }
 
@@ -100,6 +109,9 @@ public class RCClient {
       }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_REGISTER_UNTRUSTED_SERVER) {
          return "Device failed to register; server is not trusted";
+      }
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_AUTHENTICATION_FORBIDDEN) {
+         return "Connection failed to authenticate with Service";
       }
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_URI_INVALID) {
          return "Connection URI is invalid";
@@ -142,8 +154,29 @@ public class RCClient {
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_WEBRTC_TURN_ERROR) {
          return "Error retrieving TURN servers";
       }
-      else if (errorCode == ErrorCodes.ERROR_MESSAGE_SEND_FAILED) {
-         return "Failed to send message";
+
+      else if (errorCode == ErrorCodes.ERROR_MESSAGE_AUTHENTICATION_FORBIDDEN) {
+         return "Message failed to authenticate with Service";
+      }
+      else if (errorCode == ErrorCodes.ERROR_MESSAGE_URI_INVALID) {
+         return "Message URI is invalid";
+      }
+      else if (errorCode == ErrorCodes.ERROR_MESSAGE_PEER_UNAVAILABLE) {
+         return "Failed to send message; peer is unavailable";
+      }
+      else if (errorCode == ErrorCodes.ERROR_MESSAGE_TIMEOUT) {
+         return "Message timed out";
+      }
+      else if (errorCode == ErrorCodes.ERROR_MESSAGE_COULD_NOT_CONNECT) {
+         // returned when there is an issue connecting to the destination URI, like no process listening to the server port,
+         // wrong server domain/ip is used, or domain is not resolvable
+         return "Failed to send message; could not connect to service";
+      }
+      else if (errorCode == ErrorCodes.ERROR_MESSAGE_PEER_NOT_FOUND) {
+         return "Failed to send message; peer not found";
+      }
+      else if (errorCode == ErrorCodes.ERROR_MESSAGE_SERVICE_UNAVAILABLE) {
+         return "Failed to send message; service is unavailable";
       }
 
       return "Unmapped Restcomm Client error";

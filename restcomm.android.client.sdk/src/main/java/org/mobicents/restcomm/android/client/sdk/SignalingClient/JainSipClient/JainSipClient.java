@@ -50,6 +50,26 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 
+/**
+ * JainSipClient hides the JAIN SIP complexity and offers an easy to use API to implement SIP signaling. JainSipClient is typically used by Signaling Handler
+ * that encapsulates the separate, signaling thread. JainSipClient creates SIP requests via methods like open(), close(), call(), etc and replies or events
+ * are sent back to the 'user' via listener callbacks.
+ *
+ * Although all signaling functionality is accessed via the JainSipClient entity, internally we have introduced JainSipCall that handles call related functionalities
+ * to better organize things. This means that call related APIs like call(), accept(), disconnect(), etc are forwarded to JainSipCall. In the reverse direction when
+ * a response/event comes in from JAIN SIP it is firstly received by JainSipClient (since its the SipListener for JAIN SIP), but then if it identifies that it is call
+ * related, it is once again forwarded to JainSipCall.
+ *
+ * With each signaling action (like call, register, reconfigure, etc) a JainSipJob is created that carries around its context until it is either finished or an error occurs.
+ * Main pieces of the job are the current transaction. Remember that a single job can consist of more than one SIP transaction. For example the TYPE_RECONFIGURE job consists
+ * of an unregister transaction, followed by an authentication transaction, followed by register transaction, followed by an authentication transaction. Some jobs are also
+ * associated with a JainSipFsm object that implements a simple state machine to be able to properly address invoking the same functionalities in different job contexts
+ * without losing track and at the same time notifying the correct UI entities of job status. Right now JainSipFsm is only used in complex jobs that need to batch multiple
+ * transactions together, like: TYPE_OPEN, TYPE_REGISTER_REFRESH, TYPE_CLOSE, TYPE_RECONFIGURE, TYPE_RECONFIGURE_RELOAD_NETWORKING, TYPE_RELOAD_NETWORKING, TYPE_START_NETWORKING,
+ * TYPE_CALL. Jobs are managed by JainSipJobManager
+ *
+ * JAIN SIP requests and responses are typically built by JainSipMessageBuilder
+ */
 public class JainSipClient implements SipListener, JainSipNotificationManager.NotificationManagerListener {
 
    // Interface the JainSipClient listener needs to implement, to get events from us
@@ -66,7 +86,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
 
       void onClientMessageArrivedEvent(String jobId, String peer, String messageText);
 
-      void onClientMessageSentEvent(String jobId, RCClient.ErrorCodes status, String text);
+      void onClientMessageReply(String jobId, RCClient.ErrorCodes status, String text);
 
       // Event to convey trying to Register, so that UI can convey that to user
       void onClientRegisteringEvent(String jobId);
@@ -76,18 +96,18 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
    JainSipMessageBuilder jainSipMessageBuilder;
    JainSipJobManager jainSipJobManager;
    JainSipNotificationManager jainSipNotificationManager;
-   Context androidContext;
+   private Context androidContext;
    HashMap<String, Object> configuration;
    // any client context that is not configuration related, like the rport
    HashMap<String, Object> jainSipClientContext;
    //boolean clientConnected = false;
-   static boolean clientOpened = false;
-   static final String TAG = "JainSipClient";
+   private static boolean clientOpened = false;
+   private static final String TAG = "JainSipClient";
    // android handler token to identify registration refresh posts
-   final int REGISTER_REFRESH_HANDLER_TOKEN = 1;
+   private final int REGISTER_REFRESH_HANDLER_TOKEN = 1;
    Handler signalingHandler;
-   final int DEFAULT_REGISTER_EXPIRY_PERIOD = 60;
-   final int DEFAULT_LOCAL_SIP_PORT = 5090;
+   private final int DEFAULT_REGISTER_EXPIRY_PERIOD = 60;
+   private final int DEFAULT_LOCAL_SIP_PORT = 5090;
    // the registration refresh needs to happen sooner than expiry to make sure that the client has a registration at all times. Let's
    // set it to EXPIRY - 10 seconds. TODO: in the future we could randomize this so that for example it is between half the expiry
    // and full expiry (in this example, a random between [30, 60] seconds) to avoid having all android clients refreshing all at
@@ -141,7 +161,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       JainSipSecurityHelper.setProperties(properties, securityParameters.get("keystore-path"), securityParameters.get("keystore-password"));
 
       if (configuration.containsKey(RCDevice.ParameterKeys.SIGNALING_JAIN_SIP_LOGGING_ENABLED) &&
-            configuration.get(RCDevice.ParameterKeys.SIGNALING_JAIN_SIP_LOGGING_ENABLED) == true) {
+            (Boolean)configuration.get(RCDevice.ParameterKeys.SIGNALING_JAIN_SIP_LOGGING_ENABLED)) {
          // You need 16 for logging traces. 32 for debug + traces.
          // Your code will limp at 32 but it is best for debugging.
          properties.setProperty("android.gov.nist.javax.sip.TRACE_LEVEL", "32");
@@ -260,7 +280,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       }
    }
 
-   // ------ Call-related calls
+   // ------ Call-related methods
    public void call(String jobId, HashMap<String, Object> parameters, JainSipCall.JainSipCallListener listener)
    {
       RCLogger.i(TAG, "call(): jobId: " + jobId + ", parameters: " + parameters.toString());
@@ -292,7 +312,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
 
    public void disconnect(String jobId, JainSipCall.JainSipCallListener listener)
    {
-      RCLogger.i(TAG, "hangup(): jobId: " + jobId);
+      RCLogger.i(TAG, "disconnect(): jobId: " + jobId);
 
       if (!jainSipNotificationManager.haveConnectivity()) {
          listener.onCallErrorEvent(jobId, RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY, RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY));
@@ -311,12 +331,13 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       jainSipJob.jainSipCall.sendDigits(jainSipJob, digits);
    }
 
+   // ------ Message-related methods
    public void sendMessage(String jobId, HashMap<String, Object> parameters)
    {
-      RCLogger.i(TAG, "call(): jobId: " + jobId + ", parameters: " + parameters.toString());
+      RCLogger.i(TAG, "sendMessage(): jobId: " + jobId + ", parameters: " + parameters.toString());
 
       if (!jainSipNotificationManager.haveConnectivity()) {
-         listener.onClientMessageSentEvent(jobId, RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY, RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY));
+         listener.onClientMessageReply(jobId, RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY, RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY));
          return;
       }
 
@@ -325,7 +346,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
          jainSipJobManager.add(jobId, JainSipJob.Type.TYPE_MESSAGE, transaction, parameters, null);
       }
       catch (JainSipException e) {
-         listener.onClientMessageSentEvent(jobId, e.errorCode, e.errorText);
+         listener.onClientMessageReply(jobId, e.errorCode, e.errorText);
       }
    }
 
@@ -430,7 +451,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
    {
       RCLogger.v(TAG, "jainSipRegister()");
       // Debug purposes to track the JainSipJob objects
-      RCLogger.v(TAG, "jainSipRegister(), job count: " + jainSipJobManager.jobs.size());
+      RCLogger.v(TAG, "jainSipRegister(), jobs status: " + jainSipJobManager.getPrintableJobs());
 
       if (!jainSipNotificationManager.haveConnectivity()) {
          throw new JainSipException(RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY,
@@ -530,8 +551,8 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
          return transaction;
       }
       catch (SipException e) {
-         throw new JainSipException(RCClient.ErrorCodes.ERROR_MESSAGE_SEND_FAILED,
-               RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_SEND_FAILED), e);
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_MESSAGE_COULD_NOT_CONNECT,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_COULD_NOT_CONNECT), e);
       }
    }
 
@@ -694,20 +715,20 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
                      jainSipAuthenticate(jainSipJob, configuration, responseEventExt);
                   }
                   catch (JainSipException e) {
-                     listener.onClientMessageSentEvent(jainSipJob.jobId, e.errorCode, e.errorText);
+                     listener.onClientMessageReply(jainSipJob.jobId, e.errorCode, e.errorText);
                   }
                }
                else if (response.getStatusCode() == Response.OK) {
-                  listener.onClientMessageSentEvent(jainSipJob.jobId, RCClient.ErrorCodes.SUCCESS,
+                  listener.onClientMessageReply(jainSipJob.jobId, RCClient.ErrorCodes.SUCCESS,
                         RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
                }
                else if (response.getStatusCode() == Response.FORBIDDEN) {
-                  listener.onClientMessageSentEvent(jainSipJob.jobId, RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_AUTHENTICATION_FORBIDDEN,
-                        RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_AUTHENTICATION_FORBIDDEN));
+                  listener.onClientMessageReply(jainSipJob.jobId, RCClient.ErrorCodes.ERROR_MESSAGE_AUTHENTICATION_FORBIDDEN,
+                        RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_AUTHENTICATION_FORBIDDEN));
                }
                else if (response.getStatusCode() == Response.SERVICE_UNAVAILABLE) {
-                  listener.onClientMessageSentEvent(jainSipJob.jobId, RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_SERVICE_UNAVAILABLE,
-                        RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_SERVICE_UNAVAILABLE));
+                  listener.onClientMessageReply(jainSipJob.jobId, RCClient.ErrorCodes.ERROR_MESSAGE_SERVICE_UNAVAILABLE,
+                        RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_SERVICE_UNAVAILABLE));
                }
             }
          }
@@ -794,7 +815,9 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
                jainSipJob.jainSipCall.processTimeout(jainSipJob, timeoutEvent);
             }
             else if (jainSipJob.type == JainSipJob.Type.TYPE_MESSAGE) {
-               // TODO: call JainSipMessage.processTimeout()
+               listener.onClientMessageReply(jainSipJob.jobId, RCClient.ErrorCodes.ERROR_MESSAGE_TIMEOUT,
+                     RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_TIMEOUT));
+               jainSipJobManager.remove(jainSipJob.jobId);
             }
             else {
                // register, register refresh, reconfigure, etc

@@ -139,6 +139,11 @@ public class MainActivity extends AppCompatActivity
          getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
       }
 
+      if (device != null) {
+         // needed if we are returning from Message screen that becomes the Device listener
+         device.setDeviceListener(this);
+      }
+
       // The activity has become visible (it is now "resumed").
       Log.i(TAG, "%% onResume");
    }

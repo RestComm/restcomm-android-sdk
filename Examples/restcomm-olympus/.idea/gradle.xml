@@ -14,6 +14,7 @@
             <option value="$PROJECT_DIR$/../../restcomm.android.client.sdk" />
           </set>
         </option>
+        <option name="resolveModulePerSourceSet" value="false" />
       </GradleProjectSettings>
     </option>
   </component>

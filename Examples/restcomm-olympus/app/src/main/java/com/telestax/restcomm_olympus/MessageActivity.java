@@ -112,6 +112,12 @@ public class MessageActivity extends AppCompatActivity
       else {
          getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
       }
+
+      if (device != null) {
+         // needed if we are returning from Message screen that becomes the Device listener
+         device.setDeviceListener(this);
+      }
+
       // Get Intent parameters.
       final Intent finalIntent = getIntent();
       if (finalIntent.getAction().equals(RCDevice.OPEN_MESSAGE_SCREEN)) {
@@ -231,7 +237,10 @@ public class MessageActivity extends AppCompatActivity
 
    public void onMessageSent(RCDevice device, int statusCode, String statusText)
    {
-
+      Log.i(TAG, "onMessageSent(): statusCode: " + statusCode + ", statusText: " + statusText);
+      if (statusCode != RCClient.ErrorCodes.SUCCESS.ordinal()) {
+         showOkAlert("RCDevice Error", statusText);
+      }
    }
 
    public void onReleased(RCDevice device, int statusCode, String statusText)
@@ -257,6 +266,8 @@ public class MessageActivity extends AppCompatActivity
     */
    private void showOkAlert(final String title, final String detail)
    {
+      Log.d(TAG, "Showing alert: " + title + ", detail: " + detail);
+
       if (alertDialog.isShowing()) {
          Log.w(TAG, "Alert already showing, hiding to show new alert");
          alertDialog.hide();

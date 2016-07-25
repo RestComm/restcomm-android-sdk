@@ -28,7 +28,7 @@ public class JainSipConfiguration {
 
    static boolean getBoolean(HashMap<String, Object> parameters, String key)
    {
-      if (parameters.containsKey(key) && parameters.get(key) == true) {
+      if (parameters.containsKey(key) && (Boolean)parameters.get(key)) {
          return true;
       }
       return false;
