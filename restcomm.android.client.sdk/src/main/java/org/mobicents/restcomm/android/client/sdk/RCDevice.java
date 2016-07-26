@@ -591,6 +591,12 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
    {
       RCLogger.i(TAG, "onConnectivityEvent(): id: " + jobId + ", status - " + connectivityStatus);
       cachedConnectivityStatus = connectivityStatus;
+      if (state == DeviceState.OFFLINE && connectivityStatus != RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
+         state = DeviceState.READY;
+      }
+      if (state != DeviceState.OFFLINE && connectivityStatus == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
+         state = DeviceState.OFFLINE;
+      }
       listener.onConnectivityUpdate(this, connectivityStatus);
    }
 

@@ -13,7 +13,7 @@ import java.util.HashMap;
 
 /**
  * SignalingClient is a singleton that provides asynchronous access to lower level signaling facilities. Requests are sent via methods
- * like open(), close(), etc below towards signaling thread. Responses are received via Handler.handleMessage() from signaling thread
+ * like open(), close(), etc towards signaling thread. Responses are received via Handler.handleMessage() from signaling thread
  * and sent for further processing to SignalingClientListener listener for register/configuration specific functionality and to
  * SignalingClientCallListener listener for call related functionality. Hence, users of this API should implement those
  * and properly handle responses and events.
