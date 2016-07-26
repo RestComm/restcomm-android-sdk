@@ -703,7 +703,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         Context context = RCClient.getContext();
         try {
             // Restrict the Intent to MMC Handler running within the same application
-            Class aclass = Class.forName("com.cortxt.app.mmccore.Services.Intents.MMCIntentHandler");
+            Class aclass = Class.forName("com.cortxt.app.corelib.Services.Intents.IntentHandler");
             intent.setClass(context.getApplicationContext(), aclass);
             context.sendBroadcast(intent);
         }
@@ -723,7 +723,7 @@ public class RCDevice extends BroadcastReceiver implements SipUADeviceListener  
         Context context = RCClient.getContext();
         try {
             // Restrict the Intent to MMC Handler running within the same application
-            Class aclass = Class.forName("com.cortxt.app.mmccore.Services.Intents.MMCIntentHandler");
+            Class aclass = Class.forName("com.cortxt.app.corelib.Services.Intents.IntentHandler");
             intent.setClass(context.getApplicationContext(), aclass);
             context.sendBroadcast(intent);
         } catch (ClassNotFoundException e) {
