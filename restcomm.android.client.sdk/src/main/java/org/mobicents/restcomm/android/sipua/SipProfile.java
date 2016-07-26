@@ -70,6 +70,14 @@ public class SipProfile {
 				else if (key.equals("turn-password")) {
 					this.setTurnPassword((String) params.get(key));
 				}
+				else if (key.equals("signaling-secure")) {
+					if ((boolean)params.get("signaling-secure")) {
+						transport = "tls";
+					}
+					else {
+						transport = "tcp";
+					}
+				}
 			}
 		}
 	}
@@ -182,3 +190,4 @@ public class SipProfile {
 		this.transport = transport;
 	}
 }
+

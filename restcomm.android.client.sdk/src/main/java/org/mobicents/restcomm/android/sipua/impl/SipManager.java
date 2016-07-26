@@ -1,3 +1,25 @@
+/*
+ * TeleStax, Open Source Cloud Communications
+ * Copyright 2011-2015, Telestax Inc and individual contributors
+ * by the @authors tag.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation; either version 3 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ *
+ * For questions related to commercial use licensing, please contact sales@telestax.com.
+ *
+ */
+
 package org.mobicents.restcomm.android.sipua.impl;
 
 import java.io.File;
@@ -27,12 +49,12 @@ import org.mobicents.restcomm.android.sipua.impl.sipmessages.*;
 import org.mobicents.restcomm.android.sipua.SipProfile;
 import org.mobicents.restcomm.android.sipua.RCLogger;
 
+
 import android.gov.nist.javax.sdp.SessionDescriptionImpl;
 import android.gov.nist.javax.sdp.parser.SDPAnnounceParser;
 import android.gov.nist.javax.sip.ResponseEventExt;
 import android.gov.nist.javax.sip.SipStackExt;
 import android.gov.nist.javax.sip.clientauthutils.AuthenticationHelper;
-import android.gov.nist.javax.sip.clientauthutils.DigestServerAuthenticationHelper;
 import android.gov.nist.javax.sip.message.SIPMessage;
 import android.javax.sdp.MediaDescription;
 import android.javax.sdp.SdpException;
@@ -80,10 +102,6 @@ import android.os.Environment;
 import android.text.format.Formatter;
 import android.content.Context;
 
-import android.util.Log;
-
-import EDU.oswego.cs.dl.util.concurrent.FJTask;
-
 public class SipManager implements SipListener, ISipManager, Serializable {
 	enum CallDirection {
 		NONE,
@@ -100,7 +118,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 	}
 
 	private static SipStack sipStack;
-	public static String USERAGENT_STRING = "TelScale Restcomm Android Client 1.0.0 BETA3";
+	public static String USERAGENT_STRING = "TelScale Restcomm Android Client 1.0.0 BETA4";
 	public SipProvider sipProvider;
 	public HeaderFactory headerFactory;
 	public AddressFactory addressFactory;
@@ -137,6 +155,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		initialize(connectivity, networkInterfaceType, context);
 	}
 
+
+
 	private boolean initialize(boolean connectivity, NetworkInterfaceType networkInterfaceType, Context context)
 	{
 		RCLogger.v(TAG, "initialize()");
@@ -149,22 +169,33 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 		sipFactory.setPathName("android.gov.nist");
 
 		Properties properties = new Properties();
-		// Using ROUTE instead
+		// This is no longer needed; we 're using ROUTE headers instead that is more flexible
 		/*
 		if (!sipProfile.getRemoteIp().isEmpty()) {
 			properties.setProperty("android.javax.sip.OUTBOUND_PROXY",
 					sipProfile.getRemoteEndpoint() + "/" + sipProfile.getTransport());
 		}
 		*/
+
 		properties.setProperty("android.javax.sip.STACK_NAME", "androidSip");
+
+		// Setup TLS even if currently we aren't using it, so that if user changes the setting later
+		// the SIP stack is ready to support it
+		//if (this.sipProfile.getTransport().equals("tls")) {
+			// Generate custom keystore
+			String keystoreFilename = "restcomm-android.keystore";
+			HashMap<String, String> parameters = SecurityHelper.generateKeystore(context, keystoreFilename);
+			SecurityHelper.setProperties(properties, parameters.get("keystore-path"), parameters.get("keystore-password"));
+		//}
+
 		// You need 16 for logging traces. 32 for debug + traces.
 		// Your code will limp at 32 but it is best for debugging.
-		//properties.setProperty("android.gov.nist.javax.sip.TRACE_LEVEL", "32");
-		//File downloadPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-		//properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", downloadPath.getAbsolutePath() + "/debug-jain.log");
-		//properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", downloadPath.getAbsolutePath() + "/server-jain.log");
+		properties.setProperty("android.gov.nist.javax.sip.TRACE_LEVEL", "32");
+		File downloadPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+		properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", downloadPath.getAbsolutePath() + "/debug-jain.log");
+		properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", downloadPath.getAbsolutePath() + "/server-jain.log");
 
-		// old code, just in case we need the path
+		// old code, just in case we need the absolute path
 		//properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", "/mnt/sdcard/Download/debug-jain.log");
 		//properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", "/mnt/sdcard/Download/server-jain.log");
 
@@ -188,6 +219,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			initialized = true;
 			sipManagerState = SipManagerState.READY;
 		} catch (PeerUnavailableException e) {
+			e.printStackTrace();
 			return false;
 		} catch (ObjectInUseException e) {
 			e.printStackTrace();
@@ -221,6 +253,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 		return true;
 	}
+
 
 	// shutdown SIP stack
 	public boolean shutdown()
@@ -452,9 +485,10 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			Thread thread = new Thread() {
 				public void run() {
 					try {
+						// remember that this might block waiting for DNS server
 						final ClientTransaction transaction = sipProvider.getNewClientTransaction(r);
 						transaction.sendRequest();
-					} catch (Exception e) {
+					} catch (SipException e) {
 						// DNS error (error resolving registrar URI)
 						dispatchSipError(ISipEventListener.ErrorContext.ERROR_CONTEXT_NON_CALL, RCClient.ErrorCodes.SIGNALLING_REGISTER_ERROR,
 								e.getMessage());
@@ -472,6 +506,8 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 
 	public void Unregister(Address contact) throws ParseException, TransactionUnavailableException {
 		RCLogger.v(TAG, "Unregister()");
+
+		String branchId = "";
 		if (sipProvider == null) {
 			return;
 		}
@@ -481,6 +517,7 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			final Request r = registerRequest.MakeRequest(this, 0, contact);
 			RCLogger.v(TAG, "Sending SIP request: \n" + r.toString());
 			final SipProvider sipProvider = this.sipProvider;
+			//branchId = transaction.getBranchId();
 			// Send the request statefully, through the client transaction.
 			Thread thread = new Thread() {
 				public void run() {
@@ -496,11 +533,11 @@ public class SipManager implements SipListener, ISipManager, Serializable {
 			};
 			thread.start();
 
-		} catch (ParseException e) {
-			e.printStackTrace();
-		} catch (InvalidArgumentException e) {
+		} catch (ParseException|InvalidArgumentException e) {
 			e.printStackTrace();
 		}
+
+		//return branchId;
 	}
 
 	@Override
