@@ -7,42 +7,49 @@
     <EditTextPreference
         android:defaultValue="android-sdk"
         android:key="pref_sip_user"
-        android:title="User" />
+        android:title="User"
+        android:summary="Restcomm-Connect client username, like 'bob'"/>
     <EditTextPreference
         android:defaultValue="1234"
         android:key="pref_sip_password"
         android:title="Password"
-        android:inputType="textPassword"/>
+        android:inputType="textPassword"
+        android:summary="Password for Restcomm-Connect authentication"/>
     <EditTextPreference
         android:defaultValue=""
         android:key="pref_proxy_domain"
-        android:title="Domain" />
+        android:title="Domain"
+        android:summary="Restcomm-Connect domain prefixed with sip, like: 'sip:cloud.restcomm.com'"/>
     <CheckBoxPreference
         android:defaultValue="false"
         android:key="signaling-secure"
-        android:title="Secure Signaling" />
+        android:title="Secure Signaling"
+        android:summary="Encypt signaling communications (notice that media communications are always encrypted so no need for an extra option)"/>
 
 </PreferenceCategory>
-
     <PreferenceCategory
         android:key="webrtc_ice_settings"
         android:title="WebRTC ICE Settings" >
         <CheckBoxPreference
             android:defaultValue="true"
             android:key="turn-enabled"
-            android:title="Enable TURN" />
+            android:title="Enable TURN"
+            android:summary="Enable TURN to improve media connectivity in strict network conditions, like some Enterprise or Cellular Data networks"/>
         <EditTextPreference
             android:defaultValue="https://service.xirsys.com/ice"
             android:key="turn-url"
-            android:title="ICE URL" />
+            android:title="ICE URL"
+            android:summary="Base URL to use when TURN is enabled"/>
         <EditTextPreference
             android:defaultValue="atsakiridis"
             android:key="turn-username"
-            android:title="ICE Username" />
+            android:title="ICE Username"
+            android:summary="Username to use for authentication when TURN is enabled"/>
         <EditTextPreference
             android:defaultValue="4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7"
             android:key="turn-password"
             android:title="ICE Password"
-            android:inputType="textPassword"/>
+            android:inputType="textPassword"
+            android:summary="Password to use for authentication when TURN is enabled"/>
     </PreferenceCategory>
 </PreferenceScreen>

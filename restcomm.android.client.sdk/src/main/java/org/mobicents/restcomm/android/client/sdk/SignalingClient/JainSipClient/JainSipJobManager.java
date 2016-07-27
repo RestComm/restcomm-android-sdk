@@ -22,10 +22,13 @@ class JainSipJobManager {
 
    JainSipJob add(String jobId, JainSipJob.Type type, Transaction transaction, HashMap<String, Object> parameters, JainSipCall jainSipCall)
    {
-      //JainSipJob jainSipJob = new JainSipJob(this, jainSipClient, jobId, type, registrationType, transaction, parameters);
       JainSipJob jainSipJob = new JainSipJob(this, jainSipClient, jobId, type, transaction, parameters, jainSipCall);
       jobs.put(jobId, jainSipJob);
-      jainSipJob.processFsm(jobId, "", null, null, null);
+
+      if (jainSipJob.hasFsm()) {
+         jainSipJob.startFsm();
+      }
+
       return jainSipJob;
    }
 

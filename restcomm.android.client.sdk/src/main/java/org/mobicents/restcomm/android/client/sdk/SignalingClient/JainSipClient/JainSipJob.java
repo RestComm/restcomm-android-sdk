@@ -12,16 +12,62 @@ import java.util.Arrays;
 import java.util.HashMap;
 
 /**
- * JainSipJob represents the context of a signaling action until it is either finished or an error occurs
+ * JainSipJob represents the context of a signaling action until it is either finished or an error occurs. All signaling actions MUST be started as jobs, because
+ * jobs keep the context that binds requests & responses together. An important note is that not all jobs need an FSM, but whether an FSM is started or not
+ * for a job depends on JainSipJob.hasFsm()
+ *
+ * A JainSipJob mainly holds the following information:
+ * - jobId: that uniquely identifies a job within the signaling facilities. This typically is a unix timestamp (including milis)
+ *   for outgoing requests provided in the request by the App, and the SIP Call-Id for incoming requests
+ * - transaction: the SIP Transaction object associated with the job at this point in time. Remember that a job might consist of multiple transactions, hence
+ *   this field might be updated during the job's lifetime
+ * - parameters: a HashMap holding an arbitrary number of parameters applicable to the job. These can originate at the App, or they can be updated during the course
+ *   of job execution
  */
 class JainSipJob {
+   public enum FsmStates {
+      START_BIND_REGISTER,
+      AUTH,
+      NOTIFY,
+      REGISTER,
+      UNREGISTER,
+      SHUTDOWN,
+      AUTH_1,
+      AUTH_2,
+      UNBIND_BIND_REGISTER,
+      BIND_REGISTER,
+   }
+
+   public enum FsmEvents {
+      NONE,
+      TIMEOUT,
+      AUTH_REQUIRED,
+      REGISTER_FAILURE,
+      REGISTER_SUCCESS,
+   }
 
    /**
-    * Some signaling jobs are also associated with a state machine to be able to properly address invoking the same functionalities in different job contexts
-    * without losing track and at the same time notifying the correct UI entities of job status.
+    * Some signaling jobs (important: not all jobs have an FSM) are also associated with a state machine to be able to properly address invoking
+    * the same functionalities in different job contexts without losing track and at the same time notifying the correct UI entities of job status.
+    *
+    * The idea here is that you initialize a job and based on its type (i.e. TYPE_OPEN, etc) we have a set of states (i.e. FsmStates) that this jobs typically needs
+    * to go through. For example job of type TYPE_OPEN needs to start the signaling stack, bind to networking facilities, register, authorize and finally
+    * notify the App. These steps are reflected in the states member variable and initialized when the job is constructed.
+    *
+    * Once the FSM is initialized we can then call JainSipFsm.process() that will do the actual FSM processing based on current state (i.e. states variable) and the event (i.e. FrmEvents)
+    * passed by the caller (check JainSipFsm.process())
+    *
+    * It's important to avoid calling any methods within JainSipFsm.process() that inside them call JainSipFsm.process(), cause that would probably cause corruption
+    * of the FSM state
+    *
+    * Some areas that need further improvement at some point:
+    * - JainSipFsm.process() code has become spaghetti so we need to consider avoiding code duplication
+    * - Right now we use JainSipJob.parameters to access and store context information, which can sometimes proves error prone (especially for reconfigure jobs where we
+    *   stuff in it two separate sub parameters
+    * - when some state needs to be skipped the logic is lousy
     */
    class JainSipFsm {
-      String[] states;
+      FsmStates[] states;
       JainSipJob.Type type;
       JainSipClient jainSipClient;
       static final String TAG = "JainSipFsm";
@@ -34,49 +80,42 @@ class JainSipJob {
 
       void init(JainSipJob.Type type, JainSipClient jainSipClient)
       {
-         //this.id = id;
          this.type = type;
          this.jainSipClient = jainSipClient;
-         //this.parameters = parameters;
          index = 0;
 
          if (type == JainSipJob.Type.TYPE_OPEN) {
-            states = new String[]{"start-bind-register", "auth", "notify"};
+            states = new FsmStates[] { FsmStates.START_BIND_REGISTER, FsmStates.AUTH, FsmStates.NOTIFY};
          }
          else if (type == Type.TYPE_REGISTER_REFRESH) {
-            states = new String[]{"register", "auth", "notify"};
+            states = new FsmStates[] { FsmStates.REGISTER, FsmStates.AUTH, FsmStates.NOTIFY};
          }
          else if (type == Type.TYPE_CLOSE) {
-            states = new String[]{"unregister", "auth", "shutdown"};
+            states = new FsmStates[] { FsmStates.UNREGISTER, FsmStates.AUTH, FsmStates.SHUTDOWN};
          }
          else if (type == Type.TYPE_RECONFIGURE) {
-            states = new String[]{"unregister", "auth-1", "register", "auth-2", "notify"};
+            states = new FsmStates[] { FsmStates.UNREGISTER, FsmStates.AUTH_1, FsmStates.REGISTER, FsmStates.AUTH_2, FsmStates.NOTIFY};
          }
          else if (type == Type.TYPE_RECONFIGURE_RELOAD_NETWORKING) {
-            states = new String[]{"unregister", "auth-1", "unbind-bind-register", "auth-2", "notify"};
+            states = new FsmStates[] { FsmStates.UNREGISTER, FsmStates.AUTH_1, FsmStates.UNBIND_BIND_REGISTER, FsmStates.AUTH_2, FsmStates.NOTIFY};
          }
          else if (type == Type.TYPE_RELOAD_NETWORKING) {
-            states = new String[]{"unbind-bind-register", "auth", "notify"};
+            states = new FsmStates[] { FsmStates.UNBIND_BIND_REGISTER, FsmStates.AUTH, FsmStates.NOTIFY};
          }
          else if (type == Type.TYPE_START_NETWORKING) {
-            states = new String[]{"bind-register", "auth", "notify"};
+            states = new FsmStates[] { FsmStates.BIND_REGISTER, FsmStates.AUTH, FsmStates.NOTIFY};
          }
       }
 
-        /*
-        void init(String jobId, JainSipJob.Type type, JainSipClient jainSipClient) {
-            this.init(id, type, jainSipClient);
-        }
-        */
-
-      /* process FSM
-       * id: the job id for the current job
-       * event: the input event provided by the caller, to help FSM understand what kind of transition to do
-       * arg: (optional) argument for the job
-       * statusCode: (optional) the status code we want to convey to the UI thread typically
-       * statusText: (optional) the status text we want to convey to the UI thread typically
+      /**
+       * This is either called to start the FSM or resume it
+       * @param jobId Id for the current job
+       * @param event The input event provided by the caller, to help FSM understand what kind of transition to do
+       * @param arg Optional argument for the job
+       * @param statusCode Optional status code we want to convey (to the UI thread typically)
+       * @param statusText Optional the status text we want to convey (to the UI thread typically)
        */
-      void process(String jobId, String event, Object arg, RCClient.ErrorCodes statusCode, String statusText)
+      void process(String jobId, FsmEvents event, Object arg, RCClient.ErrorCodes statusCode, String statusText)
       {
          if (statusCode == null) {
             statusCode = RCClient.ErrorCodes.SUCCESS;
@@ -100,14 +139,14 @@ class JainSipJob {
                }
                if (type == Type.TYPE_OPEN) {
                   // no matter what state we are in if we get a timeout we need to just bail
-                  if (event.equals("timeout")) {
+                  if (event.equals(FsmEvents.TIMEOUT)) {
                      jainSipClient.listener.onClientOpenedReply(jobId, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone,
                            RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_TIMEOUT,
                            RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_TIMEOUT));
                      jainSipJobManager.remove(jobId);
                      return;
                   }
-                  if (states[index].equals("start-bind-register")) {
+                  if (states[index].equals(FsmStates.START_BIND_REGISTER)) {
                      try {
                         jainSipClient.jainSipClientStartStack();
 
@@ -137,9 +176,9 @@ class JainSipJob {
                         jainSipJobManager.remove(jobId);
                      }
                   }
-                  else if (states[index].equals("auth")) {
+                  else if (states[index].equals(FsmStates.AUTH)) {
                      // the auth step is optional hence we check if auth-required event was passed by the caller, if not we loop around to visit next state
-                     if (event.equals("auth-required")) {
+                     if (event.equals(FsmEvents.AUTH_REQUIRED)) {
                         ResponseEventExt responseEventExt = (ResponseEventExt) arg;
                         try {
                            jainSipClient.jainSipAuthenticate(JainSipJob.this, parameters, responseEventExt);
@@ -154,23 +193,23 @@ class JainSipJob {
                         loop = true;
                      }
                   }
-                  else if (states[index].equals("notify")) {
-                     if (event.equals("register-failure")) {
+                  else if (states[index].equals(FsmStates.NOTIFY)) {
+                     if (event.equals(FsmEvents.REGISTER_FAILURE)) {
                         jainSipClient.listener.onClientOpenedReply(jobId, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone, statusCode, statusText);
                      }
-                     if (event.equals("register-success")) {
+                     if (event.equals(FsmEvents.REGISTER_SUCCESS)) {
                         jainSipClient.listener.onClientOpenedReply(jobId, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipClient.jainSipNotificationManager.getNetworkStatus()),
                               statusCode, statusText);
                      }
 
-                     if (event.equals("register-success") || event.equals("register-failure")) {
+                     if (event.equals(FsmEvents.REGISTER_SUCCESS) || event.equals(FsmEvents.REGISTER_FAILURE)) {
                         jainSipJobManager.remove(jobId);
                      }
                   }
                }
                else if (type == Type.TYPE_REGISTER_REFRESH) {
                   // no matter what state we are in if we get a timeout we need to just bail
-                  if (event.equals("timeout")) {
+                  if (event.equals(FsmEvents.TIMEOUT)) {
                      jainSipClient.listener.onClientErrorReply(jobId, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone,
                            RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_TIMEOUT,
                            RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_TIMEOUT));
@@ -178,7 +217,7 @@ class JainSipJob {
                      return;
                   }
 
-                  if (states[index].equals("register")) {
+                  if (states[index].equals(FsmStates.REGISTER)) {
                      try {
                         transaction = jainSipClient.jainSipClientRegister(JainSipJob.this, parameters);
                      }
@@ -188,9 +227,9 @@ class JainSipJob {
                         jainSipJobManager.remove(jobId);
                      }
                   }
-                  else if (states[index].equals("auth")) {
+                  else if (states[index].equals(FsmStates.AUTH)) {
                      // the auth step is optional hence we check if auth-required event was passed by the caller, if not we loop around to visit next state
-                     if (event.equals("auth-required")) {
+                     if (event.equals(FsmEvents.AUTH_REQUIRED)) {
                         ResponseEventExt responseEventExt = (ResponseEventExt) arg;
                         try {
                            jainSipClient.jainSipAuthenticate(JainSipJob.this, parameters, responseEventExt);
@@ -205,17 +244,17 @@ class JainSipJob {
                         loop = true;
                      }
                   }
-                  else if (states[index].equals("notify")) {
-                     if (event.equals("register-failure")) {
+                  else if (states[index].equals(FsmStates.NOTIFY)) {
+                     if (event.equals(FsmEvents.REGISTER_FAILURE)) {
                         jainSipClient.listener.onClientErrorReply(jobId, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone, statusCode, statusText);
                      }
-                     if (event.equals("register-success") || event.equals("register-failure")) {
+                     if (event.equals(FsmEvents.REGISTER_SUCCESS) || event.equals(FsmEvents.REGISTER_FAILURE)) {
                         jainSipJobManager.remove(jobId);
                      }
                   }
                }
                else if (type == Type.TYPE_CLOSE) {
-                  if (states[index].equals("unregister")) {
+                  if (states[index].equals(FsmStates.UNREGISTER)) {
                      try {
                         transaction = jainSipClient.jainSipClientUnregister(parameters);
                         final String finalId = jobId;
@@ -263,9 +302,9 @@ class JainSipJob {
                         jainSipJobManager.remove(jobId);
                      }
                   }
-                  else if (states[index].equals("auth")) {
+                  else if (states[index].equals(FsmStates.AUTH)) {
                      // the auth step is optional hence we check if auth-required event was passed by the caller, if not we loop around to visit next state
-                     if (event.equals("auth-required")) {
+                     if (event.equals(FsmEvents.AUTH_REQUIRED)) {
                         ResponseEventExt responseEventExt = (ResponseEventExt) arg;
                         try {
                            jainSipClient.jainSipAuthenticate(JainSipJob.this, parameters, responseEventExt);
@@ -287,8 +326,8 @@ class JainSipJob {
                         loop = true;
                      }
                   }
-                  else if (states[index].equals("shutdown")) {
-                     if (event.equals("register-success") || event.equals("register-failure")) {
+                  else if (states[index].equals(FsmStates.SHUTDOWN)) {
+                     if (event.equals(FsmEvents.REGISTER_SUCCESS) || event.equals(FsmEvents.REGISTER_FAILURE)) {
                         try {
                            jainSipClient.jainSipClientUnbind();
                            jainSipClient.jainSipClientStopStack();
@@ -304,15 +343,15 @@ class JainSipJob {
                   }
                }
                else if (type == Type.TYPE_RECONFIGURE) {
-                  if (event.equals("timeout")) {
+                  if (event.equals(FsmEvents.TIMEOUT)) {
                      // Important: if time out occurred on unregister we need to ignore and jump to register step. Take for example a case
                      // where the user does such a setup that registration fails and then they change again to a valid settings. In this case
                      // the first registration will timeout, but we don't care, we still need to continue with the register step
-                     if (states[index].equals("auth-1")) {
+                     if (states[index].equals(FsmStates.AUTH_1)) {
                         // timeout occured in unregister
                         RCLogger.w(TAG, "process(): unregister timed out in reconfigure, ignoring unregister step");
                         index += 1;
-                        event = "register-failure";
+                        event = FsmEvents.REGISTER_FAILURE;
                      }
                      else {
                         jainSipClient.listener.onClientReconfigureReply(jobId, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone,
@@ -323,7 +362,7 @@ class JainSipJob {
                      }
                   }
 
-                  if (states[index].equals("unregister")) {
+                  if (states[index].equals(FsmStates.UNREGISTER)) {
                      if (!jainSipClient.jainSipNotificationManager.haveConnectivity()) {
                         jainSipClient.listener.onClientReconfigureReply(jobId, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipClient.jainSipNotificationManager.getNetworkStatus()),
                               RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY,
@@ -342,7 +381,7 @@ class JainSipJob {
                            loop = true;
                            // TODO: need to improve
                            // we need this to properly handle the 'register' step below
-                           event = "register-success";
+                           event = FsmEvents.REGISTER_SUCCESS;
                         }
                      }
                      catch (JainSipException e) {
@@ -353,12 +392,12 @@ class JainSipJob {
                         // TODO: this is a pretty messy way to convey that we want to jump 1 step
                         index += 1;
                         loop = true;
-                        event = "register-failure";
+                        event = FsmEvents.REGISTER_FAILURE;
                      }
                   }
-                  else if (states[index].equals("auth-1")) {
+                  else if (states[index].equals(FsmStates.AUTH_1)) {
                      // the auth step is optional hence we check if auth-required event was passed by the caller, if not we loop around to visit next state
-                     if (event.equals("auth-required")) {
+                     if (event.equals(FsmEvents.AUTH_REQUIRED)) {
                         ResponseEventExt responseEventExt = (ResponseEventExt) arg;
                         try {
                            jainSipClient.jainSipAuthenticate(JainSipJob.this, (HashMap<String, Object>) parameters.get("old-parameters"), responseEventExt);
@@ -373,12 +412,12 @@ class JainSipJob {
                         loop = true;
                      }
                   }
-                  else if (states[index].equals("register")) {
-                     if (event.equals("register-failure")) {
+                  else if (states[index].equals(FsmStates.REGISTER)) {
+                     if (event.equals(FsmEvents.REGISTER_FAILURE)) {
                         // unregister step of reconfigure failed. Not that catastrophic, let's log it and continue; no need to notify UI thread just yet
                         RCLogger.e(TAG, "process(): unregister failed: " + Arrays.toString(Thread.currentThread().getStackTrace()));
                      }
-                     if (event.equals("register-success") || event.equals("register-failure")) {
+                     if (event.equals(FsmEvents.REGISTER_SUCCESS) || event.equals(FsmEvents.REGISTER_FAILURE)) {
                         try {
                            if (((HashMap<String, Object>) parameters.get("new-parameters")).containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) &&
                                  !((HashMap<String, Object>) parameters.get("new-parameters")).get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
@@ -398,9 +437,9 @@ class JainSipJob {
                         }
                      }
                   }
-                  else if (states[index].equals("auth-2")) {
+                  else if (states[index].equals(FsmStates.AUTH_2)) {
                      // the auth step is optional hence we check if auth-required event was passed by the caller, if not we loop around to visit next state
-                     if (event.equals("auth-required")) {
+                     if (event.equals(FsmEvents.AUTH_REQUIRED)) {
                         ResponseEventExt responseEventExt = (ResponseEventExt) arg;
                         try {
                            jainSipClient.jainSipAuthenticate(JainSipJob.this, (HashMap<String, Object>) parameters.get("new-parameters"), responseEventExt);
@@ -416,8 +455,8 @@ class JainSipJob {
                         loop = true;
                      }
                   }
-                  else if (states[index].equals("notify")) {
-                     if (event.equals("register-success") || event.equals("register-failure")) {
+                  else if (states[index].equals(FsmStates.NOTIFY)) {
+                     if (event.equals(FsmEvents.REGISTER_SUCCESS) || event.equals(FsmEvents.REGISTER_FAILURE)) {
                         jainSipClient.listener.onClientReconfigureReply(jobId, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipClient.jainSipNotificationManager.getNetworkStatus()),
                               statusCode, statusText);
                         jainSipJobManager.remove(jobId);
@@ -425,7 +464,7 @@ class JainSipJob {
                   }
                }
                else if (type == Type.TYPE_RECONFIGURE_RELOAD_NETWORKING) {
-                  if (states[index].equals("unregister")) {
+                  if (states[index].equals(FsmStates.UNREGISTER)) {
                      if (!jainSipClient.jainSipNotificationManager.haveConnectivity()) {
                         jainSipClient.listener.onClientReconfigureReply(jobId, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipClient.jainSipNotificationManager.getNetworkStatus()),
                               RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY,
@@ -444,7 +483,7 @@ class JainSipJob {
                            // TODO: this is a pretty messy way to convey that we want to jump 1 step
                            index += 1;
                            loop = true;
-                           event = "register-success";
+                           event = FsmEvents.REGISTER_SUCCESS;
                         }
                      }
                      catch (JainSipException e) {
@@ -455,12 +494,12 @@ class JainSipJob {
                         // TODO: this is a pretty messy way to convey that we want to jump 1 step
                         index += 1;
                         loop = true;
-                        event = "register-failure";
+                        event = FsmEvents.REGISTER_FAILURE;
                      }
                   }
-                  else if (states[index].equals("auth-1")) {
+                  else if (states[index].equals(FsmStates.AUTH_1)) {
                      // the auth step is optional hence we check if auth-required event was passed by the caller, if not we loop around to visit next state
-                     if (event.equals("auth-required")) {
+                     if (event.equals(FsmEvents.AUTH_REQUIRED)) {
                         ResponseEventExt responseEventExt = (ResponseEventExt) arg;
                         try {
                            jainSipClient.jainSipAuthenticate(JainSipJob.this, (HashMap<String, Object>) parameters.get("old-parameters"), responseEventExt);
@@ -475,12 +514,12 @@ class JainSipJob {
                         loop = true;
                      }
                   }
-                  else if (states[index].equals("unbind-bind-register")) {
-                     if (event.equals("register-failure")) {
+                  else if (states[index].equals(FsmStates.UNBIND_BIND_REGISTER)) {
+                     if (event.equals(FsmEvents.REGISTER_FAILURE)) {
                         // unregister step of reconfigure failed. Not that catastrophic, let's log it and continue; no need to notify UI thread just yet
                         RCLogger.e(TAG, "process(): unregister failed: " + Arrays.toString(Thread.currentThread().getStackTrace()));
                      }
-                     if (event.equals("register-success") || event.equals("register-failure")) {
+                     if (event.equals(FsmEvents.REGISTER_SUCCESS) || event.equals(FsmEvents.REGISTER_FAILURE)) {
                         try {
                            jainSipClient.jainSipClientUnbind();
 
@@ -496,7 +535,7 @@ class JainSipJob {
                               // TODO: this is a pretty messy way to convey that we want to jump 1 step
                               index += 1;
                               loop = true;
-                              event = "register-failure";
+                              event = FsmEvents.REGISTER_FAILURE;
                            }
                         }
                         catch (JainSipException e) {
@@ -507,9 +546,9 @@ class JainSipJob {
                         }
                      }
                   }
-                  else if (states[index].equals("auth-2")) {
+                  else if (states[index].equals(FsmStates.AUTH_2)) {
                      // the auth step is optional hence we check if auth-required event was passed by the caller, if not we loop around to visit next state
-                     if (event.equals("auth-required")) {
+                     if (event.equals(FsmEvents.AUTH_REQUIRED)) {
                         ResponseEventExt responseEventExt = (ResponseEventExt) arg;
                         try {
                            jainSipClient.jainSipAuthenticate(JainSipJob.this, (HashMap<String, Object>) parameters.get("new-parameters"), responseEventExt);
@@ -524,8 +563,8 @@ class JainSipJob {
                         loop = true;
                      }
                   }
-                  else if (states[index].equals("notify")) {
-                     if (event.equals("register-success") || event.equals("register-failure")) {
+                  else if (states[index].equals(FsmStates.NOTIFY)) {
+                     if (event.equals(FsmEvents.REGISTER_SUCCESS) || event.equals(FsmEvents.REGISTER_FAILURE)) {
                         jainSipClient.listener.onClientReconfigureReply(jobId, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipClient.jainSipNotificationManager.getNetworkStatus()),
                               statusCode, statusText);
                         jainSipJobManager.remove(jobId);
@@ -534,7 +573,7 @@ class JainSipJob {
                   }
                }
                else if (type == Type.TYPE_RELOAD_NETWORKING) {
-                  if (states[index].equals("unbind-bind-register")) {
+                  if (states[index].equals(FsmStates.UNBIND_BIND_REGISTER)) {
                      // no need for connectivity check here, we know there is connectivity
                      try {
                         jainSipClient.jainSipClientUnbind();
@@ -557,9 +596,9 @@ class JainSipJob {
                         jainSipClient.listener.onClientErrorReply(jobId, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone, e.errorCode, e.errorText);
                      }
                   }
-                  else if (states[index].equals("auth")) {
+                  else if (states[index].equals(FsmStates.AUTH)) {
                      // the auth step is optional hence we check if auth-required event was passed by the caller, if not we loop around to visit next state
-                     if (event.equals("auth-required")) {
+                     if (event.equals(FsmEvents.AUTH_REQUIRED)) {
                         ResponseEventExt responseEventExt = (ResponseEventExt) arg;
                         try {
                            jainSipClient.jainSipAuthenticate(JainSipJob.this, parameters, responseEventExt);
@@ -573,20 +612,20 @@ class JainSipJob {
                         loop = true;
                      }
                   }
-                  else if (states[index].equals("notify")) {
-                     if (event.equals("register-success")) {
+                  else if (states[index].equals(FsmStates.NOTIFY)) {
+                     if (event.equals(FsmEvents.REGISTER_SUCCESS)) {
                         RCDeviceListener.RCConnectivityStatus connectivityStatus = (RCDeviceListener.RCConnectivityStatus) parameters.get("connectivity-status");
                         jainSipClient.listener.onClientConnectivityEvent(jobId, connectivityStatus);
                         jainSipJobManager.remove(jobId);
                      }
-                     if (event.equals("register-failure")) {
+                     if (event.equals(FsmEvents.REGISTER_FAILURE)) {
                         jainSipClient.listener.onClientErrorReply(jobId, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone, statusCode, statusText);
                         jainSipJobManager.remove(jobId);
                      }
                   }
                }
                else if (type == Type.TYPE_START_NETWORKING) {
-                  if (states[index].equals("bind-register")) {
+                  if (states[index].equals(FsmStates.BIND_REGISTER)) {
                      // no need for connectivity check here, we know there is connectivity
                      try {
                         jainSipClient.jainSipClientBind(parameters);
@@ -607,9 +646,9 @@ class JainSipJob {
                         jainSipClient.listener.onClientErrorReply(jobId, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone, e.errorCode, e.errorText);
                      }
                   }
-                  else if (states[index].equals("auth")) {
+                  else if (states[index].equals(FsmStates.AUTH)) {
                      // the auth step is optional hence we check if auth-required event was passed by the caller, if not we loop around to visit next state
-                     if (event.equals("auth-required")) {
+                     if (event.equals(FsmEvents.AUTH_REQUIRED)) {
                         ResponseEventExt responseEventExt = (ResponseEventExt) arg;
                         try {
                            jainSipClient.jainSipAuthenticate(JainSipJob.this, parameters, responseEventExt);
@@ -623,13 +662,13 @@ class JainSipJob {
                         loop = true;
                      }
                   }
-                  else if (states[index].equals("notify")) {
-                     if (event.equals("register-success")) {
+                  else if (states[index].equals(FsmStates.NOTIFY)) {
+                     if (event.equals(FsmEvents.REGISTER_SUCCESS)) {
                         RCDeviceListener.RCConnectivityStatus connectivityStatus = (RCDeviceListener.RCConnectivityStatus) parameters.get("connectivity-status");
                         jainSipClient.listener.onClientConnectivityEvent(jobId, connectivityStatus);
                         jainSipJobManager.remove(jobId);
                      }
-                     if (event.equals("register-failure")) {
+                     if (event.equals(FsmEvents.REGISTER_FAILURE)) {
                         jainSipClient.listener.onClientErrorReply(jobId, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone, statusCode, statusText);
                         jainSipJobManager.remove(jobId);
                      }
@@ -645,7 +684,7 @@ class JainSipJob {
       public String toString()
       {
          StringBuilder result = new StringBuilder();
-         String NEW_LINE = System.getProperty("line.separator");
+         //String NEW_LINE = System.getProperty("line.separator");
 
          result.append(this.getClass().getName() + " Object { ");
          result.append("Type: " + type + ", ");
@@ -654,7 +693,6 @@ class JainSipJob {
 
          return result.toString();
       }
-
    }
 
    public enum Type {
@@ -699,14 +737,31 @@ class JainSipJob {
       this.jainSipCall = jainSipCall;
    }
 
-   void start()
+   void startFsm()
    {
-
+      jainSipFsm.process(jobId, FsmEvents.NONE, null, null, null);
    }
 
-   void processFsm(String jobId, String event, Object arg, RCClient.ErrorCodes statusCode, String statusText)
+   // Not all jobs have FSM. Simple jobs don't need one. Check if current job has an FSM
+   boolean hasFsm()
    {
-      jainSipFsm.process(jobId, event, arg, statusCode, statusText);
+      if (type == JainSipJob.Type.TYPE_OPEN ||
+            type == Type.TYPE_REGISTER_REFRESH ||
+            type == Type.TYPE_CLOSE ||
+            type == Type.TYPE_RECONFIGURE ||
+            type == Type.TYPE_RECONFIGURE_RELOAD_NETWORKING ||
+            type == Type.TYPE_RELOAD_NETWORKING ||
+            type == Type.TYPE_START_NETWORKING) {
+         return true;
+      }
+      return false;
+   }
+
+   void processFsm(String jobId, FsmEvents event, Object arg, RCClient.ErrorCodes statusCode, String statusText)
+   {
+      if (hasFsm()) {
+         jainSipFsm.process(jobId, event, arg, statusCode, statusText);
+      }
    }
 
    void updateTransaction(Transaction transaction)

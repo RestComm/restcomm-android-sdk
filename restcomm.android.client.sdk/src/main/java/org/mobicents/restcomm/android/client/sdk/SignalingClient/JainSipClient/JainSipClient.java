@@ -673,14 +673,14 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
             String method = cseq.getMethod();
             if (method.equals(Request.REGISTER)) {
                if (response.getStatusCode() == Response.PROXY_AUTHENTICATION_REQUIRED || response.getStatusCode() == Response.UNAUTHORIZED) {
-                  jainSipJob.processFsm(jainSipJob.jobId, "auth-required", responseEventExt, null, null);
+                  jainSipJob.processFsm(jainSipJob.jobId, JainSipJob.FsmEvents.AUTH_REQUIRED, responseEventExt, null, null);
                }
                else if (response.getStatusCode() == Response.FORBIDDEN) {
-                  jainSipJob.processFsm(jainSipJob.jobId, "register-failure", null, RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_AUTHENTICATION_FORBIDDEN,
+                  jainSipJob.processFsm(jainSipJob.jobId, JainSipJob.FsmEvents.REGISTER_FAILURE, null, RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_AUTHENTICATION_FORBIDDEN,
                         RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_AUTHENTICATION_FORBIDDEN));
                }
                else if (response.getStatusCode() == Response.SERVICE_UNAVAILABLE) {
-                  jainSipJob.processFsm(jainSipJob.jobId, "register-failure", null, RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_SERVICE_UNAVAILABLE,
+                  jainSipJob.processFsm(jainSipJob.jobId, JainSipJob.FsmEvents.REGISTER_FAILURE, null, RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_SERVICE_UNAVAILABLE,
                         RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_SERVICE_UNAVAILABLE));
                }
                else if (response.getStatusCode() == Response.OK) {
@@ -701,7 +701,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
                      jainSipClientContext.remove("via-rport");
                   }
 
-                  jainSipJob.processFsm(jainSipJob.jobId, "register-success", null, RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
+                  jainSipJob.processFsm(jainSipJob.jobId, JainSipJob.FsmEvents.REGISTER_SUCCESS, null, RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
                }
             }
             else if (method.equals(Request.INVITE) || method.equals(Request.BYE) || method.equals(Request.CANCEL) ||
@@ -821,7 +821,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
             }
             else {
                // register, register refresh, reconfigure, etc
-               jainSipJob.processFsm(jainSipJob.jobId, "timeout", null, RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_TIMEOUT,
+               jainSipJob.processFsm(jainSipJob.jobId, JainSipJob.FsmEvents.TIMEOUT, null, RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_TIMEOUT,
                      RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_TIMEOUT));
             }
          }

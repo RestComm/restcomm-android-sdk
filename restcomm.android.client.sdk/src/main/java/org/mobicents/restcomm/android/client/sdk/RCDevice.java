@@ -478,8 +478,19 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
       return parameters;
    }
 
-   // -- SignalingClientListener events for incoming messages from signaling thread
-   // Replies
+   public SignalingClient.SignalingClientCallListener getConnectionByJobId(String jobId)
+   {
+      if (connections.containsKey(jobId)) {
+         return connections.get(jobId);
+      }
+      else {
+         throw new RuntimeException("No RCConnection exists to handle message with jobid: " + jobId);
+      }
+   }
+
+      // -- SignalingClientListener events for incoming messages from signaling thread
+      // Replies
+
    public void onOpenReply(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
       cachedConnectivityStatus = connectivityStatus;
@@ -625,6 +636,7 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
       }
    }
 
+   /*
    // This is for messages that have to do with a call, which are delegated to RCConnection
    public void onCallRelatedMessage(SignalingMessage signalingMessage)
    {
@@ -635,6 +647,7 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
          throw new RuntimeException("Unexpected signaling message type");
       }
    }
+   */
 
 
    // ------ Helpers

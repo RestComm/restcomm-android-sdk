@@ -5,6 +5,8 @@ import android.os.Handler;
 import android.os.Message;
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
+import org.mobicents.restcomm.android.client.sdk.RCConnection;
+import org.mobicents.restcomm.android.client.sdk.RCConnectionListener;
 import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
 //import org.mobicents.restcomm.android.client.sdk.RCMessage;
 import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
@@ -64,7 +66,10 @@ public class SignalingClient extends Handler {
 
       // TODO: this should be removed after we remodel the whole connection/device communication
       // Call related events that are delegated to RCConnection
-      void onCallRelatedMessage(SignalingMessage message);
+      //void onCallRelatedMessage(SignalingMessage message);
+
+      // this is not a callback but we want the listener to implement it so that we cat retrieve the connection from the jobId
+      SignalingClient.SignalingClientCallListener getConnectionByJobId(String jobId);
    }
 
    /**
@@ -84,12 +89,12 @@ public class SignalingClient extends Handler {
       // call was disconnected due to local disconnect() call
       void onCallLocalDisconnectedEvent(String jobId);
 
-      void onCallErrorEvent(String jobId);
+      void onCallErrorEvent(String jobId, RCClient.ErrorCodes status, String text);
 
       // cancel was was answered for incoming call
       void onCallIncomingCanceledEvent(String jobId);
 
-      void onCallSentDigitsEvent(String jobId);
+      void onCallSentDigitsEvent(String jobId, RCClient.ErrorCodes statusCode, String statusText);
    }
 
 
@@ -100,7 +105,7 @@ public class SignalingClient extends Handler {
 
 
    private static final SignalingClient instance = new SignalingClient();
-   SignalingClient.SignalingClientListener listener;
+   SignalingClientListener listener;
    private static final String TAG = "SignalingClient";
 
    // handler at signaling thread to send messages to
@@ -298,11 +303,46 @@ public class SignalingClient extends Handler {
       else if (message.type == SignalingMessage.MessageType.REGISTERING_EVENT) {
          listener.onRegisteringEvent(message.jobId);
       }
+      // Call related events
       else if (message.type == SignalingMessage.MessageType.CALL_INCOMING_EVENT) {
          listener.onCallArrivedEvent(message.jobId, message.peer, message.sdp);
       }
+      else if (message.type == SignalingMessage.MessageType.CALL_OUTGOING_CONNECTED_EVENT) {
+         SignalingClientCallListener callListener = listener.getConnectionByJobId(message.jobId);
+         // outgoing call is connected (got 200 OK and ACKed it)
+         callListener.onCallOutgoingConnectedEvent(message.jobId, message.sdp);
+      }
+      else if (message.type == SignalingMessage.MessageType.CALL_INCOMING_CONNECTED_EVENT) {
+         // incoming call connected
+         SignalingClientCallListener callListener = listener.getConnectionByJobId(message.jobId);
+         callListener.onCallIncomingConnectedEvent(message.jobId);
+      }
+      else if (message.type == SignalingMessage.MessageType.CALL_PEER_DISCONNECT_EVENT) {
+         SignalingClientCallListener callListener = listener.getConnectionByJobId(message.jobId);
+         callListener.onCallPeerDisconnectEvent(message.jobId);
+      }
+      else if (message.type == SignalingMessage.MessageType.CALL_OUTGOING_PEER_RINGING_EVENT) {
+         SignalingClientCallListener callListener = listener.getConnectionByJobId(message.jobId);
+         callListener.onCallOutgoingPeerRingingEvent(message.jobId);
+      }
+      else if (message.type == SignalingMessage.MessageType.CALL_LOCAL_DISCONNECT_EVENT) {
+         SignalingClientCallListener callListener = listener.getConnectionByJobId(message.jobId);
+         callListener.onCallLocalDisconnectedEvent(message.jobId);
+      }
+      else if (message.type == SignalingMessage.MessageType.CALL_ERROR_EVENT) {
+         SignalingClientCallListener callListener = listener.getConnectionByJobId(message.jobId);
+         callListener.onCallErrorEvent(message.jobId, message.status, message.text);
+      }
+      else if (message.type == SignalingMessage.MessageType.CALL_INCOMING_CANCELED_EVENT) {
+         SignalingClientCallListener callListener = listener.getConnectionByJobId(message.jobId);
+         callListener.onCallIncomingCanceledEvent(message.jobId);
+      }
+      else if (message.type == SignalingMessage.MessageType.CALL_SEND_DIGITS_EVENT) {
+         SignalingClientCallListener callListener = listener.getConnectionByJobId(message.jobId);
+         callListener.onCallSentDigitsEvent(message.jobId, message.status, message.text);
+      }
       else {
-         listener.onCallRelatedMessage(message);
+         RCLogger.e(TAG, "handleSignalingMessage(): no handler for signaling message");
       }
    }
 
