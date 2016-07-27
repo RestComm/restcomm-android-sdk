@@ -204,17 +204,17 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             lblCall.setText(text + intent.getStringExtra(RCDevice.EXTRA_DID).replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
             lblStatus.setText("Initiating Call...");
 
-            connectParams.put("username", intent.getStringExtra(RCDevice.EXTRA_DID));
-            connectParams.put("video-enabled", intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
-            connectParams.put("local-video", findViewById(R.id.local_video_view));
-            connectParams.put("remote-video", findViewById(R.id.remote_video_view));
+            connectParams.put(RCConnection.ParameterKeys.CONNECTION_PEER, intent.getStringExtra(RCDevice.EXTRA_DID));
+            connectParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
+            connectParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_view));
+            connectParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_view));
             // by default we use VP8 for video as it tends to be more adopted, but you can override that and specify VP9 as follows:
-            //connectParams.put("preferred-video-codec", "VP9");
+            //connectParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC, "VP9");
 
             // *** if you want to add custom SIP headers, please uncomment this
             //HashMap<String, String> sipHeaders = new HashMap<>();
             //sipHeaders.put("X-SIP-Header1", "Value1");
-            //connectParams.put("sip-headers", sipHeaders);
+            //connectParams.put(RCConnection.ParameterKeys.CONNECTION_CUSTOM_SIP_HEADERS, sipHeaders);
 
             connection = device.connect(connectParams, this);
 
@@ -242,7 +242,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             // the number from which we got the call
             String incomingCallDid = intent.getStringExtra(RCDevice.EXTRA_DID);
             // notice that this is not used yet; the sdk doesn't tell us if the incoming call is video/audio (TODO)
-            acceptParams.put("video-enabled", intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
+            acceptParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
         }
     }
 
@@ -277,9 +277,9 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 btnAnswer.setVisibility(View.INVISIBLE);
                 btnAnswerAudio.setVisibility(View.INVISIBLE);
                 HashMap<String, Object> params = new HashMap<String, Object>();
-                params.put("video-enabled", true);
-                params.put("local-video", findViewById(R.id.local_video_view));
-                params.put("remote-video", findViewById(R.id.remote_video_view));
+                params.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, true);
+                params.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_view));
+                params.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_view));
                 pendingConnection.accept(params);
                 connection = this.pendingConnection;
                 pendingConnection = null;
@@ -290,9 +290,9 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 btnAnswer.setVisibility(View.INVISIBLE);
                 btnAnswerAudio.setVisibility(View.INVISIBLE);
                 HashMap<String, Object> params = new HashMap<String, Object>();
-                params.put("video-enabled", false);
-                params.put("local-video", findViewById(R.id.local_video_view));
-                params.put("remote-video", findViewById(R.id.remote_video_view));
+                params.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, false);
+                params.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_view));
+                params.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_view));
                 pendingConnection.accept(params);
                 connection = this.pendingConnection;
                 pendingConnection = null;

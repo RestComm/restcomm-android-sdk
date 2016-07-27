@@ -37,6 +37,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
+import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
 import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
 import org.mobicents.restcomm.android.client.sdk.RCPresenceEvent;
@@ -121,16 +122,16 @@ public class MessageActivity extends AppCompatActivity
       // Get Intent parameters.
       final Intent finalIntent = getIntent();
       if (finalIntent.getAction().equals(RCDevice.OPEN_MESSAGE_SCREEN)) {
-         params.put("username", finalIntent.getStringExtra(RCDevice.EXTRA_DID));
+         params.put(RCConnection.ParameterKeys.CONNECTION_PEER, finalIntent.getStringExtra(RCDevice.EXTRA_DID));
          String shortname = finalIntent.getStringExtra(RCDevice.EXTRA_DID).replaceAll("^sip:", "").replaceAll("@.*$", "");
          setTitle(shortname);
       }
       if (finalIntent.getAction().equals(RCDevice.INCOMING_MESSAGE)) {
          String message = finalIntent.getStringExtra(RCDevice.INCOMING_MESSAGE_TEXT);
          HashMap<String, String> intentParams = (HashMap<String, String>) finalIntent.getSerializableExtra(RCDevice.INCOMING_MESSAGE_PARAMS);
-         String username = intentParams.get("username");
+         String username = intentParams.get(RCConnection.ParameterKeys.CONNECTION_PEER);
          String shortname = username.replaceAll("^sip:", "").replaceAll("@.*$", "");
-         params.put("username", username);
+         params.put(RCConnection.ParameterKeys.CONNECTION_PEER, username);
 
          listFragment.addRemoteMessage(message, shortname);
          setTitle(shortname);
@@ -183,7 +184,7 @@ public class MessageActivity extends AppCompatActivity
    {
       if (view.getId() == R.id.button_send) {
          HashMap<String, String> sendParams = new HashMap<String, String>();
-         sendParams.put("username", (String) params.get("username"));
+         sendParams.put(RCConnection.ParameterKeys.CONNECTION_PEER, (String) params.get(RCConnection.ParameterKeys.CONNECTION_PEER));
          if (device.sendMessage(txtMessage.getText().toString(), sendParams)) {
             // also output the message in the wall
             listFragment.addLocalMessage(txtMessage.getText().toString());

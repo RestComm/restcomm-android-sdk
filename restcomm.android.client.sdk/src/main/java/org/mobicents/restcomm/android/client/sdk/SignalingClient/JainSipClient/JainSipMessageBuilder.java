@@ -26,6 +26,7 @@ import android.javax.sip.message.Response;
 
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
+import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
 import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
@@ -90,15 +91,15 @@ class JainSipMessageBuilder {
 
          Address toAddress;
          URI requestUri;
-         if (!method.equals(Request.REGISTER)) {
-            // non register
-            toAddress = jainSipAddressFactory.createAddress(toSipUri);
-            requestUri = jainSipAddressFactory.createURI(toSipUri);
-         }
-         else {
+         if (method.equals(Request.REGISTER)) {
             // register
             toAddress = fromAddress;
             requestUri = jainSipAddressFactory.createAddress(domain).getURI();
+         }
+         else {
+            // non register
+            toAddress = jainSipAddressFactory.createAddress(toSipUri);
+            requestUri = jainSipAddressFactory.createURI(toSipUri);
          }
 
          Request request = jainSipMessageFactory.createRequest(requestUri,
@@ -183,7 +184,7 @@ class JainSipMessageBuilder {
       try {
          Request request = buildBaseRequest(Request.INVITE, (String) clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_USERNAME),
                (String) clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN),
-               (String) parameters.get("username"), listeningPoint, clientContext);
+               (String) parameters.get(RCConnection.ParameterKeys.CONNECTION_PEER), listeningPoint, clientContext);
 
          SupportedHeader supportedHeader = jainSipHeaderFactory.createSupportedHeader("replaces, outbound");
          request.addHeader(supportedHeader);
@@ -196,9 +197,9 @@ class JainSipMessageBuilder {
          request.addHeader(createUserAgentHeader());
 
          // add custom sip headers if applicable
-         if (parameters.containsKey("sip-headers")) {
+         if (parameters.containsKey(RCConnection.ParameterKeys.CONNECTION_CUSTOM_SIP_HEADERS)) {
             try {
-               addCustomHeaders(request, (HashMap<String, String>) parameters.get("sip-headers"));
+               addCustomHeaders(request, (HashMap<String, String>) parameters.get(RCConnection.ParameterKeys.CONNECTION_CUSTOM_SIP_HEADERS));
             }
             catch (ParseException e) {
                throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_PARSE_CUSTOM_SIP_HEADERS,
@@ -347,6 +348,60 @@ class JainSipMessageBuilder {
    */
 
    // -- Helpers
+   // Take a short destination of the form 'bob' and create full SIP URI out of it: 'sip:bob@cloud.restcomm.com'
+   public String convert2FullUri(String usernameOrUri, String domain)
+   {
+      String fullUri = usernameOrUri;
+      if (!usernameOrUri.contains("sip:")) {
+         if (domain == null || domain.equals("")) {
+            throw new RuntimeException("Failed to create full URI: domain is missing and peer is not a full SIP URI: " + usernameOrUri);
+         }
+
+         fullUri = "sip:" + usernameOrUri + "@" + domain.replaceAll("sip:", "");
+         RCLogger.i(TAG, "convert2FullUri(): normalizing username to: " + fullUri);
+      }
+      else {
+         RCLogger.i(TAG, "convert2FullUri(): no need for normalization, URI already normalized: " + fullUri);
+      }
+      return fullUri;
+   }
+
+   // Take a short domain of the form 'cloud.restcomm.com' and create full SIP domain out of it: 'sip:cloud.restcomm.com'
+   public String convertDomain2Uri(String domain)
+   {
+      String domainUri = domain;
+      if (!domain.contains("sip:")) {
+         domainUri = "sip:" + domain;
+         RCLogger.i(TAG, "convertDomain2Uri(): normalizing domain to: " + domainUri);
+      }
+      else {
+         RCLogger.i(TAG, "convertDomain2Uri(): no need for normalization, URI already normalized: " + domainUri);
+      }
+
+      return domainUri;
+   }
+
+   // Normalize domain and SIP URIs
+   public void normalizeDomain(HashMap<String, Object> parameters)
+   {
+      parameters.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN,
+            convertDomain2Uri((String)parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN)));
+   }
+
+   public void normalizePeer(HashMap<String, Object> peerParameters, HashMap<String, Object> clientParameters)
+   {
+      peerParameters.put(RCConnection.ParameterKeys.CONNECTION_PEER,
+            convert2FullUri((String)peerParameters.get(RCConnection.ParameterKeys.CONNECTION_PEER),
+                  (String)clientParameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN)));
+      /*
+      for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+         if (parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN)) {
+            parameters.put(entry.getKey(), convertDomain2Uri((String) entry.getValue()));
+         }
+      }
+      */
+   }
+
    private RouteHeader createRouteHeader(String route)
    {
       try {
