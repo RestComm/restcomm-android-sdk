@@ -654,43 +654,42 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
 
    // -- Notify QoS module of Device related event through intents, if the module is available
    // Phone state Intents to capture incoming call event
-   private void sendQoSIncomingConnectionIntent(String user, RCConnection connection)
-   {
-      Intent intent = new Intent("org.mobicents.restcomm.android.CALL_STATE");
-      intent.putExtra("STATE", "ringing");
-      intent.putExtra("INCOMING", true);
-      intent.putExtra("FROM", user);
-      Context context = RCClient.getContext();
-      try {
-         // Restrict the Intent to MMC Handler running within the same application
-         Class aclass = Class.forName("com.cortxt.app.mmccore.Services.Intents.MMCIntentHandler");
-         intent.setClass(context.getApplicationContext(), aclass);
-         context.sendBroadcast(intent);
-      }
-      catch (ClassNotFoundException e) {
-         // If there is no MMC class isn't here, no intent
-      }
-   }
+    private void sendQoSIncomingConnectionIntent (String user, RCConnection connection)
+    {
+        Intent intent = new Intent ("org.mobicents.restcomm.android.CALL_STATE");
+        intent.putExtra("STATE", "ringing");
+        intent.putExtra("INCOMING", true);
+        intent.putExtra("FROM", user);
+        Context context = RCClient.getContext();
+        try {
+            // Restrict the Intent to MMC Handler running within the same application
+            Class aclass = Class.forName("com.cortxt.app.corelib.Services.Intents.IntentHandler");
+            intent.setClass(context.getApplicationContext(), aclass);
+            context.sendBroadcast(intent);
+        }
+        catch (ClassNotFoundException e)
+        {
+            // If there is no MMC class isn't here, no intent
+        }
+    }
 
-   private void sendQoSNoConnectionIntent(String user, String message)
-   {
-      Intent intent = new Intent("org.mobicents.restcomm.android.CONNECT_FAILED");
-      intent.putExtra("STATE", "connect failed");
-      intent.putExtra("ERRORTEXT", message);
-      intent.putExtra("ERROR", RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY.ordinal());
-      intent.putExtra("INCOMING", false);
-      intent.putExtra("USER", user);
-      Context context = RCClient.getContext();
-      try {
-         // Restrict the Intent to MMC Handler running within the same application
-         Class aclass = Class.forName("com.cortxt.app.mmccore.Services.Intents.MMCIntentHandler");
-         intent.setClass(context.getApplicationContext(), aclass);
-         context.sendBroadcast(intent);
-      }
-      catch (ClassNotFoundException e) {
-         // If there is no MMC class isn't here, no intent
-      }
-   }
+    private void sendQoSNoConnectionIntent (String user, String message) {
+        Intent intent = new Intent("org.mobicents.restcomm.android.CONNECT_FAILED");
+        intent.putExtra("STATE", "connect failed");
+        intent.putExtra("ERRORTEXT", message);
+        intent.putExtra("ERROR", RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY);
+        intent.putExtra("INCOMING", false);
+        intent.putExtra("USER", user);
+        Context context = RCClient.getContext();
+        try {
+            // Restrict the Intent to MMC Handler running within the same application
+            Class aclass = Class.forName("com.cortxt.app.corelib.Services.Intents.IntentHandler");
+            intent.setClass(context.getApplicationContext(), aclass);
+            context.sendBroadcast(intent);
+        } catch (ClassNotFoundException e) {
+            // If there is no MMC class isn't here, no intent
+        }
+    }
 
    void removeConnection(String jobId)
    {
