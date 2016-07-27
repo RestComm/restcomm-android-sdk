@@ -166,6 +166,19 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
     */
    boolean muted;
 
+
+   /**
+    * Parameter keys for RCCDevice.connect() and RCConnection.accept()
+    */
+   public static class ParameterKeys {
+      public static final String CONNECTION_PEER = "username";
+      public static final String CONNECTION_VIDEO_ENABLED = "video-enabled";
+      public static final String CONNECTION_LOCAL_VIDEO = "local-video";
+      public static final String CONNECTION_REMOTE_VIDEO = "remote-video";
+      public static final String CONNECTION_PREFERRED_VIDEO_CODEC = "preferred-video-codec";
+      public static final String CONNECTION_CUSTOM_SIP_HEADERS = "sip-headers";
+   }
+
    public String jobId;
    private SignalingClient signalingClient;
    public RCDevice device = null;
@@ -302,8 +315,10 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
       //if (haveConnectivity()) {
       this.callParams = (HashMap<String, Object>) parameters;
-      initializeWebrtc((Boolean) this.callParams.get("video-enabled"), (SurfaceViewRenderer) parameters.get("local-video"),
-            (SurfaceViewRenderer) parameters.get("remote-video"), (String) parameters.get("preferred-video-codec"));
+      initializeWebrtc((Boolean) this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED),
+            (SurfaceViewRenderer) parameters.get(ParameterKeys.CONNECTION_LOCAL_VIDEO),
+            (SurfaceViewRenderer) parameters.get(ParameterKeys.CONNECTION_REMOTE_VIDEO),
+            (String) parameters.get(ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC));
 
       startTurn();
       //}
@@ -609,15 +624,18 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
                // create a new hash map
                HashMap<String, String> sipHeaders = null;
-               if (RCConnection.this.callParams.containsKey("sip-headers")) {
-                  sipHeaders = (HashMap<String, String>) RCConnection.this.callParams.get("sip-headers");
+               if (RCConnection.this.callParams.containsKey(ParameterKeys.CONNECTION_CUSTOM_SIP_HEADERS)) {
+                  sipHeaders = (HashMap<String, String>) RCConnection.this.callParams.get(ParameterKeys.CONNECTION_CUSTOM_SIP_HEADERS);
                }
 
-               RCConnection.this.signalingParameters = new SignalingParameters(iceServers, true, "", (String) RCConnection.this.callParams.get("username"), "", null, null, sipHeaders, (Boolean) RCConnection.this.callParams.get("video-enabled"));
+               RCConnection.this.signalingParameters = new SignalingParameters(iceServers, true, "",
+                     (String) RCConnection.this.callParams.get(ParameterKeys.CONNECTION_PEER),
+                     "", null, null, sipHeaders, (Boolean) RCConnection.this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED));
             }
             else {
                // we are not the initiator
-               RCConnection.this.signalingParameters = new SignalingParameters(iceServers, false, "", "", "", null, null, null, (Boolean) RCConnection.this.callParams.get("video-enabled"));
+               RCConnection.this.signalingParameters = new SignalingParameters(iceServers, false, "", "", "", null, null, null,
+                     (Boolean) RCConnection.this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED));
                SignalingParameters params = SignalingParameters.extractCandidates(new SessionDescription(SessionDescription.Type.OFFER, incomingCallSdp));
                RCConnection.this.signalingParameters.offerSdp = params.offerSdp;
                RCConnection.this.signalingParameters.iceCandidates = params.iceCandidates;
@@ -651,8 +669,10 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void setupWebrtcAndCall(Map<String, Object> parameters)
    {
       this.callParams = (HashMap<String, Object>) parameters;
-      initializeWebrtc((Boolean) this.callParams.get("video-enabled"), (SurfaceViewRenderer) parameters.get("local-video"),
-            (SurfaceViewRenderer) parameters.get("remote-video"), (String) parameters.get("preferred-video-codec"));
+      initializeWebrtc((Boolean) this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED),
+            (SurfaceViewRenderer) parameters.get(ParameterKeys.CONNECTION_LOCAL_VIDEO),
+            (SurfaceViewRenderer) parameters.get(ParameterKeys.CONNECTION_REMOTE_VIDEO),
+            (String) parameters.get(ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC));
 
       startTurn();
    }
@@ -951,9 +971,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             }
             if (signalingParameters.initiator) {
                HashMap<String, Object> parameters = new HashMap<String, Object>();
-               parameters.put("username", signalingParameters.sipUrl);
+               parameters.put(RCConnection.ParameterKeys.CONNECTION_PEER, signalingParameters.sipUrl);
                parameters.put("sdp", connection.signalingParameters.generateSipSdp(connection.signalingParameters.offerSdp, connection.signalingParameters.iceCandidates));
-               parameters.put("sip-headers", connection.signalingParameters.sipHeaders);
+               parameters.put(ParameterKeys.CONNECTION_CUSTOM_SIP_HEADERS, connection.signalingParameters.sipHeaders);
 
                signalingClient.call(jobId, parameters);
                // we have gathered all candidates and SDP. Combine then in SIP SDP and send over to JAIN SIP

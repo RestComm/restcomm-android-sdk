@@ -35,6 +35,7 @@ import android.text.format.Formatter;
 
 import org.apache.http.conn.util.InetAddressUtils;
 import org.mobicents.restcomm.android.client.sdk.RCClient;
+import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
 import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
 import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
@@ -172,6 +173,8 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
 
       try {
          jainSipStack = jainSipFactory.createSipStack(properties);
+         jainSipMessageBuilder.normalizeDomain(configuration);
+
          jainSipJobManager.add(jobId, JainSipJob.Type.TYPE_OPEN, configuration);
       }
       catch (SipException e) {
@@ -228,6 +231,9 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
    public void reconfigure(String jobId, HashMap<String, Object> parameters, JainSipClientListener listener)
    {
       RCLogger.i(TAG, "reconfigure(): " + parameters.toString());
+
+      // normalize before checking which parameters changed
+      jainSipMessageBuilder.normalizeDomain(parameters);
 
       // check which parameters actually changed by comparing this.configuration with parameters
       HashMap<String, Object> modifiedParameters = JainSipConfiguration.modifiedParameters(this.configuration, parameters);
@@ -290,6 +296,8 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
          return;
       }
 
+      jainSipMessageBuilder.normalizePeer(parameters, configuration);
+
       JainSipCall jainSipCall = new JainSipCall(this, listener);
       jainSipCall.open(jobId, parameters);
    }
@@ -342,6 +350,8 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       }
 
       try {
+         jainSipMessageBuilder.normalizePeer(parameters, configuration);
+
          Transaction transaction = jainSipClientSendMessage(parameters);
          jainSipJobManager.add(jobId, JainSipJob.Type.TYPE_MESSAGE, transaction, parameters, null);
       }
@@ -542,7 +552,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       RCLogger.v(TAG, "jainSipClientSendMessage()");
 
       try {
-         Request request = jainSipMessageBuilder.buildMessageRequest((String) parameters.get("username"),
+         Request request = jainSipMessageBuilder.buildMessageRequest((String) parameters.get(RCConnection.ParameterKeys.CONNECTION_PEER),
                (String) parameters.get("text-message"), jainSipListeningPoint, configuration);
          RCLogger.v(TAG, "jainSipClientSendMessage(): Sending SIP request: \n" + request.toString());
 
@@ -736,17 +746,14 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       signalingHandler.post(runnable);
    }
 
-   public void processDialogTerminated(DialogTerminatedEvent dialogTerminatedEvent)
+   public void processDialogTerminated(final DialogTerminatedEvent dialogTerminatedEvent)
    {
       Runnable runnable = new Runnable() {
          @Override
          public void run()
          {
-            // TODO:
-            /*
                 RCLogger.i(TAG, "SipManager.processDialogTerminated: " + dialogTerminatedEvent.toString() + "\n" +
                         "\tdialog: " + dialogTerminatedEvent.getDialog().toString());
-            */
          }
       };
       signalingHandler.post(runnable);
@@ -758,7 +765,6 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
          @Override
          public void run()
          {
-            // TODO:
             RCLogger.e(TAG, "SipManager.processIOException: " + exceptionEvent.toString() + "\n" +
                   "\thost: " + exceptionEvent.getHost() + "\n" +
                   "\tport: " + exceptionEvent.getPort());
@@ -767,20 +773,16 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       signalingHandler.post(runnable);
    }
 
-   public void processTransactionTerminated(TransactionTerminatedEvent transactionTerminatedEvent)
+   public void processTransactionTerminated(final TransactionTerminatedEvent transactionTerminatedEvent)
    {
       Runnable runnable = new Runnable() {
          @Override
          public void run()
          {
-            // TODO:
-            RCLogger.i(TAG, "processTransactionTerminated()");
-            /*
-                RCLogger.i(TAG, "SipManager.processTransactionTerminated: " + transactionTerminatedEvent.toString() + "\n" +
+                RCLogger.i(TAG, "processTransactionTerminated: " + transactionTerminatedEvent.toString() + "\n" +
                         "\tclient transaction: " + transactionTerminatedEvent.getClientTransaction() + "\n" +
                         "\tserver transaction: " + transactionTerminatedEvent.getServerTransaction() + "\n" +
                         "\tisServerTransaction: " + transactionTerminatedEvent.isServerTransaction());
-             */
          }
       };
       signalingHandler.post(runnable);

@@ -270,8 +270,8 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
       if (cachedConnectivityStatus == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
          // Phone state Intents to capture connection failed event
          String username = "";
-         if (parameters != null && parameters.get("username") != null)
-            username = parameters.get("username").toString();
+         if (parameters != null && parameters.get(RCConnection.ParameterKeys.CONNECTION_PEER) != null)
+            username = parameters.get(RCConnection.ParameterKeys.CONNECTION_PEER).toString();
          sendQoSNoConnectionIntent(username, this.getConnectivityStatus().toString());
       }
 
@@ -304,7 +304,7 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
 
       if (state == DeviceState.READY) {
          HashMap<String, Object> messageParameters = new HashMap<>();
-         messageParameters.put("username", parameters.get("username"));
+         messageParameters.put(RCConnection.ParameterKeys.CONNECTION_PEER, parameters.get(RCConnection.ParameterKeys.CONNECTION_PEER));
          messageParameters.put("text-message", message);
          //RCMessage message = RCMessage.newInstanceOutgoing(messageParameters, listener);
          signalingClient.sendMessage(messageParameters);
@@ -572,7 +572,7 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
       HashMap<String, String> parameters = new HashMap<String, String>();
       // filter out SIP URI stuff and leave just the name
       String from = peer.replaceAll("^<", "").replaceAll(">$", "");
-      parameters.put("username", from);
+      parameters.put(RCConnection.ParameterKeys.CONNECTION_PEER, from);
 
       try {
          Intent dataIntent = new Intent();

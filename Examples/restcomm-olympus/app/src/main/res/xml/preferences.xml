@@ -19,7 +19,7 @@
         android:defaultValue=""
         android:key="pref_proxy_domain"
         android:title="Domain"
-        android:summary="Restcomm-Connect domain prefixed with sip, like: 'sip:cloud.restcomm.com'"/>
+        android:summary="Restcomm-Connect domain, like: 'cloud.restcomm.com'"/>
     <CheckBoxPreference
         android:defaultValue="false"
         android:key="signaling-secure"
