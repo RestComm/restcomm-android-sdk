@@ -126,6 +126,7 @@ class JainSipMessageBuilder {
          ContactHeader contactHeader = jainSipHeaderFactory.createContactHeader(contactAddress);
 
          request.addHeader(contactHeader);
+         request.addHeader(createUserAgentHeader());
 
          return request;
       }
@@ -163,8 +164,6 @@ class JainSipMessageBuilder {
          ExpiresHeader expiresHeader = jainSipHeaderFactory.createExpiresHeader(expires);
          request.addHeader(expiresHeader);
 
-         request.addHeader(createUserAgentHeader());
-
          return request;
       }
       catch (JainSipException e) {
@@ -192,8 +191,6 @@ class JainSipMessageBuilder {
          ContentTypeHeader contentTypeHeader = jainSipHeaderFactory.createContentTypeHeader("application", "sdp");
          byte[] contents = ((String) parameters.get("sdp")).getBytes();
          request.setContent(contents, contentTypeHeader);
-
-         request.addHeader(createUserAgentHeader());
 
          // add custom sip headers if applicable
          if (parameters.containsKey(RCConnection.ParameterKeys.CONNECTION_CUSTOM_SIP_HEADERS)) {
@@ -235,8 +232,6 @@ class JainSipMessageBuilder {
          ContentTypeHeader contentTypeHeader = jainSipHeaderFactory.createContentTypeHeader("text", "plain");
          request.setContent(message, contentTypeHeader);
 
-         request.addHeader(createUserAgentHeader());
-
          return request;
       }
       catch (JainSipException e) {
@@ -257,6 +252,7 @@ class JainSipMessageBuilder {
    {
       try {
          Request request = dialog.createRequest(Request.BYE);
+         request.addHeader(createUserAgentHeader());
          if (clientConfiguration.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) &&
                !clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
             // we only need this for non-registrarless calls since the problem is only for incoming calls,

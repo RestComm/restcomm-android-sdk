@@ -84,7 +84,8 @@ public class MainActivity extends AppCompatActivity
 
       alertDialog = new AlertDialog.Builder(MainActivity.this).create();
 
-      PreferenceManager.setDefaultValues(this, "preferences.xml", MODE_PRIVATE, R.xml.preferences, false);
+      //PreferenceManager.setDefaultValues(this, "preferences.xml", MODE_PRIVATE, R.xml.preferences, false);
+      PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
       prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
       RCClient.setLogLevel(Log.VERBOSE);
