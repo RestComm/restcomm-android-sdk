@@ -370,7 +370,9 @@ class JainSipMessageBuilder {
    public String convertDomain2Uri(String domain)
    {
       String domainUri = domain;
-      if (!domain.contains("sip:")) {
+
+      // when domain is empty (i.e. registrar-less we don't want to touch it)
+      if (!domain.contains("sip:") && !domain.isEmpty()) {
          domainUri = "sip:" + domain;
          RCLogger.i(TAG, "convertDomain2Uri(): normalizing domain to: " + domainUri);
       }

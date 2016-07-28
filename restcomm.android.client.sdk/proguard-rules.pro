@@ -15,3 +15,8 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+
+# Needed for TestFairy (important: remove for production builds)
+-keep class com.testfairy.** { *; }
+-dontwarn com.testfairy.**
+-keepattributes Exceptions, Signature, LineNumberTable

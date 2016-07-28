@@ -33,15 +33,6 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
       // Gets the image task from the incoming Message object.
       SignalingMessage message = (SignalingMessage) inputMessage.obj;
 
-        /*
-        if (Looper.myLooper() == Looper.getMainLooper()) {
-            Log.e(TAG, "In main UI thread");
-        }
-        else {
-            Log.e(TAG, "NOT In main UI thread");
-        }
-        */
-
       RCLogger.i(TAG, "handleMessage: type: " + message.type + ", jobId: " + message.jobId);
 
       // all requests apart from OPEN_REQUEST require an initialized jainSipClient
@@ -86,7 +77,8 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
    // -- JainSipClientListener events
    public void onClientOpenedReply(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
-      //listener.onOpenReply(jobId, RCClient.ErrorCodes.SUCCESS, "Success");
+      RCLogger.v(TAG, "onClientOpenedReply: jobId: " + jobId + ", connectivityStatus: " + connectivityStatus + ", status: " + status + ", text: " + text);
+
       SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.OPEN_REPLY);
       signalingMessage.status = status;  //RCClient.ErrorCodes.SUCCESS;
       signalingMessage.text = text;  //"Success";
@@ -97,7 +89,8 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
 
    public void onClientErrorReply(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
-      //listener.onOpenReply(jobId, status, text);
+      RCLogger.v(TAG, "onClientErrorReply: jobId: " + jobId + ", connectivityStatus: " + connectivityStatus + ", status: " + status + ", text: " + text);
+
       SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.ERROR_EVENT);
       signalingMessage.status = status;
       signalingMessage.text = text;
@@ -108,7 +101,8 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
 
    public void onClientClosedEvent(String jobId, RCClient.ErrorCodes status, String text)
    {
-      //listener.onCloseReply(jobId, "Successfully closed client");
+      RCLogger.v(TAG, "onClientClosedEvent: jobId: " + jobId + ", status: " + status + ", text: " + text);
+
       SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CLOSE_REPLY);
       signalingMessage.status = status;  //RCClient.ErrorCodes.SUCCESS;
       signalingMessage.text = text;  //"Success";
@@ -121,7 +115,8 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
 
    public void onClientReconfigureReply(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
-      //listener.onOpenReply(jobId, RCClient.ErrorCodes.SUCCESS, "Success");
+      RCLogger.v(TAG, "onClientReconfigureReply: jobId: " + jobId + ", connectivityStatus: " + connectivityStatus + ", status: " + status + ", text: " + text);
+
       SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.RECONFIGURE_REPLY);
       signalingMessage.status = status;  //RCClient.ErrorCodes.SUCCESS;
       signalingMessage.text = text;  //"Success";
@@ -132,6 +127,8 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
 
    public void onClientConnectivityEvent(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus)
    {
+      RCLogger.v(TAG, "onClientConnectivityEvent: jobId: " + jobId + ", connectivityStatus: " + connectivityStatus);
+
       SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CONNECTIVITY_EVENT);
       signalingMessage.connectivityStatus = connectivityStatus;
       Message message = uiHandler.obtainMessage(1, signalingMessage);
@@ -140,6 +137,8 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
 
    public void onClientMessageArrivedEvent(String jobId, String peer, String messageText)
    {
+      RCLogger.v(TAG, "onClientMessageArrivedEvent: jobId: " + jobId + ", peer: " + peer + ", messageText: " + messageText);
+
       SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.MESSAGE_INCOMING_EVENT);
       signalingMessage.messageText = messageText;
       signalingMessage.peer = peer;
@@ -149,6 +148,7 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
 
    public void onClientMessageReply(String jobId, RCClient.ErrorCodes status, String text)
    {
+      RCLogger.v(TAG, "onClientMessageReply: jobId: " + jobId + ", status: " + status + ", text: " + text);
       SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.MESSAGE_REPLY);
       signalingMessage.status = status;
       signalingMessage.text = text;
@@ -158,6 +158,7 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
 
    public void onClientRegisteringEvent(String jobId)
    {
+      RCLogger.v(TAG, "onClientRegisteringEvent: jobId: " + jobId);
       SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.REGISTERING_EVENT);
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
@@ -166,6 +167,7 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
    // -- JainSipCallListener events
    public void onCallArrivedEvent(String jobId, String peer, String sdpOffer)
    {
+      RCLogger.v(TAG, "onCallArrivedEvent: jobId: " + jobId + ", peer: " + peer + ", sdpOffer: " + sdpOffer);
       SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CALL_INCOMING_EVENT);
       signalingMessage.sdp = sdpOffer;
       signalingMessage.peer = peer;
@@ -175,6 +177,7 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
 
    public void onCallOutgoingConnectedEvent(String jobId, String sdpAnswer)
    {
+      RCLogger.v(TAG, "onCallOutgoingConnectedEvent: jobId: " + jobId + ", sdpAnswer: " + sdpAnswer);
       SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CALL_OUTGOING_CONNECTED_EVENT);
       signalingMessage.sdp = sdpAnswer;
       Message message = uiHandler.obtainMessage(1, signalingMessage);
@@ -183,6 +186,7 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
 
    public void onCallIncomingConnectedEvent(String jobId)
    {
+      RCLogger.v(TAG, "onCallIncomingConnectedEvent: jobId: " + jobId);
       SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CALL_INCOMING_CONNECTED_EVENT);
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
@@ -190,6 +194,7 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
 
    public void onCallPeerDisconnectedEvent(String jobId)
    {
+      RCLogger.v(TAG, "onCallPeerDisconnectedEvent: jobId: " + jobId);
       SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CALL_PEER_DISCONNECT_EVENT);
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
@@ -197,6 +202,7 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
 
    public void onCallLocalDisconnectedEvent(String jobId)
    {
+      RCLogger.v(TAG, "onCallLocalDisconnectedEvent: jobId: " + jobId);
       SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CALL_LOCAL_DISCONNECT_EVENT);
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
@@ -204,6 +210,7 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
 
    public void onCallOutgoingPeerRingingEvent(String jobId)
    {
+      RCLogger.v(TAG, "onCallOutgoingPeerRingingEvent: jobId: " + jobId);
       SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CALL_OUTGOING_PEER_RINGING_EVENT);
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
@@ -211,6 +218,7 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
 
    public void onCallIncomingCanceledEvent(String jobId)
    {
+      RCLogger.v(TAG, "onCallIncomingCanceledEvent: jobId: " + jobId);
       SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CALL_INCOMING_CANCELED_EVENT);
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
@@ -218,11 +226,13 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
 
    public void onCallIgnoredEvent(String jobId)
    {
+      RCLogger.v(TAG, "onCallIgnoredEvent: jobId: " + jobId);
 
    }
 
    public void onCallErrorEvent(String jobId, RCClient.ErrorCodes status, String text)
    {
+      RCLogger.v(TAG, "onCallErrorEvent: jobId: " + jobId + ", status: " + status + ", text: " + text);
       SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CALL_ERROR_EVENT);
       signalingMessage.status = status;
       signalingMessage.text = text;
@@ -232,6 +242,7 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
 
    public void onCallDigitsEvent(String jobId, RCClient.ErrorCodes status, String text)
    {
+      RCLogger.v(TAG, "onCallDigitsEvent: jobId: " + jobId + ", status: " + status + ", text: " + text);
       SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CALL_SEND_DIGITS_EVENT);
       signalingMessage.status = status;
       signalingMessage.text = text;

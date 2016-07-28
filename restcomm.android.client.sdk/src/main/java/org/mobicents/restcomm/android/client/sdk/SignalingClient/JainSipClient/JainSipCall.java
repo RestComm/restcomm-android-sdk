@@ -64,7 +64,7 @@ public class JainSipCall {
    // make a call with the given jobId, using given parameters
    public void open(String jobId, HashMap<String, Object> parameters)
    {
-      RCLogger.i(TAG, "open(): id: " + jobId);
+      RCLogger.i(TAG, "open(): id: " + jobId + ", parameters: " + parameters.toString());
       try {
          Transaction transaction = jainSipCallInvite(parameters);
          jainSipClient.jainSipJobManager.add(jobId, JainSipJob.Type.TYPE_CALL, transaction, parameters, this);
@@ -79,7 +79,7 @@ public class JainSipCall {
    // make a call with the given jobId, using given parameters
    public void accept(JainSipJob jainSipJob, HashMap<String, Object> parameters)
    {
-      RCLogger.i(TAG, "accept(): jobId: " + jainSipJob.jobId);
+      RCLogger.i(TAG, "accept(): jobId: " + jainSipJob.jobId + ", parameters: " + parameters.toString());
       try {
          jainSipCallAccept(jainSipJob, parameters);
       }
@@ -113,12 +113,11 @@ public class JainSipCall {
    {
       RCLogger.i(TAG, "close(): jobId: " + jainSipJob.jobId);
       try {
-         //RCLogger.i(TAG, "dialog state: " + jainSipJob.transaction.getDialog().getState());
          if (jainSipJob.transaction.getDialog().getState() == null ||
                jainSipJob.transaction.getDialog().getState() == DialogState.EARLY) {
             if (jainSipJob.transaction.getDialog().isServer()) {
                // server transaction (i.e. incoming call)
-               RCLogger.i(TAG, "close(): jobId " + jainSipJob.jobId + " - Early dialog state for incoming call, sending Decline");
+               RCLogger.v(TAG, "close(): jobId " + jainSipJob.jobId + " - Early dialog state for incoming call, sending Decline");
                jainSipCallDecline(jainSipJob);
 
                listener.onCallLocalDisconnectedEvent(jainSipJob.jobId);
@@ -127,13 +126,13 @@ public class JainSipCall {
             }
             else {
                // client transaction (i.e. outgoing call)
-               RCLogger.i(TAG, "close(): jobId " + jainSipJob.jobId + " - Early dialog state for outgoing call, sending Cancel");
+               RCLogger.v(TAG, "close(): jobId " + jainSipJob.jobId + " - Early dialog state for outgoing call, sending Cancel");
                // if we haven't received 200 OK to our invite yet, we need to cancel
                jainSipCallCancel(jainSipJob);
             }
          }
          else {
-            RCLogger.i(TAG, "close(): jobId " + jainSipJob.jobId + " - Confirmed dialog state, sending Bye");
+            RCLogger.v(TAG, "close(): jobId " + jainSipJob.jobId + " - Confirmed dialog state, sending Bye");
             jainSipCallHangup(jainSipJob, jainSipClient.configuration);
          }
       }
@@ -153,7 +152,7 @@ public class JainSipCall {
 
       try {
          Request inviteRequest = jainSipClient.jainSipMessageBuilder.buildInviteRequest(jainSipClient.jainSipListeningPoint, parameters, jainSipClient.configuration, jainSipClient.jainSipClientContext);
-         RCLogger.v(TAG, "Sending SIP request: \n" + inviteRequest.toString());
+         RCLogger.i(TAG, "Sending SIP request: \n" + inviteRequest.toString());
          transaction = jainSipClient.jainSipProvider.getNewClientTransaction(inviteRequest);
          transaction.sendRequest();
       }
@@ -171,13 +170,13 @@ public class JainSipCall {
 
    public void jainSipCallAccept(JainSipJob jainSipJob, HashMap<String, Object> parameters) throws JainSipException
    {
-      RCLogger.i(TAG, "jainSipCallAccept(): jobId: " + jainSipJob.jobId);
+      RCLogger.v(TAG, "jainSipCallAccept(): jobId: " + jainSipJob.jobId);
       try {
          ServerTransaction transaction = (ServerTransaction) jainSipJob.transaction;
          Response response = jainSipClient.jainSipMessageBuilder.buildInvite200OKResponse(transaction, (String) parameters.get("sdp"), jainSipClient.jainSipListeningPoint,
                jainSipClient.jainSipClientContext);
 
-         RCLogger.v(TAG, "Sending SIP response: \n" + response.toString());
+         RCLogger.i(TAG, "Sending SIP response: \n" + response.toString());
          transaction.sendResponse(response);
       }
       catch (JainSipException e) {
@@ -191,11 +190,11 @@ public class JainSipCall {
 
    public ClientTransaction jainSipCallHangup(JainSipJob jainSipJob, HashMap<String, Object> clientConfiguration) throws JainSipException
    {
-      RCLogger.i(TAG, "jainSipCallHangup(): jobId: " + jainSipJob.jobId);
+      RCLogger.v(TAG, "jainSipCallHangup(): jobId: " + jainSipJob.jobId);
       Request byeRequest = null;
       try {
          byeRequest = jainSipClient.jainSipMessageBuilder.buildByeRequest(jainSipJob.transaction.getDialog(), clientConfiguration);
-         RCLogger.v(TAG, "Sending SIP request: \n" + byeRequest.toString());
+         RCLogger.i(TAG, "Sending SIP request: \n" + byeRequest.toString());
 
          ClientTransaction transaction = jainSipClient.jainSipProvider.getNewClientTransaction(byeRequest);
          jainSipJob.transaction.getDialog().sendRequest(transaction);
@@ -216,10 +215,10 @@ public class JainSipCall {
 
    public ClientTransaction jainSipCallCancel(JainSipJob jainSipJob) throws JainSipException
    {
-      RCLogger.i(TAG, "jainSipCallCancel(): jobId: " + jainSipJob.jobId);
+      RCLogger.v(TAG, "jainSipCallCancel(): jobId: " + jainSipJob.jobId);
       try {
          final Request request = ((ClientTransaction) jainSipJob.transaction).createCancel();
-         RCLogger.v(TAG, "Sending SIP response: \n" + request.toString());
+         RCLogger.i(TAG, "Sending SIP response: \n" + request.toString());
 
          ClientTransaction cancelTransaction = jainSipClient.jainSipProvider.getNewClientTransaction(request);
          //jainSipJob.updateTransaction(cancelTransaction);
@@ -234,11 +233,11 @@ public class JainSipCall {
 
    public void jainSipCallDecline(JainSipJob jainSipJob) throws JainSipException
    {
-      RCLogger.i(TAG, "jainSipCallReject(): jobId: " + jainSipJob.jobId);
+      RCLogger.v(TAG, "jainSipCallReject(): jobId: " + jainSipJob.jobId);
 
       try {
          Response responseDecline = jainSipClient.jainSipMessageBuilder.buildResponse(Response.DECLINE, jainSipJob.transaction.getRequest());
-         RCLogger.v(TAG, "Sending SIP response: \n" + responseDecline.toString());
+         RCLogger.i(TAG, "Sending SIP response: \n" + responseDecline.toString());
          ((ServerTransaction) jainSipJob.transaction).sendResponse(responseDecline);
 
       }
@@ -255,7 +254,7 @@ public class JainSipCall {
       try {
          Dialog dialog = jainSipJob.transaction.getDialog();
          Request request = jainSipClient.jainSipMessageBuilder.buildDtmfInfoRequest(dialog, digits);
-         RCLogger.v(TAG, "Sending SIP request: \n" + request.toString());
+         RCLogger.i(TAG, "Sending SIP request: \n" + request.toString());
          ClientTransaction transaction = jainSipClient.jainSipProvider.getNewClientTransaction(request);
          dialog.sendRequest(transaction);
          return transaction;
@@ -276,7 +275,7 @@ public class JainSipCall {
       if (method.equals(Request.BYE)) {
          try {
             Response response = jainSipClient.jainSipMessageBuilder.buildResponse(Response.OK, request);
-            RCLogger.v(TAG, "Sending SIP response: \n" + response.toString());
+            RCLogger.i(TAG, "Sending SIP response: \n" + response.toString());
             serverTransaction.sendResponse(response);
 
             listener.onCallPeerDisconnectedEvent(jainSipJob.jobId);
@@ -292,14 +291,14 @@ public class JainSipCall {
       else if (method.equals(Request.CANCEL)) {
          try {
             Response response = jainSipClient.jainSipMessageBuilder.buildResponse(Response.OK, request);
-            RCLogger.v(TAG, "Sending SIP response: \n" + response.toString());
+            RCLogger.i(TAG, "Sending SIP response: \n" + response.toString());
             serverTransaction.sendResponse(response);
 
             if (jainSipJob.transaction != null) {
                // also send a 487 Request Terminated response to the original INVITE request
                Request originalInviteRequest = jainSipJob.transaction.getRequest();
                Response originalInviteResponse = jainSipClient.jainSipMessageBuilder.buildResponse(Response.REQUEST_TERMINATED, originalInviteRequest);
-               RCLogger.v(TAG, "Sending SIP response: \n" + originalInviteResponse.toString());
+               RCLogger.i(TAG, "Sending SIP response: \n" + originalInviteResponse.toString());
                ((ServerTransaction) jainSipJob.transaction).sendResponse(originalInviteResponse);
             }
             listener.onCallIncomingCanceledEvent(jainSipJob.jobId);
@@ -327,7 +326,7 @@ public class JainSipCall {
             toHeader.setTag(Long.toString(System.currentTimeMillis()));
             response.setHeader(toHeader);
 
-            RCLogger.v(TAG, "Sending SIP response: \n" + response.toString());
+            RCLogger.i(TAG, "Sending SIP response: \n" + response.toString());
             serverTransaction.sendResponse(response);
 
             String sdpOffer = new String(request.getRawContent(), "UTF-8");
@@ -363,7 +362,7 @@ public class JainSipCall {
                // create and send out ACK
                Dialog dialog = jainSipJob.transaction.getDialog();
                Request ackRequest = dialog.createAck(((CSeqHeader) response.getHeader(CSeqHeader.NAME)).getSeqNumber());
-               RCLogger.v(TAG, "Sending SIP request: \n" + ackRequest.toString());
+               RCLogger.i(TAG, "Sending SIP request: \n" + ackRequest.toString());
                dialog.sendAck(ackRequest);
 
                // filter out SDP to return to UI thread
