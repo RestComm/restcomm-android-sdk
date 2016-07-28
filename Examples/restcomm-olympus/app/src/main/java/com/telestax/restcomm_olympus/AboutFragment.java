@@ -28,7 +28,9 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
+import android.widget.TextView;
 
 public class AboutFragment extends DialogFragment {
 
@@ -70,6 +72,12 @@ public class AboutFragment extends DialogFragment {
    {
       // Get the layout inflater
       View view = getActivity().getLayoutInflater().inflate(R.layout.fragment_about, null);
+
+      // Update version automatically from gradle file
+      TextView versionTextView = (TextView)view.findViewById(R.id.textView_version_name);
+      versionTextView.setText(BuildConfig.APPLICATION_ID + " " + BuildConfig.VERSION_NAME  + "#" + BuildConfig.VERSION_CODE);
+
+
       AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
 
       // Inflate and set the layout for the dialog

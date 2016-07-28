@@ -4,12 +4,33 @@ android {
     compileSdkVersion 22
     buildToolsVersion '22.0.1'
 
+    def versionPropertiesFile = file('restcomm-android-sdk-version.properties')
+    if (versionPropertiesFile.canRead()) {
+        def Properties versionProperties = new Properties()
+        versionProperties.load(new FileInputStream(versionPropertiesFile))
+
+        def version = versionProperties['VERSION_CODE'].toInteger() + 1
+        versionProperties['VERSION_CODE'] = version.toString()
+        versionProperties.store(versionPropertiesFile.newWriter(), null)
+
+        defaultConfig {
+            minSdkVersion 16
+            targetSdkVersion 22
+            versionCode version
+            versionName "1.0.0-BETA4"
+        }
+    }
+    else {
+        throw new GradleException("Could not read file restcomm-android-sdk-version.properties")
+    }
+    /*
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 22
         versionCode 1
-        versionName "1.0"
+        versionName "1.0.0-BETA4"
     }
+    */
     buildTypes {
         release {
             minifyEnabled false

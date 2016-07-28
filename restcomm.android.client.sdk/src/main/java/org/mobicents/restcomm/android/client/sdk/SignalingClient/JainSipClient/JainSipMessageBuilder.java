@@ -25,6 +25,7 @@ import android.javax.sip.message.Request;
 import android.javax.sip.message.Response;
 
 
+import org.mobicents.restcomm.android.client.sdk.BuildConfig;
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
@@ -47,9 +48,7 @@ class JainSipMessageBuilder {
 
    private static final String TAG = "JainSipMessageBuilder";
    private static final int MAX_FORWARDS = 70;
-
-   // TODO: put this in a central place
-   public static String USERAGENT_STRING = "TelScale Restcomm Android Client 1.0.0 BETA4";
+   private static final String USERAGENT_STRING = "TelScale Restcomm Android Client " + BuildConfig.VERSION_NAME + "#" + BuildConfig.VERSION_CODE; //"TelScale Restcomm Android Client 1.0.0-BETA4#20";
 
    void initialize(SipFactory sipFactory, SipProvider provider) throws PeerUnavailableException
    {
@@ -372,7 +371,7 @@ class JainSipMessageBuilder {
       String domainUri = domain;
 
       // when domain is empty (i.e. registrar-less we don't want to touch it)
-      if (!domain.contains("sip:") && !domain.isEmpty()) {
+      if (!domain.isEmpty() && !domain.contains("sip:")) {
          domainUri = "sip:" + domain;
          RCLogger.i(TAG, "convertDomain2Uri(): normalizing domain to: " + domainUri);
       }
@@ -386,22 +385,19 @@ class JainSipMessageBuilder {
    // Normalize domain and SIP URIs
    public void normalizeDomain(HashMap<String, Object> parameters)
    {
-      parameters.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN,
-            convertDomain2Uri((String)parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN)));
+      if (parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN)) {
+         parameters.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN,
+               convertDomain2Uri((String) parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN)));
+      }
    }
 
    public void normalizePeer(HashMap<String, Object> peerParameters, HashMap<String, Object> clientParameters)
    {
-      peerParameters.put(RCConnection.ParameterKeys.CONNECTION_PEER,
-            convert2FullUri((String)peerParameters.get(RCConnection.ParameterKeys.CONNECTION_PEER),
-                  (String)clientParameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN)));
-      /*
-      for (Map.Entry<String, Object> entry : parameters.entrySet()) {
-         if (parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN)) {
-            parameters.put(entry.getKey(), convertDomain2Uri((String) entry.getValue()));
-         }
+      if (peerParameters.containsKey(RCConnection.ParameterKeys.CONNECTION_PEER)) {
+         peerParameters.put(RCConnection.ParameterKeys.CONNECTION_PEER,
+               convert2FullUri((String) peerParameters.get(RCConnection.ParameterKeys.CONNECTION_PEER),
+                     (String) clientParameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN)));
       }
-      */
    }
 
    private RouteHeader createRouteHeader(String route)
