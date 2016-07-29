@@ -57,11 +57,11 @@ public class ContactsController {
          SharedPreferences.Editor prefEdit = prefsContacts.edit();
          //prefEdit.putString("sip:alice@cloud.restcomm.com", "Alice");
          //prefEdit.putString("sip:bob@cloud.restcomm.com", "Bob");
-         prefEdit.putString("sip:+1234@cloud.restcomm.com", "Play App");
-         prefEdit.putString("sip:+1235@cloud.restcomm.com", "Say App");
-         prefEdit.putString("sip:+1236@cloud.restcomm.com", "Gather App");
-         prefEdit.putString("sip:+1310@cloud.restcomm.com", "Conference App");
-         prefEdit.putString("sip:+1311@cloud.restcomm.com", "Conference Admin App");
+         prefEdit.putString("+1234", "Play App");
+         prefEdit.putString("+1235", "Say App");
+         prefEdit.putString("+1236", "Gather App");
+         prefEdit.putString("+1310", "Conference App");
+         prefEdit.putString("+1311", "Conference Admin App");
 
          prefEdit.putBoolean(PREFS_CONTACTS_INIT_KEY, true);
          prefEdit.commit();

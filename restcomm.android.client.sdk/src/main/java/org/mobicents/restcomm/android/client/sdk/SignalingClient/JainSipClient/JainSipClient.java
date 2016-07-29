@@ -296,10 +296,15 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
          return;
       }
 
-      jainSipMessageBuilder.normalizePeer(parameters, configuration);
+      try {
+         jainSipMessageBuilder.normalizePeer(parameters, configuration);
 
-      JainSipCall jainSipCall = new JainSipCall(this, listener);
-      jainSipCall.open(jobId, parameters);
+         JainSipCall jainSipCall = new JainSipCall(this, listener);
+         jainSipCall.open(jobId, parameters);
+      }
+      catch (JainSipException e) {
+         listener.onCallErrorEvent(jobId, e.errorCode, e.errorText);
+      }
    }
 
    public void accept(String jobId, HashMap<String, Object> parameters, JainSipCall.JainSipCallListener listener)

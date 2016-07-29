@@ -344,12 +344,13 @@ class JainSipMessageBuilder {
 
    // -- Helpers
    // Take a short destination of the form 'bob' and create full SIP URI out of it: 'sip:bob@cloud.restcomm.com'
-   public String convert2FullUri(String usernameOrUri, String domain)
+   public String convert2FullUri(String usernameOrUri, String domain) throws JainSipException
    {
       String fullUri = usernameOrUri;
       if (!usernameOrUri.contains("sip:")) {
          if (domain == null || domain.equals("")) {
-            throw new RuntimeException("Failed to create full URI: domain is missing and peer is not a full SIP URI: " + usernameOrUri);
+            throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_REGISTRARLESS_NODOMAIN,
+                  RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_REGISTRARLESS_NODOMAIN));
          }
 
          fullUri = "sip:" + usernameOrUri + "@" + domain.replaceAll("sip:", "");
@@ -387,7 +388,7 @@ class JainSipMessageBuilder {
       }
    }
 
-   public void normalizePeer(HashMap<String, Object> peerParameters, HashMap<String, Object> clientParameters)
+   public void normalizePeer(HashMap<String, Object> peerParameters, HashMap<String, Object> clientParameters) throws JainSipException
    {
       if (peerParameters.containsKey(RCConnection.ParameterKeys.CONNECTION_PEER)) {
          peerParameters.put(RCConnection.ParameterKeys.CONNECTION_PEER,

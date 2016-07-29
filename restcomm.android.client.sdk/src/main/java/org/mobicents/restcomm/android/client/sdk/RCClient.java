@@ -65,6 +65,7 @@ public class RCClient {
       ERROR_CONNECTION_DISCONNECT_FAILED,
       ERROR_CONNECTION_DECLINE_FAILED,
       ERROR_CONNECTION_DTMF_DIGITS_FAILED,
+      ERROR_CONNECTION_REGISTRARLESS_NODOMAIN,
       ERROR_CONNECTION_WEBRTC_PEERCONNECTION_ERROR,
       ERROR_CONNECTION_WEBRTC_TURN_ERROR,
       ERROR_CONNECTION_UNTRUSTED_SERVER,
@@ -147,6 +148,9 @@ public class RCClient {
       }
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_DTMF_DIGITS_FAILED) {
          return "Failed to send DTMF digits over connection";
+      }
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_REGISTRARLESS_NODOMAIN) {
+         return "Failed to initiate connection: when RCDevice is configured with no domain you need to provide domain in RCConnection peer";
       }
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_WEBRTC_PEERCONNECTION_ERROR) {
          return "Webrtc Peer Connection error";
