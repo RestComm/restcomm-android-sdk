@@ -135,7 +135,7 @@ public class SignalingClient extends Handler {
     * @param listener Listener to register/configuration specific events
     * @param context Android context needed by signaling thread
     * @param parameters A map of parameters of the open (TODO: add doc for specific keys)
-    * @return
+    * @return The jobId for the new job created at Signaling thread
     */
    public String open(SignalingClientListener listener, Context context, HashMap<String, Object> parameters)
    {
@@ -156,8 +156,8 @@ public class SignalingClient extends Handler {
 
    /**
     * Change signaling configuration, like update username/password, change domain, etc
-    * @param parameters
-    * @return
+    * @param parameters Reconfigure paramemeters
+    * @return The jobId for the new job created at Signaling thread
     */
    public String reconfigure(HashMap<String, Object> parameters)
    {
@@ -176,7 +176,7 @@ public class SignalingClient extends Handler {
    /**
     * Make a call towards a peer
     * @param jobId Unique identifier to identify future replies & events
-    * @param parameters
+    * @param parameters Call parameters
     */
    public void call(String jobId, HashMap<String, Object> parameters)
    {
@@ -189,7 +189,7 @@ public class SignalingClient extends Handler {
    /**
     * Accept a call from a peer
     * @param jobId Unique identifier to identify future replies & events
-    * @param parameters
+    * @param parameters Accept parameters
     */
    public void accept(String jobId, HashMap<String, Object> parameters)
    {
@@ -213,7 +213,7 @@ public class SignalingClient extends Handler {
    /**
     * Send DTMF digits to peer over existing call
     * @param jobId Unique identifier to identify future replies & events
-    * @param digits
+    * @param digits DTMF digits to send (Important: for now we only support a single digit per sendDigits() call
     */
    public void sendDigits(String jobId, String digits)
    {

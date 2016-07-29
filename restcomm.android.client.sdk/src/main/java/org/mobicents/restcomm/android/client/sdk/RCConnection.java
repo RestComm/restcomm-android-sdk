@@ -63,7 +63,6 @@ import java.util.Map;
 
 import org.mobicents.restcomm.android.client.sdk.MediaClient.AppRTCAudioManager;
 import org.mobicents.restcomm.android.client.sdk.MediaClient.PeerConnectionClient;
-import org.mobicents.restcomm.android.client.sdk.SignalingClient.SignalingMessage;
 import org.mobicents.restcomm.android.client.sdk.SignalingClient.SignalingParameters;
 import org.mobicents.restcomm.android.client.sdk.SignalingClient.SignalingClient;
 import org.mobicents.restcomm.android.client.sdk.MediaClient.util.IceServerFetcher;
@@ -101,13 +100,16 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
     */
    public enum ConnectionState {
       PENDING, /**
-       * Connection is in state pending
+       * An (outgoing) Connection enters this state when RCDevice.connect() is called and until peer starts ringing at which point in enters CONNECTING state (or DISCONNECTED)
        */
       CONNECTING, /**
-       * Connection is in state connecting
+       * A Connection enters this state a. when it is outgoing and peer starts ringing, b. when it is incoming and at the point it first arrives at RCDevice listener
+       */
+      SIGNALING_CONNECTED, /**
+       * A Connection enters this intermediate state when signaling is connected but before media is connected and RCConnection is deemed actually connected
        */
       CONNECTED, /**
-       * Connection is in state connected
+       * A Connection enters this state when actual media starts flowing
        */
       DISCONNECTED,  /** Connection is in state disconnected */
    }
@@ -129,42 +131,39 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    String IncomingParameterCallSIDKey = "RCConnectionIncomingParameterCallSIDKey";
 
    /**
-    * @abstract State of the connection.
-    * @discussion A new connection created by RCDevice starts off RCConnectionStatePending. It transitions to RCConnectionStateConnecting when it starts ringing. Once the remote party answers it it transitions to RCConnectionStateConnected. Finally, when disconnected it resets to RCConnectionStateDisconnected.
+    * State of the connection. For more info please check ConnectionState
     */
    ConnectionState state;
 
    /**
-    * @abstract Type of local media.
-    * @discussion Type of local media transferred over the RCConnection.
+    * Type of local media transferred over the RCConnection.
     */
-   ConnectionMediaType localMediaType;
+   private ConnectionMediaType localMediaType;
 
    /**
-    * @abstract Type of remote media.
-    * @discussion Type of local media transferred over the RCConnection.
+    * Type of local media transferred over the RCConnection.
     */
-   ConnectionMediaType remoteMediaType;
+   private ConnectionMediaType remoteMediaType;
 
    /**
-    * @abstract Direction of the connection. True if connection is incoming; false otherwise
+    * Direction of the connection. True if connection is incoming; false otherwise
     */
    boolean incoming;
 
    /**
-    * @abstract Connection parameters (**Not Implemented yet**)
+    * Connection parameters (**Not Implemented yet**)
     */
-   HashMap<String, String> parameters;
+   private HashMap<String, String> parameters;
 
    /**
-    * @abstract Listener that will be called on RCConnection events described at RCConnectionListener
+    * Listener that will be called on RCConnection events described at RCConnectionListener
     */
-   RCConnectionListener listener;
+   private RCConnectionListener listener;
 
    /**
-    * @abstract Is connection currently muted? If a connection is muted the remote party cannot hear the local party
+    * Is connection currently muted? If a connection is muted the remote party cannot hear the local party
     */
-   boolean muted;
+   private boolean muted;
 
 
    /**
@@ -179,10 +178,62 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       public static final String CONNECTION_CUSTOM_SIP_HEADERS = "sip-headers";
    }
 
-   public String jobId;
-   private SignalingClient signalingClient;
+   // Let's use a builder since RCConnections don't have uniform way to construct
+   static class Builder {
+      // Required parameters
+      private final boolean incoming;
+      private final RCConnection.ConnectionState state;
+      private final RCDevice device;
+      private final SignalingClient signalingClient;
+
+      // Optional parameters - initialized to default values
+      private String jobId = null;
+      private RCConnectionListener listener = null;
+      private String incomingCallSdp = null;
+      private ConnectionMediaType remoteMediaType = ConnectionMediaType.UNDEFINED;
+
+      public Builder(boolean incoming, RCConnection.ConnectionState state, RCDevice device, SignalingClient signalingClient)
+      {
+         this.incoming = incoming;
+         this.state = state;
+         this.device = device;
+         this.signalingClient = signalingClient;
+      }
+
+      public Builder jobId(String val)
+      {
+         jobId = val;
+         return this;
+      }
+
+      public Builder listener(RCConnectionListener val)
+      {
+         listener = val;
+         return this;
+      }
+
+      public Builder incomingCallSdp(String val)
+      {
+         incomingCallSdp = val;
+         return this;
+      }
+
+      public Builder remoteMediaType(ConnectionMediaType val)
+      {
+         remoteMediaType = val;
+         return this;
+      }
+
+      public RCConnection build()
+      {
+         return new RCConnection(this);
+      }
+   }
+
    public RCDevice device = null;
-   public String incomingCallSdp = "";
+   private String jobId;
+   private SignalingClient signalingClient;
+   private String incomingCallSdp = "";
    private EglBase rootEglBase;
    private SurfaceViewRenderer localRender;
    private SurfaceViewRenderer remoteRender;
@@ -193,9 +244,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private Toast logToast;
    private PeerConnectionClient.PeerConnectionParameters peerConnectionParameters;
    private boolean iceConnected;
-   HashMap<String, Object> callParams = null;
+   private HashMap<String, Object> callParams = null;
    private long callStartedTimeMs = 0;
-   private static boolean DO_TOAST = false;
+   private final boolean DO_TOAST = false;
 
    // List of mandatory application permissions.
    private static final String[] MANDATORY_PERMISSIONS = {
@@ -205,11 +256,34 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    };
    private static final String TAG = "RCConnection";
 
+   // Construct RCConnection from Buider
+   private RCConnection(Builder builder)
+   {
+      RCLogger.i(TAG, "RCConnection(Builder)");
+
+      if (builder.jobId == null) {
+         // create a unique jobId for the RCConnection, this is used for signaling actions to maintain state
+         jobId = Long.toString(System.currentTimeMillis());
+      }
+      else {
+         jobId = builder.jobId;
+      }
+
+      incoming = builder.incoming;
+      state = builder.state;
+      device = builder.device;
+      signalingClient = builder.signalingClient;
+      listener = builder.listener;
+      incomingCallSdp = builder.incomingCallSdp;
+      if (incomingCallSdp != null) {
+         remoteMediaType = RCConnection.sdp2Mediatype(builder.incomingCallSdp);
+      }
+   }
+
    /**
     * Initialize a new RCConnection object. <b>Important</b>: this is used internally by RCDevice and is not meant for application use
     *
     * @param connectionListener RCConnection listener that will be receiving RCConnection events (@see RCConnectionListener)
-    * @return Newly initialized object
     */
    public RCConnection(RCConnectionListener connectionListener)
    {
@@ -219,7 +293,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    }
 
    // Additional constructor
-   public RCConnection(String jobId, boolean incoming, RCConnection.ConnectionState state, RCDevice device, SignalingClient signalingClient, RCConnectionListener listener)
+   /*
+   public RCConnection(String jobId, boolean incoming, RCConnection.ConnectionState state, RCDevice device, SignalingClient signalingClient,
+                       RCConnectionListener listener)
    {
       if (jobId == null) {
          // create a unique jobId for the RCConnection, this is used for signaling actions to maintain state
@@ -234,16 +310,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       this.signalingClient = signalingClient;
       this.listener = listener;
    }
+   */
 
-    /*
-    // could not use the previous constructor with connectionListener = null, hence created this:
-    public RCConnection() {
-        this.jobId = Long.toString(System.currentTimeMillis());
-        RCLogger.i(TAG, "RCConnection()");
-        this.listener = null;
-    }
-    */
-
+   /*
    // 'Copy' constructor
    public RCConnection(RCConnection connection)
    {
@@ -255,6 +324,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       this.parameters = null;  //new HashMap<String, String>(connection.parameters);
       this.listener = connection.listener;
    }
+   */
 
    /**
     * Retrieves the current state of the connection
@@ -313,15 +383,28 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       RCLogger.i(TAG, "accept(): " + parameters.toString());
 
-      //if (haveConnectivity()) {
-      this.callParams = (HashMap<String, Object>) parameters;
-      initializeWebrtc((Boolean) this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED),
-            (SurfaceViewRenderer) parameters.get(ParameterKeys.CONNECTION_LOCAL_VIDEO),
-            (SurfaceViewRenderer) parameters.get(ParameterKeys.CONNECTION_REMOTE_VIDEO),
-            (String) parameters.get(ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC));
+      if (state == ConnectionState.CONNECTING) {
+         this.callParams = (HashMap<String, Object>) parameters;
+         initializeWebrtc((Boolean) this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED),
+               (SurfaceViewRenderer) parameters.get(ParameterKeys.CONNECTION_LOCAL_VIDEO),
+               (SurfaceViewRenderer) parameters.get(ParameterKeys.CONNECTION_REMOTE_VIDEO),
+               (String) parameters.get(ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC));
 
-      startTurn();
-      //}
+         startTurn();
+      }
+      else {
+         // let's delay a millisecond to avoid calling code in the App getting intertwined with App listener code
+         new Handler(RCClient.getContext().getMainLooper()).postDelayed(
+               new Runnable() {
+                  @Override
+                  public void run()
+                  {
+                     listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_ACCEPT_WRONG_STATE.ordinal(),
+                           RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_ACCEPT_WRONG_STATE));
+                  }
+               }
+               , 1);
+      }
    }
 
    /**
@@ -329,7 +412,22 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
     */
    public void ignore()
    {
-
+      if (state == ConnectionState.CONNECTING) {
+         signalingClient.disconnect(jobId);
+      }
+      else {
+         // let's delay a millisecond to avoid calling code in the App getting intertwined with App listener code
+         new Handler(RCClient.getContext().getMainLooper()).postDelayed(
+               new Runnable() {
+                  @Override
+                  public void run()
+                  {
+                     listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_IGNORE_WRONG_STATE.ordinal(),
+                           RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_IGNORE_WRONG_STATE));
+                  }
+               }
+               , 1);
+      }
    }
 
    /**
@@ -339,12 +437,32 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       RCLogger.i(TAG, "reject()");
 
-      signalingClient.disconnect(jobId);
-      this.state = ConnectionState.DISCONNECTED;
+      if (state == ConnectionState.CONNECTING) {
+         signalingClient.disconnect(jobId);
 
-      // also update RCDevice state
-      if (RCDevice.state == RCDevice.DeviceState.BUSY) {
-         RCDevice.state = RCDevice.DeviceState.READY;
+         // TODO: (minor) if reject() is called while we are already connected then we will disconnect, but in that
+         // edge case we shouldn't set connection state to DICONNECTED right away
+
+         // update state right away since rejecting a call is a response to the INVITE, so no further messages will come
+         this.state = ConnectionState.DISCONNECTED;
+
+         // also update RCDevice state
+         if (RCDevice.state == RCDevice.DeviceState.BUSY) {
+            RCDevice.state = RCDevice.DeviceState.READY;
+         }
+      }
+      else {
+         // let's delay a millisecond to avoid calling code in the App getting intertwined with App listener code
+         new Handler(RCClient.getContext().getMainLooper()).postDelayed(
+               new Runnable() {
+                  @Override
+                  public void run()
+                  {
+                     listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_REJECT_WRONG_STATE.ordinal(),
+                           RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_REJECT_WRONG_STATE));
+                  }
+               }
+               , 1);
       }
    }
 
@@ -355,14 +473,29 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       RCLogger.i(TAG, "disconnect()");
 
-      signalingClient.disconnect(jobId);
+      if (state != ConnectionState.DISCONNECTED) {
+         signalingClient.disconnect(jobId);
+         disconnectWebrtc();
 
-      // also update RCDevice state. Reason we need that is twofold: a. if a call times out in signaling for a reason it will take around half a minute to
-      // get response from signaling, during which period we won't be able to make a call, b. there are some edge cases where signaling hangs and never times out
-      if (RCDevice.state == RCDevice.DeviceState.BUSY) {
-         RCDevice.state = RCDevice.DeviceState.READY;
+         // also update RCDevice state. Reason we need that is twofold: a. if a call times out in signaling for a reason it will take around half a minute to
+         // get response from signaling, during which period we won't be able to make a call, b. there are some edge cases where signaling hangs and never times out
+         if (RCDevice.state == RCDevice.DeviceState.BUSY) {
+            RCDevice.state = RCDevice.DeviceState.READY;
+         }
       }
-      disconnectWebrtc();
+      else {
+         // let's delay a millisecond to avoid calling code in the App getting intertwined with App listener code
+         new Handler(RCClient.getContext().getMainLooper()).postDelayed(
+               new Runnable() {
+                  @Override
+                  public void run()
+                  {
+                     listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_WRONG_STATE.ordinal(),
+                           RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_WRONG_STATE));
+                  }
+               }
+               , 1);
+      }
    }
 
    /**
@@ -430,8 +563,23 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void sendDigits(String digits)
    {
       RCLogger.i(TAG, "sendDigits(): " + digits);
-      signalingClient.sendDigits(this.jobId, digits);
-      //DeviceImpl.GetInstance().SendDTMF(digits);
+
+      if (state == ConnectionState.CONNECTED) {
+         signalingClient.sendDigits(this.jobId, digits);
+      }
+      else {
+         // let's delay a millisecond to avoid calling code in the App getting intertwined with App listener code
+         new Handler(RCClient.getContext().getMainLooper()).postDelayed(
+               new Runnable() {
+                  @Override
+                  public void run()
+                  {
+                     listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_DTMF_DIGITS_WRONG_STATE.ordinal(),
+                           RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_DTMF_DIGITS_WRONG_STATE));
+                  }
+               }
+               , 1);
+      }
    }
 
    /**
@@ -446,51 +594,12 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       RCLogger.i(TAG, "setConnectionListener()");
 
       this.listener = listener;
-      //DeviceImpl.GetInstance().sipuaConnectionListener = this;
    }
-
-   /*
-   public void handleSignalingMessage(SignalingMessage signalingMessage)
-   {
-      RCLogger.i(TAG, "handleSignalingMessage: type: " + signalingMessage.type + ", jobId: " + signalingMessage.jobId);
-      if (signalingMessage.type == SignalingMessage.MessageType.CALL_OUTGOING_CONNECTED_EVENT) {
-         // outgoing call is connected (got 200 OK)
-         handleConnected(signalingMessage.sdp);
-      }
-      else if (signalingMessage.type == SignalingMessage.MessageType.CALL_INCOMING_CONNECTED_EVENT) {
-         // incoming call connected
-         // no need to do anything as the App is notified when ICE is connected
-      }
-      else if (signalingMessage.type == SignalingMessage.MessageType.CALL_PEER_DISCONNECT_EVENT) {
-         handleDisconnected(true);
-      }
-      else if (signalingMessage.type == SignalingMessage.MessageType.CALL_OUTGOING_PEER_RINGING_EVENT) {
-         handleConnecting();
-      }
-      else if (signalingMessage.type == SignalingMessage.MessageType.CALL_LOCAL_DISCONNECT_EVENT) {
-         handleDisconnected(false);
-      }
-      else if (signalingMessage.type == SignalingMessage.MessageType.CALL_ERROR_EVENT) {
-         handleError(signalingMessage.status, signalingMessage.text);
-      }
-      else if (signalingMessage.type == SignalingMessage.MessageType.CALL_INCOMING_CANCELED_EVENT) {
-         handleDisconnected(false);
-      }
-      else if (signalingMessage.type == SignalingMessage.MessageType.CALL_SEND_DIGITS_EVENT) {
-         handleDigitsSent(signalingMessage.status, signalingMessage.text);
-      }
-      else {
-         RCLogger.e(TAG, "handleSignalingMessage(): no handler for signaling message");
-
-      }
-
-   }
-   */
 
    // ------ Call-related callbacks received from signaling thread are handled here
    public void onCallOutgoingPeerRingingEvent(String jobId)
    {
-      RCLogger.i(TAG, "onCallOutgoingPeerRingingEvent()");
+      RCLogger.i(TAG, "onCallOutgoingPeerRingingEvent(): jobId: " + jobId);
 
       state = ConnectionState.CONNECTING;
       listener.onConnecting(this);
@@ -501,16 +610,17 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    public void onCallIncomingConnectedEvent(String jobId)
    {
-      // no need to do anything as the App is notified when ICE is connected
-      RCLogger.i(TAG, "onCallIncomingConnectedEvent()");
+      // no need to do any notifying as the App is notified when ICE is connected
+      RCLogger.i(TAG, "onCallIncomingConnectedEvent(): jobId: " + jobId);
+
+      state = ConnectionState.SIGNALING_CONNECTED;
    }
 
    public void onCallOutgoingConnectedEvent(String jobId, String sdpAnswer)
    {
-      RCLogger.i(TAG, "onCallOutgoingConnectedEvent()");
+      RCLogger.i(TAG, "onCallOutgoingConnectedEvent(): jobId: " + jobId);
 
-      //this.state = ConnectionState.CONNECTED;
-      //final RCConnection finalConnection = new RCConnection(this);
+      state = ConnectionState.SIGNALING_CONNECTED;
 
       // we want to notify webrtc onRemoteDescription *only* on an outgoing call
       if (!this.isIncoming()) {
@@ -522,38 +632,36 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    public void onCallLocalDisconnectedEvent(String jobId)
    {
-      RCLogger.i(TAG, "onCallLocalDisconnectedEvent()");
-      // same handling
-      handleDisconnected(jobId);
+      RCLogger.i(TAG, "onCallLocalDisconnectedEvent(): jobId: " + jobId);
+      handleDisconnected(jobId, true);
    }
 
    public void onCallIncomingCanceledEvent(String jobId)
    {
-      RCLogger.i(TAG, "onCallIncomingCanceledEvent()");
-      // same handling
-      handleDisconnected(jobId);
+      RCLogger.i(TAG, "onCallIncomingCanceledEvent(): jobId: " + jobId);
+      handleDisconnected(jobId, false);
    }
 
-
-   //public void handleDisconnected(boolean inboundDisconnect)
    public void onCallPeerDisconnectEvent(String jobId)
    {
-      RCLogger.i(TAG, "onCallPeerDisconnectEvent()");
-
-      handleDisconnected(jobId);
+      RCLogger.i(TAG, "onCallPeerDisconnectEvent(): jobId: " + jobId);
+      handleDisconnected(jobId, false);
    }
 
    public void onCallSentDigitsEvent(String jobId, RCClient.ErrorCodes statusCode, String statusText)
    {
-      RCLogger.i(TAG, "handleDigitsSent(): status: " + statusCode + ", text: " + statusText);
+      RCLogger.i(TAG, "onCallSentDigitsEvent(): jobId: " + jobId + ", status: " + statusCode + ", text: " + statusText);
       listener.onDigitSent(this, statusCode.ordinal(), statusText);
    }
 
    public void onCallErrorEvent(String jobId, RCClient.ErrorCodes errorCode, String errorText)
    {
-      final RCConnection connection = this;
-      RCLogger.e(TAG, "onCallErrorEvent(): error code: " + errorCode + ", error text: " + errorText);
-      //disconnect();
+      RCLogger.e(TAG, "onCallErrorEvent(): jobId: " + jobId + ", error code: " + errorCode + ", error text: " + errorText);
+
+      // TODO: we need to see if there's a chance a call that causes an error to remain up,
+      // if not we need to avoid disconnecting below
+      signalingClient.disconnect(jobId);
+      disconnectWebrtc();
 
       if (RCDevice.state == RCDevice.DeviceState.BUSY) {
          RCDevice.state = RCDevice.DeviceState.READY;
@@ -562,25 +670,30 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       this.state = ConnectionState.DISCONNECTED;
       device.removeConnection(jobId);
 
-      disconnectWebrtc();
-      if (connection.listener != null) {
-         connection.listener.onDisconnected(connection, errorCode.ordinal(), errorText);
+      if (listener != null) {
+         listener.onDisconnected(this, errorCode.ordinal(), errorText);
       }
    }
 
    // Common disconnect code for local/remote disconnect and remote cancel
-   private void handleDisconnected(String jobId)
+   // If this is called after we have disconnected locally (i.e. RCConnection.disconnect() was called) we
+   // don't need to media
+   private void handleDisconnected(String jobId, boolean haveDisconnectedLocally)
    {
-      // we 're first notifying listener and then setting new state because we want the listener to be able to
+      // IMPORTANT: we 're first notifying listener and then setting new state because we want the listener to be able to
       // differentiate between disconnect and remote cancel events with the same listener method: onDisconnected.
       // In the first case listener will see state CONNECTED and in the second CONNECTING
 
       //if (inboundDisconnect && RCDevice.state == RCDevice.DeviceState.BUSY) {
-      if (RCDevice.state == RCDevice.DeviceState.BUSY) {
+      if (!haveDisconnectedLocally && RCDevice.state == RCDevice.DeviceState.BUSY) {
+         // No need to disconnect signaling, it is already disconnected both when we cause
+         // disconnect and when the remote party does
          disconnectWebrtc();
       }
-      RCDevice.state = RCDevice.DeviceState.READY;
+
       listener.onDisconnected(this);
+
+      RCDevice.state = RCDevice.DeviceState.READY;
       this.state = ConnectionState.DISCONNECTED;
       device.removeConnection(jobId);
 
@@ -651,7 +764,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    }
 
    //public void setupWebrtcAndCall(String sipUri, HashMap<String, String> sipHeaders, boolean videoEnabled)
-   public void setupWebrtcAndCall(Map<String, Object> parameters)
+   private void setupWebrtcAndCall(Map<String, Object> parameters)
    {
       this.callParams = (HashMap<String, Object>) parameters;
       initializeWebrtc((Boolean) this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED),
@@ -662,7 +775,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       startTurn();
    }
 
-   void startTurn()
+   private void startTurn()
    {
       HashMap<String, Object> deviceParameters = device.getParameters();
       String url = deviceParameters.get(RCDevice.ParameterKeys.MEDIA_TURN_URL) + "?ident=" +
@@ -674,7 +787,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    }
 
    // initialize webrtc facilities for the call
-   void initializeWebrtc(boolean videoEnabled, SurfaceViewRenderer localVideo, SurfaceViewRenderer remoteVideo, String preferredVideoCodec)
+   private void initializeWebrtc(boolean videoEnabled, SurfaceViewRenderer localVideo, SurfaceViewRenderer remoteVideo, String preferredVideoCodec)
    {
       RCLogger.i(TAG, "initializeWebrtc  ");
       Context context = RCClient.getContext();
@@ -789,7 +902,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    }
 
    // Disconnect from remote resources, dispose of local resources, and exit.
-   public void disconnectWebrtc()
+   private void disconnectWebrtc()
    {
       RCLogger.i(TAG, "disconnectWebrtc");
 
@@ -933,7 +1046,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          public void run()
          {
             RCLogger.i(TAG, "onIceCandidateRemoved: Not Implemented Yet");
-            //connection.signalingParameters.addIceCandidate(candidate);
          }
       };
       mainHandler.post(myRunnable);
@@ -961,19 +1073,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
                parameters.put(ParameterKeys.CONNECTION_CUSTOM_SIP_HEADERS, connection.signalingParameters.sipHeaders);
 
                signalingClient.call(jobId, parameters);
-               // we have gathered all candidates and SDP. Combine then in SIP SDP and send over to JAIN SIP
-                    /*
-                    DeviceImpl.GetInstance().CallWebrtc(signalingParameters.sipUrl,
-                            connection.signalingParameters.generateSipSdp(connection.signalingParameters.offerSdp, connection.signalingParameters.iceCandidates),
-                            connection.signalingParameters.sipHeaders);
-                            */
             }
             else {
                HashMap<String, Object> parameters = new HashMap<>();
                parameters.put("sdp", connection.signalingParameters.generateSipSdp(connection.signalingParameters.answerSdp,
                      connection.signalingParameters.iceCandidates));
                signalingClient.accept(jobId, parameters);
-               connection.state = ConnectionState.CONNECTING;
+               //connection.state = ConnectionState.CONNECTING;
             }
          }
       };
@@ -1093,7 +1199,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    // All callbacks are invoked from websocket signaling looper thread and
    // are routed to UI thread.
    //@Override
-   public void onConnectedToRoom(final SignalingParameters params)
+   private void onConnectedToRoom(final SignalingParameters params)
    {
       Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
       Runnable myRunnable = new Runnable() {
@@ -1149,13 +1255,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
    }
 
-   public void onRemoteDescription(String sdpString)
+   private void onRemoteDescription(String sdpString)
    {
       onRemoteDescription(new SessionDescription(SessionDescription.Type.ANSWER, sdpString));
    }
 
    //@Override
-   public void onRemoteDescription(final SessionDescription sdp)
+   private void onRemoteDescription(final SessionDescription sdp)
    {
       final long delta = System.currentTimeMillis() - callStartedTimeMs;
       Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
@@ -1185,7 +1291,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    }
 
    //@Override
-   public void onRemoteIceCandidates(final List<IceCandidate> candidates)
+   private void onRemoteIceCandidates(final List<IceCandidate> candidates)
    {
       RCLogger.i(TAG, "onRemoteIceCandidates");
       // no need to run it in UI thread it is already there due to onRemoteDescription
@@ -1237,55 +1343,55 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             return ConnectionMediaType.AUDIO;
         }
         */
-    }
+   }
 
-    // -- Notify QoS module of Connection related events through intents, if the module is available
-    // Phone state Intents to capture events
-    private void sendQoSConnectionIntent (String state)
-    {
-        SignalingParameters params = this.signalingParameters;
-        Intent intent = new Intent ("org.mobicents.restcomm.android.CALL_STATE");
+   // -- Notify QoS module of Connection related events through intents, if the module is available
+   // Phone state Intents to capture events
+   private void sendQoSConnectionIntent(String state)
+   {
+      SignalingParameters params = this.signalingParameters;
+      Intent intent = new Intent("org.mobicents.restcomm.android.CALL_STATE");
 
-        intent.putExtra("STATE", state);
-        intent.putExtra("INCOMING", this.isIncoming());
-        if (params != null)
-        {
-            intent.putExtra("VIDEO", params.videoEnabled);
-            intent.putExtra("REQUEST", params.sipUrl);
-        }
-        if (this.getState() != null)
-            intent.putExtra("CONNECTIONSTATE", this.getState().toString());
+      intent.putExtra("STATE", state);
+      intent.putExtra("INCOMING", this.isIncoming());
+      if (params != null) {
+         intent.putExtra("VIDEO", params.videoEnabled);
+         intent.putExtra("REQUEST", params.sipUrl);
+      }
+      if (this.getState() != null)
+         intent.putExtra("CONNECTIONSTATE", this.getState().toString());
 
-        Context context = RCClient.getContext();
-        try {
-            // Restrict the Intent to MMC Handler running within the same application
-            Class aclass = Class.forName("com.cortxt.app.corelib.Services.Intents.IntentHandler");
-            intent.setClass(context.getApplicationContext(), aclass);
-            context.sendBroadcast(intent);
-        }
-        catch (ClassNotFoundException e)
-        {
-            // If the MMC class isn't here, no intent
-        }
-    }
+      Context context = RCClient.getContext();
+      try {
+         // Restrict the Intent to MMC Handler running within the same application
+         Class aclass = Class.forName("com.cortxt.app.corelib.Services.Intents.IntentHandler");
+         intent.setClass(context.getApplicationContext(), aclass);
+         context.sendBroadcast(intent);
+      }
+      catch (ClassNotFoundException e) {
+         // If the MMC class isn't here, no intent
+      }
+   }
 
-    // Phone state Intents to capture dropped call event with reason
-    private void sendQoSDisconnectErrorIntent (int error, String errorText) {
-        Intent intent = new Intent("org.mobicents.restcomm.android.DISCONNECT_ERROR");
-        intent.putExtra("STATE", "disconnect error");
-        if (errorText != null)
-            intent.putExtra("ERRORTEXT", errorText);
-        intent.putExtra("ERROR", error);
-        intent.putExtra("INCOMING", this.isIncoming());
+   // Phone state Intents to capture dropped call event with reason
+   private void sendQoSDisconnectErrorIntent(int error, String errorText)
+   {
+      Intent intent = new Intent("org.mobicents.restcomm.android.DISCONNECT_ERROR");
+      intent.putExtra("STATE", "disconnect error");
+      if (errorText != null)
+         intent.putExtra("ERRORTEXT", errorText);
+      intent.putExtra("ERROR", error);
+      intent.putExtra("INCOMING", this.isIncoming());
 
-        Context context = RCClient.getContext();
-        try {
-            // Restrict the Intent to MMC Handler running within the same application
-            Class aclass = Class.forName("com.cortxt.app.corelib.Services.Intents.IntentHandler");
-            intent.setClass(context.getApplicationContext(), aclass);
-            context.sendBroadcast(intent);
-        } catch (ClassNotFoundException e) {
-            // If the MMC class isn't here, no intent
-        }
-    }
+      Context context = RCClient.getContext();
+      try {
+         // Restrict the Intent to MMC Handler running within the same application
+         Class aclass = Class.forName("com.cortxt.app.corelib.Services.Intents.IntentHandler");
+         intent.setClass(context.getApplicationContext(), aclass);
+         context.sendBroadcast(intent);
+      }
+      catch (ClassNotFoundException e) {
+         // If the MMC class isn't here, no intent
+      }
+   }
 }

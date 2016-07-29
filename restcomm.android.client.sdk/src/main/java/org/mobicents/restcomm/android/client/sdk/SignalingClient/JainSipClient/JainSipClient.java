@@ -61,7 +61,8 @@ import java.util.Properties;
  * a response/event comes in from JAIN SIP it is firstly received by JainSipClient (since its the SipListener for JAIN SIP), but then if it identifies that it is call
  * related, it is once again forwarded to JainSipCall.
  *
- * With each signaling action (like call, register, reconfigure, etc) a JainSipJob is created that carries around its context until it is either finished or an error occurs.
+ * With each of the following signaling actions: open(), reconfigure(), close(), sendMessage() and call() a JainSipJob is created that carries around its context until
+ * it is either finished or an error occurs. The rest of the signaling actions like accept(), sendDtmf(), don't create new jobs. Instead they act on existing ones.
  * Main pieces of the job are the current transaction. Remember that a single job can consist of more than one SIP transaction. For example the TYPE_RECONFIGURE job consists
  * of an unregister transaction, followed by an authentication transaction, followed by register transaction, followed by an authentication transaction. Some jobs are also
  * associated with a JainSipFsm object that implements a simple state machine to be able to properly address invoking the same functionalities in different job contexts
@@ -289,7 +290,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
    // ------ Call-related methods
    public void call(String jobId, HashMap<String, Object> parameters, JainSipCall.JainSipCallListener listener)
    {
-      RCLogger.i(TAG, "call(): jobId: " + jobId + ", parameters: " + parameters.toString());
+      RCLogger.i(TAG, "call(): jobId: " + jobId + ", username: " + parameters.toString());
 
       if (!jainSipNotificationManager.haveConnectivity()) {
          listener.onCallErrorEvent(jobId, RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY, RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY));
@@ -318,7 +319,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
 
       JainSipJob jainSipJob = jainSipJobManager.get(jobId);
       if (jainSipJob == null) {
-         throw new RuntimeException("Error accepting a call that doesn't exist in job manager");
+         throw new RuntimeException("Error accepting a call that doesn't exist in job manager, jobId: " + jobId);
       }
       jainSipJob.jainSipCall.accept(jainSipJob, parameters);
    }
@@ -595,20 +596,13 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
                   (ClientTransaction) jainSipJob.transaction, jainSipProvider, 5, true);
 
             // update previous transaction with authenticationTransaction (remember that previous ended with 407 final response)
-            //String authCallId = ((CallIdHeader) authenticationTransaction.getRequest().getHeader("Call-ID")).getCallId();
             jainSipJob.updateTransaction(authenticationTransaction);
-            // TODO: not sure if this is needed. Auth doesn't change Call-Id, right?
-            //jainSipJob.updateCallId(authCallId);
             RCLogger.i(TAG, "Sending SIP request: \n" + authenticationTransaction.getRequest().toString());
             authenticationTransaction.sendRequest();
             jainSipJob.increaseAuthAttempts();
          }
          else {
             // actually this should not happen. Restcomm should return forbidden if the credentials are wrong and not challenge again
-            /*
-            throw new JainSipException(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_AUTHENTICATION_MAX_RETRIES_REACHED,
-                  RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_AUTHENTICATION_MAX_RETRIES_REACHED));
-                  */
             throw new RuntimeException("Failed to authenticate after max attempts");
          }
       }
@@ -630,8 +624,10 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
          {
             Request request = requestEvent.getRequest();
             RCLogger.i(TAG, "Received SIP request: \n" + request.toString());
-            CallIdHeader callIdHeader = (CallIdHeader)request.getHeader("Call-ID");
-            String callId = callIdHeader.getCallId();
+            String callId = ((CallIdHeader)request.getHeader("Call-ID")).getCallId();
+
+            // create a new jobId for the new job
+            String jobId = Long.toString(System.currentTimeMillis());
             ServerTransaction serverTransaction = requestEvent.getServerTransaction();
             String method = request.getMethod();
 
@@ -639,7 +635,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
                // New INVITE, need to create new job
                JainSipCall jainSipCall = new JainSipCall(JainSipClient.this, (JainSipCall.JainSipCallListener)listener);
                // Remember, this is new dialog and hence serverTransaction is null
-               JainSipJob jainSipJob = jainSipJobManager.add(callId, JainSipJob.Type.TYPE_CALL, null, null, jainSipCall);
+               JainSipJob jainSipJob = jainSipJobManager.add(jobId, JainSipJob.Type.TYPE_CALL, null, null, jainSipCall);
 
                jainSipCall.processRequest(jainSipJob, requestEvent);
             }
@@ -654,7 +650,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
                   RCLogger.i(TAG, "Sending SIP response: \n" + response.toString());
                   serverTransaction.sendResponse(response);
                   String messageText = ((SIPMessage)request).getMessageContent();
-                  listener.onClientMessageArrivedEvent(callId, ((SIPMessage)request).getFrom().getAddress().toString(), messageText);
+                  listener.onClientMessageArrivedEvent(jobId, ((SIPMessage)request).getFrom().getAddress().toString(), messageText);
                }
                catch (Exception e) {
                   e.printStackTrace();

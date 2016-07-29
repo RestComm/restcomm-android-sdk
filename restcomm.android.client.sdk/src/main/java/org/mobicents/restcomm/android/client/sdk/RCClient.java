@@ -62,9 +62,14 @@ public class RCClient {
       ERROR_CONNECTION_SERVICE_UNAVAILABLE,
       ERROR_CONNECTION_PARSE_CUSTOM_SIP_HEADERS,
       ERROR_CONNECTION_ACCEPT_FAILED,
+      ERROR_CONNECTION_ACCEPT_WRONG_STATE,
+      ERROR_CONNECTION_IGNORE_WRONG_STATE,
+      ERROR_CONNECTION_REJECT_WRONG_STATE,
+      ERROR_CONNECTION_DISCONNECT_WRONG_STATE,
       ERROR_CONNECTION_DISCONNECT_FAILED,
       ERROR_CONNECTION_DECLINE_FAILED,
       ERROR_CONNECTION_DTMF_DIGITS_FAILED,
+      ERROR_CONNECTION_DTMF_DIGITS_WRONG_STATE,
       ERROR_CONNECTION_REGISTRARLESS_FULL_URI_REQUIRED,
       ERROR_CONNECTION_WEBRTC_PEERCONNECTION_ERROR,
       ERROR_CONNECTION_WEBRTC_TURN_ERROR,
@@ -143,14 +148,29 @@ public class RCClient {
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_ACCEPT_FAILED) {
          return "Failed to accept connection";
       }
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_ACCEPT_WRONG_STATE) {
+         return "Failed to accept connection; connection state should be CONNECTING";
+      }
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_IGNORE_WRONG_STATE) {
+         return "Failed to ignore connection; connection state should be CONNECTING";
+      }
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_REJECT_WRONG_STATE) {
+         return "Failed to reject connection; connection state should be CONNECTING";
+      }
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_DISCONNECT_WRONG_STATE) {
+         return "Failed to disconnect connection; connection state is already DISCONNECTED";
+      }
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_DECLINE_FAILED) {
          return "Failed to decline connection";
       }
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_DTMF_DIGITS_FAILED) {
          return "Failed to send DTMF digits over connection";
       }
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_DTMF_DIGITS_WRONG_STATE) {
+         return "Failed to send DTMF digits; connection state should be CONNECTED";
+      }
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_REGISTRARLESS_FULL_URI_REQUIRED) {
-         return "Failed to initiate connection: when RCDevice is configured with no domain you need to provide full SIP URI in RCConnection peer";
+         return "Failed to initiate connection: when RCDevice is configured with no domain you need to provide full SIP URI in connection peer";
       }
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_WEBRTC_PEERCONNECTION_ERROR) {
          return "Webrtc Peer Connection error";

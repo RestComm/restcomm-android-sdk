@@ -426,6 +426,14 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         pendingConnection = null;
     }
 
+    public void onError(RCConnection connection, int errorCode, String errorText)
+    {
+        pendingError = true;
+        showOkAlert("RCConnection Error", errorText);
+        this.connection = null;
+        pendingConnection = null;
+    }
+
     public void onDigitSent(RCConnection connection, int statusCode, String statusText)
     {
 

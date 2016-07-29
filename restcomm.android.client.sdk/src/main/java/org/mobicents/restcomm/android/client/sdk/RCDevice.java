@@ -53,27 +53,27 @@ import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
 public class RCDevice implements SignalingClient.SignalingClientListener {
    /**
-    * @abstract Device state
+    * Device state
     */
    static DeviceState state;
    /**
-    * @abstract Device capabilities (<b>Not Implemented yet</b>)
+    * Device capabilities (<b>Not Implemented yet</b>)
     */
    HashMap<DeviceCapability, Object> capabilities;
    /**
-    * @abstract Listener that will be receiving RCDevice events described at RCDeviceListener
+    * Listener that will be receiving RCDevice events described at RCDeviceListener
     */
    RCDeviceListener listener;
    /**
-    * @abstract Is sound for incoming connections enabled
+    * Is sound for incoming connections enabled
     */
    boolean incomingSoundEnabled;
    /**
-    * @abstract Is sound for outgoing connections enabled
+    * Is sound for outgoing connections enabled
     */
    boolean outgoingSoundEnabled;
    /**
-    * @abstract Is sound for disconnect enabled
+    * Is sound for disconnect enabled
     */
    boolean disconnectSoundEnabled;
 
@@ -278,7 +278,8 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
       if (state == DeviceState.READY) {
          RCLogger.i(TAG, "RCDevice.connect(), with connectivity");
 
-         RCConnection connection = new RCConnection(null, false, RCConnection.ConnectionState.PENDING, this, signalingClient, listener);
+         RCConnection connection = new RCConnection.Builder(false, RCConnection.ConnectionState.PENDING, this, signalingClient)
+               .listener(listener).build();
          connection.open(parameters);
 
          // keep connection in the connections hashmap
@@ -609,11 +610,12 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
 
    public void onCallArrivedEvent(String jobId, String peer, String sdpOffer)
    {
-      RCLogger.i(TAG, "onCallArrivedEvent(): id: " + jobId + ", peed: " + peer);
+      RCLogger.i(TAG, "onCallArrivedEvent(): id: " + jobId + ", peer: " + peer);
 
-      RCConnection connection = new RCConnection(jobId, true, RCConnection.ConnectionState.CONNECTING, this, signalingClient, null);
-      connection.incomingCallSdp = sdpOffer;
-      connection.remoteMediaType = RCConnection.sdp2Mediatype(sdpOffer);
+      RCConnection connection = new RCConnection.Builder(true, RCConnection.ConnectionState.CONNECTING, this, signalingClient)
+            .jobId(jobId)
+            .incomingCallSdp(sdpOffer).build();
+
       // keep connection in the connections hashmap
       connections.put(jobId, connection);
 
@@ -623,7 +625,7 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
          Intent dataIntent = new Intent();
          dataIntent.setAction(INCOMING_CALL);
          dataIntent.putExtra(RCDevice.EXTRA_DID, peer);
-         dataIntent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, (connection.remoteMediaType == RCConnection.ConnectionMediaType.AUDIO_VIDEO));
+         dataIntent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, (connection.getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO));
          pendingCallIntent.send(RCClient.getContext(), 0, dataIntent);
 
          // Phone state Intents to capture incoming phone call event
