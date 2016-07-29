@@ -349,8 +349,8 @@ class JainSipMessageBuilder {
       String fullUri = usernameOrUri;
       if (!usernameOrUri.contains("sip:")) {
          if (domain == null || domain.equals("")) {
-            throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_REGISTRARLESS_NODOMAIN,
-                  RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_REGISTRARLESS_NODOMAIN));
+            throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_REGISTRARLESS_FULL_URI_REQUIRED,
+                  RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_REGISTRARLESS_FULL_URI_REQUIRED));
          }
 
          fullUri = "sip:" + usernameOrUri + "@" + domain.replaceAll("sip:", "");

@@ -522,36 +522,25 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    public void onCallLocalDisconnectedEvent(String jobId)
    {
+      RCLogger.i(TAG, "onCallLocalDisconnectedEvent()");
       // same handling
-      this.onCallPeerDisconnectEvent(jobId);
+      handleDisconnected(jobId);
    }
 
    public void onCallIncomingCanceledEvent(String jobId)
    {
+      RCLogger.i(TAG, "onCallIncomingCanceledEvent()");
       // same handling
-      this.onCallPeerDisconnectEvent(jobId);
+      handleDisconnected(jobId);
    }
+
 
    //public void handleDisconnected(boolean inboundDisconnect)
    public void onCallPeerDisconnectEvent(String jobId)
    {
       RCLogger.i(TAG, "onCallPeerDisconnectEvent()");
 
-      // we 're first notifying listener and then setting new state because we want the listener to be able to
-      // differentiate between disconnect and remote cancel events with the same listener method: onDisconnected.
-      // In the first case listener will see state CONNECTED and in the second CONNECTING
-
-      //if (inboundDisconnect && RCDevice.state == RCDevice.DeviceState.BUSY) {
-      if (RCDevice.state == RCDevice.DeviceState.BUSY) {
-         disconnectWebrtc();
-      }
-      RCDevice.state = RCDevice.DeviceState.READY;
-      listener.onDisconnected(this);
-      this.state = ConnectionState.DISCONNECTED;
-      device.removeConnection(jobId);
-
-      // Phone state Intents to capture normal disconnect event
-      sendQoSConnectionIntent("disconnected");
+      handleDisconnected(jobId);
    }
 
    public void onCallSentDigitsEvent(String jobId, RCClient.ErrorCodes statusCode, String statusText)
@@ -570,38 +559,34 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          RCDevice.state = RCDevice.DeviceState.READY;
       }
 
+      this.state = ConnectionState.DISCONNECTED;
+      device.removeConnection(jobId);
+
       disconnectWebrtc();
       if (connection.listener != null) {
          connection.listener.onDisconnected(connection, errorCode.ordinal(), errorText);
       }
    }
 
-   // Helpers
-   /*
-   private boolean haveConnectivity()
+   // Common disconnect code for local/remote disconnect and remote cancel
+   private void handleDisconnected(String jobId)
    {
-      //RCDevice device = RCClient.listDevices().get(0);
-      if (device == null) {
-         return false;
-      }
+      // we 're first notifying listener and then setting new state because we want the listener to be able to
+      // differentiate between disconnect and remote cancel events with the same listener method: onDisconnected.
+      // In the first case listener will see state CONNECTED and in the second CONNECTING
 
-      // get reachability state from RCDevice
-      RCDeviceListener.RCConnectivityStatus state = device.getConnectivityStatus();
+      //if (inboundDisconnect && RCDevice.state == RCDevice.DeviceState.BUSY) {
+      if (RCDevice.state == RCDevice.DeviceState.BUSY) {
+         disconnectWebrtc();
+      }
+      RCDevice.state = RCDevice.DeviceState.READY;
+      listener.onDisconnected(this);
+      this.state = ConnectionState.DISCONNECTED;
+      device.removeConnection(jobId);
 
-      if (state == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi ||
-            state == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular) {
-         return true;
-      }
-      else {
-         if (this.listener != null) {
-            this.listener.onDisconnected(this, RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY.ordinal(), RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY));
-         }
-         // Phone state Intents to capture dropped call due to no connectivity
-         sendQoSDisconnectErrorIntent(RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY.ordinal(), RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY));
-         return false;
-      }
+      // Phone state Intents to capture normal disconnect event
+      sendQoSConnectionIntent("disconnected");
    }
-   */
 
    public String getId()
    {

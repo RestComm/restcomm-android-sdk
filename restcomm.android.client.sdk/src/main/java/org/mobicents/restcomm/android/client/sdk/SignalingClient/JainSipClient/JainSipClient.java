@@ -333,7 +333,16 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       }
 
       JainSipJob jainSipJob = jainSipJobManager.get(jobId);
-      jainSipJob.jainSipCall.disconnect(jainSipJob);
+      // There are cases where a call legitimately fails before a job is created (an example is when invalid SIP URI is used, where RCConnection will return error
+      // to the User but the user still needs to disconnect() manually), hence this will return null and
+      // in those cases we don't need to do anything
+      if (jainSipJob != null) {
+         jainSipJob.jainSipCall.disconnect(jainSipJob);
+      }
+      else {
+         // let's emit a warning just in case we hit an actual error case with this
+         RCLogger.w(TAG, "disconnect(): job doesn't exist for the call; this can be a valid scenario");
+      }
    }
 
    public void sendDigits(String jobId, String digits)
