@@ -1,0 +1,18 @@
+#! /bin/bash
+
+# Checks if Olympus & SDK versions have changed from last commit and if so tag the new commit accordingly. Separate tags are added for each of them.
+# Thanks to https://coderwall.com/p/mk18zq/automatic-git-version-tagging-for-npm-modules
+
+olympus_version=`git diff HEAD^..HEAD -- "$(git rev-parse --show-toplevel)"/Examples/restcomm-olympus/app/olympus-version.properties | grep '^\+.*VERSION_CODE' | sed 's/[^0-9\.]//g'`
+
+if [ "$olympus_version" != "" ]; then
+    git tag -a "Olympus#$olympus_version" -m "`git log -1 --format=%s`"
+    echo "Olympus build version has changed; appending new tag, Olympus#$olympus_version"
+fi
+
+sdk_version=`git diff HEAD^..HEAD -- "$(git rev-parse --show-toplevel)"/restcomm.android.client.sdk/restcomm-android-sdk-version.properties | grep '^\+.*VERSION_CODE' | sed 's/[^0-9\.]//g'`
+
+if [ "$sdk_version" != "" ]; then
+    git tag -a "SDK#$sdk_version" -m "`git log -1 --format=%s`"
+    echo "SDK build version has changed; appending new tag, SDK#$sdk_version"
+fi
