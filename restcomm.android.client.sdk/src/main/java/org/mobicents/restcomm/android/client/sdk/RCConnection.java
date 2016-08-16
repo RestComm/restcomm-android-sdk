@@ -111,6 +111,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       CONNECTED, /**
        * A Connection enters this state when actual media starts flowing
        */
+      DISCONNECTING,  /** Connection is being disconnected. When client App calls RCConnection.disconnect(), RCConnection state transitions to this until we get a response
+       at which point we transition to DISCONNECTED */
       DISCONNECTED,  /** Connection is in state disconnected */
    }
 
@@ -473,15 +475,19 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       RCLogger.i(TAG, "disconnect()");
 
-      if (state != ConnectionState.DISCONNECTED) {
+      if (state != ConnectionState.DISCONNECTED && state != ConnectionState.DISCONNECTING) {
          signalingClient.disconnect(jobId);
          disconnectWebrtc();
 
+         state = ConnectionState.DISCONNECTING;
          // also update RCDevice state. Reason we need that is twofold: a. if a call times out in signaling for a reason it will take around half a minute to
          // get response from signaling, during which period we won't be able to make a call, b. there are some edge cases where signaling hangs and never times out
          if (RCDevice.state == RCDevice.DeviceState.BUSY) {
             RCDevice.state = RCDevice.DeviceState.READY;
          }
+      }
+      else if (state == ConnectionState.DISCONNECTING) {
+         RCLogger.w(TAG, "disconnect(): Attempting to disconnect while we are in state disconnecting, skipping.");
       }
       else {
          // let's delay a millisecond to avoid calling code in the App getting intertwined with App listener code
@@ -660,7 +666,10 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
       // TODO: we need to see if there's a chance a call that causes an error to remain up,
       // if not we need to avoid disconnecting below
-      signalingClient.disconnect(jobId);
+      if (state != ConnectionState.DISCONNECTING) {
+         // only disconnect signaling facilities if we are not already disconnecting
+         signalingClient.disconnect(jobId);
+      }
       disconnectWebrtc();
 
       if (RCDevice.state == RCDevice.DeviceState.BUSY) {
