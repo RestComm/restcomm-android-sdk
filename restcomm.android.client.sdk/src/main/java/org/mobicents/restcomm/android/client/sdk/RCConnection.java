@@ -294,40 +294,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       this.listener = connectionListener;
    }
 
-   // Additional constructor
-   /*
-   public RCConnection(String jobId, boolean incoming, RCConnection.ConnectionState state, RCDevice device, SignalingClient signalingClient,
-                       RCConnectionListener listener)
-   {
-      if (jobId == null) {
-         // create a unique jobId for the RCConnection, this is used for signaling actions to maintain state
-         this.jobId = Long.toString(System.currentTimeMillis());
-      }
-      else {
-         this.jobId = jobId;
-      }
-      this.incoming = incoming;
-      this.state = state;
-      this.device = device;
-      this.signalingClient = signalingClient;
-      this.listener = listener;
-   }
-   */
-
-   /*
-   // 'Copy' constructor
-   public RCConnection(RCConnection connection)
-   {
-      this.incoming = connection.incoming;
-      this.muted = connection.muted;
-
-      this.state = connection.state;
-      // not used yet
-      this.parameters = null;  //new HashMap<String, String>(connection.parameters);
-      this.listener = connection.listener;
-   }
-   */
-
    /**
     * Retrieves the current state of the connection
     */
@@ -380,6 +346,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    /**
     * Accept the incoming connection
+    *
+    * @param parameters Parameters such as whether we want video enabled, etc. Possible keys: <br>
+    *   <b>RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED</b>: Whether we want WebRTC video enabled or not <br>
+    *   <b>RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO</b>: View where we want the local video to be rendered <br>
+    *   <b>RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO</b>: View where we want the remote video to be rendered  <br>
+    *   <b>RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC</b>: Preferred video codec to use. Default is VP8. Possible values: <i>'VP8', 'VP9'</i> <br>
+    * means that RCDevice.state not ready to make a call (this usually means no WiFi available)
     */
    public void accept(Map<String, Object> parameters)
    {

@@ -259,10 +259,14 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
    /**
     * Create an outgoing connection to an endpoint
     *
-    * @param parameters Parameters such as the endpoint we want to connect to or SIP custom headers. If
-    *                   you want to pass SIP custom headers, you need to add a separate (String, String) HashMap
-    *                   inside 'parameters' hash and introduce your headers there.
-    *                   For an example please check HelloWorld or Messenger samples.
+    * @param parameters Parameters such as the endpoint we want to connect to, etc. Possible keys: <br>
+    *   <b>RCConnection.ParameterKeys.CONNECTION_PEER</b>: Who is the called number, like <i>'+1235'</i> or <i>'sip:+1235@cloud.restcomm.com'</i> <br>
+    *   <b>RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED</b>: Whether we want WebRTC video enabled or not <br>
+    *   <b>RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO</b>: View where we want the local video to be rendered <br>
+    *   <b>RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO</b>: View where we want the remote video to be rendered  <br>
+    *   <b>RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC</b>: Preferred video codec to use. Default is VP8. Possible values: <i>'VP8', 'VP9'</i> <br>
+    *   <b>RCConnection.ParameterKeys.CONNECTION_CUSTOM_SIP_HEADERS</b>: An optional HashMap<String,String> of custom SIP headers we want to add. For an example
+    *                   please check HelloWorld sample or Olympus App. <br>
     * @param listener   The listener object that will receive events when the connection state changes
     * @return An RCConnection object representing the new connection or null in case of error. Error
     * means that RCDevice.state not ready to make a call (this usually means no WiFi available)
@@ -461,10 +465,22 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
    }
 
    /**
-    * Update preference parameters such as username/password
+    *  Update Device parameters such as username, password, domain, etc
     *
-    * @param params The params to be updated
-    * @return Whether the update was successful or not
+    * @param params  Parameters for the Device entity (prefer using the string constants shown below, i.e. RCDevice.ParameterKeys.*, instead of using strings
+    *                like 'signaling-secure', etc. Possible keys: <br>
+    *   <b>RCDevice.ParameterKeys.SIGNALING_USERNAME</b>: Identity for the client, like <i>'bob'</i> (mandatory) <br>
+    *   <b>RCDevice.ParameterKeys.SIGNALING_PASSWORD</b>: Password for the client (mandatory) <br>
+    *   <b>RCDevice.ParameterKeys.SIGNALING_DOMAIN</b>: Restcomm instance to use, like <i>'cloud.restcomm.com'</i>. Leave empty for registrar-less mode<br>
+    *   <b>RCDevice.ParameterKeys.MEDIA_ICE_URL</b>: ICE url to use, like <i>'https://turn.provider.com/turn'</i> (mandatory) <br>
+    *   <b>RCDevice.ParameterKeys.MEDIA_ICE_USERNAME</b>: ICE username for authentication (mandatory) <br>
+    *   <b>RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD</b>: ICE password for authentication (mandatory) <br>
+    *   <b>RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED</b>: Should signaling traffic be encrypted? If this is the case, then a key pair is generated when
+    *                signaling facilities are initialized and added to a custom keystore. Also, added to this custom keystore are all the trusted certificates from
+    *                the System Wide Android CA Store, so that we properly accept legit server certificates (optional) <br>
+    *   <b>RCDevice.ParameterKeys.MEDIA_TURN_ENABLED</b>: Should TURN be enabled for webrtc media? (optional) <br>
+    *   <b>RCDevice.ParameterKeys.SIGNALING_LOCAL_PORT</b>: Local port to use for signaling (optional) <br>
+    * @see RCDevice
     */
    public boolean updateParams(HashMap<String, Object> params)
    {

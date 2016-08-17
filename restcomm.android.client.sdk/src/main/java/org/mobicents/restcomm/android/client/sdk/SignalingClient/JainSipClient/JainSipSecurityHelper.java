@@ -64,11 +64,15 @@ public class JainSipSecurityHelper {
         Security.insertProviderAt(new BouncyCastleProvider(), 1);
     }
 
-    // Create custom keystore, generate key and certificate and add them to it for use in encryption, etc, and in the end
-    // also add to the keystore all the trusted certificates from the System Wide Android CA Store, so that we properly accept
-    // legit server certificates
-    //
-    // Returns: HashMap containing keystore full path (key 'keystore-path') and keystore password (key 'keystore-password')
+    /*
+     * Create custom keystore, generate key and certificate and add them to it for use in encryption, etc, and in the end
+     * also add to the keystore all the trusted certificates from the System Wide Android CA Store, so that we properly accept
+     * legit server certificates
+     *
+     * @param context Android context
+     * @param filename Filename to use for storing the keystore
+     * @return HashMap containing keystore full path (key 'keystore-path') and keystore password (key 'keystore-password')
+     */
     public static HashMap<String, String> generateKeystore(Context context, String filename)
     {
         HashMap<String, String> parameters = new HashMap<String, String>();

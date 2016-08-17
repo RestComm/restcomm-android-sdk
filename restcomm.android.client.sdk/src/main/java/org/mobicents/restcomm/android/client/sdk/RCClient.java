@@ -318,10 +318,22 @@ public class RCClient {
    }
 
    /**
-    * Create an initialize a new Device object
+    *  Initialize a new RCDevice object with parameters
     *
-    * @param parameters     Restcomm Client parameters
-    * @param deviceListener The listener for upcoming RCDevice events
+    * @param parameters  Parameters for the Device entity (prefer using the string constants shown below, i.e. RCDevice.ParameterKeys.*, instead of
+    *                    using strings like 'signaling-secure', etc. Possible keys: <br>
+    *   <b>RCDevice.ParameterKeys.SIGNALING_USERNAME</b>: Identity for the client, like <i>'bob'</i> (mandatory) <br>
+    *   <b>RCDevice.ParameterKeys.SIGNALING_PASSWORD</b>: Password for the client (mandatory) <br>
+    *   <b>RCDevice.ParameterKeys.SIGNALING_DOMAIN</b>: Restcomm instance to use, like <i>'cloud.restcomm.com'</i>. Leave empty for registrar-less mode<br>
+    *   <b>RCDevice.ParameterKeys.MEDIA_ICE_URL</b>: ICE url to use, like <i>'https://turn.provider.com/turn'</i> (mandatory) <br>
+    *   <b>RCDevice.ParameterKeys.MEDIA_ICE_USERNAME</b>: ICE username for authentication (mandatory) <br>
+    *   <b>RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD</b>: ICE password for authentication (mandatory) <br>
+    *   <b>RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED</b>: Should signaling traffic be encrypted? If this is the case, then a key pair is generated when
+    *                signaling facilities are initialized and added to a custom keystore. Also, added to this custom keystore are all the trusted certificates from
+    *                the System Wide Android CA Store, so that we properly accept legit server certificates (optional) <br>
+    *   <b>RCDevice.ParameterKeys.MEDIA_TURN_ENABLED</b>: Should TURN be enabled for webrtc media? (optional) <br>
+    *   <b>RCDevice.ParameterKeys.SIGNALING_LOCAL_PORT</b>: Local port to use for signaling (optional) <br>
+    * @param deviceListener  The listener for upcoming RCDevice events
     * @return The newly created RCDevice
     * @see RCDevice
     */
