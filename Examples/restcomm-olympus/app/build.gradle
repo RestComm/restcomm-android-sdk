@@ -4,6 +4,7 @@ android {
     compileSdkVersion 22
     buildToolsVersion "23.0.1"
 
+    // Retrieve build number from properties file, increment and use as versionCode. Finally, store new build number in properties file
     def versionPropertiesFile = file('olympus-version.properties')
     if (versionPropertiesFile.canRead()) {
         def Properties versionProperties = new Properties()
