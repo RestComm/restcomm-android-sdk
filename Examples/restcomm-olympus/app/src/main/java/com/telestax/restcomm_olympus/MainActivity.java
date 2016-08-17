@@ -108,12 +108,12 @@ public class MainActivity extends AppCompatActivity
       params.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN, prefs.getString(RCDevice.ParameterKeys.SIGNALING_DOMAIN, ""));
       params.put(RCDevice.ParameterKeys.SIGNALING_USERNAME, prefs.getString(RCDevice.ParameterKeys.SIGNALING_USERNAME, "android-sdk"));
       params.put(RCDevice.ParameterKeys.SIGNALING_PASSWORD, prefs.getString(RCDevice.ParameterKeys.SIGNALING_PASSWORD, "1234"));
+      params.put(RCDevice.ParameterKeys.MEDIA_ICE_URL, prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_URL, ""));
+      params.put(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME, prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME, ""));
+      params.put(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD, prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD, ""));
       params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
-      params.put(RCDevice.ParameterKeys.MEDIA_TURN_URL, prefs.getString(RCDevice.ParameterKeys.MEDIA_TURN_URL, ""));
-      params.put(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME, prefs.getString(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME, ""));
-      params.put(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD, prefs.getString(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD, ""));
       params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false));
-      params.put(RCDevice.ParameterKeys.SIGNALING_JAIN_SIP_LOGGING_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_JAIN_SIP_LOGGING_ENABLED, true));
+      //params.put(RCDevice.ParameterKeys.SIGNALING_JAIN_SIP_LOGGING_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_JAIN_SIP_LOGGING_ENABLED, true));
       device = RCClient.createDevice(params, this);
       device.setPendingIntents(new Intent(getApplicationContext(), CallActivity.class),
             new Intent(getApplicationContext(), MessageActivity.class));
@@ -302,6 +302,11 @@ public class MainActivity extends AppCompatActivity
          Toast.makeText(getApplicationContext(), "RCDevice Initialization Error: " + statusText, Toast.LENGTH_LONG).show();
       }
 
+   }
+
+   public void onInitializationError(int errorCode, String errorText)
+   {
+      Toast.makeText(getApplicationContext(), "RCDevice Initialization Error: " + errorText, Toast.LENGTH_LONG).show();
    }
 
    public void onReleased(RCDevice device, int statusCode, String statusText)

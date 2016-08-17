@@ -256,14 +256,14 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       if (modifiedParameters.containsKey(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED)) {
          this.configuration.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, modifiedParameters.get(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED));
       }
-      if (modifiedParameters.containsKey(RCDevice.ParameterKeys.MEDIA_TURN_URL)) {
-         this.configuration.put(RCDevice.ParameterKeys.MEDIA_TURN_URL, modifiedParameters.get(RCDevice.ParameterKeys.MEDIA_TURN_URL));
+      if (modifiedParameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_URL)) {
+         this.configuration.put(RCDevice.ParameterKeys.MEDIA_ICE_URL, modifiedParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_URL));
       }
-      if (modifiedParameters.containsKey(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME)) {
-         this.configuration.put(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME, modifiedParameters.get(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME));
+      if (modifiedParameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME)) {
+         this.configuration.put(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME, modifiedParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME));
       }
-      if (modifiedParameters.containsKey(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD)) {
-         this.configuration.put(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD, modifiedParameters.get(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD));
+      if (modifiedParameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD)) {
+         this.configuration.put(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD, modifiedParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD));
       }
 
       HashMap<String, Object> multipleParameters = new HashMap<String, Object>();

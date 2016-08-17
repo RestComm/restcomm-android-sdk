@@ -52,7 +52,7 @@ public interface RCDeviceListener {
     *  @param errorCode Error code for the error
     *  @param errorText Error text for the error
     */
-   //void onInitializationFailure(int errorCode, String errorText);
+   void onInitializationError(int errorCode, String errorText);
 
    /**
     * RCDevice started listening for incoming connections

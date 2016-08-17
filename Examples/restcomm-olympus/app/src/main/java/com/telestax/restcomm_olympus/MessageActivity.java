@@ -205,6 +205,11 @@ public class MessageActivity extends AppCompatActivity
 
    }
 
+   public void onInitializationError(int errorCode, String errorText)
+   {
+
+   }
+
    public void onStartListening(RCDevice device, RCConnectivityStatus connectivityStatus)
    {
 

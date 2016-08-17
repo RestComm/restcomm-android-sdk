@@ -114,9 +114,9 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
       public static final String SIGNALING_LOCAL_PORT = "signaling-local-port";
       public static final String SIGNALING_JAIN_SIP_LOGGING_ENABLED = "jain-sip-logging-enabled";
       public static final String MEDIA_TURN_ENABLED = "turn-enabled";
-      public static final String MEDIA_TURN_URL = "turn-url";
-      public static final String MEDIA_TURN_USERNAME = "turn-username";
-      public static final String MEDIA_TURN_PASSWORD = "turn-password";
+      public static final String MEDIA_ICE_URL = "turn-url";
+      public static final String MEDIA_ICE_USERNAME = "turn-username";
+      public static final String MEDIA_ICE_PASSWORD = "turn-password";
    }
 
    private static final String TAG = "RCDevice";
@@ -160,6 +160,10 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
       connections = new HashMap<String, RCConnection>();
       // initialize JAIN SIP if we have connectivity
       this.parameters = parameters;
+
+      // check if TURN keys are there
+      //params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
+
 
       signalingClient = SignalingClient.getInstance();
       signalingClient.open(this, RCClient.getContext(), parameters);

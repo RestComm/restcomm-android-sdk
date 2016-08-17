@@ -22,6 +22,8 @@
 
 package com.telestax.restcomm_olympus;
 
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
@@ -34,6 +36,8 @@ import android.view.MenuItem;
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
+import org.mobicents.restcomm.android.client.sdk.util.ErrorStruct;
+import org.mobicents.restcomm.android.client.sdk.util.RCUtils;
 
 import java.util.HashMap;
 
@@ -42,6 +46,7 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
    HashMap<String, Object> params;
    RCDevice device;
    boolean updated;
+   private AlertDialog alertDialog;
 
    @Override
    protected void onCreate(Bundle savedInstanceState)
@@ -67,6 +72,8 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
 
       prefs = PreferenceManager.getDefaultSharedPreferences(this);
       prefs.registerOnSharedPreferenceChangeListener(this);
+
+      alertDialog = new AlertDialog.Builder(SettingsActivity.this).create();
    }
 
    protected void onResume()
@@ -94,13 +101,22 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
       int id = item.getItemId();
       if (id == android.R.id.home) {
          if (updated) {
-            if (!device.updateParams(params)) {
-               // TODO:
-               //showOkAlert("RCDevice Error", "No Wifi connectivity");
+            ErrorStruct errorStruct = RCUtils.validateParms((HashMap<String,Object>)prefs.getAll());
+            if (errorStruct.statusCode != RCClient.ErrorCodes.SUCCESS) {
+               showOkAlert("Error saving Settings", errorStruct.statusText);
+            }
+            else {
+               if (!device.updateParams(params)) {
+                  // TODO:
+                  //showOkAlert("RCDevice Error", "No Wifi connectivity");
+               }
+               NavUtils.navigateUpFromSameTask(this);
             }
          }
+         else {
+            NavUtils.navigateUpFromSameTask(this);
+         }
 
-         NavUtils.navigateUpFromSameTask(this);
          return true;
       }
       return super.onOptionsItemSelected(item);
@@ -126,21 +142,34 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
          params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
          updated = true;
       }
-      else if (key.equals(RCDevice.ParameterKeys.MEDIA_TURN_URL)) {
-         params.put(RCDevice.ParameterKeys.MEDIA_TURN_URL, prefs.getString(RCDevice.ParameterKeys.MEDIA_TURN_URL, ""));
+      else if (key.equals(RCDevice.ParameterKeys.MEDIA_ICE_URL)) {
+         params.put(RCDevice.ParameterKeys.MEDIA_ICE_URL, prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_URL, ""));
          updated = true;
       }
-      else if (key.equals(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME)) {
-         params.put(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME, prefs.getString(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME, ""));
+      else if (key.equals(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME)) {
+         params.put(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME, prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME, ""));
          updated = true;
       }
-      else if (key.equals(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD)) {
-         params.put(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD, prefs.getString(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD, ""));
+      else if (key.equals(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD)) {
+         params.put(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD, prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD, ""));
          updated = true;
       }
       else if (key.equals(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED)) {
          params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false));
          updated = true;
       }
+   }
+
+   private void showOkAlert(final String title, final String detail)
+   {
+      alertDialog.setTitle(title);
+      alertDialog.setMessage(detail);
+      alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
+         public void onClick(DialogInterface dialog, int which)
+         {
+            dialog.dismiss();
+         }
+      });
+      alertDialog.show();
    }
 }

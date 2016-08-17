@@ -27,7 +27,9 @@ import java.util.HashMap;
 
 import android.content.Context;
 
+import org.mobicents.restcomm.android.client.sdk.util.ErrorStruct;
 import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
+import org.mobicents.restcomm.android.client.sdk.util.RCUtils;
 
 
 /**
@@ -44,6 +46,9 @@ public class RCClient {
 
    public enum ErrorCodes {
       SUCCESS,
+      ERROR_DEVICE_MISSING_ICE_URL,
+      ERROR_DEVICE_MISSING_ICE_USERNAME,
+      ERROR_DEVICE_MISSING_ICE_PASSWORD,
       ERROR_DEVICE_NO_CONNECTIVITY,
       ERROR_DEVICE_ALREADY_OPEN,
       ERROR_DEVICE_REGISTER_AUTHENTICATION_FORBIDDEN,
@@ -89,6 +94,15 @@ public class RCClient {
    {
       if (errorCode == ErrorCodes.SUCCESS) {
          return "Success";
+      }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_MISSING_ICE_URL) {
+         return "Device parameter validation error; ICE URL is mandatory";
+      }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_MISSING_ICE_USERNAME) {
+         return "Device parameter validation error; ICE username is mandatory";
+      }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_MISSING_ICE_PASSWORD) {
+         return "Device parameter validation error; ICE password is mandatory";
       }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY) {
          return "Device has no connectivity";
@@ -319,6 +333,12 @@ public class RCClient {
       }
 
       if (list.size() == 0) {
+         // check if RCDevice parameters are ok
+         ErrorStruct errorStruct = RCUtils.validateParms(parameters);
+         if (errorStruct.statusCode != RCClient.ErrorCodes.SUCCESS) {
+            throw new RuntimeException(errorStruct.statusText);
+         }
+
          RCDevice device = new RCDevice(parameters, deviceListener);
          list.add(device);
       }

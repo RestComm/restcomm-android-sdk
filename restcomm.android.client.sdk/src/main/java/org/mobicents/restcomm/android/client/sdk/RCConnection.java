@@ -772,7 +772,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       mainHandler.post(myRunnable);
    }
 
-   //public void setupWebrtcAndCall(String sipUri, HashMap<String, String> sipHeaders, boolean videoEnabled)
    private void setupWebrtcAndCall(Map<String, Object> parameters)
    {
       this.callParams = (HashMap<String, Object>) parameters;
@@ -787,12 +786,18 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private void startTurn()
    {
       HashMap<String, Object> deviceParameters = device.getParameters();
-      String url = deviceParameters.get(RCDevice.ParameterKeys.MEDIA_TURN_URL) + "?ident=" +
-            deviceParameters.get(RCDevice.ParameterKeys.MEDIA_TURN_USERNAME) + "&secret=" +
-            deviceParameters.get(RCDevice.ParameterKeys.MEDIA_TURN_PASSWORD) + "&domain=cloud.restcomm.com&application=default&room=default&secure=1";
+      String url = deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_URL) + "?ident=" +
+            deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME) + "&secret=" +
+            deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD) + "&domain=cloud.restcomm.com&application=default&room=default&secure=1";
+
+      boolean turnEnabled = false;
+      if (deviceParameters.containsKey(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED) &&
+            !deviceParameters.get(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED).equals("")) {
+         turnEnabled = true;
+      }
 
       //String url = "https://service.xirsys.com/ice?ident=atsakiridis&secret=4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7&domain=cloud.restcomm.com&application=default&room=default&secure=1";
-      new IceServerFetcher(url, (boolean) deviceParameters.get(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED), this).makeRequest();
+      new IceServerFetcher(url, turnEnabled, this).makeRequest();
    }
 
    // initialize webrtc facilities for the call
