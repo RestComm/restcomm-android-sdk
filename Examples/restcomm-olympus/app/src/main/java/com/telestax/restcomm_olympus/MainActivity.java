@@ -59,6 +59,7 @@ public class MainActivity extends AppCompatActivity
    private MainFragment listFragment;
    private AlertDialog alertDialog;
    private RCConnectivityStatus previousConnectivityStatus = RCConnectivityStatus.RCConnectivityStatusNone;
+   private static final String APP_VERSION = "Restcomm Android Olympus Client " + BuildConfig.VERSION_NAME + "#" + BuildConfig.VERSION_CODE; //"Restcomm Android Olympus Client 1.0.0-BETA4#20";
 
    ImageButton btnAdd;
 
@@ -69,6 +70,8 @@ public class MainActivity extends AppCompatActivity
    {
       super.onCreate(savedInstanceState);
       setContentView(R.layout.activity_main);
+
+      Log.i(TAG, "Olympus Version: " + APP_VERSION);
 
       // For TestFairy troubleshooting. IMPORTANT: remove for production apps, as TestFairy sends logs, screenshots, etc to their servers
       TestFairy.begin(this, "52d3ee1de1b7681d1fcbbc3295b2b86a0aa43fcc");
