@@ -585,9 +585,14 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
    public void jainSipAuthenticate(JainSipJob jainSipJob, HashMap<String, Object> parameters, ResponseEventExt responseEventExt) throws JainSipException
    {
       try {
+         String password = (String) parameters.get(RCDevice.ParameterKeys.SIGNALING_PASSWORD);
+         if (password == null) {
+            password = "";
+         }
+
          AuthenticationHelper authenticationHelper = ((SipStackExt) jainSipStack).getAuthenticationHelper(
                new JainSipAccountManagerImpl((String) parameters.get(RCDevice.ParameterKeys.SIGNALING_USERNAME),
-                     responseEventExt.getRemoteIpAddress(), (String) parameters.get(RCDevice.ParameterKeys.SIGNALING_PASSWORD)), jainSipMessageBuilder.getHeaderFactory());
+                     responseEventExt.getRemoteIpAddress(), password), jainSipMessageBuilder.getHeaderFactory());
 
          // we 're subtracting one since the first attempt has already taken place
          // (that way we are enforcing MAX_AUTH_ATTEMPTS at most)

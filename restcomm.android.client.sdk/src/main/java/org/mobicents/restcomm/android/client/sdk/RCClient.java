@@ -46,6 +46,7 @@ public class RCClient {
 
    public enum ErrorCodes {
       SUCCESS,
+      ERROR_DEVICE_MISSING_USERNAME,
       ERROR_DEVICE_MISSING_ICE_URL,
       ERROR_DEVICE_MISSING_ICE_USERNAME,
       ERROR_DEVICE_MISSING_ICE_PASSWORD,
@@ -94,6 +95,9 @@ public class RCClient {
    {
       if (errorCode == ErrorCodes.SUCCESS) {
          return "Success";
+      }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_MISSING_USERNAME) {
+         return "Device parameter validation error; username is mandatory";
       }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_MISSING_ICE_URL) {
          return "Device parameter validation error; ICE URL is mandatory";

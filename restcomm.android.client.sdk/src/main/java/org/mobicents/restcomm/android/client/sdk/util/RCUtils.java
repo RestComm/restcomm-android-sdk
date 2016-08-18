@@ -38,6 +38,11 @@ public class RCUtils {
             ((Boolean)parameters.get(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED))) {
             */
 
+      if (!parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_USERNAME) ||
+            parameters.get(RCDevice.ParameterKeys.SIGNALING_USERNAME).equals("")) {
+         return new ErrorStruct(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_USERNAME);
+      }
+
       // all those fields are mandatory irrespective if we use TURN or not. Even to only get the STUN url, we need all of them
       if (!parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_URL) ||
             parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_URL).equals("")) {
