@@ -61,7 +61,7 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
          jainSipClient.call(message.jobId, message.parameters, this);
       }
       else if (message.type == SignalingMessage.MessageType.CALL_DISCONNECT_REQUEST) {
-         jainSipClient.disconnect(message.jobId, this);
+         jainSipClient.disconnect(message.jobId, message.reason, this);
       }
       else if (message.type == SignalingMessage.MessageType.CALL_ACCEPT_REQUEST) {
          jainSipClient.accept(message.jobId, message.parameters, this);

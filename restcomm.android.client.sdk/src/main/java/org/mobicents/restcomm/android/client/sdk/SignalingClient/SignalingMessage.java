@@ -58,6 +58,8 @@ public class SignalingMessage {
    public String peer;
    // DTMF digits
    public String dtmfDigits;
+   // reason for hunging up a call (to be added as SIP Reason Header)
+   public String reason;
 
    // let's enforce id and type, to make sure we always get them
    public SignalingMessage(String jobId, MessageType type)

@@ -324,9 +324,9 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       jainSipJob.jainSipCall.accept(jainSipJob, parameters);
    }
 
-   public void disconnect(String jobId, JainSipCall.JainSipCallListener listener)
+   public void disconnect(String jobId, String reason, JainSipCall.JainSipCallListener listener)
    {
-      RCLogger.i(TAG, "disconnect(): jobId: " + jobId);
+      RCLogger.i(TAG, "disconnect(): jobId: " + jobId + ", reason: " + reason);
 
       if (!jainSipNotificationManager.haveConnectivity()) {
          listener.onCallErrorEvent(jobId, RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY, RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY));
@@ -338,7 +338,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       // to the User but the user still needs to disconnect() manually), hence this will return null and
       // in those cases we don't need to do anything
       if (jainSipJob != null) {
-         jainSipJob.jainSipCall.disconnect(jainSipJob);
+         jainSipJob.jainSipCall.disconnect(jainSipJob, reason);
       }
       else {
          // let's emit a warning just in case we hit an actual error case with this

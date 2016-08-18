@@ -109,7 +109,7 @@ public class JainSipCall {
 
    // Close an existing call. The actual SIP request emitted depends on current state: a. If its an early incoming call we Decline, b. If its an early outgoing
    // call we Cancel and c. On any other case we Bye
-   public void disconnect(JainSipJob jainSipJob)
+   public void disconnect(JainSipJob jainSipJob, String reason)
    {
       RCLogger.i(TAG, "close(): jobId: " + jainSipJob.jobId);
       try {
@@ -133,7 +133,7 @@ public class JainSipCall {
          }
          else {
             RCLogger.v(TAG, "close(): jobId " + jainSipJob.jobId + " - Confirmed dialog state, sending Bye");
-            jainSipCallHangup(jainSipJob, jainSipClient.configuration);
+            jainSipCallHangup(jainSipJob, jainSipClient.configuration, reason);
          }
       }
       catch (JainSipException e) {
@@ -188,12 +188,12 @@ public class JainSipCall {
       }
    }
 
-   public ClientTransaction jainSipCallHangup(JainSipJob jainSipJob, HashMap<String, Object> clientConfiguration) throws JainSipException
+   public ClientTransaction jainSipCallHangup(JainSipJob jainSipJob, HashMap<String, Object> clientConfiguration, String reason) throws JainSipException
    {
       RCLogger.v(TAG, "jainSipCallHangup(): jobId: " + jainSipJob.jobId);
       Request byeRequest = null;
       try {
-         byeRequest = jainSipClient.jainSipMessageBuilder.buildByeRequest(jainSipJob.transaction.getDialog(), clientConfiguration);
+         byeRequest = jainSipClient.jainSipMessageBuilder.buildByeRequest(jainSipJob.transaction.getDialog(), reason, clientConfiguration);
          RCLogger.i(TAG, "Sending SIP request: \n" + byeRequest.toString());
 
          ClientTransaction transaction = jainSipClient.jainSipProvider.getNewClientTransaction(byeRequest);
@@ -395,7 +395,7 @@ public class JainSipCall {
             if (responseEvent.getClientTransaction().getDialog().getState() == DialogState.CONFIRMED) {
                RCLogger.w(TAG, "processResponse(): Cancel reached peer too late, need to send Bye");
                try {
-                  jainSipCallHangup(jainSipJob, jainSipClient.configuration);
+                  jainSipCallHangup(jainSipJob, jainSipClient.configuration, null);
                }
                catch (JainSipException e) {
                   listener.onCallErrorEvent(jainSipJob.jobId, e.errorCode, e.errorText);

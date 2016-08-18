@@ -388,7 +388,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void ignore()
    {
       if (state == ConnectionState.CONNECTING) {
-         signalingClient.disconnect(jobId);
+         signalingClient.disconnect(jobId, null);
       }
       else {
          // let's delay a millisecond to avoid calling code in the App getting intertwined with App listener code
@@ -413,7 +413,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       RCLogger.i(TAG, "reject()");
 
       if (state == ConnectionState.CONNECTING) {
-         signalingClient.disconnect(jobId);
+         signalingClient.disconnect(jobId, null);
 
          // TODO: (minor) if reject() is called while we are already connected then we will disconnect, but in that
          // edge case we shouldn't set connection state to DICONNECTED right away
@@ -448,33 +448,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       RCLogger.i(TAG, "disconnect()");
 
-      if (state != ConnectionState.DISCONNECTED && state != ConnectionState.DISCONNECTING) {
-         signalingClient.disconnect(jobId);
-         disconnectWebrtc();
-
-         state = ConnectionState.DISCONNECTING;
-         // also update RCDevice state. Reason we need that is twofold: a. if a call times out in signaling for a reason it will take around half a minute to
-         // get response from signaling, during which period we won't be able to make a call, b. there are some edge cases where signaling hangs and never times out
-         if (RCDevice.state == RCDevice.DeviceState.BUSY) {
-            RCDevice.state = RCDevice.DeviceState.READY;
-         }
-      }
-      else if (state == ConnectionState.DISCONNECTING) {
-         RCLogger.w(TAG, "disconnect(): Attempting to disconnect while we are in state disconnecting, skipping.");
-      }
-      else {
-         // let's delay a millisecond to avoid calling code in the App getting intertwined with App listener code
-         new Handler(RCClient.getContext().getMainLooper()).postDelayed(
-               new Runnable() {
-                  @Override
-                  public void run()
-                  {
-                     listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_WRONG_STATE.ordinal(),
-                           RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_WRONG_STATE));
-                  }
-               }
-               , 1);
-      }
+      handleDisconnect(null);
    }
 
    /**
@@ -641,7 +615,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       // if not we need to avoid disconnecting below
       if (state != ConnectionState.DISCONNECTING) {
          // only disconnect signaling facilities if we are not already disconnecting
-         signalingClient.disconnect(jobId);
+         signalingClient.disconnect(jobId, null);
       }
       disconnectWebrtc();
 
@@ -681,6 +655,39 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
       // Phone state Intents to capture normal disconnect event
       sendQoSConnectionIntent("disconnected");
+   }
+
+   private void handleDisconnect(String reason)
+   {
+      RCLogger.i(TAG, "handleDisconnect(): reason: " + reason);
+
+      if (state != ConnectionState.DISCONNECTED && state != ConnectionState.DISCONNECTING) {
+         signalingClient.disconnect(jobId, reason);
+         disconnectWebrtc();
+
+         state = ConnectionState.DISCONNECTING;
+         // also update RCDevice state. Reason we need that is twofold: a. if a call times out in signaling for a reason it will take around half a minute to
+         // get response from signaling, during which period we won't be able to make a call, b. there are some edge cases where signaling hangs and never times out
+         if (RCDevice.state == RCDevice.DeviceState.BUSY) {
+            RCDevice.state = RCDevice.DeviceState.READY;
+         }
+      }
+      else if (state == ConnectionState.DISCONNECTING) {
+         RCLogger.w(TAG, "disconnect(): Attempting to disconnect while we are in state disconnecting, skipping.");
+      }
+      else {
+         // let's delay a millisecond to avoid calling code in the App getting intertwined with App listener code
+         new Handler(RCClient.getContext().getMainLooper()).postDelayed(
+               new Runnable() {
+                  @Override
+                  public void run()
+                  {
+                     listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_WRONG_STATE.ordinal(),
+                           RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_WRONG_STATE));
+                  }
+               }
+               , 1);
+      }
    }
 
    public String getId()
@@ -1097,6 +1104,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    @Override
    public void onIceDisconnected()
    {
+      // Notice that this is actually means that media connectivity has been lost, hence showing an error (maps to IceConnectionState.DISCONNECTED)
       Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
       Runnable myRunnable = new Runnable() {
          @Override
@@ -1105,7 +1113,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             RCLogger.i(TAG, "onIceDisconnected");
             logAndToast("ICE disconnected");
             iceConnected = false;
-            disconnect();
+            handleDisconnect("Connectivity-Drop");
          }
       };
       mainHandler.post(myRunnable);
@@ -1143,7 +1151,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          public void run()
          {
             RCLogger.e(TAG, "PeerConnection error: " + description);
-            disconnect();
+            String reason = null;
+            if (description.equals("ICE connection failed")) {
+               // in cases where this is the result of IceConnectionState.FAILED, which means that media connectivity is lost we need to add proper reason header
+               reason = "Connectivity-Drop";
+            }
+            handleDisconnect(reason);
+
             if (connection.listener != null) {
                connection.listener.onDisconnected(connection, RCClient.ErrorCodes.ERROR_CONNECTION_WEBRTC_PEERCONNECTION_ERROR.ordinal(), description);
             }

@@ -16,6 +16,7 @@ import android.javax.sip.header.ContentTypeHeader;
 import android.javax.sip.header.ExpiresHeader;
 import android.javax.sip.header.Header;
 import android.javax.sip.header.HeaderFactory;
+import android.javax.sip.header.ReasonHeader;
 import android.javax.sip.header.RouteHeader;
 import android.javax.sip.header.SupportedHeader;
 import android.javax.sip.header.UserAgentHeader;
@@ -248,7 +249,7 @@ class JainSipMessageBuilder {
       }
    }
 
-   public Request buildByeRequest(android.javax.sip.Dialog dialog, HashMap<String, Object> clientConfiguration) throws JainSipException
+   public Request buildByeRequest(android.javax.sip.Dialog dialog, String reason, HashMap<String, Object> clientConfiguration) throws JainSipException
    {
       try {
          Request request = dialog.createRequest(Request.BYE);
@@ -261,7 +262,25 @@ class JainSipMessageBuilder {
             request.addFirst(routeHeader);
          }
 
+         int reasonCode;
+         if (reason == null || reason.isEmpty()) {
+            // normal hangup
+            reason = "Normal-Hangup";
+            reasonCode = 0;
+         }
+         else {
+            // error, the only error that we convey right now is the connectivity drop
+            reasonCode = 1;
+         }
+
+         ReasonHeader reasonHeader = jainSipHeaderFactory.createReasonHeader("SIP", reasonCode, reason);
+         request.addHeader(reasonHeader);
+
          return request;
+      }
+      catch (ParseException|InvalidArgumentException e) {
+         // these exceptions occur only in reason header generation, so if it happens it means there's programming error we need to fix
+         throw new RuntimeException("Error generating Reason Header for request", e);
       }
       catch (SipException e) {
          throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_FAILED,
