@@ -1,5 +1,3 @@
-package org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient;
-
 /*
  * TeleStax, Open Source Cloud Communications
  * Copyright 2011-2015, Telestax Inc and individual contributors
@@ -22,6 +20,7 @@ package org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient;
  *
  */
 
+package org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient;
 
 import android.gov.nist.javax.sip.clientauthutils.AccountManager;
 import android.gov.nist.javax.sip.clientauthutils.UserCredentials;

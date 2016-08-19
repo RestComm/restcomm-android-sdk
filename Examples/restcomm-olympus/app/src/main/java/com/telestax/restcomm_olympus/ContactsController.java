@@ -64,7 +64,7 @@ public class ContactsController {
          prefEdit.putString("+1311", "Conference Admin App");
 
          prefEdit.putBoolean(PREFS_CONTACTS_INIT_KEY, true);
-         prefEdit.commit();
+         prefEdit.apply();
       }
 
       ArrayList<Map<String, String>> list = new ArrayList<Map<String, String>>();
@@ -83,7 +83,7 @@ public class ContactsController {
       if (prefsContacts.getString(sipuri, "not found").equals("not found")) {
          SharedPreferences.Editor prefEdit = prefsContacts.edit();
          prefEdit.putString(sipuri, username);
-         prefEdit.commit();
+         prefEdit.apply();
       }
       else {
          Log.w(TAG, "addContact(): contact already exists: " + username + ", " + sipuri);
@@ -99,7 +99,7 @@ public class ContactsController {
       if (!prefsContacts.getString(sipuri, "not found").equals("not found")) {
          SharedPreferences.Editor prefEdit = prefsContacts.edit();
          prefEdit.putString(sipuri, username);
-         prefEdit.commit();
+         prefEdit.apply();
       }
       else {
          // TODO: we could add some error reporting at some point
@@ -131,7 +131,7 @@ public class ContactsController {
       if (!prefsContacts.getString(sipuri, "not found").equals("not found")) {
          SharedPreferences.Editor prefEdit = prefsContacts.edit();
          prefEdit.remove(sipuri);
-         prefEdit.commit();
+         prefEdit.apply();
       }
       else {
          Log.w(TAG, "removeContact(): contact not found in ListView adapter list: " + username + ", " + sipuri);

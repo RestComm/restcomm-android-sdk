@@ -20,28 +20,23 @@
  *
  */
 
-package org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient;
+package com.telestax.restcomm_olympus;
 
-import org.mobicents.restcomm.android.client.sdk.RCClient;
+import android.provider.BaseColumns;
 
-class JainSipException extends Exception {
-   RCClient.ErrorCodes errorCode;
-   String errorText;
-
-   JainSipException(RCClient.ErrorCodes errorCode, String errorText)
-   {
-      this.errorCode = errorCode;
-      this.errorText = errorText;
+// Define a contract for the DB schema, to make easier to picture and use
+public final class DatabaseContract {
+   // To prevent someone from accidentally instantiating the contract class,
+   // give it an empty constructor
+   public DatabaseContract() {
    }
 
-   // initialize an exception, but also chain another exception to it
-   JainSipException(RCClient.ErrorCodes errorCode, String errorText, Throwable throwable)
-   {
-      this.errorCode = errorCode;
-      this.errorText = errorText;
-
-      this.initCause(throwable);
+   // Inner class that defines the table contents
+   public static abstract class ContactEntry implements BaseColumns {
+      public static final String TABLE_NAME = "contact";
+      public static final String COLUMN_NAME_NAME = "name";
+      //public static final String COLUMN_NAME_LABEL = "label";
+      public static final String COLUMN_NAME_URI = "uri";
    }
-
-
 }
+

@@ -27,6 +27,9 @@ import android.app.DialogFragment;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteQueryBuilder;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
@@ -45,7 +48,9 @@ import org.mobicents.restcomm.android.client.sdk.RCDevice;
 import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
 import org.mobicents.restcomm.android.client.sdk.RCPresenceEvent;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity
       implements MainFragment.Callbacks, RCDeviceListener,
@@ -61,10 +66,57 @@ public class MainActivity extends AppCompatActivity
    private RCConnectivityStatus previousConnectivityStatus = RCConnectivityStatus.RCConnectivityStatusNone;
    private static final String APP_VERSION = "Restcomm Android Olympus Client " + BuildConfig.VERSION_NAME + "#" + BuildConfig.VERSION_CODE; //"Restcomm Android Olympus Client 1.0.0-BETA4#20";
 
+   //DatabaseHelper databaseHelper;
+
    ImageButton btnAdd;
 
    private static final int CONNECTION_REQUEST = 1;
 
+   /*
+   // Retrieve all contact entries from DB and return them in an ArrayList suitable for use by the ContactAdapter
+   ArrayList<Map<String, String>> retrieveContactsArray()
+   {
+      if (databaseHelper == null) {
+         throw new RuntimeException("Database hasn't been opened yet, please call open()");
+      }
+
+      //SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
+      //qb.setTables(DatabaseContract.ContactEntry.TABLE_NAME);
+
+      // Define a projection that specifies which columns from the database
+      // you will actually use after this query.
+      String[] columns = {
+            DatabaseContract.ContactEntry.COLUMN_NAME_NAME,
+            DatabaseContract.ContactEntry.COLUMN_NAME_URI,
+      };
+
+      // How you want the results sorted in the resulting Cursor
+      String sortOrder = DatabaseContract.ContactEntry.COLUMN_NAME_NAME + " ASC";
+
+      SQLiteDatabase db = databaseHelper.getReadableDatabase();
+      Cursor cursor = db.query(
+            DatabaseContract.ContactEntry.TABLE_NAME,  // The table to query
+            columns,                               // The columns to return
+            null,                                // The columns for the WHERE clause
+            null,                            // The values for the WHERE clause
+            null,                                     // don't group the rows
+            null,                                     // don't filter by row groups
+            sortOrder                                 // The sort order
+      );
+
+      ArrayList<Map<String, String>> contactList = new ArrayList<Map<String, String>>();
+      if (cursor.getCount() > 0) {
+         cursor.moveToFirst();
+         // iterate the rows, read from db and populate contactList
+         for (int i = 0; i < cursor.getCount(); i++) {
+            Log.w(TAG, "+++ Entry: " + cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.ContactEntry.COLUMN_NAME_NAME)));
+         }
+      }
+      cursor.close();
+
+      return null;
+   }
+   */
    @Override
    protected void onCreate(Bundle savedInstanceState)
    {
@@ -75,6 +127,11 @@ public class MainActivity extends AppCompatActivity
 
       // For TestFairy troubleshooting. IMPORTANT: remove for production apps, as TestFairy sends logs, screenshots, etc to their servers
       TestFairy.begin(this, "52d3ee1de1b7681d1fcbbc3295b2b86a0aa43fcc");
+
+      // Initialize database
+      //DatabaseManager.getInstance().open(getApplicationContext());
+
+      //databaseHelper = new DatabaseHelper(getApplicationContext());
 
       Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
       setSupportActionBar(toolbar);
@@ -231,6 +288,9 @@ public class MainActivity extends AppCompatActivity
     */
    public void onActionClicked(ActionFragment.ActionType action, String username, String sipuri)
    {
+      //DatabaseManager.getInstance().retrieveContactsArray();
+      //retrieveContactsArray();
+
       if (action == ActionFragment.ActionType.ACTION_TYPE_VIDEO_CALL) {
          Intent intent = new Intent(this, CallActivity.class);
          intent.setAction(RCDevice.OUTGOING_CALL);

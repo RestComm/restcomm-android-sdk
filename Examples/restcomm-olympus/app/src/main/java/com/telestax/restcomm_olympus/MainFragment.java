@@ -103,7 +103,11 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
       super.onCreate(savedInstanceState);
 
       contactsController = new ContactsController(getActivity().getApplicationContext());
-      contactList = contactsController.initializeContacts();
+      //contactList = contactsController.initializeContacts();
+
+      // Initialize database
+      DatabaseManager.getInstance().open(getActivity().getApplicationContext());
+      contactList = DatabaseManager.getInstance().retrieveContactsArray();
 
       listViewAdapter = new ContactAdapter(getActivity().getApplicationContext(), contactList, this);
       setListAdapter(listViewAdapter);
