@@ -742,6 +742,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          @Override
          public void run()
          {
+            handleDisconnect(null);
+
             if (RCDevice.state == RCDevice.DeviceState.BUSY) {
                RCDevice.state = RCDevice.DeviceState.READY;
             }
