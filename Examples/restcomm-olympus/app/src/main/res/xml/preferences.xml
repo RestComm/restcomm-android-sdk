@@ -5,18 +5,18 @@
     android:key="sip_proxy_settings"
     android:title="Sip Settings" >
     <EditTextPreference
-        android:defaultValue="android-sdk"
+        android:defaultValue=""
         android:key="pref_sip_user"
         android:title="User"
         android:summary="Restcomm-Connect client username, like 'bob'"/>
     <EditTextPreference
-        android:defaultValue="1234"
+        android:defaultValue=""
         android:key="pref_sip_password"
         android:title="Password"
         android:inputType="textPassword"
         android:summary="Password for Restcomm-Connect authentication"/>
     <EditTextPreference
-        android:defaultValue=""
+        android:defaultValue="cloud.restcomm.com"
         android:key="pref_proxy_domain"
         android:title="Domain"
         android:summary="Restcomm-Connect domain, like: 'cloud.restcomm.com'"/>
@@ -24,7 +24,7 @@
         android:defaultValue="false"
         android:key="signaling-secure"
         android:title="Secure Signaling"
-        android:summary="Encypt signaling communications (notice that media communications are always encrypted so no need for an extra option)"/>
+        android:summary="Encrypt signaling communications (notice that media communications are always encrypted so no need for an extra option)"/>
 
 </PreferenceCategory>
     <PreferenceCategory
