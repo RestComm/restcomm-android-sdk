@@ -24,6 +24,7 @@ package com.telestax.restcomm_olympus;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.database.SQLException;
 import android.util.Log;
 
 import java.util.ArrayList;
@@ -32,8 +33,10 @@ import java.util.Map;
 
 public class ContactsController {
    private static final String TAG = "ContactsController";
-   private static final String PREFS_CONTACTS_NAME = "contacts.xml";
-   private static final String PREFS_CONTACTS_INIT_KEY = "prefs-initialized";
+   //private static final String PREFS_CONTACTS_NAME = "contacts.xml";
+   //private static final String PREFS_CONTACTS_INIT_KEY = "prefs-initialized";
+   public static final String CONTACT_KEY = "username";
+   public static final String CONTACT_VALUE = "sipuri";
    private Context context;
 
    SharedPreferences prefsContacts = null;
@@ -43,10 +46,10 @@ public class ContactsController {
       this.context = context;
    }
 
-   // Check if default contact entries already exist in the data store (android preferences) and if not
-   // add them
+   // Retrieve all contact entries from DB and return them in an ArrayList suitable for use by the ContactAdapter
    ArrayList<Map<String, String>> initializeContacts()
    {
+      /*
       // didn't find a clean way to add default values as an .xml in resources without binding them to UI elements
       //PreferenceManager.setDefaultValues(this, "contacts.xml", MODE_PRIVATE, R.xml.contacts, false);
       //prefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -75,59 +78,58 @@ public class ContactsController {
          }
       }
       return list;
+      */
+      return DatabaseManager.getInstance().retrieveContacts();
    }
 
-   // Adds contact to a. the preferences data store and b. to the given list (which is the backing store for the ListView)
-   void addContact(ArrayList<Map<String, String>> list, String username, String sipuri)
+   // Adds contact to a. the db and b. to the given list (which is the backing store for the ListView)
+   void addContact(ArrayList<Map<String, String>> list, String username, String sipuri) throws Exception
    {
-      if (prefsContacts.getString(sipuri, "not found").equals("not found")) {
-         SharedPreferences.Editor prefEdit = prefsContacts.edit();
-         prefEdit.putString(sipuri, username);
-         prefEdit.apply();
+      try {
+         DatabaseManager.getInstance().addContact(username, sipuri);
       }
-      else {
-         Log.w(TAG, "addContact(): contact already exists: " + username + ", " + sipuri);
-         return;
+      catch (SQLException e) {
+         if (e.getMessage().contains("UNIQUE constraint failed")) {
+            throw new Exception("Contact already exists", e);
+         }
+         else {
+            throw new Exception(e.getMessage(), e);
+         }
       }
 
       list.add(createEntry(sipuri, username));
    }
 
    // Updates contact to a. the preferences data store and b. to the given list
-   void updateContact(ArrayList<Map<String, String>> list, String username, String sipuri)
+   public int updateContact(ArrayList<Map<String, String>> list, String username, String sipuri)
    {
-      if (!prefsContacts.getString(sipuri, "not found").equals("not found")) {
-         SharedPreferences.Editor prefEdit = prefsContacts.edit();
-         prefEdit.putString(sipuri, username);
-         prefEdit.apply();
-      }
-      else {
-         // TODO: we could add some error reporting at some point
-         Log.w(TAG, "addContact(): contact not found: " + username + ", " + sipuri);
-         return;
-      }
-
-      int index = 0;
-      boolean found = false;
-      for (Map<String, String> item : list) {
-         if (item.containsValue(sipuri)) {
-            found = true;
-            break;
-         }
-         index++;
-      }
-
-      if (found) {
+      int rowIndex = DatabaseManager.getInstance().updateContact(username, sipuri);
+      if (rowIndex != -1) {
          HashMap<String, String> map = new HashMap<String, String>();
-         map.put("sipuri", sipuri);
-         map.put("username", username);
-         list.set(index, map);
+         map.put(CONTACT_KEY, username);
+         map.put(CONTACT_VALUE, sipuri);
+
+         list.set(rowIndex, map);
       }
+
+      return rowIndex;
    }
 
    // Removes a contact from a. the preferences data store and b. to the given list
-   void removeContact(ArrayList<Map<String, String>> list, String username, String sipuri)
+   int removeContact(ArrayList<Map<String, String>> list, String username, String sipuri)
    {
+      int rowIndex = DatabaseManager.getInstance().removeContact(username, sipuri);
+      if (rowIndex != -1) {
+         HashMap<String, String> map = new HashMap<String, String>();
+         map.put(CONTACT_KEY, username);
+         map.put(CONTACT_VALUE, sipuri);
+
+         list.remove(rowIndex);
+      }
+
+      return rowIndex;
+
+      /*
       if (!prefsContacts.getString(sipuri, "not found").equals("not found")) {
          SharedPreferences.Editor prefEdit = prefsContacts.edit();
          prefEdit.remove(sipuri);
@@ -150,14 +152,15 @@ public class ContactsController {
          Log.w(TAG, "removeContact(): contact not found in ListView adapter list: " + username + ", " + sipuri);
          return;
       }
+      */
    }
 
    // Helpers
    private HashMap<String, String> createEntry(String sipuri, String username)
    {
       HashMap<String, String> item = new HashMap<String, String>();
-      item.put("sipuri", sipuri);
-      item.put("username", username);
+      item.put(CONTACT_VALUE, sipuri);
+      item.put(CONTACT_KEY, username);
       return item;
    }
 

@@ -34,9 +34,23 @@ public final class DatabaseContract {
    // Inner class that defines the table contents
    public static abstract class ContactEntry implements BaseColumns {
       public static final String TABLE_NAME = "contact";
+      // contact name, like 'Conference Bridge', or 'Bob'
       public static final String COLUMN_NAME_NAME = "name";
-      //public static final String COLUMN_NAME_LABEL = "label";
+      // contact uri, like '+1235', or 'bob'
       public static final String COLUMN_NAME_URI = "uri";
    }
+
+   // Inner class that defines the table contents
+   public static abstract class MessageEntry implements BaseColumns {
+      public static final String TABLE_NAME = "message";
+      public static final String COLUMN_NAME_CONTACT_ID = "contact_id";
+      // message actual text
+      public static final String COLUMN_NAME_TEXT = "text";
+      // message type: 'local' or 'remote'
+      public static final String COLUMN_NAME_TYPE = "type";
+      // time sent or received
+      public static final String COLUMN_NAME_TIMESTAMP = "timestamp";
+   }
+
 }
 

@@ -52,6 +52,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.telestax.restcomm_olympus.ContactsController.CONTACT_KEY;
+import static com.telestax.restcomm_olympus.ContactsController.CONTACT_VALUE;
+
 public class MainActivity extends AppCompatActivity
       implements MainFragment.Callbacks, RCDeviceListener,
       View.OnClickListener, SharedPreferences.OnSharedPreferenceChangeListener,
@@ -254,18 +257,18 @@ public class MainActivity extends AppCompatActivity
    public void onItemSelected(HashMap<String, String> contact, MainFragment.ContactSelectionType type)
    {
       // forward to onActionClicked
-      onActionClicked(ActionFragment.ActionType.ACTION_TYPE_VIDEO_CALL, contact.get("username"), contact.get("sipuri"));
+      onActionClicked(ActionFragment.ActionType.ACTION_TYPE_VIDEO_CALL, contact.get(CONTACT_KEY), contact.get(CONTACT_VALUE));
    }
 
    public void onContactUpdate(HashMap<String, String> contact, int type)
    {
-      DialogFragment newFragment = AddUserDialogFragment.newInstance(AddUserDialogFragment.DIALOG_TYPE_UPDATE_CONTACT, contact.get("username"), contact.get("sipuri"));
+      DialogFragment newFragment = AddUserDialogFragment.newInstance(AddUserDialogFragment.DIALOG_TYPE_UPDATE_CONTACT, contact.get(CONTACT_KEY), contact.get(CONTACT_VALUE));
       newFragment.show(getFragmentManager(), "dialog");
    }
 
    public void onAccessoryClicked(HashMap<String, String> contact)
    {
-      DialogFragment actionFragment = ActionFragment.newInstance(contact.get("username"), contact.get("sipuri"));
+      DialogFragment actionFragment = ActionFragment.newInstance(contact.get(CONTACT_KEY), contact.get(CONTACT_VALUE));
       actionFragment.show(getFragmentManager(), "dialog-accessory");
    }
 

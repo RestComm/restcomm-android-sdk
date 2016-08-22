@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string-array name="demo_apps">
+        <!-- We must delimit Restcomm App name from App URI with a comma character -->
+        <item>Play App, +1234</item>
+        <item>Say App, +1235</item>
+        <item>Gather App, +1236</item>
+    </string-array>
     <string-array name="actions_array">
         <item>Make Video Call</item>
         <item>Make Audio Call</item>

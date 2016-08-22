@@ -26,6 +26,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.database.SQLException;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.util.TypedValue;
@@ -44,6 +45,9 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.telestax.restcomm_olympus.ContactsController.CONTACT_KEY;
+import static com.telestax.restcomm_olympus.ContactsController.CONTACT_VALUE;
 
 public class MainFragment extends ListFragment implements ContactAdapterListener {
    private ContactsController contactsController;
@@ -103,11 +107,11 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
       super.onCreate(savedInstanceState);
 
       contactsController = new ContactsController(getActivity().getApplicationContext());
-      //contactList = contactsController.initializeContacts();
 
       // Initialize database
       DatabaseManager.getInstance().open(getActivity().getApplicationContext());
-      contactList = DatabaseManager.getInstance().retrieveContactsArray();
+      contactList = contactsController.initializeContacts();
+      //contactList = DatabaseManager.getInstance().retrieveContacts();
 
       listViewAdapter = new ContactAdapter(getActivity().getApplicationContext(), contactList, this);
       setListAdapter(listViewAdapter);
@@ -211,7 +215,7 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
       if (v.getId() == android.R.id.list) {
          AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
 
-         menu.setHeaderTitle("Edit '" + contactList.get(info.position).get("username") + "'");
+         menu.setHeaderTitle("Edit '" + contactList.get(info.position).get(CONTACT_KEY) + "'");
          menu.add("Update Contact");
          menu.add("Remove Contact");
       }
@@ -227,7 +231,7 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
          mCallbacks.onContactUpdate(contact, AddUserDialogFragment.DIALOG_TYPE_UPDATE_CONTACT);
       }
       if (item.getTitle().toString().equals("Remove Contact")) {
-         contactsController.removeContact(contactList, contact.get("username"), contact.get("sipuri"));
+         contactsController.removeContact(contactList, contact.get(CONTACT_KEY), contact.get(CONTACT_VALUE));
          this.listViewAdapter.notifyDataSetChanged();
       }
 
@@ -243,11 +247,20 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
             return;
          }
          else {
-            this.contactsController.addContact(contactList, username, sipuri);
+            try {
+               this.contactsController.addContact(contactList, username, sipuri);
+            }
+            catch (Exception e) {
+               showOkAlert("Failed to add contact", e.getMessage());
+               return;
+            }
          }
       }
       else {
-         this.contactsController.updateContact(contactList, username, sipuri);
+         if (this.contactsController.updateContact(contactList, username, sipuri) == -1) {
+            // no contact was updated, no need to upate listAdapter
+            return;
+         }
       }
       // notify adapter that ListView needs to be updated
       this.listViewAdapter.notifyDataSetChanged();
@@ -324,8 +337,8 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
          }
 
          Map<String, String> contact = contactList.get(position);
-         holder.username.setText(contact.get("username"));
-         holder.sipuri.setText(contact.get("sipuri"));
+         holder.username.setText(contact.get(CONTACT_KEY));
+         holder.sipuri.setText(contact.get(CONTACT_VALUE));
 
          return view;
       }

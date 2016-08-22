@@ -31,6 +31,9 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
 
+import static com.telestax.restcomm_olympus.ContactsController.CONTACT_KEY;
+import static com.telestax.restcomm_olympus.ContactsController.CONTACT_VALUE;
+
 public class AddUserDialogFragment extends DialogFragment {
    public static final int DIALOG_TYPE_ADD_CONTACT = 0;
    public static final int DIALOG_TYPE_UPDATE_CONTACT = 1;
@@ -61,8 +64,8 @@ public class AddUserDialogFragment extends DialogFragment {
       Bundle args = new Bundle();
       args.putInt("type", type);
       if (type == DIALOG_TYPE_UPDATE_CONTACT) {
-         args.putString("username", username);
-         args.putString("sipuri", sipuri);
+         args.putString(CONTACT_KEY, username);
+         args.putString(CONTACT_VALUE, sipuri);
       }
       f.setArguments(args);
 
@@ -128,10 +131,10 @@ public class AddUserDialogFragment extends DialogFragment {
          title = "Update Contact";
          positiveText = "Update";
 
-         txtUsername.setText(getArguments().getString("username", ""));
-         txtSipuri.setText(getArguments().getString("sipuri", ""));
-         // sipuri is not modifiable
-         txtSipuri.setEnabled(false);
+         txtUsername.setText(getArguments().getString(CONTACT_KEY, ""));
+         txtSipuri.setText(getArguments().getString(CONTACT_VALUE, ""));
+         // username is not modifiable
+         txtUsername.setEnabled(false);
       }
 
       AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());

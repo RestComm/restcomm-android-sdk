@@ -38,7 +38,7 @@ import java.util.Map;
 
 public class MessageFragment extends ListFragment {
    private SimpleAdapter listViewAdapter;
-   private ArrayList<Map<String, String>> contactList;
+   private ArrayList<Map<String, String>> messageList;
 
    /**
     * The serialization (saved instance state) Bundle key representing the
@@ -84,14 +84,18 @@ public class MessageFragment extends ListFragment {
    {
       super.onCreate(savedInstanceState);
 
-      contactList = new ArrayList<Map<String, String>>();
+      messageList = new ArrayList<Map<String, String>>();
 
       String[] from = {"username", "message-text"};
       int[] to = {R.id.message_username, R.id.message_text};
 
-      listViewAdapter = new SimpleAdapter(getActivity().getApplicationContext(), contactList,
+      listViewAdapter = new SimpleAdapter(getActivity().getApplicationContext(), messageList,
             R.layout.message_row_layout, from, to);
       setListAdapter(listViewAdapter);
+
+      // Initialize database
+      //DatabaseManager.getInstance().retrieveMessages()
+
    }
 
    @Override
@@ -185,7 +189,8 @@ public class MessageFragment extends ListFragment {
       HashMap<String, String> item = new HashMap<String, String>();
       item.put("username", "Me");
       item.put("message-text", message);
-      contactList.add(item);
+      messageList.add(item);
+      DatabaseManager.getInstance().addMessage("Me", message, true);
       this.listViewAdapter.notifyDataSetChanged();
       getListView().setSelection(listViewAdapter.getCount() - 1);
    }
@@ -196,7 +201,8 @@ public class MessageFragment extends ListFragment {
       HashMap<String, String> item = new HashMap<String, String>();
       item.put("username", username);
       item.put("message-text", message);
-      contactList.add(item);
+      messageList.add(item);
+      DatabaseManager.getInstance().addMessage(username, message, false);
       this.listViewAdapter.notifyDataSetChanged();
       getListView().setSelection(listViewAdapter.getCount() - 1);
    }

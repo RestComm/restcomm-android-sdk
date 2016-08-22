@@ -5,7 +5,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context="com.telestax.restcomm_messenger.MessageActivity">
+    tools:context="com.telestax.restcomm_olympus.MessageActivity">
 
     <!-- Reason I'm using different layout than activity_main.xml, is cause with that layout the buttons below the ListView didn't show up correctly.
      So I ended up removing CoordinatorLayout which was needed for android.support.design.widget.AppBarLayout to work properly. So I removed

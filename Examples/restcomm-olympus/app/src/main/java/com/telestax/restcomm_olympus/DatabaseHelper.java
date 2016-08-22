@@ -30,33 +30,51 @@ import android.util.Log;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
    // If you change the database schema, you must increment the database version.
-   public static final int DATABASE_VERSION = 4;
+   public static final int DATABASE_VERSION = 13;
    public static final String DATABASE_NAME = "Olympus.db";
 
    private static final String TAG = "DatabaseHelper";
 
-   private static final String TEXT_TYPE = " TEXT";
-   private static final String COMMA_SEP = ",";
+   //private static final String TEXT_TYPE = " TEXT";
+   //private static final String COMMA_SEP = ",";
    private static final String SQL_CREATE_CONTACT_TABLE =
          "CREATE TABLE " + DatabaseContract.ContactEntry.TABLE_NAME + " (" +
                DatabaseContract.ContactEntry._ID + " INTEGER PRIMARY KEY," +
-               DatabaseContract.ContactEntry.COLUMN_NAME_NAME + TEXT_TYPE + COMMA_SEP +
-               DatabaseContract.ContactEntry.COLUMN_NAME_URI + TEXT_TYPE +
+               DatabaseContract.ContactEntry.COLUMN_NAME_NAME + " TEXT NOT NULL UNIQUE, " +
+               DatabaseContract.ContactEntry.COLUMN_NAME_URI + " TEXT NOT NULL" +
                " );";
 
-   private static final String SQL_DELETE_ENTRIES =
+   private static final String SQL_CREATE_MESSAGE_TABLE =
+         "CREATE TABLE " + DatabaseContract.MessageEntry.TABLE_NAME + " (" +
+               DatabaseContract.MessageEntry._ID + " INTEGER PRIMARY KEY," +
+               DatabaseContract.MessageEntry.COLUMN_NAME_CONTACT_ID + " INTEGER, " +
+               DatabaseContract.MessageEntry.COLUMN_NAME_TEXT + " TEXT NOT NULL, " +
+               DatabaseContract.MessageEntry.COLUMN_NAME_TYPE + " TEXT NOT NULL, " +
+               DatabaseContract.MessageEntry.COLUMN_NAME_TIMESTAMP + " DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+               "FOREIGN KEY (" + DatabaseContract.MessageEntry.COLUMN_NAME_CONTACT_ID + ") REFERENCES " + DatabaseContract.ContactEntry.TABLE_NAME +
+                  "(" + DatabaseContract.ContactEntry._ID + ") " +
+               " );";
+
+   private static final String SQL_DELETE_CONTACT_ENTRIES =
          "DROP TABLE IF EXISTS " + DatabaseContract.ContactEntry.TABLE_NAME;
+   private static final String SQL_DELETE_MESSAGE_ENTRIES =
+         "DROP TABLE IF EXISTS " + DatabaseContract.MessageEntry.TABLE_NAME;
+
+   // Android context
+   Context context;
 
    public DatabaseHelper(Context context)
    {
       super(context, DATABASE_NAME, null, DATABASE_VERSION);
       Log.i(TAG, "+++ DatabaseHelper constructor");
+      this.context = context;
    }
 
    public void onCreate(SQLiteDatabase db)
    {
       Log.i(TAG, "+++ Creating table: " + SQL_CREATE_CONTACT_TABLE);
       db.execSQL(SQL_CREATE_CONTACT_TABLE);
+      db.execSQL(SQL_CREATE_MESSAGE_TABLE);
       populateSampleEntries(db);
    }
 
@@ -64,7 +82,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
    {
       // This database is only a cache for online data, so its upgrade policy is
       // to simply to discard the data and start over
-      db.execSQL(SQL_DELETE_ENTRIES);
+      db.execSQL(SQL_DELETE_CONTACT_ENTRIES);
+      db.execSQL(SQL_DELETE_MESSAGE_ENTRIES);
       onCreate(db);
    }
 
@@ -77,43 +96,27 @@ public class DatabaseHelper extends SQLiteOpenHelper {
    // Populate DB with sample contacts, targeting Restcomm sample applications
    private void populateSampleEntries(SQLiteDatabase db)
    {
+      // TODO: used to get exceptions when using this
       // Gets the data repository in write mode
       //SQLiteDatabase db = this.getWritableDatabase();
 
-      // Create a new map of values, where column names are the keys
-      ContentValues values = new ContentValues();
-
-      // TODO: for some reason 5 entries with same data are inserted, the data of the last entry below
-      // commit once in the end
       db.beginTransaction();
-      values.put(DatabaseContract.ContactEntry.COLUMN_NAME_NAME, "Play App");
-      values.put(DatabaseContract.ContactEntry.COLUMN_NAME_URI, "+1234");
-      db.insert(DatabaseContract.ContactEntry.TABLE_NAME, null, values);
-      values.clear();
+      for (String s: context.getResources().getStringArray(R.array.demo_apps)) {
+         String[] parts = s.split(", *");
+         String name = parts[0];
+         String uri = parts[1];
 
-      values.put(DatabaseContract.ContactEntry.COLUMN_NAME_NAME, "Say App");
-      values.put(DatabaseContract.ContactEntry.COLUMN_NAME_URI, "+1235");
-      db.insert(DatabaseContract.ContactEntry.TABLE_NAME, null, values);
-      values.clear();
+         // Create a new map of values, where column names are the keys
+         ContentValues values = new ContentValues();
 
-      values.put(DatabaseContract.ContactEntry.COLUMN_NAME_NAME, "Gather App");
-      values.put(DatabaseContract.ContactEntry.COLUMN_NAME_URI, "+1236");
-      db.insert(DatabaseContract.ContactEntry.TABLE_NAME, null, values);
-      values.clear();
-
-      values.put(DatabaseContract.ContactEntry.COLUMN_NAME_NAME, "Conference App");
-      values.put(DatabaseContract.ContactEntry.COLUMN_NAME_URI, "+1310");
-      db.insert(DatabaseContract.ContactEntry.TABLE_NAME, null, values);
-      values.clear();
-
-      values.put(DatabaseContract.ContactEntry.COLUMN_NAME_NAME, "Conference Admin App");
-      values.put(DatabaseContract.ContactEntry.COLUMN_NAME_URI, "+1311");
-      db.insert(DatabaseContract.ContactEntry.TABLE_NAME, null, values);
-      values.clear();
-
+         values.put(DatabaseContract.ContactEntry.COLUMN_NAME_NAME, name);
+         values.put(DatabaseContract.ContactEntry.COLUMN_NAME_URI, uri);
+         db.insert(DatabaseContract.ContactEntry.TABLE_NAME, null, values);
+      }
       // veeery important, otherwise transaction is deemed failed and is rolled back
       db.setTransactionSuccessful();
       db.endTransaction();
+
       //db.close();
 
       Log.i(TAG, "+++ Populated sample entries");
