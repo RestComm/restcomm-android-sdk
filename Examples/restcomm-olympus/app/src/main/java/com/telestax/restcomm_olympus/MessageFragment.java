@@ -25,11 +25,15 @@ package com.telestax.restcomm_olympus;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
+
+import org.mobicents.restcomm.android.client.sdk.RCDevice;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -39,7 +43,8 @@ import java.util.Map;
 public class MessageFragment extends ListFragment {
    private SimpleAdapter listViewAdapter;
    private ArrayList<Map<String, String>> messageList;
-
+   public static final String MESSAGE_CONTACT_KEY = "username";
+   public static final String MESSAGE_TEXT_KEY = "message-text";
    /**
     * The serialization (saved instance state) Bundle key representing the
     * activated item position. Only used on tablets.
@@ -84,24 +89,38 @@ public class MessageFragment extends ListFragment {
    {
       super.onCreate(savedInstanceState);
 
-      messageList = new ArrayList<Map<String, String>>();
+      // Use MessageActivity intent to retrieve the contact name
+      final Intent intent = getActivity().getIntent();
+      String contactName = intent.getStringExtra(RCDevice.EXTRA_DID).replaceAll("^sip:", "").replaceAll("@.*$", "");
+      //listFragment = (MessageFragment) getSupportFragmentManager().findFragmentById(R.id.message_list);
+      //Bundle args = new Bundle();
+      //args.putString("contact-name", shortname);
+      //listFragment.setArguments(args);
 
-      String[] from = {"username", "message-text"};
+      /*
+      Bundle args = getArguments();
+      String contactName = args.getString("contact-name");
+      */
+      DatabaseManager.getInstance().open(getActivity().getApplicationContext());
+      messageList = DatabaseManager.getInstance().retrieveMessages(contactName);
+
+      //messageList = new ArrayList<Map<String, String>>();
+
+      String[] from = {MESSAGE_CONTACT_KEY, MESSAGE_TEXT_KEY};
       int[] to = {R.id.message_username, R.id.message_text};
 
       listViewAdapter = new SimpleAdapter(getActivity().getApplicationContext(), messageList,
             R.layout.message_row_layout, from, to);
       setListAdapter(listViewAdapter);
-
-      // Initialize database
-      //DatabaseManager.getInstance().retrieveMessages()
-
    }
 
    @Override
    public void onViewCreated(View view, Bundle savedInstanceState)
    {
       super.onViewCreated(view, savedInstanceState);
+
+      getListView().setDivider(null);
+      getListView().setDividerHeight(0);
 
       // Restore the previously serialized activated item position.
       if (savedInstanceState != null
@@ -184,13 +203,13 @@ public class MessageFragment extends ListFragment {
    }
 
    // Called by Activity when when new message is sent
-   public void addLocalMessage(String message)
+   public void addLocalMessage(String message, String username)
    {
       HashMap<String, String> item = new HashMap<String, String>();
-      item.put("username", "Me");
-      item.put("message-text", message);
+      item.put(MESSAGE_CONTACT_KEY, "Me");
+      item.put(MESSAGE_TEXT_KEY, message);
       messageList.add(item);
-      DatabaseManager.getInstance().addMessage("Me", message, true);
+      DatabaseManager.getInstance().addMessage(username, message, true);
       this.listViewAdapter.notifyDataSetChanged();
       getListView().setSelection(listViewAdapter.getCount() - 1);
    }
@@ -199,8 +218,8 @@ public class MessageFragment extends ListFragment {
    public void addRemoteMessage(String message, String username)
    {
       HashMap<String, String> item = new HashMap<String, String>();
-      item.put("username", username);
-      item.put("message-text", message);
+      item.put(MESSAGE_CONTACT_KEY, username);
+      item.put(MESSAGE_TEXT_KEY, message);
       messageList.add(item);
       DatabaseManager.getInstance().addMessage(username, message, false);
       this.listViewAdapter.notifyDataSetChanged();

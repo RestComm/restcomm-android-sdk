@@ -8,6 +8,7 @@
     <color name="colorTextSecondary">#6D6D6D</color>
     <color name="colorSeparator">#CDCDCD</color>
     <color name="colorGreyMiddle">#8D8D8D</color>
+    <color name="colorMessagesSeparator">#E1E1E1</color>
 </resources>
 
 <!--

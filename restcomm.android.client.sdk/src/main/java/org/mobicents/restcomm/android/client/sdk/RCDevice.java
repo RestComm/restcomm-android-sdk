@@ -126,7 +126,7 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
    public static String OPEN_MESSAGE_SCREEN = "ACTION_OPEN_MESSAGE_SCREEN";
    public static String INCOMING_MESSAGE = "ACTION_INCOMING_MESSAGE";
    public static String INCOMING_MESSAGE_TEXT = "INCOMING_MESSAGE_TEXT";
-   public static String INCOMING_MESSAGE_PARAMS = "INCOMING_MESSAGE_PARAMS";
+   //public static String INCOMING_MESSAGE_PARAMS = "INCOMING_MESSAGE_PARAMS";
    public static String EXTRA_DID = "com.telestax.restcomm_messenger.DID";
    public static String EXTRA_VIDEO_ENABLED = "com.telestax.restcomm_messenger.VIDEO_ENABLED";
    public static String EXTRA_SDP = "com.telestax.restcomm_messenger.SDP";
@@ -590,12 +590,13 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
       HashMap<String, String> parameters = new HashMap<String, String>();
       // filter out SIP URI stuff and leave just the name
       String from = peer.replaceAll("^<", "").replaceAll(">$", "");
-      parameters.put(RCConnection.ParameterKeys.CONNECTION_PEER, from);
+      //parameters.put(RCConnection.ParameterKeys.CONNECTION_PEER, from);
 
       try {
          Intent dataIntent = new Intent();
          dataIntent.setAction(INCOMING_MESSAGE);
-         dataIntent.putExtra(INCOMING_MESSAGE_PARAMS, parameters);
+         //dataIntent.putExtra(INCOMING_MESSAGE_PARAMS, parameters);
+         dataIntent.putExtra(EXTRA_DID, from);
          dataIntent.putExtra(INCOMING_MESSAGE_TEXT, messageText);
          pendingMessageIntent.send(RCClient.getContext(), 0, dataIntent);
       }

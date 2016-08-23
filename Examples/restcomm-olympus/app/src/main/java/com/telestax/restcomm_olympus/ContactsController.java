@@ -47,7 +47,7 @@ public class ContactsController {
    }
 
    // Retrieve all contact entries from DB and return them in an ArrayList suitable for use by the ContactAdapter
-   ArrayList<Map<String, String>> initializeContacts()
+   ArrayList<Map<String, String>> retrieveContacts()
    {
       /*
       // didn't find a clean way to add default values as an .xml in resources without binding them to UI elements

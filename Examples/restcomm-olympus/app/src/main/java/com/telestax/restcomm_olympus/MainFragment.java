@@ -29,6 +29,7 @@ import android.content.DialogInterface;
 import android.database.SQLException;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
+import android.util.Log;
 import android.util.TypedValue;
 import android.view.ContextMenu;
 import android.view.LayoutInflater;
@@ -53,6 +54,7 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
    private ContactsController contactsController;
    private ContactAdapter listViewAdapter;
    private ArrayList<Map<String, String>> contactList;
+   private static final String TAG = "MainFragment";
 
    enum ContactSelectionType {
       VIDEO_CALL,
@@ -104,14 +106,26 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
    @Override
    public void onCreate(Bundle savedInstanceState)
    {
+      Log.i(TAG, "%% onCreate");
+
       super.onCreate(savedInstanceState);
 
       contactsController = new ContactsController(getActivity().getApplicationContext());
 
       // Initialize database
       DatabaseManager.getInstance().open(getActivity().getApplicationContext());
-      contactList = contactsController.initializeContacts();
+      //contactList = contactsController.initializeContacts();
       //contactList = DatabaseManager.getInstance().retrieveContacts();
+
+   }
+
+   @Override
+   public void onResume()
+   {
+      Log.i(TAG, "%% onResume");
+      super.onResume();
+
+      contactList = contactsController.retrieveContacts();
 
       listViewAdapter = new ContactAdapter(getActivity().getApplicationContext(), contactList, this);
       setListAdapter(listViewAdapter);
@@ -143,6 +157,7 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
    @Override
    public void onAttach(Activity activity)
    {
+      Log.i(TAG, "%% onCreate");
       super.onAttach(activity);
 
       // Activities containing this fragment must implement its callbacks.
@@ -156,6 +171,7 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
    @Override
    public void onDetach()
    {
+      Log.i(TAG, "%% onCreate");
       super.onDetach();
 
       // Reset the active callbacks interface to the dummy implementation.

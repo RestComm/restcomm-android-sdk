@@ -35,6 +35,7 @@ import android.util.Log;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.Toast;
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
@@ -52,6 +53,7 @@ public class MessageActivity extends AppCompatActivity
    HashMap<String, Object> params = new HashMap<String, Object>();
    private static final String TAG = "MessageActivity";
    private AlertDialog alertDialog;
+   private String currentPeer;
 
    ImageButton btnSend;
    EditText txtMessage;
@@ -89,6 +91,10 @@ public class MessageActivity extends AppCompatActivity
       btnSend.setOnClickListener(this);
       txtMessage = (EditText) findViewById(R.id.text_message);
       txtMessage.setOnClickListener(this);
+
+      // keep on note of the current peer we are texting with
+      currentPeer = getIntent().getStringExtra(RCDevice.EXTRA_DID).replaceAll("^sip:", "").replaceAll("@.*$", "");
+      setTitle(currentPeer);
    }
 
    @Override
@@ -120,21 +126,36 @@ public class MessageActivity extends AppCompatActivity
       }
 
       // Get Intent parameters.
-      final Intent finalIntent = getIntent();
-      if (finalIntent.getAction().equals(RCDevice.OPEN_MESSAGE_SCREEN)) {
-         params.put(RCConnection.ParameterKeys.CONNECTION_PEER, finalIntent.getStringExtra(RCDevice.EXTRA_DID));
-         String shortname = finalIntent.getStringExtra(RCDevice.EXTRA_DID).replaceAll("^sip:", "").replaceAll("@.*$", "");
+      final Intent intent = getIntent();
+      if (intent.getAction().equals(RCDevice.OPEN_MESSAGE_SCREEN)) {
+         params.put(RCConnection.ParameterKeys.CONNECTION_PEER, intent.getStringExtra(RCDevice.EXTRA_DID));
+         String shortname = intent.getStringExtra(RCDevice.EXTRA_DID).replaceAll("^sip:", "").replaceAll("@.*$", "");
          setTitle(shortname);
       }
-      if (finalIntent.getAction().equals(RCDevice.INCOMING_MESSAGE)) {
-         String message = finalIntent.getStringExtra(RCDevice.INCOMING_MESSAGE_TEXT);
-         HashMap<String, String> intentParams = (HashMap<String, String>) finalIntent.getSerializableExtra(RCDevice.INCOMING_MESSAGE_PARAMS);
-         String username = intentParams.get(RCConnection.ParameterKeys.CONNECTION_PEER);
+      if (intent.getAction().equals(RCDevice.INCOMING_MESSAGE)) {
+         String message = intent.getStringExtra(RCDevice.INCOMING_MESSAGE_TEXT);
+         //HashMap<String, String> intentParams = (HashMap<String, String>) finalIntent.getSerializableExtra(RCDevice.INCOMING_MESSAGE_PARAMS);
+         //String username = intentParams.get(RCConnection.ParameterKeys.CONNECTION_PEER);
+         String username = intent.getStringExtra(RCDevice.EXTRA_DID);
          String shortname = username.replaceAll("^sip:", "").replaceAll("@.*$", "");
-         params.put(RCConnection.ParameterKeys.CONNECTION_PEER, username);
 
+         if (!shortname.equals(currentPeer)) {
+            // message originating from another peer, not the one we are currently texting with, just update DB and show a Toast
+            Toast.makeText(getApplicationContext(), "New text from \'" + shortname + "\': " + message, Toast.LENGTH_LONG).show();
+            if (DatabaseManager.getInstance().addContactIfNeded(username)) {
+               Toast.makeText(getApplicationContext(), "Adding '" + shortname + "\' to contacts as it doesn't exist", Toast.LENGTH_LONG).show();
+            }
+            DatabaseManager.getInstance().addMessage(shortname, message, false);
+            return;
+         }
+
+         params.put(RCConnection.ParameterKeys.CONNECTION_PEER, username);
+         //setTitle(shortname);
+
+         if (DatabaseManager.getInstance().addContactIfNeded(username)) {
+            Toast.makeText(getApplicationContext(), "Text message sender not found; updating Contacts with \'" + shortname + "\'", Toast.LENGTH_LONG).show();
+         }
          listFragment.addRemoteMessage(message, shortname);
-         setTitle(shortname);
       }
    }
 
@@ -184,10 +205,11 @@ public class MessageActivity extends AppCompatActivity
    {
       if (view.getId() == R.id.button_send) {
          HashMap<String, String> sendParams = new HashMap<String, String>();
-         sendParams.put(RCConnection.ParameterKeys.CONNECTION_PEER, (String) params.get(RCConnection.ParameterKeys.CONNECTION_PEER));
+         String connectionPeer = (String) params.get(RCConnection.ParameterKeys.CONNECTION_PEER);
+         sendParams.put(RCConnection.ParameterKeys.CONNECTION_PEER, connectionPeer);
          if (device.sendMessage(txtMessage.getText().toString(), sendParams)) {
             // also output the message in the wall
-            listFragment.addLocalMessage(txtMessage.getText().toString());
+            listFragment.addLocalMessage(txtMessage.getText().toString(), connectionPeer.replaceAll("^sip:", "").replaceAll("@.*$", ""));
             txtMessage.setText("");
             //txtWall.append("Me: " + txtMessage.getText().toString() + "\n\n");
          }

@@ -30,7 +30,7 @@ import android.util.Log;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
    // If you change the database schema, you must increment the database version.
-   public static final int DATABASE_VERSION = 13;
+   public static final int DATABASE_VERSION = 14;
    public static final String DATABASE_NAME = "Olympus.db";
 
    private static final String TAG = "DatabaseHelper";
@@ -66,14 +66,15 @@ public class DatabaseHelper extends SQLiteOpenHelper {
    public DatabaseHelper(Context context)
    {
       super(context, DATABASE_NAME, null, DATABASE_VERSION);
-      Log.i(TAG, "+++ DatabaseHelper constructor");
+      Log.i(TAG, "DatabaseHelper constructor");
       this.context = context;
    }
 
    public void onCreate(SQLiteDatabase db)
    {
-      Log.i(TAG, "+++ Creating table: " + SQL_CREATE_CONTACT_TABLE);
+      Log.i(TAG, "Creating table contact: " + SQL_CREATE_CONTACT_TABLE);
       db.execSQL(SQL_CREATE_CONTACT_TABLE);
+      Log.i(TAG, "Creating table message: " + SQL_CREATE_MESSAGE_TABLE);
       db.execSQL(SQL_CREATE_MESSAGE_TABLE);
       populateSampleEntries(db);
    }
@@ -119,6 +120,6 @@ public class DatabaseHelper extends SQLiteOpenHelper {
 
       //db.close();
 
-      Log.i(TAG, "+++ Populated sample entries");
+      Log.i(TAG, "Populated sample entries");
    }
 }
