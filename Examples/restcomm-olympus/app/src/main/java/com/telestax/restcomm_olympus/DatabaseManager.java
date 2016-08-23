@@ -50,6 +50,7 @@ class DatabaseManager {
    {
    }
 
+   // Before we can use Database manager we need to first call open() and pass Android context
    public void open(Context context)
    {
       if (databaseHelper == null) {
@@ -62,7 +63,6 @@ class DatabaseManager {
       }
    }
 
-   // TODO: consider making DatabaseHelper singleton instead of DatabaseManager, I think it makes more sense
    // ---- Contacts table
    // Retrieve all contact entries from DB and return them
    ArrayList<Map<String, String>> retrieveContacts()
