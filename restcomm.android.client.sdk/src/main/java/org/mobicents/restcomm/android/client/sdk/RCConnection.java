@@ -52,6 +52,7 @@ package org.mobicents.restcomm.android.client.sdk;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.media.AudioManager;
 import android.os.Handler;
 import android.view.Gravity;
 import android.widget.Toast;
@@ -187,6 +188,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       private final RCConnection.ConnectionState state;
       private final RCDevice device;
       private final SignalingClient signalingClient;
+      private final AppRTCAudioManager audioManager;
 
       // Optional parameters - initialized to default values
       private String jobId = null;
@@ -194,12 +196,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       private String incomingCallSdp = null;
       private ConnectionMediaType remoteMediaType = ConnectionMediaType.UNDEFINED;
 
-      public Builder(boolean incoming, RCConnection.ConnectionState state, RCDevice device, SignalingClient signalingClient)
+      public Builder(boolean incoming, RCConnection.ConnectionState state, RCDevice device, SignalingClient signalingClient, AppRTCAudioManager audioManager)
       {
          this.incoming = incoming;
          this.state = state;
          this.device = device;
          this.signalingClient = signalingClient;
+         this.audioManager = audioManager;
       }
 
       public Builder jobId(String val)
@@ -275,10 +278,15 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       state = builder.state;
       device = builder.device;
       signalingClient = builder.signalingClient;
+      audioManager = builder.audioManager;
       listener = builder.listener;
       incomingCallSdp = builder.incomingCallSdp;
       if (incomingCallSdp != null) {
          remoteMediaType = RCConnection.sdp2Mediatype(builder.incomingCallSdp);
+      }
+
+      if (incoming) {
+         audioManager.playRingingSound();
       }
    }
 
@@ -388,6 +396,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void ignore()
    {
       if (state == ConnectionState.CONNECTING) {
+         audioManager.stop();
          signalingClient.disconnect(jobId, null);
       }
       else {
@@ -413,6 +422,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       RCLogger.i(TAG, "reject()");
 
       if (state == ConnectionState.CONNECTING) {
+         audioManager.stop();
          signalingClient.disconnect(jobId, null);
 
          // TODO: (minor) if reject() is called while we are already connected then we will disconnect, but in that
@@ -554,6 +564,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       RCLogger.i(TAG, "onCallOutgoingPeerRingingEvent(): jobId: " + jobId);
 
+      //audioManager.play(R.raw.calling, true);
+      audioManager.playCallingSound();
       state = ConnectionState.CONNECTING;
       listener.onConnecting(this);
 
@@ -598,6 +610,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void onCallPeerDisconnectEvent(String jobId)
    {
       RCLogger.i(TAG, "onCallPeerDisconnectEvent(): jobId: " + jobId);
+
       handleDisconnected(jobId, false);
    }
 
@@ -640,6 +653,14 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       // differentiate between disconnect and remote cancel events with the same listener method: onDisconnected.
       // In the first case listener will see state CONNECTED and in the second CONNECTING
 
+      if (!isIncoming() && state == ConnectionState.CONNECTING) {
+         // outgoing call is ringing at the peer, and the peer disconnects, need to play busy
+         audioManager.playDeclinedSound();
+      }
+      else {
+         audioManager.stop();
+      }
+
       //if (inboundDisconnect && RCDevice.state == RCDevice.DeviceState.BUSY) {
       if (!haveDisconnectedLocally && RCDevice.state == RCDevice.DeviceState.BUSY) {
          // No need to disconnect signaling, it is already disconnected both when we cause
@@ -660,6 +681,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private void handleDisconnect(String reason)
    {
       RCLogger.i(TAG, "handleDisconnect(): reason: " + reason);
+
+      audioManager.stop();
 
       if (state != ConnectionState.DISCONNECTED && state != ConnectionState.DISCONNECTING) {
          signalingClient.disconnect(jobId, reason);
@@ -875,6 +898,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       // Start room connection.
       logAndToast("Preparing call");
 
+      /*
       // Create and audio manager that will take care of audio routing,
       // audio modes, audio device enumeration etc.
       audioManager = AppRTCAudioManager.create(RCClient.getContext(), new Runnable() {
@@ -888,10 +912,12 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             }
       );
 
+
       // Store existing audio settings and change audio mode to
       // MODE_IN_COMMUNICATION for best possible VoIP performance.
       RCLogger.d(TAG, "Initializing the audio manager...");
       audioManager.init();
+      */
 
       // we don't have room functionality to notify us when ready; instead, we start connecting right now
       this.onConnectedToRoom(signalingParameters);
@@ -914,21 +940,25 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          remoteRender.release();
          remoteRender = null;
       }
+      /*
       if (audioManager != null) {
          audioManager.close();
          audioManager = null;
       }
+      */
       if (rootEglBase != null) {
          rootEglBase.release();
          rootEglBase = null;
       }
    }
 
+   /*
    private void onAudioManagerChangedState()
    {
       // TODO(henrika): disable video if AppRTCAudioManager.AudioDevice.EARPIECE
       // is active.
    }
+   */
 
 
    // Create peer connection factory when EGL context is ready.
@@ -1093,6 +1123,10 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          public void run()
          {
             RCLogger.i(TAG, "onIceConnected");
+
+            // stop any calling or ringing sound
+            audioManager.stop();
+
             logAndToast("ICE connected, delay=" + delta + "ms");
             iceConnected = true;
             RCConnection.this.state = ConnectionState.CONNECTED;

@@ -25,6 +25,28 @@
  * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/*
+ * TeleStax, Open Source Cloud Communications
+ * Copyright 2011-2015, Telestax Inc and individual contributors
+ * by the @authors tag.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation; either version 3 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ *
+ * For questions related to commercial use licensing, please contact sales@telestax.com.
+ *
+ */
+
 package org.mobicents.restcomm.android.client.sdk.MediaClient;
 
 import android.content.BroadcastReceiver;
@@ -33,12 +55,15 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
+import android.media.MediaPlayer;
 
 //import org.appspot.apprtc.util.AppRTCUtils;
+import org.mobicents.restcomm.android.client.sdk.RCDevice;
 import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 import org.mobicents.restcomm.android.client.sdk.MediaClient.util.AppRTCUtils;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -66,6 +91,7 @@ public class AppRTCAudioManager {
    private int savedAudioMode = AudioManager.MODE_INVALID;
    private boolean savedIsSpeakerPhoneOn = false;
    private boolean savedIsMicrophoneMute = false;
+   HashMap<String, Integer> resourceIds;
 
    // For now; always use the speaker phone as default device selection when
    // there is a choice between SPEAKER_PHONE and EARPIECE.
@@ -88,6 +114,9 @@ public class AppRTCAudioManager {
 
    // Broadcast receiver for wired headset intent broadcasts.
    private BroadcastReceiver wiredHeadsetReceiver;
+
+   // Media player for playback of calling/ringing/message sounds
+   private MediaPlayerWrapper mediaPlayerWrapper;
 
    // This method is called when the proximity sensor reports a state change,
    // e.g. from "NEAR to FAR" or from "FAR to NEAR".
@@ -149,7 +178,7 @@ public class AppRTCAudioManager {
       AppRTCUtils.logDeviceInfo(TAG);
    }
 
-   public void init()
+   public void init(HashMap<String, Integer> resourceIds)
    {
       RCLogger.d(TAG, "init");
       if (initialized) {
@@ -183,6 +212,9 @@ public class AppRTCAudioManager {
       // wired headset (Intent.ACTION_HEADSET_PLUG).
       registerForWiredHeadsetIntentBroadcast();
 
+      this.resourceIds = resourceIds;
+      mediaPlayerWrapper = new MediaPlayerWrapper(apprtcContext);
+
       initialized = true;
    }
 
@@ -194,6 +226,8 @@ public class AppRTCAudioManager {
       }
 
       unregisterForWiredHeadsetIntentBroadcast();
+
+      mediaPlayerWrapper.close();
 
       // Restore previously stored audio states.
       setSpeakerphoneOn(savedIsSpeakerPhoneOn);
@@ -428,5 +462,33 @@ public class AppRTCAudioManager {
          // use public getters to query the new state.
          onStateChangeListener.run();
       }
+   }
+
+   // MediaPlayer related methods
+   public void playCallingSound()
+   {
+      mediaPlayerWrapper.play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_CALLING), true);
+   }
+   public void playRingingSound()
+   {
+      mediaPlayerWrapper.play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_RINGING), true);
+   }
+   public void playDeclinedSound()
+   {
+      mediaPlayerWrapper.play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_DECLINED), false);
+   }
+   public void playMessageSound()
+   {
+      mediaPlayerWrapper.play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_MESSAGE), false);
+   }
+
+   public void play(int resid, boolean loop)
+   {
+      mediaPlayerWrapper.play(resid, loop);
+   }
+
+   public void stop()
+   {
+      mediaPlayerWrapper.stop();
    }
 }

@@ -30,6 +30,7 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 
+import org.mobicents.restcomm.android.client.sdk.MediaClient.AppRTCAudioManager;
 import org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient.JainSipConfiguration;
 import org.mobicents.restcomm.android.client.sdk.SignalingClient.SignalingClient;
 import org.mobicents.restcomm.android.client.sdk.SignalingClient.SignalingMessage;
@@ -117,6 +118,10 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
       public static final String MEDIA_ICE_URL = "turn-url";
       public static final String MEDIA_ICE_USERNAME = "turn-username";
       public static final String MEDIA_ICE_PASSWORD = "turn-password";
+      public static final String RESOURCE_SOUND_CALLING = "sound-calling";
+      public static final String RESOURCE_SOUND_RINGING = "sound-ringing";
+      public static final String RESOURCE_SOUND_DECLINED = "sound-declined";
+      public static final String RESOURCE_SOUND_MESSAGE = "sound-message";
    }
 
    private static final String TAG = "RCDevice";
@@ -140,6 +145,7 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
    //private RCConnection incomingConnection;
    private RCDeviceListener.RCConnectivityStatus cachedConnectivityStatus = RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone;
    private SignalingClient signalingClient;
+   private AppRTCAudioManager audioManager = null;
 
    /**
     * Initialize a new RCDevice object
@@ -164,9 +170,67 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
       // check if TURN keys are there
       //params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
 
-
       signalingClient = SignalingClient.getInstance();
       signalingClient.open(this, RCClient.getContext(), parameters);
+
+      // Create and audio manager that will take care of audio routing,
+      // audio modes, audio device enumeration etc.
+      audioManager = AppRTCAudioManager.create(RCClient.getContext(), new Runnable() {
+               // This method will be called each time the audio state (number and
+               // type of devices) has been changed.
+               @Override
+               public void run()
+               {
+                  onAudioManagerChangedState();
+               }
+            }
+      );
+
+      // Store existing audio settings and change audio mode to
+      // MODE_IN_COMMUNICATION for best possible VoIP performance.
+      RCLogger.d(TAG, "Initializing the audio manager...");
+      audioManager.init(populateAudioResourceIds(parameters));
+   }
+
+   /*
+    * Populate audio resource ids for various sounds like calling, ringing, etc. The logic here is that
+    * we have default resources in the SDK level, found at R.raw.*, and if the user wants to override
+    * them they need to update R.raw in the Application level.
+    */
+   private HashMap<String, Integer> populateAudioResourceIds(HashMap<String, Object> parameters)
+   {
+      HashMap<String, Integer> resourceIds = new HashMap<String, Integer>();
+
+      if (parameters.containsKey(ParameterKeys.RESOURCE_SOUND_CALLING)) {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_CALLING, (Integer)parameters.get(ParameterKeys.RESOURCE_SOUND_CALLING));
+      }
+      else {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_CALLING, R.raw.calling_sample);
+      }
+
+      if (parameters.containsKey(ParameterKeys.RESOURCE_SOUND_RINGING)) {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_RINGING, (Integer)parameters.get(ParameterKeys.RESOURCE_SOUND_RINGING));
+      }
+      else {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_RINGING, R.raw.ringing_sample);
+      }
+
+      if (parameters.containsKey(ParameterKeys.RESOURCE_SOUND_DECLINED)) {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_DECLINED, (Integer)parameters.get(ParameterKeys.RESOURCE_SOUND_DECLINED));
+      }
+      else {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_DECLINED, R.raw.busy_tone_sample);
+      }
+
+      if (parameters.containsKey(ParameterKeys.RESOURCE_SOUND_MESSAGE)) {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_MESSAGE, (Integer)parameters.get(ParameterKeys.RESOURCE_SOUND_MESSAGE));
+      }
+      else {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_MESSAGE, R.raw.message_sample);
+      }
+
+
+      return resourceIds;
    }
 
    // TODO: this is for RCConnection, but see if they can figure out the connectivity in a different way, like asking the signaling thread directly?
@@ -193,6 +257,11 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
    public void release()
    {
       RCLogger.i(TAG, "release()");
+      if (audioManager != null) {
+         audioManager.close();
+         audioManager = null;
+      }
+
       this.listener = null;
 
       signalingClient.close();
@@ -286,8 +355,9 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
       if (state == DeviceState.READY) {
          RCLogger.i(TAG, "RCDevice.connect(), with connectivity");
 
-         RCConnection connection = new RCConnection.Builder(false, RCConnection.ConnectionState.PENDING, this, signalingClient)
-               .listener(listener).build();
+         RCConnection connection = new RCConnection.Builder(false, RCConnection.ConnectionState.PENDING, this, signalingClient, audioManager)
+               .listener(listener)
+               .build();
          connection.open(parameters);
 
          // keep connection in the connections hashmap
@@ -587,6 +657,7 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
    {
       RCLogger.i(TAG, "onMessageArrivedEvent(): id: " + jobId + ", peer: " + peer + ", text: " + messageText);
 
+      audioManager.playMessageSound();
       HashMap<String, String> parameters = new HashMap<String, String>();
       // filter out SIP URI stuff and leave just the name
       String from = peer.replaceAll("^<", "").replaceAll(">$", "");
@@ -633,9 +704,10 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
    {
       RCLogger.i(TAG, "onCallArrivedEvent(): id: " + jobId + ", peer: " + peer);
 
-      RCConnection connection = new RCConnection.Builder(true, RCConnection.ConnectionState.CONNECTING, this, signalingClient)
+      RCConnection connection = new RCConnection.Builder(true, RCConnection.ConnectionState.CONNECTING, this, signalingClient, audioManager)
             .jobId(jobId)
-            .incomingCallSdp(sdpOffer).build();
+            .incomingCallSdp(sdpOffer)
+            .build();
 
       // keep connection in the connections hashmap
       connections.put(jobId, connection);
@@ -702,5 +774,11 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
    {
       RCLogger.i(TAG, "removeConnection(): id: " + jobId + ", total connections before removal: " + connections.size());
       connections.remove(jobId);
+   }
+
+   private void onAudioManagerChangedState()
+   {
+      // TODO(henrika): disable video if AppRTCAudioManager.AudioDevice.EARPIECE
+      // is active.
    }
 }

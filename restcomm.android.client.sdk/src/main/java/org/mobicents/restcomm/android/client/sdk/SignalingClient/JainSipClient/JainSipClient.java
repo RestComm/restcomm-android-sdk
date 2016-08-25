@@ -732,21 +732,8 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
                }
                else if (response.getStatusCode() == Response.OK) {
                   // register succeeded
-                  ViaHeader viaHeader = (ViaHeader) response.getHeader(ViaHeader.NAME);
-                  // keep around the Via received and rport parms so that we can populate the contact properly
-                  if (viaHeader.getReceived() != null) {
-                     jainSipClientContext.put("via-received", viaHeader.getReceived());
-                  }
-                  else {
-                     jainSipClientContext.remove("via-received");
-                  }
-
-                  if (viaHeader.getRPort() != -1) {
-                     jainSipClientContext.put("via-rport", viaHeader.getRPort());
-                  }
-                  else {
-                     jainSipClientContext.remove("via-rport");
-                  }
+                  //ViaHeader viaHeader = (ViaHeader) response.getHeader(ViaHeader.NAME);
+                  updateViaReceivedAndRport((ViaHeader)response.getHeader(ViaHeader.NAME));
 
                   jainSipJob.processFsm(jainSipJob.jobId, JainSipJob.FsmEvents.REGISTER_SUCCESS, null, RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
                }
@@ -949,5 +936,24 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       }
       return "";
    }
+
+   private void updateViaReceivedAndRport(ViaHeader viaHeader)
+   {
+      // keep around the Via received and rport parms so that we can populate the contact properly
+      if (viaHeader.getReceived() != null) {
+         jainSipClientContext.put("via-received", viaHeader.getReceived());
+      }
+      else {
+         jainSipClientContext.remove("via-received");
+      }
+
+      if (viaHeader.getRPort() != -1) {
+         jainSipClientContext.put("via-rport", viaHeader.getRPort());
+      }
+      else {
+         jainSipClientContext.remove("via-rport");
+      }
+   }
+
 
 }

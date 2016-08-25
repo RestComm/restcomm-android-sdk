@@ -45,7 +45,7 @@
         android:layout_marginLeft="14dp"
         android:layout_marginRight="4dp"
         android:layout_marginBottom="4dp"
-        android:text="Enter a username for the contact, like 'bob'"
+        android:text="Contact name, like 'bob'"
         android:textStyle="italic"
         android:id="@+id/textView_username"
         android:layout_gravity="center_horizontal" />
@@ -68,7 +68,7 @@
         android:layout_marginLeft="14dp"
         android:layout_marginRight="4dp"
         android:layout_marginBottom="24dp"
-        android:text="Enter a Restcomm number or client, like '+1235' or 'bob'"
+        android:text="Restcomm number or client, like '+1235' or 'bob'"
         android:textStyle="italic"
         android:id="@+id/textView_sipuri"
         android:layout_gravity="center_horizontal" />
