@@ -161,6 +161,7 @@ public class AppRTCAudioManager {
    {
       apprtcContext = context;
       onStateChangeListener = deviceStateChangeListener;
+      /*
       audioManager = ((AudioManager) context.getSystemService(
             Context.AUDIO_SERVICE));
 
@@ -176,6 +177,7 @@ public class AppRTCAudioManager {
             onProximitySensorChangedState();
          }
       });
+      */
       AppRTCUtils.logDeviceInfo(TAG);
    }
 
@@ -210,6 +212,22 @@ public class AppRTCAudioManager {
       if (callAudioInitialized) {
          return;
       }
+
+      audioManager = ((AudioManager) apprtcContext.getSystemService(
+            Context.AUDIO_SERVICE));
+
+      // Create and initialize the proximity sensor.
+      // Tablet devices (e.g. Nexus 7) does not support proximity sensors.
+      // Note that, the sensor will not be active until start() has been called.
+      proximitySensor = AppRTCProximitySensor.create(apprtcContext, new Runnable() {
+         // This method will be called each time a state change is detected.
+         // Example: user holds his hand over the device (closer than ~5 cm),
+         // or removes his hand from the device.
+         public void run()
+         {
+            onProximitySensorChangedState();
+         }
+      });
 
       // Store current audio state so we can restore it when close() is called.
       savedAudioMode = audioManager.getMode();
