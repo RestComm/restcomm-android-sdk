@@ -281,6 +281,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       audioManager = builder.audioManager;
       listener = builder.listener;
       incomingCallSdp = builder.incomingCallSdp;
+      incomingCallSdp = builder.incomingCallSdp;
       if (incomingCallSdp != null) {
          remoteMediaType = RCConnection.sdp2Mediatype(builder.incomingCallSdp);
       }
@@ -898,6 +899,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       // Start room connection.
       logAndToast("Preparing call");
 
+      audioManager.startCall();
       /*
       // Create and audio manager that will take care of audio routing,
       // audio modes, audio device enumeration etc.
@@ -940,6 +942,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          remoteRender.release();
          remoteRender = null;
       }
+      audioManager.endCall();
       /*
       if (audioManager != null) {
          audioManager.close();

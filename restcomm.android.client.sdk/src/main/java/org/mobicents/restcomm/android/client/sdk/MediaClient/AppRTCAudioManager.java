@@ -87,11 +87,12 @@ public class AppRTCAudioManager {
    private final Context apprtcContext;
    private final Runnable onStateChangeListener;
    private boolean initialized = false;
+   private boolean callAudioInitialized = false;
    private AudioManager audioManager;
    private int savedAudioMode = AudioManager.MODE_INVALID;
    private boolean savedIsSpeakerPhoneOn = false;
    private boolean savedIsMicrophoneMute = false;
-   HashMap<String, Integer> resourceIds;
+   private HashMap<String, Integer> resourceIds;
 
    // For now; always use the speaker phone as default device selection when
    // there is a choice between SPEAKER_PHONE and EARPIECE.
@@ -185,6 +186,31 @@ public class AppRTCAudioManager {
          return;
       }
 
+      this.resourceIds = resourceIds;
+      mediaPlayerWrapper = new MediaPlayerWrapper(apprtcContext);
+
+      initialized = true;
+   }
+
+   public void close()
+   {
+      RCLogger.d(TAG, "close");
+      if (!initialized) {
+         return;
+      }
+
+      mediaPlayerWrapper.close();
+
+      initialized = false;
+   }
+
+   public void startCall()
+   {
+      RCLogger.d(TAG, "startCall");
+      if (callAudioInitialized) {
+         return;
+      }
+
       // Store current audio state so we can restore it when close() is called.
       savedAudioMode = audioManager.getMode();
       savedIsSpeakerPhoneOn = audioManager.isSpeakerphoneOn();
@@ -212,22 +238,17 @@ public class AppRTCAudioManager {
       // wired headset (Intent.ACTION_HEADSET_PLUG).
       registerForWiredHeadsetIntentBroadcast();
 
-      this.resourceIds = resourceIds;
-      mediaPlayerWrapper = new MediaPlayerWrapper(apprtcContext);
-
-      initialized = true;
+      callAudioInitialized = true;
    }
 
-   public void close()
+   public void endCall()
    {
-      RCLogger.d(TAG, "close");
-      if (!initialized) {
+      RCLogger.d(TAG, "endCall");
+      if (!callAudioInitialized) {
          return;
       }
 
       unregisterForWiredHeadsetIntentBroadcast();
-
-      mediaPlayerWrapper.close();
 
       // Restore previously stored audio states.
       setSpeakerphoneOn(savedIsSpeakerPhoneOn);
@@ -240,7 +261,7 @@ public class AppRTCAudioManager {
          proximitySensor = null;
       }
 
-      initialized = false;
+      callAudioInitialized = false;
    }
 
    /**
@@ -467,28 +488,38 @@ public class AppRTCAudioManager {
    // MediaPlayer related methods
    public void playCallingSound()
    {
-      mediaPlayerWrapper.play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_CALLING), true);
+      play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_CALLING), true);
+      //mediaPlayerWrapper.play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_CALLING), true);
    }
    public void playRingingSound()
    {
-      mediaPlayerWrapper.play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_RINGING), true);
+      play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_RINGING), true);
+      //mediaPlayerWrapper.play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_RINGING), true);
    }
    public void playDeclinedSound()
    {
-      mediaPlayerWrapper.play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_DECLINED), false);
+      play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_DECLINED), false);
+      //mediaPlayerWrapper.play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_DECLINED), false);
    }
    public void playMessageSound()
    {
-      mediaPlayerWrapper.play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_MESSAGE), false);
+      play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_MESSAGE), false);
+      //mediaPlayerWrapper.play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_MESSAGE), false);
    }
 
    public void play(int resid, boolean loop)
    {
+      // Request audio focus before making any device switch.
+      audioManager.requestAudioFocus(null, AudioManager.STREAM_VOICE_CALL,
+            AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+
       mediaPlayerWrapper.play(resid, loop);
    }
 
    public void stop()
    {
       mediaPlayerWrapper.stop();
+
+      audioManager.abandonAudioFocus(null);
    }
 }
