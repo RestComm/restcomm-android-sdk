@@ -62,7 +62,8 @@ public class RCClient {
       ERROR_CONNECTION_AUTHENTICATION_FORBIDDEN,
       ERROR_CONNECTION_URI_INVALID,
       ERROR_CONNECTION_PEER_UNAVAILABLE,
-      ERROR_CONNECTION_TIMEOUT,
+      ERROR_CONNECTION_SIGNALING_TIMEOUT,
+      ERROR_CONNECTION_MEDIA_TIMEOUT,
       ERROR_CONNECTION_COULD_NOT_CONNECT,
       ERROR_CONNECTION_PEER_NOT_FOUND,
       ERROR_CONNECTION_SERVICE_UNAVAILABLE,
@@ -143,8 +144,11 @@ public class RCClient {
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_PEER_UNAVAILABLE) {
          return "Failed to initiate connection; peer is unavailable";
       }
-      else if (errorCode == ErrorCodes.ERROR_CONNECTION_TIMEOUT) {
-         return "Connection timed out";
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_SIGNALING_TIMEOUT) {
+         return "Connection timed out (signaling)";
+      }
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_MEDIA_TIMEOUT) {
+         return "Connection timed out (media)";
       }
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_COULD_NOT_CONNECT) {
          // returned when there is an issue connecting to the destination URI, like no process listening to the server port,

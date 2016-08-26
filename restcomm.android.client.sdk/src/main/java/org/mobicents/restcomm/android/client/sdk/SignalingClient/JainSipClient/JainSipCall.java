@@ -485,8 +485,8 @@ public class JainSipCall {
 
    public void processTimeout(JainSipJob jainSipJob, final TimeoutEvent timeoutEvent)
    {
-      listener.onCallErrorEvent(jainSipJob.jobId, RCClient.ErrorCodes.ERROR_CONNECTION_TIMEOUT,
-            RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_TIMEOUT));
+      listener.onCallErrorEvent(jainSipJob.jobId, RCClient.ErrorCodes.ERROR_CONNECTION_SIGNALING_TIMEOUT,
+            RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_SIGNALING_TIMEOUT));
       jainSipClient.jainSipJobManager.remove(jainSipJob.jobId);
    }
 

@@ -252,6 +252,10 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private HashMap<String, Object> callParams = null;
    private long callStartedTimeMs = 0;
    private final boolean DO_TOAST = false;
+   // if a call takes too long to establish this handler is used to emit a time out
+   private Handler timeoutHandler = null;
+   // call times out if it hasn't been established after 15 seconds
+   private final int CALL_TIMEOUT_DURATION_MILIS = 15 * 1000;
 
    // List of mandatory application permissions.
    private static final String[] MANDATORY_PERMISSIONS = {
@@ -289,6 +293,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       if (incoming) {
          audioManager.playRingingSound();
       }
+
+      timeoutHandler = new Handler(RCClient.getContext().getMainLooper());
    }
 
    /**
@@ -804,6 +810,37 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
       //String url = "https://service.xirsys.com/ice?ident=atsakiridis&secret=4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7&domain=cloud.restcomm.com&application=default&room=default&secure=1";
       new IceServerFetcher(url, turnEnabled, this).makeRequest();
+
+      // cancel any pending timers before we start new one
+      timeoutHandler.removeCallbacksAndMessages(null);
+      Runnable runnable = new Runnable() {
+         @Override
+         public void run()
+         {
+            onCallTimeout();
+         }
+      };
+      timeoutHandler.postDelayed(runnable, CALL_TIMEOUT_DURATION_MILIS);
+   }
+
+   // Called if call hasn't been established in the predefined period
+   private void onCallTimeout()
+   {
+      RCLogger.e(TAG, "onCallTimeout(): State: " + state + ", after: " + CALL_TIMEOUT_DURATION_MILIS);
+
+      String reason = "Call-Timeout-Signaling";
+      RCClient.ErrorCodes errorCode = RCClient.ErrorCodes.ERROR_CONNECTION_SIGNALING_TIMEOUT;
+      if (state == ConnectionState.SIGNALING_CONNECTED) {
+         reason = "Call-Timeout-Media";
+         errorCode = RCClient.ErrorCodes.ERROR_CONNECTION_MEDIA_TIMEOUT;
+      }
+      handleDisconnect(reason);
+
+      if (this.listener != null) {
+         this.listener.onDisconnected(this, errorCode.ordinal(), RCClient.errorText(errorCode));
+      }
+      // Phone state Intents to capture dropped call event
+      sendQoSDisconnectErrorIntent(errorCode.ordinal(), RCClient.errorText(errorCode));
    }
 
    // initialize webrtc facilities for the call
@@ -1129,6 +1166,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
             // stop any calling or ringing sound
             audioManager.stop();
+
+            // we 're connected, cancel any pending timeout timers
+            timeoutHandler.removeCallbacksAndMessages(null);
 
             logAndToast("ICE connected, delay=" + delta + "ms");
             iceConnected = true;
