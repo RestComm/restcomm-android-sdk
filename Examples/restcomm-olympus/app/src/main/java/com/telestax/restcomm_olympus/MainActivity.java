@@ -31,6 +31,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteQueryBuilder;
 import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
@@ -210,6 +211,7 @@ public class MainActivity extends AppCompatActivity
       }
       else {
          getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
+         handleExternalCall();
       }
 
       if (device != null) {
@@ -413,6 +415,7 @@ public class MainActivity extends AppCompatActivity
       }
       else {
          getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
+         handleExternalCall();
       }
 
       //if (connectivityStatus != this.previousConnectivityStatus) {
@@ -420,6 +423,38 @@ public class MainActivity extends AppCompatActivity
          Toast.makeText(getApplicationContext(), text, Toast.LENGTH_LONG).show();
          this.previousConnectivityStatus = connectivityStatus;
       //}
+   }
+
+   // Handle call issued by external App via CALL intent
+   private void handleExternalCall()
+   {
+      // We have connectivity (either wifi or cellular), check if we have any external call requests and service it
+      GlobalPreferences globalPreferences = new GlobalPreferences(getApplicationContext());
+      String externalCallUriString = globalPreferences.getExternalCallUri();
+      if (!externalCallUriString.isEmpty()) {
+         Uri externalCallUri = Uri.parse(externalCallUriString);
+
+         String parsedUriString = "";
+         if (externalCallUri.getScheme().contains("sip")) {
+            // either 'sip' or 'restcomm-sip'
+            // normalize 'restcomm-sip' and replace with 'sip'
+            String normalized =  externalCallUriString.replace("restcomm-sip", "sip"); //[[uri absoluteString] stringByReplacingOccurrencesOfString:@"restcomm-sip" withString:@"sip"];
+            // also replace '://' with ':' so that the SIP stack can understand it
+            parsedUriString = normalized.replace("://", ":");
+         }
+         else {
+            // either 'tel', 'restcomm-tel', 'client' or 'restcomm-client'. Return just the host part, like 'bob' or '1235' that the Restcomm SDK can handle
+            parsedUriString = externalCallUri.getHost();
+         }
+
+         Intent intent = new Intent(this, CallActivity.class);
+         intent.setAction(RCDevice.OUTGOING_CALL);
+         intent.putExtra(RCDevice.EXTRA_DID, parsedUriString);
+         intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, true);
+         startActivityForResult(intent, CONNECTION_REQUEST);
+
+         globalPreferences.setExternalCallUri("");
+      }
    }
 
    public void onMessageSent(RCDevice device, int statusCode, String statusText)

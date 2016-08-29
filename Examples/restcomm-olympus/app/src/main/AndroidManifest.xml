@@ -33,12 +33,24 @@
 
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.CALL" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="restcomm-sip" />
+                <data android:scheme="restcomm-tel" />
+                <data android:scheme="restcomm-client" />
+                <data android:scheme="sip" />
+                <data android:scheme="tel" />
+                <data android:scheme="client" />
+            </intent-filter>
         </activity>
         <activity
             android:name=".MainActivity"
             android:label="@string/app_name"
             android:launchMode="singleTask"
             android:screenOrientation="portrait">
+
         </activity>
         <activity
             android:name=".CallActivity"

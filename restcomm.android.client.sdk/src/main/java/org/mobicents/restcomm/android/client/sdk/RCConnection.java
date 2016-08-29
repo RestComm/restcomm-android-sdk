@@ -826,21 +826,22 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    // Called if call hasn't been established in the predefined period
    private void onCallTimeout()
    {
-      RCLogger.e(TAG, "onCallTimeout(): State: " + state + ", after: " + CALL_TIMEOUT_DURATION_MILIS);
-
-      String reason = "Call-Timeout-Signaling";
-      RCClient.ErrorCodes errorCode = RCClient.ErrorCodes.ERROR_CONNECTION_SIGNALING_TIMEOUT;
+      // This situation can be legit, as long as we not SIGNALING_CONNECTED. If we are, then it means that signaling is established but
+      // media takes way too long
       if (state == ConnectionState.SIGNALING_CONNECTED) {
-         reason = "Call-Timeout-Media";
-         errorCode = RCClient.ErrorCodes.ERROR_CONNECTION_MEDIA_TIMEOUT;
-      }
-      handleDisconnect(reason);
+         RCLogger.e(TAG, "onCallTimeout(): State: " + state + ", after: " + CALL_TIMEOUT_DURATION_MILIS);
 
-      if (this.listener != null) {
-         this.listener.onDisconnected(this, errorCode.ordinal(), RCClient.errorText(errorCode));
+         String reason = "Call-Timeout-Media";
+         RCClient.ErrorCodes errorCode = RCClient.ErrorCodes.ERROR_CONNECTION_MEDIA_TIMEOUT;
+
+         handleDisconnect(reason);
+
+         if (this.listener != null) {
+            this.listener.onDisconnected(this, errorCode.ordinal(), RCClient.errorText(errorCode));
+         }
+         // Phone state Intents to capture dropped call event
+         sendQoSDisconnectErrorIntent(errorCode.ordinal(), RCClient.errorText(errorCode));
       }
-      // Phone state Intents to capture dropped call event
-      sendQoSDisconnectErrorIntent(errorCode.ordinal(), RCClient.errorText(errorCode));
    }
 
    // initialize webrtc facilities for the call
@@ -866,13 +867,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
       localRender.init(rootEglBase.getEglBaseContext(), null);
       localRender.setZOrderMediaOverlay(true);
-      //updateVideoView();
-
-      // for incoming calls we know the remote media type at the point we are accepting it (and calling initializeWebrtc)
-      //if (this.isIncoming() && remoteMediaType == ConnectionMediaType.AUDIO_VIDEO) {
       remoteRender.init(rootEglBase.getEglBaseContext(), null);
       updateVideoView();
-      //}
 
       // default to VP8 as VP9 doesn't seem to have that great android device support
       if (preferredVideoCodec == null) {
@@ -910,7 +906,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    private void updateVideoView()
    {
-      //remoteRenderLayout.setPosition(REMOTE_X, REMOTE_Y, REMOTE_WIDTH, REMOTE_HEIGHT);
       if (remoteRender != null) {
          remoteRender.setScalingType(scalingType);
          remoteRender.setMirror(false);
@@ -919,12 +914,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
       if (localRender != null) {
          localRender.setMirror(true);
-         //localRender.bringToFront();
-         //((View) localRender.getParent()).requestLayout();
-         //((View) localRender.getParent()).invalidate();
          localRender.requestLayout();
       }
-
    }
 
 
@@ -937,26 +928,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       logAndToast("Preparing call");
 
       audioManager.startCall();
-      /*
-      // Create and audio manager that will take care of audio routing,
-      // audio modes, audio device enumeration etc.
-      audioManager = AppRTCAudioManager.create(RCClient.getContext(), new Runnable() {
-               // This method will be called each time the audio state (number and
-               // type of devices) has been changed.
-               @Override
-               public void run()
-               {
-                  onAudioManagerChangedState();
-               }
-            }
-      );
-
-
-      // Store existing audio settings and change audio mode to
-      // MODE_IN_COMMUNICATION for best possible VoIP performance.
-      RCLogger.d(TAG, "Initializing the audio manager...");
-      audioManager.init();
-      */
 
       // we don't have room functionality to notify us when ready; instead, we start connecting right now
       this.onConnectedToRoom(signalingParameters);

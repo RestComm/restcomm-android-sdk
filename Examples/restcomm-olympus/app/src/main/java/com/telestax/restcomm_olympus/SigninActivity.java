@@ -1,28 +1,23 @@
 /*
- * libjingle
- * Copyright 2014 Google Inc.
+ * TeleStax, Open Source Cloud Communications
+ * Copyright 2011-2015, Telestax Inc and individual contributors
+ * by the @authors tag.
  *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ * This program is free software: you can redistribute it and/or modify
+ * under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation; either version 3 of
+ * the License, or (at your option) any later version.
  *
- *  1. Redistributions of source code must retain the above copyright notice,
- *     this list of conditions and the following disclaimer.
- *  2. Redistributions in binary form must reproduce the above copyright notice,
- *     this list of conditions and the following disclaimer in the documentation
- *     and/or other materials provided with the distribution.
- *  3. The name of the author may not be used to endorse or promote products
- *     derived from this software without specific prior written permission.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
  *
- * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
- * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
- * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
- * EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
- * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
- * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
- * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ *
+ * For questions related to commercial use licensing, please contact sales@telestax.com.
+ *
  */
 
 package com.telestax.restcomm_olympus;
@@ -34,6 +29,7 @@ import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -58,22 +54,39 @@ public class SigninActivity extends AppCompatActivity {
    private EditText txtPassword;
    private EditText txtDomain;
    private static final String TAG = "ContactsController";
-   private static final String PREFS_NAME = "general-prefs.xml";
-   private static final String PREFS_SIGNED_UP_KEY = "user-signed-up";
+   //private static final String PREFS_NAME = "general-prefs.xml";
+   //private static final String PREFS_SIGNED_UP_KEY = "user-signed-up";
+   //private static final String PREFS_EXTERNAL_CALL_URI = "external-call-uri";
    private Context context;
+   GlobalPreferences globalPreferences;
 
-   SharedPreferences prefsGeneral = null;
+   //SharedPreferences prefsGeneral = null;
 
    @Override
    protected void onCreate(Bundle savedInstanceState)
    {
+      Log.i(TAG, "%% onCreate");
+
       super.onCreate(savedInstanceState);
       setContentView(R.layout.activity_signin);
 
+      globalPreferences = new GlobalPreferences(getApplicationContext());
       // Check if
-      prefsGeneral = this.getSharedPreferences(PREFS_NAME, 0);
-      boolean signedUp = prefsGeneral.getBoolean(PREFS_SIGNED_UP_KEY, false);
-      if (signedUp) {
+      //prefsGeneral = this.getSharedPreferences(PREFS_NAME, 0);
+      //boolean signedUp = prefsGeneral.getBoolean(PREFS_SIGNED_UP_KEY, false);
+
+      // see if we are called from an external App trying to make a call
+      if (getIntent().getAction().equals(Intent.ACTION_CALL) && getIntent().getData() != null) {
+         if (getIntent().getData().getHost() != null) {
+            // note down the fact that we are signed up so that
+            //SharedPreferences.Editor prefEdit = prefsGeneral.edit();
+            //prefEdit.putString(PREFS_EXTERNAL_CALL_URI, getIntent().getData().getHost());
+            //prefEdit.apply();
+            globalPreferences.setExternalCallUri(getIntent().getData().toString());
+         }
+      }
+
+      if (globalPreferences.haveSignedUp()) {
          // we have already sign up, skip this activity and fire up MainActivity
          Intent intent = new Intent(this, MainActivity.class);
          // needed to avoid extreme flashing when the App starts up without signing up
@@ -84,11 +97,6 @@ public class SigninActivity extends AppCompatActivity {
          overridePendingTransition(0, 0);
       }
       else {
-         // note down the fact that we are signing up
-         SharedPreferences.Editor prefEdit = prefsGeneral.edit();
-         prefEdit.putBoolean(PREFS_SIGNED_UP_KEY, true);
-         prefEdit.apply();
-
          txtUsername = (EditText) findViewById(R.id.signin_username);
          txtPassword = (EditText) findViewById(R.id.signin_password);
          txtDomain = (EditText) findViewById(R.id.signin_domain);
@@ -156,6 +164,9 @@ public class SigninActivity extends AppCompatActivity {
          focusView.requestFocus();
       }
       else {
+         // note down the fact that we are signed up so that
+         globalPreferences.setSignedUp(true);
+
          // values are valid let's update prefs
          updatePrefs();
          Intent intent = new Intent(this, MainActivity.class);
