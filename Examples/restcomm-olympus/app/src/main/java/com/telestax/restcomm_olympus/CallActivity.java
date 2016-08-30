@@ -243,6 +243,11 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             String incomingCallDid = intent.getStringExtra(RCDevice.EXTRA_DID);
             // notice that this is not used yet; the sdk doesn't tell us if the incoming call is video/audio (TODO)
             acceptParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
+            HashMap<String, String> customHeaders = (HashMap<String, String>)intent.getSerializableExtra(RCDevice.EXTRA_CUSTOM_HEADERS);
+            if (customHeaders != null) {
+                Log.i(TAG, "Got custom headers in incoming call: " + customHeaders.toString());
+            }
+
         }
     }
 
@@ -356,8 +361,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         lblStatus.setText("Started Connecting...");
     }
 
-    public void onConnected(RCConnection connection) {
-        Log.i(TAG, "RCConnection connected");
+    public void onConnected(RCConnection connection, HashMap<String, String> customHeaders) {
+        Log.i(TAG, "RCConnection connected, customHeaders: " + customHeaders);
         lblStatus.setText("Connected");
 
         btnMuteAudio.setVisibility(View.VISIBLE);

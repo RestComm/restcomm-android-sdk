@@ -23,6 +23,7 @@
 package org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient;
 
 import android.gov.nist.javax.sip.ResponseEventExt;
+import android.gov.nist.javax.sip.header.ExtensionHeaderImpl;
 import android.gov.nist.javax.sip.message.SIPMessage;
 import android.javax.sip.ClientTransaction;
 import android.javax.sip.Dialog;
@@ -34,6 +35,7 @@ import android.javax.sip.SipException;
 import android.javax.sip.TimeoutEvent;
 import android.javax.sip.Transaction;
 import android.javax.sip.header.CSeqHeader;
+import android.javax.sip.header.Header;
 import android.javax.sip.header.ToHeader;
 import android.javax.sip.message.Request;
 import android.javax.sip.message.Response;
@@ -43,6 +45,7 @@ import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
 import java.io.UnsupportedEncodingException;
 import java.util.HashMap;
+import java.util.ListIterator;
 
 // Represents a call
 public class JainSipCall {
@@ -50,7 +53,7 @@ public class JainSipCall {
    public interface JainSipCallListener {
       void onCallOutgoingPeerRingingEvent(String jobId);
 
-      void onCallOutgoingConnectedEvent(String jobId, String sdpAnswer);
+      void onCallOutgoingConnectedEvent(String jobId, String sdpAnswer, HashMap<String, String> customHeaders);
 
       void onCallIncomingConnectedEvent(String jobId);
 
@@ -67,7 +70,7 @@ public class JainSipCall {
 
       void onCallErrorEvent(String jobId, RCClient.ErrorCodes status, String text);
 
-      void onCallArrivedEvent(String jobId, String peer, String sdpOffer);
+      void onCallArrivedEvent(String jobId, String peer, String sdpOffer, HashMap<String, String> customHeaders);
 
       void onCallDigitsEvent(String jobId, RCClient.ErrorCodes status, String text);
    }
@@ -352,7 +355,7 @@ public class JainSipCall {
             serverTransaction.sendResponse(response);
 
             String sdpOffer = new String(request.getRawContent(), "UTF-8");
-            listener.onCallArrivedEvent(jainSipJob.jobId, ((SIPMessage) request).getFrom().getAddress().toString(), sdpOffer);
+            listener.onCallArrivedEvent(jainSipJob.jobId, ((SIPMessage) request).getFrom().getAddress().toString(), sdpOffer, JainSipMessageBuilder.parseCustomHeaders(request));
          }
          catch (Exception e) {
             // TODO: let's emit a RuntimeException for now so that we get a loud and clear indication of issues involved in the field and then
@@ -396,7 +399,7 @@ public class JainSipCall {
                //int rtpPort = incomingMediaDescriptor.getMedia().getMediaPort();
 
                // if its a webrtc call we need to send back the full SDP
-               listener.onCallOutgoingConnectedEvent(jainSipJob.jobId, sdpAnswer);
+               listener.onCallOutgoingConnectedEvent(jainSipJob.jobId, sdpAnswer, JainSipMessageBuilder.parseCustomHeaders(response));
             }
             catch (SipException e) {
                listener.onCallErrorEvent(jainSipJob.jobId, RCClient.ErrorCodes.ERROR_CONNECTION_COULD_NOT_CONNECT,

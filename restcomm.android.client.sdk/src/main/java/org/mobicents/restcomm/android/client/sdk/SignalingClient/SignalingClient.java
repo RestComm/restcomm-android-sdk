@@ -75,7 +75,7 @@ public class SignalingClient extends Handler {
       void onMessageReply(String jobId, RCClient.ErrorCodes status, String text);
 
       // Unsolicited Events
-      void onCallArrivedEvent(String jobId, String peer, String sdpOffer);
+      void onCallArrivedEvent(String jobId, String peer, String sdpOffer, HashMap<String, String> customHeaders);
 
       void onMessageArrivedEvent(String jobId, String peer, String messageText);
 
@@ -98,7 +98,7 @@ public class SignalingClient extends Handler {
     * Call related interface callbacks that user of the API needs to implement
     */
    public interface SignalingClientCallListener {
-      void onCallOutgoingConnectedEvent(String jobId, String sdpAnswer);
+      void onCallOutgoingConnectedEvent(String jobId, String sdpAnswer, HashMap<String, String> customHeaders);
 
       void onCallIncomingConnectedEvent(String jobId);
 
@@ -329,12 +329,12 @@ public class SignalingClient extends Handler {
       }
       // Call related events
       else if (message.type == SignalingMessage.MessageType.CALL_INCOMING_EVENT) {
-         listener.onCallArrivedEvent(message.jobId, message.peer, message.sdp);
+         listener.onCallArrivedEvent(message.jobId, message.peer, message.sdp, message.customHeaders);
       }
       else if (message.type == SignalingMessage.MessageType.CALL_OUTGOING_CONNECTED_EVENT) {
          SignalingClientCallListener callListener = listener.getConnectionByJobId(message.jobId);
          // outgoing call is connected (got 200 OK and ACKed it)
-         callListener.onCallOutgoingConnectedEvent(message.jobId, message.sdp);
+         callListener.onCallOutgoingConnectedEvent(message.jobId, message.sdp, message.customHeaders);
       }
       else if (message.type == SignalingMessage.MessageType.CALL_INCOMING_CONNECTED_EVENT) {
          // incoming call connected

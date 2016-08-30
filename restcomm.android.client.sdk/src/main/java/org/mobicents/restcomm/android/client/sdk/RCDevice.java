@@ -133,6 +133,7 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
    public static String INCOMING_MESSAGE_TEXT = "INCOMING_MESSAGE_TEXT";
    //public static String INCOMING_MESSAGE_PARAMS = "INCOMING_MESSAGE_PARAMS";
    public static String EXTRA_DID = "com.telestax.restcomm_messenger.DID";
+   public static String EXTRA_CUSTOM_HEADERS = "com.telestax.restcomm_messenger.CUSTOM_HEADERS";
    public static String EXTRA_VIDEO_ENABLED = "com.telestax.restcomm_messenger.VIDEO_ENABLED";
    public static String EXTRA_SDP = "com.telestax.restcomm_messenger.SDP";
    //public static String EXTRA_DEVICE = "com.telestax.restcomm.android.client.sdk.extra-device";
@@ -584,7 +585,7 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
 
    public void onOpenReply(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
-      RCLogger.e(TAG, "onOpenReply(): id: " + jobId + ", connectivityStatus: " + connectivityStatus + ", status: " + status + ", text: " + text);
+      RCLogger.i(TAG, "onOpenReply(): id: " + jobId + ", connectivityStatus: " + connectivityStatus + ", status: " + status + ", text: " + text);
       cachedConnectivityStatus = connectivityStatus;
       if (status != RCClient.ErrorCodes.SUCCESS) {
          // TODO: Maybe we should introduce separate message specifically for RCDevice initialization. Using onStopListening() looks weird
@@ -599,7 +600,7 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
 
    public void onCloseReply(String jobId, RCClient.ErrorCodes status, String text)
    {
-      RCLogger.e(TAG, "onCloseReply(): id: " + jobId + ", status: " + status + ", text: " + text);
+      RCLogger.i(TAG, "onCloseReply(): id: " + jobId + ", status: " + status + ", text: " + text);
 
       if (status == RCClient.ErrorCodes.SUCCESS) {
          // TODO: notify App that device is closed
@@ -610,7 +611,7 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
 
    public void onReconfigureReply(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
-      RCLogger.e(TAG, "onReconfigureReply(): id: " + jobId + ", connectivityStatus: " + connectivityStatus + ", status: " + status + ", text: " + text);
+      RCLogger.i(TAG, "onReconfigureReply(): id: " + jobId + ", connectivityStatus: " + connectivityStatus + ", status: " + status + ", text: " + text);
       cachedConnectivityStatus = connectivityStatus;
       if (status == RCClient.ErrorCodes.SUCCESS) {
          state = DeviceState.READY;
@@ -637,13 +638,37 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
    }
 
    // Unsolicited Events
-   /*
-   public void onCallArrivedEvent(String jobId, String peer)
+   public void onCallArrivedEvent(String jobId, String peer, String sdpOffer, HashMap<String, String> customHeaders)
    {
+      RCLogger.i(TAG, "onCallArrivedEvent(): id: " + jobId + ", peer: " + peer);
 
+      RCConnection connection = new RCConnection.Builder(true, RCConnection.ConnectionState.CONNECTING, this, signalingClient, audioManager)
+            .jobId(jobId)
+            .incomingCallSdp(sdpOffer)
+            .build();
 
+      // keep connection in the connections hashmap
+      connections.put(jobId, connection);
+
+      state = DeviceState.BUSY;
+
+      try {
+         Intent dataIntent = new Intent();
+         dataIntent.setAction(INCOMING_CALL);
+         dataIntent.putExtra(RCDevice.EXTRA_DID, peer);
+         dataIntent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, (connection.getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO));
+         if (customHeaders != null) {
+            dataIntent.putExtra(RCDevice.EXTRA_CUSTOM_HEADERS, customHeaders);
+         }
+         pendingCallIntent.send(RCClient.getContext(), 0, dataIntent);
+
+         // Phone state Intents to capture incoming phone call event
+         sendQoSIncomingConnectionIntent(peer, connection);
+      }
+      catch (PendingIntent.CanceledException e) {
+         e.printStackTrace();
+      }
    }
-   */
 
    public void onRegisteringEvent(String jobId)
    {
@@ -698,35 +723,6 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
          state = DeviceState.OFFLINE;
       }
       listener.onConnectivityUpdate(this, connectivityStatus);
-   }
-
-   public void onCallArrivedEvent(String jobId, String peer, String sdpOffer)
-   {
-      RCLogger.i(TAG, "onCallArrivedEvent(): id: " + jobId + ", peer: " + peer);
-
-      RCConnection connection = new RCConnection.Builder(true, RCConnection.ConnectionState.CONNECTING, this, signalingClient, audioManager)
-            .jobId(jobId)
-            .incomingCallSdp(sdpOffer)
-            .build();
-
-      // keep connection in the connections hashmap
-      connections.put(jobId, connection);
-
-      state = DeviceState.BUSY;
-
-      try {
-         Intent dataIntent = new Intent();
-         dataIntent.setAction(INCOMING_CALL);
-         dataIntent.putExtra(RCDevice.EXTRA_DID, peer);
-         dataIntent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, (connection.getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO));
-         pendingCallIntent.send(RCClient.getContext(), 0, dataIntent);
-
-         // Phone state Intents to capture incoming phone call event
-         sendQoSIncomingConnectionIntent(peer, connection);
-      }
-      catch (PendingIntent.CanceledException e) {
-         e.printStackTrace();
-      }
    }
 
    // ------ Helpers

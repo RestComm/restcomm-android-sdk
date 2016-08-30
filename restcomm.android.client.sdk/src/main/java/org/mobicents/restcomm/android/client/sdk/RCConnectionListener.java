@@ -26,6 +26,8 @@ import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.webrtc.VideoTrack;
 
+import java.util.HashMap;
+
 public interface RCConnectionListener {
    /**
     * New outgoing connection is trying to connect
@@ -38,8 +40,9 @@ public interface RCConnectionListener {
     * Connection just connected. This can be either an incoming or outgoing connection
     *
     * @param connection Connection
+    * @param customHeaders Custom SIP headers from Restcomm. Applicable only in outbound calls -for incoming calls customHeaders are found at the incoming call Intent
     */
-   void onConnected(RCConnection connection);
+   void onConnected(RCConnection connection, HashMap<String, String> customHeaders);
 
    /**
     * Established connection just got disconnected. Can be either incoming or outgoing connection

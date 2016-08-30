@@ -22,6 +22,7 @@
 
 package org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient;
 
+import android.gov.nist.javax.sip.header.ExtensionHeaderImpl;
 import android.javax.sip.InvalidArgumentException;
 import android.javax.sip.ListeningPoint;
 import android.javax.sip.PeerUnavailableException;
@@ -43,6 +44,7 @@ import android.javax.sip.header.RouteHeader;
 import android.javax.sip.header.SupportedHeader;
 import android.javax.sip.header.UserAgentHeader;
 import android.javax.sip.header.ViaHeader;
+import android.javax.sip.message.Message;
 import android.javax.sip.message.MessageFactory;
 import android.javax.sip.message.Request;
 import android.javax.sip.message.Response;
@@ -60,6 +62,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -549,6 +552,29 @@ class JainSipMessageBuilder {
       }
 
       return header;
+   }
+
+   /*
+    * Parse a SIP request/response (i.e. Message) and extract any custom sip headers inside a HashMap where key is the header name and value is the header value
+    */
+   static public HashMap<String, String> parseCustomHeaders(Message message)
+   {
+      // See if there are any custom SIP headers and expose them. Custom headers are headers starting with 'X-'
+      HashMap<String,String> customHeaders = new HashMap<>();
+      ListIterator iterator =  message.getHeaderNames();
+      while (iterator.hasNext()) {
+         String headerName = (String)iterator.next();
+         if (headerName.matches("(?s)^X-.*")) {
+            ExtensionHeaderImpl header = (ExtensionHeaderImpl)message.getHeader(headerName);
+            customHeaders.put(header.getName(), header.getHeaderValue());
+         }
+      }
+
+      if (customHeaders.isEmpty()) {
+         customHeaders = null;
+      }
+
+      return customHeaders;
    }
 
 }

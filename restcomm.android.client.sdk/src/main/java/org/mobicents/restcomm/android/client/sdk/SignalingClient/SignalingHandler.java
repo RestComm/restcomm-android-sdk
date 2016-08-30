@@ -33,6 +33,8 @@ import org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient.J
 import org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient.JainSipClient;
 import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
+import java.util.HashMap;
+
 /**
  * SignalingHandler takes care of all the messaging from UI thread -> JainSipClient and the opposite
  */
@@ -187,21 +189,23 @@ class SignalingHandler extends Handler implements JainSipClient.JainSipClientLis
    }
 
    // -- JainSipCallListener events
-   public void onCallArrivedEvent(String jobId, String peer, String sdpOffer)
+   public void onCallArrivedEvent(String jobId, String peer, String sdpOffer, HashMap<String, String> customHeaders)
    {
       RCLogger.v(TAG, "onCallArrivedEvent: jobId: " + jobId + ", peer: " + peer + ", sdpOffer: " + sdpOffer);
       SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CALL_INCOMING_EVENT);
       signalingMessage.sdp = sdpOffer;
+      signalingMessage.customHeaders = customHeaders;
       signalingMessage.peer = peer;
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
    }
 
-   public void onCallOutgoingConnectedEvent(String jobId, String sdpAnswer)
+   public void onCallOutgoingConnectedEvent(String jobId, String sdpAnswer, HashMap<String, String> customHeaders)
    {
       RCLogger.v(TAG, "onCallOutgoingConnectedEvent: jobId: " + jobId + ", sdpAnswer: " + sdpAnswer);
       SignalingMessage signalingMessage = new SignalingMessage(jobId, SignalingMessage.MessageType.CALL_OUTGOING_CONNECTED_EVENT);
       signalingMessage.sdp = sdpAnswer;
+      signalingMessage.customHeaders = customHeaders;
       Message message = uiHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
    }

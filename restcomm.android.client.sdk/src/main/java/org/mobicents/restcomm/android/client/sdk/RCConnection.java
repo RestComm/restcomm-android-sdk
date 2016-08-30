@@ -179,6 +179,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       public static final String CONNECTION_REMOTE_VIDEO = "remote-video";
       public static final String CONNECTION_PREFERRED_VIDEO_CODEC = "preferred-video-codec";
       public static final String CONNECTION_CUSTOM_SIP_HEADERS = "sip-headers";
+      public static final String CONNECTION_CUSTOM_INCOMING_SIP_HEADERS = "sip-headers-incoming";
    }
 
    // Let's use a builder since RCConnections don't have uniform way to construct
@@ -290,6 +291,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          remoteMediaType = RCConnection.sdp2Mediatype(builder.incomingCallSdp);
       }
 
+      audioManager.startCall();
       if (incoming) {
          audioManager.playRingingSound();
       }
@@ -588,12 +590,14 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       state = ConnectionState.SIGNALING_CONNECTED;
    }
 
-   public void onCallOutgoingConnectedEvent(String jobId, String sdpAnswer)
+   public void onCallOutgoingConnectedEvent(String jobId, String sdpAnswer, HashMap<String, String> customHeaders)
    {
-      RCLogger.i(TAG, "onCallOutgoingConnectedEvent(): jobId: " + jobId);
+      RCLogger.i(TAG, "onCallOutgoingConnectedEvent(): jobId: " + jobId + " customHeaders: " + customHeaders.toString());
 
       state = ConnectionState.SIGNALING_CONNECTED;
-
+      if (customHeaders != null) {
+         callParams.put(ParameterKeys.CONNECTION_CUSTOM_INCOMING_SIP_HEADERS, customHeaders);
+      }
       // we want to notify webrtc onRemoteDescription *only* on an outgoing call
       if (!this.isIncoming()) {
          remoteMediaType = sdp2Mediatype(sdpAnswer);
@@ -784,6 +788,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       mainHandler.post(myRunnable);
    }
 
+   // Outgoing call
    private void setupWebrtcAndCall(Map<String, Object> parameters)
    {
       this.callParams = (HashMap<String, Object>) parameters;
@@ -1145,7 +1150,12 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             iceConnected = true;
             RCConnection.this.state = ConnectionState.CONNECTED;
             updateVideoView();
-            listener.onConnected(RCConnection.this);
+
+            HashMap<String,String> customHeaders = null;
+            if (callParams.containsKey(ParameterKeys.CONNECTION_CUSTOM_INCOMING_SIP_HEADERS)) {
+               customHeaders = (HashMap<String,String>)callParams.get(ParameterKeys.CONNECTION_CUSTOM_INCOMING_SIP_HEADERS);
+            }
+            listener.onConnected(RCConnection.this, customHeaders);
          }
       };
       mainHandler.post(myRunnable);
