@@ -92,5 +92,20 @@ public interface RCConnectionListener {
     */
    void onError(RCConnection connection, int errorCode, String errorText);
 
+   /**
+    * Local webrtc video is received (i.e. video stream from the local camera). If user hasn't used video for the call then this event
+    * doens't occur
+    *
+    * @param connection Connection
+    */
+   void onLocalVideo(RCConnection connection);
+
+   /**
+    * Remote webrtc video is received (i.e. video stream from the peer's camera). If peers hasn't used video for the call then this event
+    * doens't occur    *
+    * @param connection Connection
+    */
+   void onRemoteVideo(RCConnection connection);
+
 }
 

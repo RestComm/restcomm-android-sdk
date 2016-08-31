@@ -55,6 +55,7 @@ import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.os.Handler;
 import android.view.Gravity;
+import android.view.View;
 import android.widget.Toast;
 
 import java.util.HashMap;
@@ -68,6 +69,7 @@ import org.mobicents.restcomm.android.client.sdk.SignalingClient.SignalingParame
 import org.mobicents.restcomm.android.client.sdk.SignalingClient.SignalingClient;
 import org.mobicents.restcomm.android.client.sdk.MediaClient.util.IceServerFetcher;
 
+import org.mobicents.restcomm.android.client.sdk.util.PercentFrameLayout;
 import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
@@ -241,8 +243,12 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private SignalingClient signalingClient;
    private String incomingCallSdp = "";
    private EglBase rootEglBase;
+   private boolean localVideoReceived = false;
+   private boolean remoteVideoReceived = false;
    private SurfaceViewRenderer localRender;
    private SurfaceViewRenderer remoteRender;
+   private PercentFrameLayout localRenderLayout;
+   private PercentFrameLayout remoteRenderLayout;
    private PeerConnectionClient peerConnectionClient = null;
    private SignalingParameters signalingParameters;
    private AppRTCAudioManager audioManager = null;
@@ -257,6 +263,31 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private Handler timeoutHandler = null;
    // call times out if it hasn't been established after 15 seconds
    private final int CALL_TIMEOUT_DURATION_MILIS = 15 * 1000;
+
+
+   // Local preview screen position before call is connected.
+   private static final int LOCAL_X_CONNECTING = 0;
+   private static final int LOCAL_Y_CONNECTING = 0;
+   private static final int LOCAL_WIDTH_CONNECTING = 100;
+   private static final int LOCAL_HEIGHT_CONNECTING = 100;
+   // Local preview screen position after call is connected.
+   private static final int LOCAL_X_CONNECTED = 72;
+   private static final int LOCAL_Y_CONNECTED = 72;
+   private static final int LOCAL_WIDTH_CONNECTED = 25;
+   private static final int LOCAL_HEIGHT_CONNECTED = 25;
+   // Remote video screen position
+   private static final int REMOTE_X = 0;
+   private static final int REMOTE_Y = 0;
+   private static final int REMOTE_WIDTH = 100;
+   private static final int REMOTE_HEIGHT = 100;
+
+
+   private enum VideoViewState {
+      NONE,
+      LOCAL_VIEW_RECEIVED,
+      REMOTE_VIEW_RECEIVED,
+      ICE_CONNECTED,
+   }
 
    // List of mandatory application permissions.
    private static final String[] MANDATORY_PERMISSIONS = {
@@ -378,8 +409,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       if (state == ConnectionState.CONNECTING) {
          this.callParams = (HashMap<String, Object>) parameters;
          initializeWebrtc((Boolean) this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED),
-               (SurfaceViewRenderer) parameters.get(ParameterKeys.CONNECTION_LOCAL_VIDEO),
-               (SurfaceViewRenderer) parameters.get(ParameterKeys.CONNECTION_REMOTE_VIDEO),
+               (PercentFrameLayout) parameters.get(ParameterKeys.CONNECTION_LOCAL_VIDEO),
+               (PercentFrameLayout) parameters.get(ParameterKeys.CONNECTION_REMOTE_VIDEO),
                (String) parameters.get(ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC));
 
          startTurn();
@@ -592,7 +623,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    public void onCallOutgoingConnectedEvent(String jobId, String sdpAnswer, HashMap<String, String> customHeaders)
    {
-      RCLogger.i(TAG, "onCallOutgoingConnectedEvent(): jobId: " + jobId + " customHeaders: " + customHeaders.toString());
+      RCLogger.i(TAG, "onCallOutgoingConnectedEvent(): jobId: " + jobId + " customHeaders: " + customHeaders);
 
       state = ConnectionState.SIGNALING_CONNECTED;
       if (customHeaders != null) {
@@ -793,8 +824,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       this.callParams = (HashMap<String, Object>) parameters;
       initializeWebrtc((Boolean) this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED),
-            (SurfaceViewRenderer) parameters.get(ParameterKeys.CONNECTION_LOCAL_VIDEO),
-            (SurfaceViewRenderer) parameters.get(ParameterKeys.CONNECTION_REMOTE_VIDEO),
+            (PercentFrameLayout) parameters.get(ParameterKeys.CONNECTION_LOCAL_VIDEO),
+            (PercentFrameLayout) parameters.get(ParameterKeys.CONNECTION_REMOTE_VIDEO),
             (String) parameters.get(ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC));
 
       startTurn();
@@ -850,8 +881,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    }
 
    // initialize webrtc facilities for the call
-   private void initializeWebrtc(boolean videoEnabled, SurfaceViewRenderer localVideo, SurfaceViewRenderer remoteVideo, String preferredVideoCodec)
+   private void initializeWebrtc(boolean videoEnabled, PercentFrameLayout localRenderLayout, PercentFrameLayout remoteRenderLayout, String preferredVideoCodec)
    {
+      PercentFrameLayout test;
       RCLogger.i(TAG, "initializeWebrtc  ");
       Context context = RCClient.getContext();
 
@@ -859,9 +891,12 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       signalingParameters = null;
       scalingType = ScalingType.SCALE_ASPECT_FILL;
 
+      this.localRenderLayout = localRenderLayout;
+      this.remoteRenderLayout = remoteRenderLayout;
+
       rootEglBase = EglBase.create();
-      localRender = localVideo;
-      remoteRender = remoteVideo;
+      localRender = (SurfaceViewRenderer)localRenderLayout.getChildAt(0);
+      remoteRender = (SurfaceViewRenderer)remoteRenderLayout.getChildAt(0);
 
       if (videoEnabled) {
          localMediaType = ConnectionMediaType.AUDIO_VIDEO;
@@ -873,7 +908,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       localRender.init(rootEglBase.getEglBaseContext(), null);
       localRender.setZOrderMediaOverlay(true);
       remoteRender.init(rootEglBase.getEglBaseContext(), null);
-      updateVideoView();
+      updateVideoView(VideoViewState.NONE);
 
       // default to VP8 as VP9 doesn't seem to have that great android device support
       if (preferredVideoCodec == null) {
@@ -909,6 +944,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       createPeerConnectionFactory();
    }
 
+   /*
    private void updateVideoView()
    {
       if (remoteRender != null) {
@@ -922,7 +958,71 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          localRender.requestLayout();
       }
    }
+   */
 
+   private void updateVideoView(VideoViewState state)
+   {
+      if (state == VideoViewState.NONE) {
+         // when call starts both local and remote video views should be hidden
+         localRender.setVisibility(View.INVISIBLE);
+         remoteRender.setVisibility(View.INVISIBLE);
+      }
+      else if (state == VideoViewState.LOCAL_VIEW_RECEIVED) {
+         // local video became available, which also means that local user has previously requested a video call,
+         // hence we need to show local video view
+         localRender.setVisibility(View.VISIBLE);
+
+         localRenderLayout.setPosition(
+               LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING, LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING);
+         localRender.setScalingType(scalingType);
+         localRender.setMirror(true);
+         localRender.requestLayout();
+      }
+      else if (state == VideoViewState.REMOTE_VIEW_RECEIVED) {
+         // remote video became available, which also means that remote user has requested a video call,
+         // hence we need to show remote video view
+         //remoteRender.setVisibility(View.VISIBLE);
+      }
+      else if (state == VideoViewState.ICE_CONNECTED) {
+         if (remoteVideoReceived) {
+            remoteRender.setVisibility(View.VISIBLE);
+
+            remoteRenderLayout.setPosition(REMOTE_X, REMOTE_Y, REMOTE_WIDTH, REMOTE_HEIGHT);
+            remoteRender.setScalingType(scalingType);
+            remoteRender.setMirror(false);
+
+            localRenderLayout.setPosition(
+                  LOCAL_X_CONNECTED, LOCAL_Y_CONNECTED, LOCAL_WIDTH_CONNECTED, LOCAL_HEIGHT_CONNECTED);
+            localRender.setScalingType(ScalingType.SCALE_ASPECT_FIT);
+            localRender.setMirror(true);
+
+            localRender.requestLayout();
+            remoteRender.requestLayout();
+         }
+      }
+
+      /*
+
+      remoteRenderLayout.setPosition(REMOTE_X, REMOTE_Y, REMOTE_WIDTH, REMOTE_HEIGHT);
+      remoteRender.setScalingType(scalingType);
+      remoteRender.setMirror(false);
+
+      if (iceConnected) {
+         localRenderLayout.setPosition(
+               LOCAL_X_CONNECTED, LOCAL_Y_CONNECTED, LOCAL_WIDTH_CONNECTED, LOCAL_HEIGHT_CONNECTED);
+         localRender.setScalingType(ScalingType.SCALE_ASPECT_FIT);
+      }
+      else {
+         localRenderLayout.setPosition(
+               LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING, LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING);
+         localRender.setScalingType(scalingType);
+      }
+      localRender.setMirror(true);
+
+      localRender.requestLayout();
+      remoteRender.requestLayout();
+      */
+   }
 
    private void startCall(SignalingParameters signalingParameters)
    {
@@ -1149,7 +1249,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             logAndToast("ICE connected, delay=" + delta + "ms");
             iceConnected = true;
             RCConnection.this.state = ConnectionState.CONNECTED;
-            updateVideoView();
+            updateVideoView(VideoViewState.ICE_CONNECTED);
 
             HashMap<String,String> customHeaders = null;
             if (callParams.containsKey(ParameterKeys.CONNECTION_CUSTOM_INCOMING_SIP_HEADERS)) {
@@ -1236,7 +1336,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          public void run()
          {
             RCLogger.i(TAG, "onLocalVideo");
-            updateVideoView();
+            localVideoReceived = true;
+            updateVideoView(VideoViewState.LOCAL_VIEW_RECEIVED);
+            listener.onLocalVideo(RCConnection.this);
          }
       };
       mainHandler.post(myRunnable);
@@ -1250,7 +1352,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          public void run()
          {
             RCLogger.i(TAG, "onRemoteVideo");
-            updateVideoView();
+            remoteVideoReceived = true;
+            updateVideoView(VideoViewState.REMOTE_VIEW_RECEIVED);
+            listener.onRemoteVideo(RCConnection.this);
          }
       };
       mainHandler.post(myRunnable);

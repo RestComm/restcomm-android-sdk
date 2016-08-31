@@ -47,6 +47,7 @@ import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.client.sdk.RCConnectionListener;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
+import org.mobicents.restcomm.android.client.sdk.util.PercentFrameLayout;
 
 public class CallActivity extends Activity implements RCConnectionListener, View.OnClickListener,
         KeypadFragment.OnFragmentInteractionListener {
@@ -189,8 +190,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         // Important note: I used to set visibility in Create(), to avoid the flashing of the GL view when it gets added and then removed right away.
         // But if I make the video view invisibe when VideoRendererGui.create() is called, then videoContextReady is never called. Need to figure
         // out a way to work around this
-        findViewById(R.id.local_video_view).setVisibility(View.INVISIBLE);
-        findViewById(R.id.remote_video_view).setVisibility(View.INVISIBLE);
+        //findViewById(R.id.local_video_view).setVisibility(View.INVISIBLE);
+        //findViewById(R.id.remote_video_view).setVisibility(View.INVISIBLE);
 
         if (intent.getAction().equals(RCDevice.OUTGOING_CALL)) {
             String text;
@@ -206,8 +207,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
             connectParams.put(RCConnection.ParameterKeys.CONNECTION_PEER, intent.getStringExtra(RCDevice.EXTRA_DID));
             connectParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
-            connectParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_view));
-            connectParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_view));
+            connectParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
+            connectParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
             // by default we use VP8 for video as it tends to be more adopted, but you can override that and specify VP9 as follows:
             //connectParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC, "VP9");
 
@@ -283,8 +284,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 btnAnswerAudio.setVisibility(View.INVISIBLE);
                 HashMap<String, Object> params = new HashMap<String, Object>();
                 params.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, true);
-                params.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_view));
-                params.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_view));
+                params.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
+                params.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
                 pendingConnection.accept(params);
                 connection = this.pendingConnection;
                 pendingConnection = null;
@@ -296,8 +297,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 btnAnswerAudio.setVisibility(View.INVISIBLE);
                 HashMap<String, Object> params = new HashMap<String, Object>();
                 params.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, false);
-                params.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_view));
-                params.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_view));
+                params.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
+                params.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
                 pendingConnection.accept(params);
                 connection = this.pendingConnection;
                 pendingConnection = null;
@@ -379,10 +380,10 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
 
         if (connection.getLocalMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) {
-            findViewById(R.id.local_video_view).setVisibility(View.VISIBLE);
+            //findViewById(R.id.local_video_view).setVisibility(View.VISIBLE);
         }
         if (connection.getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) {
-            findViewById(R.id.remote_video_view).setVisibility(View.VISIBLE);
+            //findViewById(R.id.remote_video_view).setVisibility(View.VISIBLE);
         }
     }
 
@@ -443,6 +444,17 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     {
 
     }
+
+    public void onLocalVideo(RCConnection connection)
+    {
+
+    }
+
+    public void onRemoteVideo(RCConnection connection)
+    {
+
+    }
+
 
     // Helpers
     private void showOkAlert(final String title, final String detail) {
