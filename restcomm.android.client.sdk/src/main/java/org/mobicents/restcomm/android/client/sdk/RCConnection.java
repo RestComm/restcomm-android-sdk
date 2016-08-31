@@ -247,8 +247,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private boolean remoteVideoReceived = false;
    private SurfaceViewRenderer localRender;
    private SurfaceViewRenderer remoteRender;
-   private PercentFrameLayout localRenderLayout;
-   private PercentFrameLayout remoteRenderLayout;
+   //private PercentFrameLayout localRenderLayout;
+   //private PercentFrameLayout remoteRenderLayout;
    private PeerConnectionClient peerConnectionClient = null;
    private SignalingParameters signalingParameters;
    private AppRTCAudioManager audioManager = null;
@@ -409,8 +409,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       if (state == ConnectionState.CONNECTING) {
          this.callParams = (HashMap<String, Object>) parameters;
          initializeWebrtc((Boolean) this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED),
-               (PercentFrameLayout) parameters.get(ParameterKeys.CONNECTION_LOCAL_VIDEO),
-               (PercentFrameLayout) parameters.get(ParameterKeys.CONNECTION_REMOTE_VIDEO),
+               (SurfaceViewRenderer) parameters.get(ParameterKeys.CONNECTION_LOCAL_VIDEO),
+               (SurfaceViewRenderer) parameters.get(ParameterKeys.CONNECTION_REMOTE_VIDEO),
                (String) parameters.get(ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC));
 
          startTurn();
@@ -824,8 +824,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       this.callParams = (HashMap<String, Object>) parameters;
       initializeWebrtc((Boolean) this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED),
-            (PercentFrameLayout) parameters.get(ParameterKeys.CONNECTION_LOCAL_VIDEO),
-            (PercentFrameLayout) parameters.get(ParameterKeys.CONNECTION_REMOTE_VIDEO),
+            (SurfaceViewRenderer) parameters.get(ParameterKeys.CONNECTION_LOCAL_VIDEO),
+            (SurfaceViewRenderer) parameters.get(ParameterKeys.CONNECTION_REMOTE_VIDEO),
             (String) parameters.get(ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC));
 
       startTurn();
@@ -881,7 +881,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    }
 
    // initialize webrtc facilities for the call
-   private void initializeWebrtc(boolean videoEnabled, PercentFrameLayout localRenderLayout, PercentFrameLayout remoteRenderLayout, String preferredVideoCodec)
+   private void initializeWebrtc(boolean videoEnabled, SurfaceViewRenderer localRender, SurfaceViewRenderer remoteRender, String preferredVideoCodec)
    {
       PercentFrameLayout test;
       RCLogger.i(TAG, "initializeWebrtc  ");
@@ -891,12 +891,12 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       signalingParameters = null;
       scalingType = ScalingType.SCALE_ASPECT_FILL;
 
-      this.localRenderLayout = localRenderLayout;
-      this.remoteRenderLayout = remoteRenderLayout;
+      //this.localRenderLayout = localRenderLayout;
+      //this.remoteRenderLayout = remoteRenderLayout;
 
       rootEglBase = EglBase.create();
-      localRender = (SurfaceViewRenderer)localRenderLayout.getChildAt(0);
-      remoteRender = (SurfaceViewRenderer)remoteRenderLayout.getChildAt(0);
+      this.localRender = localRender;  //(SurfaceViewRenderer)localRenderLayout.getChildAt(0);
+      this.remoteRender = remoteRender;  //(SurfaceViewRenderer)remoteRenderLayout.getChildAt(0);
 
       if (videoEnabled) {
          localMediaType = ConnectionMediaType.AUDIO_VIDEO;
@@ -972,8 +972,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          // hence we need to show local video view
          localRender.setVisibility(View.VISIBLE);
 
-         localRenderLayout.setPosition(
-               LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING, LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING);
+         //localRenderLayout.setPosition(LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING, LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING);
          localRender.setScalingType(scalingType);
          localRender.setMirror(true);
          localRender.requestLayout();
@@ -987,12 +986,11 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          if (remoteVideoReceived) {
             remoteRender.setVisibility(View.VISIBLE);
 
-            remoteRenderLayout.setPosition(REMOTE_X, REMOTE_Y, REMOTE_WIDTH, REMOTE_HEIGHT);
+            //remoteRenderLayout.setPosition(REMOTE_X, REMOTE_Y, REMOTE_WIDTH, REMOTE_HEIGHT);
             remoteRender.setScalingType(scalingType);
             remoteRender.setMirror(false);
 
-            localRenderLayout.setPosition(
-                  LOCAL_X_CONNECTED, LOCAL_Y_CONNECTED, LOCAL_WIDTH_CONNECTED, LOCAL_HEIGHT_CONNECTED);
+            //localRenderLayout.setPosition(LOCAL_X_CONNECTED, LOCAL_Y_CONNECTED, LOCAL_WIDTH_CONNECTED, LOCAL_HEIGHT_CONNECTED);
             localRender.setScalingType(ScalingType.SCALE_ASPECT_FIT);
             localRender.setMirror(true);
 

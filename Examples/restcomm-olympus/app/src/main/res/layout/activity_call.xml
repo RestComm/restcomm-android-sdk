@@ -17,6 +17,7 @@
         android:src="@drawable/restcomm_logo_call_139x54"/>
 
     <!-- IMPORTANT: seems that visibility="gone" below fixes the flashing issue somehow (restcomm-android-sdk #354) -->
+    <!--
     <org.mobicents.restcomm.android.client.sdk.util.PercentFrameLayout
         android:id="@+id/remote_video_layout"
         android:layout_width="match_parent"
@@ -27,15 +28,16 @@
             android:layout_height="wrap_content"
             android:visibility="gone"/>
     </org.mobicents.restcomm.android.client.sdk.util.PercentFrameLayout>
+    -->
 
-    <!--
     <org.webrtc.SurfaceViewRenderer
         android:id="@+id/remote_video_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-    -->
+        android:layout_height="match_parent"
+        android:visibility="gone"/>
 
     <!-- IMPORTANT: seems that visibility="gone" below fixes the flashing issue somehow (restcomm-android-sdk #354) -->
+    <!--
     <org.mobicents.restcomm.android.client.sdk.util.PercentFrameLayout
         android:id="@+id/local_video_layout"
         android:layout_width="match_parent"
@@ -46,16 +48,16 @@
             android:layout_height="wrap_content"
             android:visibility="gone" />
     </org.mobicents.restcomm.android.client.sdk.util.PercentFrameLayout>
+    -->
 
-    <!--
     <org.webrtc.SurfaceViewRenderer
         android:id="@+id/local_video_view"
-        android:layout_width="100dp"
-        android:layout_height="180dp"
+        android:layout_width="108dp"
+        android:layout_height="192dp"
         android:layout_alignParentRight="true"
         android:layout_marginTop="5dp"
-        android:layout_marginRight="5dp" />
-        -->
+        android:layout_marginRight="5dp"
+        android:visibility="gone"/>
 
     <TextView
         android:layout_width="wrap_content"

@@ -207,8 +207,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
             connectParams.put(RCConnection.ParameterKeys.CONNECTION_PEER, intent.getStringExtra(RCDevice.EXTRA_DID));
             connectParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
-            connectParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
-            connectParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
+            connectParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_view));
+            connectParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_view));
             // by default we use VP8 for video as it tends to be more adopted, but you can override that and specify VP9 as follows:
             //connectParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC, "VP9");
 
@@ -284,8 +284,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 btnAnswerAudio.setVisibility(View.INVISIBLE);
                 HashMap<String, Object> params = new HashMap<String, Object>();
                 params.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, true);
-                params.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
-                params.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
+                params.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_view));
+                params.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_view));
                 pendingConnection.accept(params);
                 connection = this.pendingConnection;
                 pendingConnection = null;
@@ -297,8 +297,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 btnAnswerAudio.setVisibility(View.INVISIBLE);
                 HashMap<String, Object> params = new HashMap<String, Object>();
                 params.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, false);
-                params.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
-                params.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
+                params.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_view));
+                params.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_view));
                 pendingConnection.accept(params);
                 connection = this.pendingConnection;
                 pendingConnection = null;
