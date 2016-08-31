@@ -272,7 +272,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private static final int LOCAL_HEIGHT_CONNECTING = 100;
    // Local preview screen position after call is connected.
    private static final int LOCAL_X_CONNECTED = 72;
-   private static final int LOCAL_Y_CONNECTED = 72;
+   private static final int LOCAL_Y_CONNECTED = 2;
    private static final int LOCAL_WIDTH_CONNECTED = 25;
    private static final int LOCAL_HEIGHT_CONNECTED = 25;
    // Remote video screen position

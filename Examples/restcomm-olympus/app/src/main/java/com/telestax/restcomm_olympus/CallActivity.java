@@ -187,12 +187,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     }
 
     private void handleCall(Intent intent) {
-        // Important note: I used to set visibility in Create(), to avoid the flashing of the GL view when it gets added and then removed right away.
-        // But if I make the video view invisibe when VideoRendererGui.create() is called, then videoContextReady is never called. Need to figure
-        // out a way to work around this
-        //findViewById(R.id.local_video_view).setVisibility(View.INVISIBLE);
-        //findViewById(R.id.remote_video_view).setVisibility(View.INVISIBLE);
-
         if (intent.getAction().equals(RCDevice.OUTGOING_CALL)) {
             String text;
             if (isVideo) {
@@ -378,13 +372,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         muteVideo = false;
 
         setVolumeControlStream(AudioManager.STREAM_VOICE_CALL);
-
-        if (connection.getLocalMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) {
-            //findViewById(R.id.local_video_view).setVisibility(View.VISIBLE);
-        }
-        if (connection.getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) {
-            //findViewById(R.id.remote_video_view).setVisibility(View.VISIBLE);
-        }
     }
 
     public void onDisconnected(RCConnection connection) {
