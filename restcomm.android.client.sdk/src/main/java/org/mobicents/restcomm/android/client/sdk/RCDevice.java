@@ -36,19 +36,33 @@ import org.mobicents.restcomm.android.client.sdk.SignalingClient.SignalingClient
 import org.mobicents.restcomm.android.client.sdk.SignalingClient.SignalingMessage;
 import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
+
 /**
- * RCDevice Represents an abstraction of a communications device able to make and receive calls, send and receive messages etc. Remember that
- * in order to be notified of RestComm Client events you need to set a listener to RCDevice and implement the applicable methods, and also 'register'
+ * <p>RCDevice represents an abstraction of a communications device able to make and receive calls, send and receive messages etc. Remember that
+ * in order to be notified of Restcomm Client events you need to set a listener to RCDevice and implement the applicable methods, and also 'register'
  * to the applicable intents by calling RCDevice.setPendingIntents() and provide one intent for whichever activity will be receiving calls and another
  * intent for the activity receiving messages.
  * If you want to initiate a media connection towards another party you use RCDevice.connect() which returns an RCConnection object representing
  * the new outgoing connection. From then on you can act on the new connection by applying RCConnection methods on the handle you got from RCDevice.connect().
- * If there is an incoming connection you will be receiving an intent with action 'RCDevice.INCOMING_CALL'. At that point you can use RCConnection methods to
- * accept or reject the connection.
- * <p/>
+ * If there is an incoming connection you will be receiving an intent with action 'RCDevice.INCOMING_CALL', and with it you will get:
+ * <ol>
+ *    <li>The calling party id via string extra named RCDevice.EXTRA_DID, like: <i>intent.getStringExtra(RCDevice.EXTRA_DID)</i></li>
+ *    <li>Whether the incoming call has video enabled via boolean extra named RCDevice.EXTRA_VIDEO_ENABLED, like:
+ *       <i>intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false)</i></li>
+ *    <li>Restcomm parameters via serializable extra named RCDevice.EXTRA_CUSTOM_HEADERS, like: <i>intent.getSerializableExtra(RCDevice.EXTRA_CUSTOM_HEADERS)</i>
+ *    where you need to cast the result to HashMap<String, String> where each entry is a Restcomm parameter with key and value of type string
+ *    (for example you will find the Restcomm Call-Sid under 'X-RestComm-CallSid' key).</li>
+ * </ol>
+ * At that point you can use RCConnection methods to accept or reject the connection.
+ * </p>
+ * <p>
  * As far as instant messages are concerned you can send a message using RCDevice.sendMessage() and you will be notified of an incoming message
- * through an intent with action 'RCDevice.INCOMING_MESSAGE'.
- *
+ * through an intent with action 'RCDevice.INCOMING_MESSAGE'. For an incoming message you can retrieve:
+ * <ol>
+ *    <li>The sending party id via string extra named RCDevice.EXTRA_DID, like: <i>intent.getStringExtra(RCDevice.EXTRA_DID)</i></li>
+ *    <li>The actual message text via string extra named RCDevice.INCOMING_MESSAGE_TEXT, like: <i>intent.getStringExtra(RCDevice.INCOMING_MESSAGE_TEXT)</i></li>
+ * </ol>
+ * </p>
  * @see RCConnection
  */
 
@@ -332,8 +346,10 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
     * @param parameters Parameters such as the endpoint we want to connect to, etc. Possible keys: <br>
     *   <b>RCConnection.ParameterKeys.CONNECTION_PEER</b>: Who is the called number, like <i>'+1235'</i> or <i>'sip:+1235@cloud.restcomm.com'</i> <br>
     *   <b>RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED</b>: Whether we want WebRTC video enabled or not <br>
-    *   <b>RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO</b>: View where we want the local video to be rendered <br>
-    *   <b>RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO</b>: View where we want the remote video to be rendered  <br>
+    *   <b>RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO</b>: PercentFrameLayout containing the view where we want the local video to be rendered in. You can check res/layout/activity_main.xml
+    *                   in hello-world sample to see the structure required <br>
+    *   <b>RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO</b>: PercentFrameLayout containing the view where we want the remote video to be rendered. You can check res/layout/activity_main.xml
+    *                   in hello-world sample to see the structure required  <br>
     *   <b>RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC</b>: Preferred video codec to use. Default is VP8. Possible values: <i>'VP8', 'VP9'</i> <br>
     *   <b>RCConnection.ParameterKeys.CONNECTION_CUSTOM_SIP_HEADERS</b>: An optional HashMap<String,String> of custom SIP headers we want to add. For an example
     *                   please check HelloWorld sample or Olympus App. <br>
@@ -439,8 +455,8 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
     * will be receiving calls and another intent for the activity receiving messages. If you use a single Activity
     * for both then you can pass the same intent both as a callIntent as well as a messageIntent
     *
-    * @param callIntent:    an intent that will be sent on an incoming call
-    * @param messageIntent: an intent that will be sent on an incoming text message
+    * @param callIntent    an intent that will be sent on an incoming call
+    * @param messageIntent an intent that will be sent on an incoming text message
     */
    public void setPendingIntents(Intent callIntent, Intent messageIntent)
    {

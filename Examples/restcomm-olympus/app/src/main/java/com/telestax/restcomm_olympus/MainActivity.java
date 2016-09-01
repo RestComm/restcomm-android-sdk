@@ -130,11 +130,6 @@ public class MainActivity extends AppCompatActivity
       // For TestFairy troubleshooting. IMPORTANT: remove for production apps, as TestFairy sends logs, screenshots, etc to their servers
       TestFairy.begin(this, "52d3ee1de1b7681d1fcbbc3295b2b86a0aa43fcc");
 
-      // Initialize database
-      //DatabaseManager.getInstance().open(getApplicationContext());
-
-      //databaseHelper = new DatabaseHelper(getApplicationContext());
-
       Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
       setSupportActionBar(toolbar);
       toolbar.setTitle(getTitle());
@@ -146,7 +141,6 @@ public class MainActivity extends AppCompatActivity
 
       alertDialog = new AlertDialog.Builder(MainActivity.this).create();
 
-      //PreferenceManager.setDefaultValues(this, "preferences.xml", MODE_PRIVATE, R.xml.preferences, false);
       PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
       prefs = PreferenceManager.getDefaultSharedPreferences(this);
 

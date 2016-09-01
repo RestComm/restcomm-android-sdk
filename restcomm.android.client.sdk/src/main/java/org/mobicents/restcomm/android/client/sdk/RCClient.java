@@ -44,6 +44,10 @@ public class RCClient {
    private static RCClient instance = null;
    private static boolean initialized = false;
 
+   /*
+    * Error codes for the SDK. They can be broken into three categories: 1. RCDevice related, starting with ERROR_DEVICE_*,
+    * 2. RCConnection related, starting with ERROR_CONNECTION_*, and 4. Text message related, starting with ERROR_MESSAGE_*,
+    */
    public enum ErrorCodes {
       SUCCESS,
       ERROR_DEVICE_MISSING_USERNAME,
@@ -92,6 +96,9 @@ public class RCClient {
       ERROR_MESSAGE_UNTRUSTED_SERVER,
    }
 
+   /*
+    * Maps the error codes above with an error description, to get more detailed information on what happened
+    */
    public static String errorText(ErrorCodes errorCode)
    {
       if (errorCode == ErrorCodes.SUCCESS) {
@@ -318,7 +325,7 @@ public class RCClient {
    /**
     * Retrieve whether Restcomm Client is initialized
     *
-    * @return
+    * @return Whether Restcomm Client is initialized or not
     */
    public static boolean isInitialized()
    {
@@ -337,10 +344,16 @@ public class RCClient {
     *   <b>RCDevice.ParameterKeys.MEDIA_ICE_USERNAME</b>: ICE username for authentication (mandatory) <br>
     *   <b>RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD</b>: ICE password for authentication (mandatory) <br>
     *   <b>RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED</b>: Should signaling traffic be encrypted? If this is the case, then a key pair is generated when
-    *                signaling facilities are initialized and added to a custom keystore. Also, added to this custom keystore are all the trusted certificates from
-    *                the System Wide Android CA Store, so that we properly accept legit server certificates (optional) <br>
+    *                    signaling facilities are initialized and added to a custom keystore. Also, added to this custom keystore are all the trusted certificates from
+    *                    the System Wide Android CA Store, so that we properly accept legit server certificates (optional) <br>
     *   <b>RCDevice.ParameterKeys.MEDIA_TURN_ENABLED</b>: Should TURN be enabled for webrtc media? (optional) <br>
     *   <b>RCDevice.ParameterKeys.SIGNALING_LOCAL_PORT</b>: Local port to use for signaling (optional) <br>
+    *   <b>RCDevice.ParameterKeys.RESOURCE_SOUND_CALLING</b>: The SDK provides the user with default sounds for calling, ringing, busy (declined) and message events, but the user can override them
+    *                    by providing their own resource files (i.e. .wav, .mp3, etc) at res/raw passing them here with Resource IDs like R.raw.user_provided_calling_sound. This parameter
+    *                    configures the sound you will hear when you make a call and until the call is either replied or you hang up<br>
+    *   <b>RCDevice.ParameterKeys.RESOURCE_SOUND_RINGING</b>: The sound you will hear when you receive a call <br>
+    *   <b>RCDevice.ParameterKeys.RESOURCE_SOUND_DECLINED</b>: The sound you will hear when your call is declined <br>
+    *   <b>RCDevice.ParameterKeys.RESOURCE_SOUND_MESSAGE</b>: The sound you will hear when you receive a message <br>
     * @param deviceListener  The listener for upcoming RCDevice events
     * @return The newly created RCDevice
     * @see RCDevice
@@ -410,7 +423,7 @@ public class RCClient {
       void onInitialized();
 
       /**
-       * Callback that is called if there's an error
+       * Callback that is called if there's an error during initialization
        */
       void onError(Exception exception);
    }
