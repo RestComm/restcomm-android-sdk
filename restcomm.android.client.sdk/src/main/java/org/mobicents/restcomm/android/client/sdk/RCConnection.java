@@ -49,11 +49,14 @@
 
 package org.mobicents.restcomm.android.client.sdk;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
 import android.os.Handler;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Toast;
@@ -289,11 +292,11 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       ICE_CONNECTED,
    }
 
-   // List of mandatory application permissions.
+   // List of 'dangerous' permissions that we need to check
    private static final String[] MANDATORY_PERMISSIONS = {
-         "android.permission.MODIFY_AUDIO_SETTINGS",
-         "android.permission.RECORD_AUDIO",
-         "android.permission.INTERNET"
+           "android.permission.CAMERA",
+           "android.permission.RECORD_AUDIO",
+           "android.permission.USE_SIP"
    };
    private static final String TAG = "RCConnection";
 
@@ -405,6 +408,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void accept(Map<String, Object> parameters)
    {
       RCLogger.i(TAG, "accept(): " + parameters.toString());
+      if (!checkPermissions()) {
+         return;
+      }
 
       if (state == ConnectionState.CONNECTING) {
          this.callParams = (HashMap<String, Object>) parameters;
@@ -720,6 +726,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       sendQoSConnectionIntent("disconnected");
    }
 
+   // Handle local disconnect
    private void handleDisconnect(String reason)
    {
       RCLogger.i(TAG, "handleDisconnect(): reason: " + reason);
@@ -822,6 +829,10 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    // Outgoing call
    private void setupWebrtcAndCall(Map<String, Object> parameters)
    {
+      if (!checkPermissions()) {
+         return;
+      }
+
       this.callParams = (HashMap<String, Object>) parameters;
       initializeWebrtc((Boolean) this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED),
             (PercentFrameLayout) parameters.get(ParameterKeys.CONNECTION_LOCAL_VIDEO),
@@ -859,6 +870,27 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       timeoutHandler.postDelayed(runnable, CALL_TIMEOUT_DURATION_MILIS);
    }
 
+   // If permission is granted we return true
+   private boolean checkPermissions()
+   {
+      // Check for mandatory permissions.
+      for (String permission : MANDATORY_PERMISSIONS) {
+         if (RCClient.getContext().checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
+            RCLogger.e(TAG, "Permission " + permission + " is not granted");
+
+            handleDisconnect("Device-Permissions-Denied");
+
+            listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_PERMISSION_DENIED.ordinal(),
+                    RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_PERMISSION_DENIED));
+
+            device.removeConnection(jobId);
+
+            return false;
+         }
+      }
+      return true;
+   }
+
    // Called if call hasn't been established in the predefined period
    private void onCallTimeout()
    {
@@ -885,7 +917,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       PercentFrameLayout test;
       RCLogger.i(TAG, "initializeWebrtc  ");
-      Context context = RCClient.getContext();
+      //Context context = RCClient.getContext();
 
       iceConnected = false;
       signalingParameters = null;
@@ -913,15 +945,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       // default to VP8 as VP9 doesn't seem to have that great android device support
       if (preferredVideoCodec == null) {
          preferredVideoCodec = "VP8";
-      }
-
-      // Check for mandatory permissions.
-      for (String permission : MANDATORY_PERMISSIONS) {
-         if (context.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
-            logAndToast("Permission " + permission + " is not granted");
-            // TODO: return error to RCConnection listener
-            return;
-         }
       }
 
       peerConnectionParameters = new PeerConnectionClient.PeerConnectionParameters(
@@ -1032,7 +1055,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       // Start room connection.
       logAndToast("Preparing call");
 
-      audioManager.startCall();
+      //audioManager.startCall();
 
       // we don't have room functionality to notify us when ready; instead, we start connecting right now
       this.onConnectedToRoom(signalingParameters);

@@ -84,6 +84,7 @@ public class RCClient {
       ERROR_CONNECTION_REGISTRARLESS_FULL_URI_REQUIRED,
       ERROR_CONNECTION_WEBRTC_PEERCONNECTION_ERROR,
       ERROR_CONNECTION_WEBRTC_TURN_ERROR,
+      ERROR_CONNECTION_PERMISSION_DENIED,
       ERROR_CONNECTION_UNTRUSTED_SERVER,
 
       ERROR_MESSAGE_AUTHENTICATION_FORBIDDEN,
@@ -206,6 +207,9 @@ public class RCClient {
       }
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_WEBRTC_TURN_ERROR) {
          return "Error retrieving TURN servers";
+      }
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_PERMISSION_DENIED) {
+         return "Failed to initiate connection; one or more Android permissions aren't granted";
       }
 
       else if (errorCode == ErrorCodes.ERROR_MESSAGE_AUTHENTICATION_FORBIDDEN) {

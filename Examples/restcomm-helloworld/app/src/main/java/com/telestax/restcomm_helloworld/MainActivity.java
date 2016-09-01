@@ -34,6 +34,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
    private HashMap<String, Object> params;
    private static final String TAG = "MainActivity";
 
+   /*
    private GLSurfaceView videoView;
    private VideoRenderer.Callbacks localRender = null;
    private VideoRenderer.Callbacks remoteRender = null;
@@ -57,6 +58,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
    private static final int REMOTE_WIDTH = 100;
    private static final int REMOTE_HEIGHT = 100;
    private VideoRendererGui.ScalingType scalingType;
+   */
 
    // UI elements
    Button btnDial;
@@ -103,14 +105,19 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
 
       params = new HashMap<String, Object>();
       // update the IP address to your Restcomm instance
-      params.put("pref_proxy_domain", "");
-      params.put("pref_sip_user", "android-sdk");
-      params.put("pref_sip_password", "1234");
+      params.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN, "");
+      params.put(RCDevice.ParameterKeys.SIGNALING_USERNAME, "android-sdk");
+      params.put(RCDevice.ParameterKeys.SIGNALING_PASSWORD, "1234");
+      params.put(RCDevice.ParameterKeys.MEDIA_ICE_URL, "https://service.xirsys.com/ice");
+      params.put(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME, "atsakiridis");
+      params.put(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD, "4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7");
+      params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
       device = RCClient.createDevice(params, this);
       Intent intent = new Intent(getApplicationContext(), MainActivity.class);
       // we don't have a separate activity for the calls, so use the same intent both for calls and messages
       device.setPendingIntents(intent, intent);
 
+      /*
       // Setup video stuff
       scalingType = VideoRendererGui.ScalingType.SCALE_ASPECT_FILL;
       videoView = (GLSurfaceView) findViewById(R.id.glview_call);
@@ -128,6 +135,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
       localRender = VideoRendererGui.create(
             LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING,
             LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING, scalingType, true);
+            */
    }
 
    @Override
@@ -140,10 +148,12 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
       device = null;
    }
 
+   /*
    private void videoContextReady()
    {
       videoReady = true;
    }
+   */
 
    @Override
    public boolean onCreateOptionsMenu(Menu menu)
@@ -179,10 +189,17 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
          }
 
          HashMap<String, Object> connectParams = new HashMap<String, Object>();
-         // CHANGEME: update the IP address to your Restcomm instance. Also, you can update the number
+         // CHANGEME: You can update the IP address to your Restcomm instance. Also, you can update the number
          // from '1235' to any Restcomm application you wish to reach
+         /*
          connectParams.put("username", "sip:+1235@cloud.restcomm.com");
          connectParams.put("video-enabled", true);
+         */
+         connectParams.put(RCConnection.ParameterKeys.CONNECTION_PEER, "sip:+1235@cloud.restcomm.com");
+         connectParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, true);
+         connectParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
+         connectParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
+
 
          // if you want to add custom SIP headers, please uncomment this
          //HashMap<String, String> sipHeaders = new HashMap<>();
@@ -210,7 +227,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
 
 
    // RCDevice Listeners
-   public void onStartListening(RCDevice device)
+   public void onStartListening(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus)
    {
 
    }
@@ -267,10 +284,10 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
       Log.i(TAG, "RCConnection connecting");
    }
 
-   public void onConnected(RCConnection connection)
-   {
+   public void onConnected(RCConnection connection, HashMap<String, String> customHeaders) {
       Log.i(TAG, "RCConnection connected");
    }
+
 
    public void onDisconnected(RCConnection connection)
    {
@@ -278,6 +295,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
       this.connection = null;
       pendingConnection = null;
 
+      /*
       // reside local renderer to take up all screen now that the call is over
       VideoRendererGui.update(localRender,
             LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING,
@@ -293,6 +311,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
          remoteVideoTrack.removeRenderer(remoteVideoRenderer);
          remoteVideoTrack = null;
       }
+      */
    }
 
    public void onDisconnected(RCConnection connection, int errorCode, String errorText)
@@ -317,36 +336,37 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
       pendingConnection = null;
    }
 
-   public void onReceiveLocalVideo(RCConnection connection, VideoTrack videoTrack)
+   public void onLocalVideo(RCConnection connection)
    {
-      Log.v(TAG, "onReceiveLocalVideo(), VideoTrack: " + videoTrack);
-      if (videoTrack != null) {
-         //show media on screen
-         videoTrack.setEnabled(true);
-         localVideoRenderer = new VideoRenderer(localRender);
-         videoTrack.addRenderer(localVideoRenderer);
-         localVideoTrack = videoTrack;
-      }
    }
 
-   public void onReceiveRemoteVideo(RCConnection connection, VideoTrack videoTrack)
+   public void onRemoteVideo(RCConnection connection)
    {
-      Log.v(TAG, "onReceiveRemoteVideo(), VideoTrack: " + videoTrack);
-      if (videoTrack != null) {
-         //show media on screen
-         videoTrack.setEnabled(true);
-         remoteVideoRenderer = new VideoRenderer(remoteRender);
-         videoTrack.addRenderer(remoteVideoRenderer);
-
-         VideoRendererGui.update(remoteRender,
-               REMOTE_X, REMOTE_Y,
-               REMOTE_WIDTH, REMOTE_HEIGHT, scalingType, false);
-         VideoRendererGui.update(localRender,
-               LOCAL_X_CONNECTED, LOCAL_Y_CONNECTED,
-               LOCAL_WIDTH_CONNECTED, LOCAL_HEIGHT_CONNECTED,
-               VideoRendererGui.ScalingType.SCALE_ASPECT_FIT, true);
-
-         remoteVideoTrack = videoTrack;
-      }
    }
+
+   public void onError(RCConnection connection, int errorCode, String errorText)
+   {
+   }
+
+   public void onDigitSent(RCConnection connection, int statusCode, String statusText)
+   {
+   }
+
+   public void onMessageSent(RCDevice device, int statusCode, String statusText)
+   {
+   }
+
+   public void onReleased(RCDevice device, int statusCode, String statusText)
+   {
+   }
+
+   public void onInitialized(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus, int statusCode, String statusText)
+   {
+   }
+
+   public void onInitializationError(int errorCode, String errorText)
+   {
+   }
+
+
 }

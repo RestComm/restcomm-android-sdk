@@ -1,15 +1,15 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 22
-    buildToolsVersion '22.0.1'
+    compileSdkVersion 24
+    buildToolsVersion '23.0.2'
 
     defaultConfig {
         applicationId "com.telestax.restcomm_helloworld"
         minSdkVersion 16
-        targetSdkVersion 22
+        targetSdkVersion 24
         versionCode 1
-        versionName "1.0.0-BETA3#1"
+        versionName "1.0.0-BETA4"
     }
     buildTypes {
         release {
@@ -23,9 +23,9 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
     compile project(':restcomm.android.client.sdk')
-    compile 'com.android.support:appcompat-v7:22.2.1'
-    compile 'com.android.support:design:22.2.1'
-    compile 'com.android.support:support-v4:22.2.1'
+    compile 'com.android.support:appcompat-v7:24.2.0'
+    compile 'com.android.support:design:24.2.0'
+    compile 'com.android.support:support-v4:24.2.0'
 }
 
 /*

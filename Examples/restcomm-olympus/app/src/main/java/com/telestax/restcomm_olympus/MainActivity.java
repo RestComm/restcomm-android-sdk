@@ -73,51 +73,6 @@ public class MainActivity extends AppCompatActivity
 
    private static final int CONNECTION_REQUEST = 1;
 
-   /*
-   // Retrieve all contact entries from DB and return them in an ArrayList suitable for use by the ContactAdapter
-   ArrayList<Map<String, String>> retrieveContactsArray()
-   {
-      if (databaseHelper == null) {
-         throw new RuntimeException("Database hasn't been opened yet, please call open()");
-      }
-
-      //SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
-      //qb.setTables(DatabaseContract.ContactEntry.TABLE_NAME);
-
-      // Define a projection that specifies which columns from the database
-      // you will actually use after this query.
-      String[] columns = {
-            DatabaseContract.ContactEntry.COLUMN_NAME_NAME,
-            DatabaseContract.ContactEntry.COLUMN_NAME_URI,
-      };
-
-      // How you want the results sorted in the resulting Cursor
-      String sortOrder = DatabaseContract.ContactEntry.COLUMN_NAME_NAME + " ASC";
-
-      SQLiteDatabase db = databaseHelper.getReadableDatabase();
-      Cursor cursor = db.query(
-            DatabaseContract.ContactEntry.TABLE_NAME,  // The table to query
-            columns,                               // The columns to return
-            null,                                // The columns for the WHERE clause
-            null,                            // The values for the WHERE clause
-            null,                                     // don't group the rows
-            null,                                     // don't filter by row groups
-            sortOrder                                 // The sort order
-      );
-
-      ArrayList<Map<String, String>> contactList = new ArrayList<Map<String, String>>();
-      if (cursor.getCount() > 0) {
-         cursor.moveToFirst();
-         // iterate the rows, read from db and populate contactList
-         for (int i = 0; i < cursor.getCount(); i++) {
-            Log.w(TAG, "+++ Entry: " + cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.ContactEntry.COLUMN_NAME_NAME)));
-         }
-      }
-      cursor.close();
-
-      return null;
-   }
-   */
    @Override
    protected void onCreate(Bundle savedInstanceState)
    {
@@ -200,6 +155,9 @@ public class MainActivity extends AppCompatActivity
    {
       super.onResume();
 
+      // The activity has become visible (it is now "resumed").
+      Log.i(TAG, "%% onResume");
+
       if (device.getState() == RCDevice.DeviceState.OFFLINE) {
          getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorTextSecondary)));
       }
@@ -213,8 +171,6 @@ public class MainActivity extends AppCompatActivity
          device.setDeviceListener(this);
       }
 
-      // The activity has become visible (it is now "resumed").
-      Log.i(TAG, "%% onResume");
    }
 
    @Override

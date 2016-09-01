@@ -22,16 +22,22 @@
 
 package com.telestax.restcomm_olympus;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.FragmentTransaction;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.media.AudioManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.preference.PreferenceManager;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -49,14 +55,14 @@ import org.mobicents.restcomm.android.client.sdk.RCConnectionListener;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
 import org.mobicents.restcomm.android.client.sdk.util.PercentFrameLayout;
 
-public class CallActivity extends Activity implements RCConnectionListener, View.OnClickListener,
+public class CallActivity extends AppCompatActivity implements RCConnectionListener, View.OnClickListener,
         KeypadFragment.OnFragmentInteractionListener {
 
     private RCConnection connection, pendingConnection;
     SharedPreferences prefs;
     private static final String TAG = "CallActivity";
-    private HashMap<String, Object> connectParams = new HashMap<String, Object>();
-    private HashMap<String, Object> acceptParams = new HashMap<String, Object>();
+    private HashMap<String, Object> connectParams;  // = new HashMap<String, Object>();
+    private HashMap<String, Object> acceptParams; // = new HashMap<String, Object>();
     private RCDevice device;
     private boolean pendingError = false;
     private boolean activityVisible = false;
@@ -66,7 +72,9 @@ public class CallActivity extends Activity implements RCConnectionListener, View
     // handler for the timer
     private Handler timerHandler = new Handler();
     int secondsElapsed = 0;
+    private final int PERMISSION_REQUEST_DANGEROUS = 1;
     private AlertDialog alertDialog;
+    private boolean callOutgoing = true;
 
     ImageButton btnMuteAudio, btnMuteVideo;
     ImageButton btnHangup;
@@ -129,7 +137,6 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
         keypadFragment = new KeypadFragment();
 
-        isVideo = intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false);
         lblTimer.setVisibility(View.INVISIBLE);
         // these might need to be moved to Resume()
         btnMuteAudio.setVisibility(View.INVISIBLE);
@@ -144,7 +151,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         ft.hide(keypadFragment);
         ft.commit();
 
-        handleCall(intent);
+        //handleCall(intent);
     }
 
     @Override
@@ -152,6 +159,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         super.onPause();
         Log.i(TAG, "%% onPause");
 
+        /*
         if (pendingConnection != null) {
             // incoming ringing
             pendingConnection.reject();
@@ -167,6 +175,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             }
         }
         finish();
+        */
     }
 
     @Override
@@ -174,6 +183,8 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         super.onStart();
         Log.i(TAG, "%% onStart");
         activityVisible = true;
+
+        handleCall(getIntent());
     }
 
     @Override
@@ -184,9 +195,34 @@ public class CallActivity extends Activity implements RCConnectionListener, View
         if (timerHandler != null) {
             timerHandler.removeCallbacksAndMessages(null);
         }
+
+        if (pendingConnection != null) {
+            // incoming ringing
+            pendingConnection.reject();
+            pendingConnection = null;
+        } else {
+            if (connection != null) {
+                // incoming established or outgoing any state (pending, connecting, connected)
+                if (connection.getState() == RCConnection.ConnectionState.CONNECTED) {
+                    connection.disconnect();
+                }
+                connection = null;
+                pendingConnection = null;
+            }
+        }
+        //finish();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // The activity has become visible (it is now "resumed").
+        Log.i(TAG, "%% onResume");
     }
 
     private void handleCall(Intent intent) {
+        isVideo = intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false);
         if (intent.getAction().equals(RCDevice.OUTGOING_CALL)) {
             String text;
             if (isVideo) {
@@ -199,6 +235,7 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             lblCall.setText(text + intent.getStringExtra(RCDevice.EXTRA_DID).replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
             lblStatus.setText("Initiating Call...");
 
+            connectParams = new HashMap<String, Object>();
             connectParams.put(RCConnection.ParameterKeys.CONNECTION_PEER, intent.getStringExtra(RCDevice.EXTRA_DID));
             connectParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
             connectParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
@@ -211,13 +248,15 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             //sipHeaders.put("X-SIP-Header1", "Value1");
             //connectParams.put(RCConnection.ParameterKeys.CONNECTION_CUSTOM_SIP_HEADERS, sipHeaders);
 
-            connection = device.connect(connectParams, this);
-
-            if (connection == null) {
-                Log.e(TAG, "Error: error connecting");
-                showOkAlert("RCDevice Error", "Device is Offline");
-                return;
-            }
+            handlePermissions();
+                /*
+                connection = device.connect(connectParams, this);
+                if (connection == null) {
+                    Log.e(TAG, "Error: error connecting");
+                    showOkAlert("RCDevice Error", "Device is Offline");
+                    return;
+                }
+                */
         }
         if (intent.getAction().equals(RCDevice.INCOMING_CALL)) {
             String text;
@@ -231,13 +270,13 @@ public class CallActivity extends Activity implements RCConnectionListener, View
             lblCall.setText(text + intent.getStringExtra(RCDevice.EXTRA_DID).replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
             lblStatus.setText("Call Received...");
 
+            //callOutgoing = false;
             pendingConnection = device.getPendingConnection();
             pendingConnection.setConnectionListener(this);
 
             // the number from which we got the call
             String incomingCallDid = intent.getStringExtra(RCDevice.EXTRA_DID);
-            // notice that this is not used yet; the sdk doesn't tell us if the incoming call is video/audio (TODO)
-            acceptParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
+            //acceptParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
             HashMap<String, String> customHeaders = (HashMap<String, String>)intent.getSerializableExtra(RCDevice.EXTRA_CUSTOM_HEADERS);
             if (customHeaders != null) {
                 Log.i(TAG, "Got custom headers in incoming call: " + customHeaders.toString());
@@ -276,26 +315,36 @@ public class CallActivity extends Activity implements RCConnectionListener, View
                 lblStatus.setText("Answering Call...");
                 btnAnswer.setVisibility(View.INVISIBLE);
                 btnAnswerAudio.setVisibility(View.INVISIBLE);
-                HashMap<String, Object> params = new HashMap<String, Object>();
-                params.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, true);
-                params.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
-                params.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
+                acceptParams = new HashMap<String, Object>();
+                //HashMap<String, Object> params = new HashMap<String, Object>();
+                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, true);
+                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
+                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
+                // Check permissions asynchronously and then accept the call
+                handlePermissions();
+                /*
                 pendingConnection.accept(params);
                 connection = this.pendingConnection;
                 pendingConnection = null;
+                */
             }
         } else if (view.getId() == R.id.button_answer_audio) {
             if (pendingConnection != null) {
                 lblStatus.setText("Answering Call...");
                 btnAnswer.setVisibility(View.INVISIBLE);
                 btnAnswerAudio.setVisibility(View.INVISIBLE);
-                HashMap<String, Object> params = new HashMap<String, Object>();
-                params.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, false);
-                params.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
-                params.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
+                acceptParams = new HashMap<String, Object>();
+                //HashMap<String, Object> params = new HashMap<String, Object>();
+                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, false);
+                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
+                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
+                // Check permissions asynchronously and then accept the call
+                handlePermissions();
+                /*
                 pendingConnection.accept(params);
                 connection = this.pendingConnection;
                 pendingConnection = null;
+                */
             }
         } else if (view.getId() == R.id.button_keypad) {
             keypadFragment.setConnection(connection);
@@ -442,6 +491,64 @@ public class CallActivity extends Activity implements RCConnectionListener, View
 
     }
 
+    private boolean handlePermissions()
+    {
+        /*
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            String[] permissions = {Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA, Manifest.permission.USE_SIP};
+
+            // Dynamic permissions where introduced in M
+            // PERMISSION_REQUEST_DANGEROUS is an app-defined int constant. The callback method (i.e. onRequestPermissionsResult) gets the result of the request.
+            ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST_DANGEROUS);
+
+            return false;
+        }
+        */
+        resumeCall();
+
+        return true;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        switch (requestCode) {
+            case PERMISSION_REQUEST_DANGEROUS: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    // permission was granted, yay! Do the contacts-related task you need to do.
+                    resumeCall();
+
+                } else {
+                    // permission denied, boo! Disable the functionality that depends on this permission.
+                    Log.e(TAG, "Error: Permission(s) denied; aborting call");
+                    showOkAlert("Call Error", "Permission(s) denied; aborting call");
+                }
+                return;
+            }
+
+            // other 'case' lines to check for other permissions this app might request
+        }
+    }
+
+    // Resume call after permissions are checked
+    private void resumeCall()
+    {
+        if (connectParams != null) {
+            // outgoing call
+            connection = device.connect(connectParams, this);
+            if (connection == null) {
+                Log.e(TAG, "Error: error connecting");
+                showOkAlert("RCDevice Error", "Device is Offline");
+            }
+        }
+        else if (acceptParams != null) {
+            // incoming call
+            pendingConnection.accept(acceptParams);
+            connection = this.pendingConnection;
+            pendingConnection = null;
+        }
+    }
 
     // Helpers
     private void showOkAlert(final String title, final String detail) {
