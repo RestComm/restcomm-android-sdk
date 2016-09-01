@@ -1,8 +1,8 @@
 apply plugin: 'com.android.library'
 
 android {
-    compileSdkVersion 22
-    buildToolsVersion '22.0.1'
+    compileSdkVersion 24
+    buildToolsVersion '23.0.2'
 
     // Retrieve build number from properties file, increment and use as versionCode. Finally, store new build number in properties file
     def versionPropertiesFile = file('restcomm-android-sdk-version.properties')
@@ -47,7 +47,7 @@ android {
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     compile files('libs/libjingle_peerconnection_java.jar')
-    compile 'com.android.support:appcompat-v7:22.2.0'
+    compile 'com.android.support:appcompat-v7:24.2.0'
     compile 'javax.sip:android-jain-sip-ri:1.2.293'
     compile 'com.madgag.spongycastle:core:1.54.0.0'
     compile 'com.madgag.spongycastle:prov:1.54.0.0'

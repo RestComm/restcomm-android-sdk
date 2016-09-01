@@ -1,8 +1,8 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 22
-    buildToolsVersion "23.0.1"
+    compileSdkVersion 24
+    buildToolsVersion '23.0.2'
 
     // Retrieve build number from properties file, increment and use as versionCode. Finally, store new build number in properties file
     def versionPropertiesFile = file('olympus-version.properties')
@@ -52,8 +52,8 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
     compile project(':restcomm.android.client.sdk')
-    compile 'com.android.support:appcompat-v7:22.2.1'
-    compile 'com.android.support:design:22.2.1'
-    compile 'com.android.support:support-v4:22.2.1'
+    compile 'com.android.support:appcompat-v7:24.2.0'
+    compile 'com.android.support:design:24.2.0'
+    compile 'com.android.support:support-v4:24.2.0'
     compile 'testfairy:testfairy-android-sdk:1.+@aar'
 }

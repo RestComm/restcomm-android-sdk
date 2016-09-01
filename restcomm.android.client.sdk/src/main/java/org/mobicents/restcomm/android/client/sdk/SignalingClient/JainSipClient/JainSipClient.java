@@ -55,7 +55,7 @@ import android.os.Handler;
 import android.os.SystemClock;
 import android.text.format.Formatter;
 
-import org.apache.http.conn.util.InetAddressUtils;
+//import org.apache.http.conn.util.InetAddressUtils;
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
@@ -63,6 +63,7 @@ import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
 import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 
 import java.io.File;
+import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
 import java.net.SocketException;
@@ -916,7 +917,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
                for (InetAddress addr : addrs) {
                   if (!addr.isLoopbackAddress()) {
                      String sAddr = addr.getHostAddress().toUpperCase();
-                     boolean isIPv4 = InetAddressUtils.isIPv4Address(sAddr);
+                     boolean isIPv4 = addr instanceof Inet4Address;  //InetAddressUtils.isIPv4Address(sAddr);
                      if (useIPv4) {
                         if (isIPv4)
                            return sAddr;
