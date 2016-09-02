@@ -2,10 +2,13 @@ package com.telestax.restcomm_helloworld;
 
 //import android.support.v7.app.ActionBarActivity;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.support.v4.app.ActivityCompat;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -15,7 +18,10 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.view.View.OnClickListener;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.ListIterator;
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
@@ -33,32 +39,8 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
    private RCConnection connection, pendingConnection;
    private HashMap<String, Object> params;
    private static final String TAG = "MainActivity";
-
-   /*
-   private GLSurfaceView videoView;
-   private VideoRenderer.Callbacks localRender = null;
-   private VideoRenderer.Callbacks remoteRender = null;
-   private boolean videoReady = false;
-   VideoTrack localVideoTrack, remoteVideoTrack;
-   VideoRenderer localVideoRenderer, remoteVideoRenderer;
-
-   // Local preview screen position before call is connected.
-   private static final int LOCAL_X_CONNECTING = 0;
-   private static final int LOCAL_Y_CONNECTING = 0;
-   private static final int LOCAL_WIDTH_CONNECTING = 100;
-   private static final int LOCAL_HEIGHT_CONNECTING = 100;
-   // Local preview screen position after call is connected.
-   private static final int LOCAL_X_CONNECTED = 72;
-   private static final int LOCAL_Y_CONNECTED = 2;
-   private static final int LOCAL_WIDTH_CONNECTED = 25;
-   private static final int LOCAL_HEIGHT_CONNECTED = 25;
-   // Remote video screen position
-   private static final int REMOTE_X = 0;
-   private static final int REMOTE_Y = 0;
-   private static final int REMOTE_WIDTH = 100;
-   private static final int REMOTE_HEIGHT = 100;
-   private VideoRendererGui.ScalingType scalingType;
-   */
+   HashMap<String, Object> connectParams;
+   private final int PERMISSION_REQUEST_DANGEROUS = 1;
 
    // UI elements
    Button btnDial;
@@ -90,6 +72,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
       btnHangup = (Button) findViewById(R.id.button_hangup);
       btnHangup.setOnClickListener(this);
 
+      // Initialized Restcomm Client SDK entities
       RCClient.setLogLevel(Log.VERBOSE);
       RCClient.initialize(getApplicationContext(), new RCClient.RCInitListener() {
          public void onInitialized()
@@ -114,28 +97,8 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
       params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
       device = RCClient.createDevice(params, this);
       Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-      // we don't have a separate activity for the calls, so use the same intent both for calls and messages
+      // we don't have a separate activity for the calls and messages, so let's use the same intent both for calls and messages
       device.setPendingIntents(intent, intent);
-
-      /*
-      // Setup video stuff
-      scalingType = VideoRendererGui.ScalingType.SCALE_ASPECT_FILL;
-      videoView = (GLSurfaceView) findViewById(R.id.glview_call);
-      // Create video renderers.
-      VideoRendererGui.setView(videoView, new Runnable() {
-         @Override
-         public void run()
-         {
-            videoContextReady();
-         }
-      });
-      remoteRender = VideoRendererGui.create(
-            REMOTE_X, REMOTE_Y,
-            REMOTE_WIDTH, REMOTE_HEIGHT, scalingType, false);
-      localRender = VideoRendererGui.create(
-            LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING,
-            LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING, scalingType, true);
-            */
    }
 
    @Override
@@ -188,7 +151,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
             return;
          }
 
-         HashMap<String, Object> connectParams = new HashMap<String, Object>();
+         connectParams = new HashMap<String, Object>();
          // CHANGEME: You can update the IP address to your Restcomm instance. Also, you can update the number
          // from '1235' to any Restcomm application you wish to reach
          /*
@@ -200,18 +163,11 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
          connectParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
          connectParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
 
-
+         handlePermissions(true);
          // if you want to add custom SIP headers, please uncomment this
          //HashMap<String, String> sipHeaders = new HashMap<>();
          //sipHeaders.put("X-SIP-Header1", "Value1");
          //connectParams.put("sip-headers", sipHeaders);
-
-         connection = device.connect(connectParams, this);
-         if (connection == null) {
-            Log.e(TAG, "Error: error connecting");
-            return;
-         }
-         //device.updateParams(params);
       }
       else if (view.getId() == R.id.button_hangup) {
          if (connection == null) {
@@ -294,24 +250,6 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
       Log.i(TAG, "RCConnection disconnected");
       this.connection = null;
       pendingConnection = null;
-
-      /*
-      // reside local renderer to take up all screen now that the call is over
-      VideoRendererGui.update(localRender,
-            LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING,
-            LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING, scalingType, true);
-
-      if (localVideoTrack != null) {
-
-         localVideoTrack.removeRenderer(localVideoRenderer);
-         localVideoTrack = null;
-      }
-
-      if (remoteVideoTrack != null) {
-         remoteVideoTrack.removeRenderer(remoteVideoRenderer);
-         remoteVideoTrack = null;
-      }
-      */
    }
 
    public void onDisconnected(RCConnection connection, int errorCode, String errorText)
@@ -368,5 +306,77 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
    {
    }
 
+   // Resume call after permissions are checked
+   private void resumeCall()
+   {
+      if (connectParams != null) {
+         connection = device.connect(connectParams, this);
+         if (connection == null) {
+            Log.e(TAG, "Error: error connecting");
+            return;
+         }
+      }
+   }
+
+   // Handle android permissions needed for Marshmallow (API 23) devices or later
+   private boolean handlePermissions(boolean isVideo)
+   {
+      ArrayList<String> permissions = new ArrayList<>(Arrays.asList(new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.USE_SIP}));
+      if (isVideo) {
+         // Only add CAMERA permission if this is a video call
+         permissions.add(Manifest.permission.CAMERA);
+      }
+
+      if (!havePermissions(permissions)) {
+         // Dynamic permissions where introduced in M
+         // PERMISSION_REQUEST_DANGEROUS is an app-defined int constant. The callback method (i.e. onRequestPermissionsResult) gets the result of the request.
+         ActivityCompat.requestPermissions(this, permissions.toArray(new String[permissions.size()]), PERMISSION_REQUEST_DANGEROUS);
+
+         return false;
+      }
+
+      resumeCall();
+
+      return true;
+   }
+
+   // Checks if user has given 'permissions'. If it has them all, it returns true. If not it returns false and modifies 'permissions' to keep only
+   // the permission that got rejected, so that they can be passed later into requestPermissions()
+   private boolean havePermissions(ArrayList<String> permissions)
+   {
+      boolean allgranted = true;
+      ListIterator<String> it = permissions.listIterator();
+      while (it.hasNext()) {
+         if (ActivityCompat.checkSelfPermission(this, it.next()) != PackageManager.PERMISSION_GRANTED) {
+            allgranted = false;
+         }
+         else {
+            // permission granted, remove it from permissions
+            it.remove();
+         }
+      }
+      return allgranted;
+   }
+
+   @Override
+   public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+      super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+      switch (requestCode) {
+         case PERMISSION_REQUEST_DANGEROUS: {
+            // If request is cancelled, the result arrays are empty.
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+               // permission was granted, yay! Do the contacts-related task you need to do.
+               resumeCall();
+
+            } else {
+               // permission denied, boo! Disable the functionality that depends on this permission.
+               Log.e(TAG, "Error: Permission(s) denied; aborting call");
+            }
+            return;
+         }
+
+         // other 'case' lines to check for other permissions this app might request
+      }
+   }
 
 }

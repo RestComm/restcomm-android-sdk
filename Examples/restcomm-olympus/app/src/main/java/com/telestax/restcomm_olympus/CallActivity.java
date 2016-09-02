@@ -47,7 +47,10 @@ import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.ListIterator;
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
@@ -248,15 +251,7 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
             //sipHeaders.put("X-SIP-Header1", "Value1");
             //connectParams.put(RCConnection.ParameterKeys.CONNECTION_CUSTOM_SIP_HEADERS, sipHeaders);
 
-            handlePermissions();
-                /*
-                connection = device.connect(connectParams, this);
-                if (connection == null) {
-                    Log.e(TAG, "Error: error connecting");
-                    showOkAlert("RCDevice Error", "Device is Offline");
-                    return;
-                }
-                */
+            handlePermissions(isVideo);
         }
         if (intent.getAction().equals(RCDevice.INCOMING_CALL)) {
             String text;
@@ -276,7 +271,6 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
 
             // the number from which we got the call
             String incomingCallDid = intent.getStringExtra(RCDevice.EXTRA_DID);
-            //acceptParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
             HashMap<String, String> customHeaders = (HashMap<String, String>)intent.getSerializableExtra(RCDevice.EXTRA_CUSTOM_HEADERS);
             if (customHeaders != null) {
                 Log.i(TAG, "Got custom headers in incoming call: " + customHeaders.toString());
@@ -295,11 +289,6 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
                 pendingConnection = null;
             } else {
                 if (connection != null) {
-                    //Log.e(TAG, "%%%% Bringing to front");
-                    //findViewById(R.id.local_video_view).bringToFront();
-                    //findViewById(R.id.local_video_view).getParent().requestLayout();
-                    //((View)findViewById(R.id.local_video_view).getParent()).invalidate();
-                    //return;
                     // incoming established or outgoing any state (pending, connecting, connected)
                     lblStatus.setText("Disconnecting Call...");
                     connection.disconnect();
@@ -315,36 +304,26 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
                 lblStatus.setText("Answering Call...");
                 btnAnswer.setVisibility(View.INVISIBLE);
                 btnAnswerAudio.setVisibility(View.INVISIBLE);
+
                 acceptParams = new HashMap<String, Object>();
-                //HashMap<String, Object> params = new HashMap<String, Object>();
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, true);
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
                 // Check permissions asynchronously and then accept the call
-                handlePermissions();
-                /*
-                pendingConnection.accept(params);
-                connection = this.pendingConnection;
-                pendingConnection = null;
-                */
+                handlePermissions(true);
             }
         } else if (view.getId() == R.id.button_answer_audio) {
             if (pendingConnection != null) {
                 lblStatus.setText("Answering Call...");
                 btnAnswer.setVisibility(View.INVISIBLE);
                 btnAnswerAudio.setVisibility(View.INVISIBLE);
+
                 acceptParams = new HashMap<String, Object>();
-                //HashMap<String, Object> params = new HashMap<String, Object>();
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, false);
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
                 // Check permissions asynchronously and then accept the call
-                handlePermissions();
-                /*
-                pendingConnection.accept(params);
-                connection = this.pendingConnection;
-                pendingConnection = null;
-                */
+                handlePermissions(false);
             }
         } else if (view.getId() == R.id.button_keypad) {
             keypadFragment.setConnection(connection);
@@ -491,22 +470,44 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
 
     }
 
-    private boolean handlePermissions()
+    // Handle android permissions needed for Marshmallow (API 23) devices or later
+    private boolean handlePermissions(boolean isVideo)
     {
-        /*
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
-            String[] permissions = {Manifest.permission.RECORD_AUDIO, Manifest.permission.CAMERA, Manifest.permission.USE_SIP};
+        ArrayList<String> permissions = new ArrayList<>(Arrays.asList(new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.USE_SIP}));
+        if (isVideo) {
+            // Only add CAMERA permission if this is a video call
+            permissions.add(Manifest.permission.CAMERA);
+        }
 
+        if (!havePermissions(permissions)) {
             // Dynamic permissions where introduced in M
             // PERMISSION_REQUEST_DANGEROUS is an app-defined int constant. The callback method (i.e. onRequestPermissionsResult) gets the result of the request.
-            ActivityCompat.requestPermissions(this, permissions, PERMISSION_REQUEST_DANGEROUS);
+            ActivityCompat.requestPermissions(this, permissions.toArray(new String[permissions.size()]), PERMISSION_REQUEST_DANGEROUS);
 
             return false;
         }
-        */
+
         resumeCall();
 
         return true;
+    }
+
+    // Checks if user has given 'permissions'. If it has them all, it returns true. If not it returns false and modifies 'permissions' to keep only
+    // the permission that got rejected, so that they can be passed later into requestPermissions()
+    private boolean havePermissions(ArrayList<String> permissions)
+    {
+        boolean allGranted = true;
+        ListIterator<String> it = permissions.listIterator();
+        while (it.hasNext()) {
+            if (ActivityCompat.checkSelfPermission(this, it.next()) != PackageManager.PERMISSION_GRANTED) {
+                allGranted = false;
+            }
+            else {
+                // permission granted, remove it from permissions
+                it.remove();
+            }
+        }
+        return allGranted;
     }
 
     @Override
@@ -581,7 +582,6 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
     }
 
     public void startTimer() {
-        //Log.w(TAG, "--- startTimer: " + secondsElapsed);
         String time = String.format("%02d:%02d:%02d", secondsElapsed / 3600, (secondsElapsed % 3600) / 60, secondsElapsed % 60);
         lblTimer.setText(time);
         secondsElapsed++;

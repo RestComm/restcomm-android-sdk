@@ -209,7 +209,7 @@ public class RCClient {
          return "Error retrieving TURN servers";
       }
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_PERMISSION_DENIED) {
-         return "Failed to initiate connection; one or more Android permissions aren't granted";
+         return "Failed to initiate connection; missing Android permissions";
       }
 
       else if (errorCode == ErrorCodes.ERROR_MESSAGE_AUTHENTICATION_FORBIDDEN) {

@@ -341,7 +341,11 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
    }
 
    /**
-    * Create an outgoing connection to an endpoint
+    * Create an outgoing connection to an endpoint. Important: if you work with Android API 23 or above you will need to handle dynamic Android permissions in your Activity
+    * as described at https://developer.android.com/training/permissions/requesting.html. More specifically the Restcomm Client SDK needs RECORD_AUDIO, CAMERA (only if the local user
+    * has enabled local video via RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED; if not then this permission isn't needed), and USE_SIP permission
+    * to be able to connect(). For an example of such permission handling you can check MainActivity of restcomm-hello world sample App. Notice that if any of these permissions
+    * are missing, the call will fail with a ERROR_CONNECTION_PERMISSION_DENIED error.
     *
     * @param parameters Parameters such as the endpoint we want to connect to, etc. Possible keys: <br>
     *   <b>RCConnection.ParameterKeys.CONNECTION_PEER</b>: Who is the called number, like <i>'+1235'</i> or <i>'sip:+1235@cloud.restcomm.com'</i> <br>
@@ -372,6 +376,8 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
       if (state == DeviceState.READY) {
          RCLogger.i(TAG, "RCDevice.connect(), with connectivity");
 
+         state = DeviceState.BUSY;
+
          RCConnection connection = new RCConnection.Builder(false, RCConnection.ConnectionState.PENDING, this, signalingClient, audioManager)
                .listener(listener)
                .build();
@@ -379,7 +385,6 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
 
          // keep connection in the connections hashmap
          connections.put(connection.getId(), connection);
-         state = DeviceState.BUSY;
 
          return connection;
       }

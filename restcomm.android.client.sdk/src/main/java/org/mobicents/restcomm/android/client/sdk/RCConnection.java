@@ -61,6 +61,8 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.Toast;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -292,11 +294,10 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       ICE_CONNECTED,
    }
 
-   // List of 'dangerous' permissions that we need to check
+   // List of 'dangerous' permissions that we need to check (CAMERA is added dynamically only if the local user uses video)
    private static final String[] MANDATORY_PERMISSIONS = {
-           "android.permission.CAMERA",
-           "android.permission.RECORD_AUDIO",
-           "android.permission.USE_SIP"
+           Manifest.permission.RECORD_AUDIO,
+           Manifest.permission.USE_SIP
    };
    private static final String TAG = "RCConnection";
 
@@ -396,7 +397,11 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    }
 
    /**
-    * Accept the incoming connection
+    * Accept the incoming connection. Important: if you work with Android API 23 or above you will need to handle dynamic Android permissions in your Activity
+    * as described at https://developer.android.com/training/permissions/requesting.html. More specifically the Restcomm Client SDK needs RECORD_AUDIO, CAMERA (only if the local user
+    * has enabled local video via RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED; if not then this permission isn't needed), and USE_SIP permission
+    * to be able to accept() a connection. For an example of such permission handling you can check MainActivity of restcomm-hello world sample App. Notice that if any of these permissions
+    * are missing, the call will fail with a ERROR_CONNECTION_PERMISSION_DENIED error.
     *
     * @param parameters Parameters such as whether we want video enabled, etc. Possible keys: <br>
     *   <b>RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED</b>: Whether we want WebRTC video enabled or not <br>
@@ -408,7 +413,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void accept(Map<String, Object> parameters)
    {
       RCLogger.i(TAG, "accept(): " + parameters.toString());
-      if (!checkPermissions()) {
+      if (!checkPermissions((Boolean)parameters.get(ParameterKeys.CONNECTION_VIDEO_ENABLED))) {
          return;
       }
 
@@ -829,7 +834,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    // Outgoing call
    private void setupWebrtcAndCall(Map<String, Object> parameters)
    {
-      if (!checkPermissions()) {
+      if (!checkPermissions((Boolean)parameters.get(ParameterKeys.CONNECTION_VIDEO_ENABLED))) {
          return;
       }
 
@@ -871,10 +876,16 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    }
 
    // If permission is granted we return true
-   private boolean checkPermissions()
+   private boolean checkPermissions(boolean isVideo)
    {
+      ArrayList<String> permissions = new ArrayList<>(Arrays.asList(MANDATORY_PERMISSIONS));
+      if (isVideo) {
+         // Only add CAMERA permission if this is a video call
+         permissions.add(Manifest.permission.CAMERA);
+      }
+
       // Check for mandatory permissions.
-      for (String permission : MANDATORY_PERMISSIONS) {
+      for (String permission : permissions) {
          if (RCClient.getContext().checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
             RCLogger.e(TAG, "Permission " + permission + " is not granted");
 
@@ -883,7 +894,12 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_PERMISSION_DENIED.ordinal(),
                     RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_PERMISSION_DENIED));
 
-            device.removeConnection(jobId);
+            if (!isIncoming()) {
+               // Only remove connection in outgoing calls where no signaling ever starts (hence we are really done with the connection).
+               // Remember that for incoming signaling has already kicked in, hence the connection will be removed
+               // when onCallLocalDisconnectedEvent() is called
+               device.removeConnection(jobId);
+            }
 
             return false;
          }
