@@ -23,20 +23,21 @@
 package com.telestax.restcomm_olympus;
 
 import android.Manifest;
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.FragmentTransaction;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -56,11 +57,10 @@ import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.client.sdk.RCConnectionListener;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
-import org.mobicents.restcomm.android.client.sdk.util.PercentFrameLayout;
 
 
 public class CallActivity extends AppCompatActivity implements RCConnectionListener, View.OnClickListener,
-        KeypadFragment.OnFragmentInteractionListener {
+        KeypadFragment.OnFragmentInteractionListener, ServiceConnection {
 
     private RCConnection connection, pendingConnection;
     SharedPreferences prefs;
@@ -68,6 +68,7 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
     private HashMap<String, Object> connectParams;  // = new HashMap<String, Object>();
     private HashMap<String, Object> acceptParams; // = new HashMap<String, Object>();
     private RCDevice device;
+    boolean serviceBound = false;
     private boolean pendingError = false;
     private boolean activityVisible = false;
     private boolean muteAudio = false;
@@ -124,7 +125,7 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
 
         alertDialog = new AlertDialog.Builder(CallActivity.this).create();
 
-        device = RCClient.listDevices().get(0);
+        //device = RCClient.listDevices().get(0);
 
         PreferenceManager.setDefaultValues(this, "preferences.xml", MODE_PRIVATE, R.xml.preferences, false);
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -154,8 +155,6 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         ft.add(R.id.keypad_fragment_container, keypadFragment);
         ft.hide(keypadFragment);
         ft.commit();
-
-        handleCall(intent);
     }
 
     @Override
@@ -175,6 +174,7 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         activityVisible = true;
 
         //handleCall(getIntent());
+        bindService(new Intent(this, RCDevice.class), this, Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -182,6 +182,13 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         super.onStop();
         Log.i(TAG, "%% onStop");
         activityVisible = false;
+
+        // Unbind from the service
+        if (serviceBound) {
+            device.detach();
+            unbindService(this);
+            serviceBound = false;
+        }
     }
 
     @Override
@@ -224,6 +231,28 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
                 }
             }
         }
+    }
+
+    // Callbacks for service binding, passed to bindService()
+    @Override
+    public void onServiceConnected(ComponentName className, IBinder service)
+    {
+        Log.i(TAG, "%% onServiceConnected");
+        // We've bound to LocalService, cast the IBinder and get LocalService instance
+        RCDevice.RCDeviceBinder binder = (RCDevice.RCDeviceBinder) service;
+        device = binder.getService();
+
+        // We have the device reference, let's handle the call
+        handleCall(getIntent());
+
+        serviceBound = true;
+    }
+
+    @Override
+    public void onServiceDisconnected(ComponentName arg0)
+    {
+        Log.i(TAG, "%% onServiceDisconnected");
+        serviceBound = false;
     }
 
     private void handleCall(Intent intent) {

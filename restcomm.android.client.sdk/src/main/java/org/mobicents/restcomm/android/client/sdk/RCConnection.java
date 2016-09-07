@@ -53,10 +53,7 @@ import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.media.AudioManager;
 import android.os.Handler;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Toast;
@@ -341,7 +338,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          audioManager.playRingingSound();
       }
 
-      timeoutHandler = new Handler(RCClient.getContext().getMainLooper());
+      timeoutHandler = new Handler(device.getMainLooper());
    }
 
    /**
@@ -440,7 +437,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
       else {
          // let's delay a millisecond to avoid calling code in the App getting intertwined with App listener code
-         new Handler(RCClient.getContext().getMainLooper()).postDelayed(
+         new Handler(device.getMainLooper()).postDelayed(
                new Runnable() {
                   @Override
                   public void run()
@@ -464,7 +461,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
       else {
          // let's delay a millisecond to avoid calling code in the App getting intertwined with App listener code
-         new Handler(RCClient.getContext().getMainLooper()).postDelayed(
+         new Handler(device.getMainLooper()).postDelayed(
                new Runnable() {
                   @Override
                   public void run()
@@ -501,7 +498,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
       else {
          // let's delay a millisecond to avoid calling code in the App getting intertwined with App listener code
-         new Handler(RCClient.getContext().getMainLooper()).postDelayed(
+         new Handler(device.getMainLooper()).postDelayed(
                new Runnable() {
                   @Override
                   public void run()
@@ -607,7 +604,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
       else {
          // let's delay a millisecond to avoid calling code in the App getting intertwined with App listener code
-         new Handler(RCClient.getContext().getMainLooper()).postDelayed(
+         new Handler(device.getMainLooper()).postDelayed(
                new Runnable() {
                   @Override
                   public void run()
@@ -778,7 +775,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
       else {
          // let's delay a millisecond to avoid calling code in the App getting intertwined with App listener code
-         new Handler(RCClient.getContext().getMainLooper()).postDelayed(
+         new Handler(device.getMainLooper()).postDelayed(
                new Runnable() {
                   @Override
                   public void run()
@@ -807,7 +804,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void onIceServersReady(final LinkedList<PeerConnection.IceServer> iceServers)
    {
       // Important: need to fire the event in UI context to make sure no races will arise
-      Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+      Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
          @Override
          public void run()
@@ -842,7 +839,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void onIceServersError(final String description)
    {
       // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
-      Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+      Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
          @Override
          public void run()
@@ -914,7 +911,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
       // Check for mandatory permissions.
       for (String permission : permissions) {
-         if (RCClient.getContext().checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
+         if (device.checkCallingOrSelfPermission(permission) != PackageManager.PERMISSION_GRANTED) {
             RCLogger.e(TAG, "Permission " + permission + " is not granted");
 
             handleDisconnect("Device-Permissions-Denied");
@@ -1010,7 +1007,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    // IMPORTANT: runs in media thread, need to post on Main thread
    public void onVideoPaused()
    {
-      Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+      Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
          @Override
          public void run()
@@ -1026,7 +1023,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    // IMPORTANT: runs in media thread, need to post on Main thread
    public void onVideoResumed()
    {
-      Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+      Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
          @Override
          public void run()
@@ -1227,7 +1224,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       final RCConnection connection = this;
       // Important: need to fire the event in UI context cause currently we 're in JAIN SIP thread
-      Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+      Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
          @Override
          public void run()
@@ -1237,7 +1234,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
                final long delta = System.currentTimeMillis() - callStartedTimeMs;
                RCLogger.d(TAG, "Creating peer connection factory, delay=" + delta + "ms");
                peerConnectionClient = PeerConnectionClient.getInstance();
-               peerConnectionClient.createPeerConnectionFactory(RCClient.getContext(),
+               peerConnectionClient.createPeerConnectionFactory(device,
                      peerConnectionParameters,
                      connection);
                logAndToast("Created PeerConnectionFactory");
@@ -1263,7 +1260,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          if (logToast != null) {
             logToast.cancel();
          }
-         logToast = Toast.makeText(RCClient.getContext(), msg, Toast.LENGTH_SHORT);
+         logToast = Toast.makeText(device, msg, Toast.LENGTH_SHORT);
          logToast.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.CENTER_VERTICAL, 0, 0);
          logToast.show();
       }
@@ -1278,7 +1275,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       final long delta = System.currentTimeMillis() - callStartedTimeMs;
       final RCConnection connection = this;
-      Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+      Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
          @Override
          public void run()
@@ -1311,7 +1308,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void onIceCandidate(final IceCandidate candidate)
    {
       final RCConnection connection = this;
-      Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+      Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
          @Override
          public void run()
@@ -1327,7 +1324,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void onIceCandidatesRemoved(final IceCandidate[] candidates)
    {
       final RCConnection connection = this;
-      Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+      Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
          @Override
          public void run()
@@ -1343,7 +1340,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       final RCConnection connection = this;
 
-      Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+      Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
          @Override
          public void run()
@@ -1378,7 +1375,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       final long delta = System.currentTimeMillis() - callStartedTimeMs;
 
-      Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+      Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
          @Override
          public void run()
@@ -1410,7 +1407,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void onIceDisconnected()
    {
       // Notice that this is actually means that media connectivity has been lost, hence showing an error (maps to IceConnectionState.DISCONNECTED)
-      Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+      Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
          @Override
          public void run()
@@ -1433,7 +1430,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    @Override
    public void onPeerConnectionStatsReady(final StatsReport[] reports)
    {
-      Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+      Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
          @Override
          public void run()
@@ -1450,7 +1447,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void onPeerConnectionError(final String description)
    {
       final RCConnection connection = this;
-      Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+      Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
          @Override
          public void run()
@@ -1475,7 +1472,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    public void onLocalVideo(VideoTrack videoTrack)
    {
-      Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+      Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
          @Override
          public void run()
@@ -1491,7 +1488,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    public void onRemoteVideo(VideoTrack videoTrack)
    {
-      Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+      Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
          @Override
          public void run()
@@ -1511,7 +1508,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    //@Override
    private void onConnectedToRoom(final SignalingParameters params)
    {
-      Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+      Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
          @Override
          public void run()
@@ -1574,7 +1571,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private void onRemoteDescription(final SessionDescription sdp)
    {
       final long delta = System.currentTimeMillis() - callStartedTimeMs;
-      Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+      Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
          @Override
          public void run()
@@ -1671,12 +1668,11 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       if (this.getState() != null)
          intent.putExtra("CONNECTIONSTATE", this.getState().toString());
 
-      Context context = RCClient.getContext();
       try {
          // Restrict the Intent to MMC Handler running within the same application
          Class aclass = Class.forName("com.cortxt.app.corelib.Services.Intents.IntentHandler");
-         intent.setClass(context.getApplicationContext(), aclass);
-         context.sendBroadcast(intent);
+         intent.setClass(device.getApplicationContext(), aclass);
+         device.sendBroadcast(intent);
       }
       catch (ClassNotFoundException e) {
          // If the MMC class isn't here, no intent
@@ -1693,12 +1689,11 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       intent.putExtra("ERROR", error);
       intent.putExtra("INCOMING", this.isIncoming());
 
-      Context context = RCClient.getContext();
       try {
          // Restrict the Intent to MMC Handler running within the same application
          Class aclass = Class.forName("com.cortxt.app.corelib.Services.Intents.IntentHandler");
-         intent.setClass(context.getApplicationContext(), aclass);
-         context.sendBroadcast(intent);
+         intent.setClass(device.getApplicationContext(), aclass);
+         device.sendBroadcast(intent);
       }
       catch (ClassNotFoundException e) {
          // If the MMC class isn't here, no intent

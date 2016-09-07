@@ -1,72 +1,32 @@
-/*
- * TeleStax, Open Source Cloud Communications
- * Copyright 2011-2015, Telestax Inc and individual contributors
- * by the @authors tag.
- *
- * This program is free software: you can redistribute it and/or modify
- * under the terms of the GNU Affero General Public License as
- * published by the Free Software Foundation; either version 3 of
- * the License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>
- *
- * For questions related to commercial use licensing, please contact sales@telestax.com.
- *
- */
-
 package org.mobicents.restcomm.android.client.sdk;
+
+import android.app.PendingIntent;
+import android.app.Service;
+import android.content.Context;
+import android.content.Intent;
+import android.os.Binder;
+import android.os.IBinder;
+import android.util.Log;
+import android.widget.Toast;
+
+import org.mobicents.restcomm.android.client.sdk.MediaClient.AppRTCAudioManager;
+import org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient.JainSipConfiguration;
+import org.mobicents.restcomm.android.client.sdk.SignalingClient.SignalingClient;
+import org.mobicents.restcomm.android.client.sdk.util.ErrorStruct;
+import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
+import org.mobicents.restcomm.android.client.sdk.util.RCUtils;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import android.app.PendingIntent;
-import android.content.Context;
-import android.content.Intent;
+public class RCDevice extends Service implements SignalingClient.SignalingClientListener {
+   // Binder given to clients
+   private final IBinder deviceBinder = new RCDeviceBinder();
+   boolean isInitialized = false;
+   boolean isActive = false;
 
-import org.mobicents.restcomm.android.client.sdk.MediaClient.AppRTCAudioManager;
-import org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient.JainSipConfiguration;
-import org.mobicents.restcomm.android.client.sdk.SignalingClient.SignalingClient;
-import org.mobicents.restcomm.android.client.sdk.SignalingClient.SignalingMessage;
-import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
-
-
-/**
- * <p>RCDevice represents an abstraction of a communications device able to make and receive calls, send and receive messages etc. Remember that
- * in order to be notified of Restcomm Client events you need to set a listener to RCDevice and implement the applicable methods, and also 'register'
- * to the applicable intents by calling RCDevice.setPendingIntents() and provide one intent for whichever activity will be receiving calls and another
- * intent for the activity receiving messages.
- * If you want to initiate a media connection towards another party you use RCDevice.connect() which returns an RCConnection object representing
- * the new outgoing connection. From then on you can act on the new connection by applying RCConnection methods on the handle you got from RCDevice.connect().
- * If there is an incoming connection you will be receiving an intent with action 'RCDevice.INCOMING_CALL', and with it you will get:
- * <ol>
- *    <li>The calling party id via string extra named RCDevice.EXTRA_DID, like: <i>intent.getStringExtra(RCDevice.EXTRA_DID)</i></li>
- *    <li>Whether the incoming call has video enabled via boolean extra named RCDevice.EXTRA_VIDEO_ENABLED, like:
- *       <i>intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false)</i></li>
- *    <li>Restcomm parameters via serializable extra named RCDevice.EXTRA_CUSTOM_HEADERS, like: <i>intent.getSerializableExtra(RCDevice.EXTRA_CUSTOM_HEADERS)</i>
- *    where you need to cast the result to HashMap<String, String> where each entry is a Restcomm parameter with key and value of type string
- *    (for example you will find the Restcomm Call-Sid under 'X-RestComm-CallSid' key).</li>
- * </ol>
- * At that point you can use RCConnection methods to accept or reject the connection.
- * </p>
- * <p>
- * As far as instant messages are concerned you can send a message using RCDevice.sendMessage() and you will be notified of an incoming message
- * through an intent with action 'RCDevice.INCOMING_MESSAGE'. For an incoming message you can retrieve:
- * <ol>
- *    <li>The sending party id via string extra named RCDevice.EXTRA_DID, like: <i>intent.getStringExtra(RCDevice.EXTRA_DID)</i></li>
- *    <li>The actual message text via string extra named RCDevice.INCOMING_MESSAGE_TEXT, like: <i>intent.getStringExtra(RCDevice.INCOMING_MESSAGE_TEXT)</i></li>
- * </ol>
- * </p>
- * @see RCConnection
- */
-
-public class RCDevice implements SignalingClient.SignalingClientListener {
+   ////////////////// Old RCDevice fields
    /**
     * Device state
     */
@@ -122,6 +82,8 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
     * Parameter keys for RCClient.createDevice() and RCDevice.updateParams()
     */
    public static class ParameterKeys {
+      public static final String INTENT_INCOMING_CALL = "incoming-call-intent";
+      public static final String INTENT_INCOMING_MESSAGE = "incoming-message-intent";
       public static final String SIGNALING_USERNAME = "pref_sip_user";
       public static final String SIGNALING_DOMAIN = "pref_proxy_domain";
       public static final String SIGNALING_PASSWORD = "pref_sip_password";
@@ -162,56 +124,184 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
    private RCDeviceListener.RCConnectivityStatus cachedConnectivityStatus = RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone;
    private SignalingClient signalingClient;
    private AppRTCAudioManager audioManager = null;
+   Context context = null;
+
+
+   // Apps must not have access to the constructor, as it is created inside the service
+   public RCDevice()
+   {
+   }
 
    /**
-    * Initialize a new RCDevice object
-    *
-    * @param parameters     RCDevice parameters
-    * @param deviceListener Listener of RCDevice
+    * Class used for the client Binder.  Because we know this service always
+    * runs in the same process as its clients, we don't need to deal with IPC.
     */
-   protected RCDevice(HashMap<String, Object> parameters, RCDeviceListener deviceListener)
-   {
-      RCLogger.i(TAG, "RCDevice(): " + parameters.toString());
-      //this.updateCapabilityToken(capabilityToken);
-      this.listener = deviceListener;
+   public class RCDeviceBinder extends Binder {
+      public RCDevice getService() {
+         // Return this instance of LocalService so clients can call public methods
+         return RCDevice.this;
+      }
+   }
 
-      // TODO: check if those headers are needed
-      HashMap<String, String> customHeaders = new HashMap<>();
-      state = DeviceState.OFFLINE;
 
-      connections = new HashMap<String, RCConnection>();
-      // initialize JAIN SIP if we have connectivity
-      this.parameters = parameters;
+   @Override
+   public void onCreate() {
+      // Only runs once, when service is created
+      Log.i(TAG, "onCreate");
 
-      // check if TURN keys are there
-      //params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
+   }
 
-      signalingClient = SignalingClient.getInstance();
-      signalingClient.open(this, RCClient.getContext(), parameters);
+   @Override
+   public int onStartCommand(Intent intent, int flags, int startId) {
+      // Runs whenever the user calls startService()
+      Log.i(TAG, "onStartCommand");
 
-      // Create and audio manager that will take care of audio routing,
-      // audio modes, audio device enumeration etc.
-      audioManager = AppRTCAudioManager.create(RCClient.getContext(), new Runnable() {
-               // This method will be called each time the audio state (number and
-               // type of devices) has been changed.
-               @Override
-               public void run()
-               {
-                  onAudioManagerChangedState();
-               }
-            }
-      );
+      // If we get killed, after returning from here, restart
+      return START_STICKY;
+   }
 
-      // Store existing audio settings and change audio mode to
-      // MODE_IN_COMMUNICATION for best possible VoIP performance.
-      RCLogger.d(TAG, "Initializing the audio manager...");
-      audioManager.init(populateAudioResourceIds(parameters));
+   @Override
+   public IBinder onBind(Intent intent) {
+      Log.i(TAG, "onBind");
+
+      //startService(intent);
+      //HashMap<String, Object> params = (HashMap<String, Object>)intent.getSerializableExtra("parameters");
+      //createDevice(params);
+
+      // provide the binder
+      return deviceBinder;
+   }
+
+   @Override
+   public void onDestroy() {
+      Log.i(TAG, "onDestroy");
+   }
+
+   @Override
+   public boolean onUnbind(Intent intent) {
+      Log.i(TAG, "onUnbind");
+
+      return false;
    }
 
    /*
+    * Methods for clients to use
+    */
+   /*
+   public boolean initialized()
+   {
+      return isInitialized;
+   }
+   */
+
+
+   /**
+    *  Attach and initialize (if not already initialized) the RCDevice Service with parameters
+    * @param activityContext  Activity context
+    * @param parameters  Parameters for the Device entity (prefer using the string constants shown below, i.e. RCDevice.ParameterKeys.*, instead of
+    *                    using strings like 'signaling-secure', etc. Possible keys: <br>
+    *   <b>RCDevice.ParameterKeys.SIGNALING_USERNAME</b>: Identity for the client, like <i>'bob'</i> (mandatory) <br>
+    *   <b>RCDevice.ParameterKeys.SIGNALING_PASSWORD</b>: Password for the client (mandatory) <br>
+    *   <b>RCDevice.ParameterKeys.SIGNALING_DOMAIN</b>: Restcomm instance to use, like <i>'cloud.restcomm.com'</i>. Leave empty for registrar-less mode<br>
+    *   <b>RCDevice.ParameterKeys.MEDIA_ICE_URL</b>: ICE url to use, like <i>'https://turn.provider.com/turn'</i> (mandatory) <br>
+    *   <b>RCDevice.ParameterKeys.MEDIA_ICE_USERNAME</b>: ICE username for authentication (mandatory) <br>
+    *   <b>RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD</b>: ICE password for authentication (mandatory) <br>
+    *   <b>RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED</b>: Should signaling traffic be encrypted? If this is the case, then a key pair is generated when
+    *                    signaling facilities are initialized and added to a custom keystore. Also, added to this custom keystore are all the trusted certificates from
+    *                    the System Wide Android CA Store, so that we properly accept legit server certificates (optional) <br>
+    *   <b>RCDevice.ParameterKeys.MEDIA_TURN_ENABLED</b>: Should TURN be enabled for webrtc media? (optional) <br>
+    *   <b>RCDevice.ParameterKeys.SIGNALING_LOCAL_PORT</b>: Local port to use for signaling (optional) <br>
+    *   <b>RCDevice.ParameterKeys.RESOURCE_SOUND_CALLING</b>: The SDK provides the user with default sounds for calling, ringing, busy (declined) and message events, but the user can override them
+    *                    by providing their own resource files (i.e. .wav, .mp3, etc) at res/raw passing them here with Resource IDs like R.raw.user_provided_calling_sound. This parameter
+    *                    configures the sound you will hear when you make a call and until the call is either replied or you hang up<br>
+    *   <b>RCDevice.ParameterKeys.RESOURCE_SOUND_RINGING</b>: The sound you will hear when you receive a call <br>
+    *   <b>RCDevice.ParameterKeys.RESOURCE_SOUND_DECLINED</b>: The sound you will hear when your call is declined <br>
+    *   <b>RCDevice.ParameterKeys.RESOURCE_SOUND_MESSAGE</b>: The sound you will hear when you receive a message <br>
+    * @param deviceListener  The listener for upcoming RCDevice events
+    * @return True if this is the first time RCDevice Service is attached to and hence initialization took place. False, if the service has already been initialized
+    *                    Remember that once the Service starts in continues to run in the background even if the App doesn't have any activity running
+    * @see RCDevice
+    */
+   public boolean attach(Context activityContext, HashMap<String, Object> parameters, RCDeviceListener deviceListener)
+   {
+      if (!isInitialized) {
+         isActive = true;
+         isInitialized = true;
+         context = activityContext;
+
+         RCLogger.i(TAG, "RCDevice(): " + parameters.toString());
+
+         ErrorStruct errorStruct = RCUtils.validateParms(parameters);
+         if (errorStruct.statusCode != RCClient.ErrorCodes.SUCCESS) {
+            throw new RuntimeException(errorStruct.statusText);
+         }
+
+         //this.updateCapabilityToken(capabilityToken);
+         this.listener = deviceListener;
+
+         setPendingIntents((Intent)parameters.get(RCDevice.ParameterKeys.INTENT_INCOMING_CALL),
+               (Intent)parameters.get(ParameterKeys.INTENT_INCOMING_MESSAGE));
+
+         // TODO: check if those headers are needed
+         HashMap<String, String> customHeaders = new HashMap<>();
+         state = DeviceState.OFFLINE;
+
+         connections = new HashMap<String, RCConnection>();
+         // initialize JAIN SIP if we have connectivity
+         this.parameters = parameters;
+
+         // check if TURN keys are there
+         //params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
+
+         signalingClient = SignalingClient.getInstance();
+         signalingClient.open(this, context, parameters);
+
+         // Create and audio manager that will take care of audio routing,
+         // audio modes, audio device enumeration etc.
+         audioManager = AppRTCAudioManager.create(context, new Runnable() {
+                  // This method will be called each time the audio state (number and
+                  // type of devices) has been changed.
+                  @Override
+                  public void run()
+                  {
+                     onAudioManagerChangedState();
+                  }
+               }
+         );
+
+         // Store existing audio settings and change audio mode to
+         // MODE_IN_COMMUNICATION for best possible VoIP performance.
+         RCLogger.d(TAG, "Initializing the audio manager...");
+         audioManager.init(populateAudioResourceIds(parameters));
+
+         return true;
+      }
+
+      // already initialized
+      return false;
+   }
+
+   /**
+    * Call when App is inactive (i.e. in the background) and hence notifications should be used instead of firing intents right away.
+    * This typically needs to be called at onStop() of your Activity
+    */
+   public void detach()
+   {
+      isActive = false;
+   }
+
+   public void setLogLevel(int level)
+   {
+      RCLogger.setLogLevel(level);
+   }
+
+   /**
     * Populate audio resource ids for various sounds like calling, ringing, etc. The logic here is that
     * we have default resources in the SDK level, found at R.raw.*, and if the user wants to override
     * them they need to update R.raw in the Application level.
+    *
+    * @param parameters Dictionary of all parameters passed to RCDevice from the App
+    * @return Resource ids per resource name
     */
    private HashMap<String, Integer> populateAudioResourceIds(HashMap<String, Object> parameters)
    {
@@ -268,7 +358,7 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
    }
 
    /**
-    * Shuts down and release the Device
+    * Shut down and release the RCDevice Service
     */
    public void release()
    {
@@ -282,6 +372,9 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
 
       signalingClient.close();
       state = DeviceState.OFFLINE;
+
+      isActive = false;
+      isInitialized = false;
    }
 
    /**
@@ -468,8 +561,8 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
    public void setPendingIntents(Intent callIntent, Intent messageIntent)
    {
       RCLogger.i(TAG, "setPendingIntents()");
-      pendingCallIntent = PendingIntent.getActivity(RCClient.getContext(), 0, callIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-      pendingMessageIntent = PendingIntent.getActivity(RCClient.getContext(), 0, messageIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+      pendingCallIntent = PendingIntent.getActivity(context, 0, callIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+      pendingMessageIntent = PendingIntent.getActivity(context, 0, messageIntent, PendingIntent.FLAG_UPDATE_CURRENT);
    }
 
    // Get incoming ringing connection
@@ -619,8 +712,8 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
       }
    }
 
-      // -- SignalingClientListener events for incoming messages from signaling thread
-      // Replies
+   // -- SignalingClientListener events for incoming messages from signaling thread
+   // Replies
 
    public void onOpenReply(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
@@ -646,6 +739,9 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
       }
       else {
       }
+
+      // Shut down the service
+      stopSelf();
    }
 
    public void onReconfigureReply(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
@@ -700,7 +796,7 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
          if (customHeaders != null) {
             dataIntent.putExtra(RCDevice.EXTRA_CUSTOM_HEADERS, customHeaders);
          }
-         pendingCallIntent.send(RCClient.getContext(), 0, dataIntent);
+         pendingCallIntent.send(context, 0, dataIntent);
 
          // Phone state Intents to capture incoming phone call event
          sendQoSIncomingConnectionIntent(peer, connection);
@@ -734,7 +830,7 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
          //dataIntent.putExtra(INCOMING_MESSAGE_PARAMS, parameters);
          dataIntent.putExtra(EXTRA_DID, from);
          dataIntent.putExtra(INCOMING_MESSAGE_TEXT, messageText);
-         pendingMessageIntent.send(RCClient.getContext(), 0, dataIntent);
+         pendingMessageIntent.send(context, 0, dataIntent);
       }
       catch (PendingIntent.CanceledException e) {
          e.printStackTrace();
@@ -769,42 +865,40 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
 
    // -- Notify QoS module of Device related event through intents, if the module is available
    // Phone state Intents to capture incoming call event
-    private void sendQoSIncomingConnectionIntent (String user, RCConnection connection)
-    {
-        Intent intent = new Intent ("org.mobicents.restcomm.android.CALL_STATE");
-        intent.putExtra("STATE", "ringing");
-        intent.putExtra("INCOMING", true);
-        intent.putExtra("FROM", user);
-        Context context = RCClient.getContext();
-        try {
-            // Restrict the Intent to MMC Handler running within the same application
-            Class aclass = Class.forName("com.cortxt.app.corelib.Services.Intents.IntentHandler");
-            intent.setClass(context.getApplicationContext(), aclass);
-            context.sendBroadcast(intent);
-        }
-        catch (ClassNotFoundException e)
-        {
-            // If there is no MMC class isn't here, no intent
-        }
-    }
+   private void sendQoSIncomingConnectionIntent (String user, RCConnection connection)
+   {
+      Intent intent = new Intent ("org.mobicents.restcomm.android.CALL_STATE");
+      intent.putExtra("STATE", "ringing");
+      intent.putExtra("INCOMING", true);
+      intent.putExtra("FROM", user);
+      try {
+         // Restrict the Intent to MMC Handler running within the same application
+         Class aclass = Class.forName("com.cortxt.app.corelib.Services.Intents.IntentHandler");
+         intent.setClass(context.getApplicationContext(), aclass);
+         context.sendBroadcast(intent);
+      }
+      catch (ClassNotFoundException e)
+      {
+         // If there is no MMC class isn't here, no intent
+      }
+   }
 
-    private void sendQoSNoConnectionIntent (String user, String message) {
-        Intent intent = new Intent("org.mobicents.restcomm.android.CONNECT_FAILED");
-        intent.putExtra("STATE", "connect failed");
-        intent.putExtra("ERRORTEXT", message);
-        intent.putExtra("ERROR", RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY);
-        intent.putExtra("INCOMING", false);
-        intent.putExtra("USER", user);
-        Context context = RCClient.getContext();
-        try {
-            // Restrict the Intent to MMC Handler running within the same application
-            Class aclass = Class.forName("com.cortxt.app.corelib.Services.Intents.IntentHandler");
-            intent.setClass(context.getApplicationContext(), aclass);
-            context.sendBroadcast(intent);
-        } catch (ClassNotFoundException e) {
-            // If there is no MMC class isn't here, no intent
-        }
-    }
+   private void sendQoSNoConnectionIntent (String user, String message) {
+      Intent intent = new Intent("org.mobicents.restcomm.android.CONNECT_FAILED");
+      intent.putExtra("STATE", "connect failed");
+      intent.putExtra("ERRORTEXT", message);
+      intent.putExtra("ERROR", RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY);
+      intent.putExtra("INCOMING", false);
+      intent.putExtra("USER", user);
+      try {
+         // Restrict the Intent to MMC Handler running within the same application
+         Class aclass = Class.forName("com.cortxt.app.corelib.Services.Intents.IntentHandler");
+         intent.setClass(context.getApplicationContext(), aclass);
+         context.sendBroadcast(intent);
+      } catch (ClassNotFoundException e) {
+         // If there is no MMC class isn't here, no intent
+      }
+   }
 
    void removeConnection(String jobId)
    {

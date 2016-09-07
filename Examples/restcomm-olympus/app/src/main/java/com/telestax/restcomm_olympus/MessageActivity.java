@@ -24,10 +24,14 @@
 package com.telestax.restcomm_olympus;
 
 import android.app.AlertDialog;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -47,9 +51,10 @@ import java.util.HashMap;
 
 public class MessageActivity extends AppCompatActivity
       implements MessageFragment.Callbacks, RCDeviceListener,
-      View.OnClickListener {
+      View.OnClickListener, ServiceConnection {
 
    private RCDevice device;
+   boolean serviceBound = false;
    HashMap<String, Object> params = new HashMap<String, Object>();
    private static final String TAG = "MessageActivity";
    private AlertDialog alertDialog;
@@ -103,16 +108,96 @@ public class MessageActivity extends AppCompatActivity
       super.onStart();
       // The activity is about to become visible.
       Log.i(TAG, "%% onStart");
+
+      //handleCall(getIntent());
+      bindService(new Intent(this, RCDevice.class), this, Context.BIND_AUTO_CREATE);
    }
 
    @Override
    protected void onResume()
    {
       super.onResume();
+      Log.i(TAG, "%% onResume");
 
-      // retrieve the device
-      device = RCClient.listDevices().get(0);
+      if (device != null) {
+         // needed if we are returning from Message screen that becomes the Device listener
+         device.setDeviceListener(this);
+      }
+   }
 
+   @Override
+   protected void onPause()
+   {
+      super.onPause();
+      // Another activity is taking focus (this activity is about to be "paused").
+      Log.i(TAG, "%% onPause");
+      Intent intent = getIntent();
+      // #129: clear the action so that on subsequent indirect activity open (i.e. via lock & unlock) we don't get the old action firing again
+      intent.setAction("CLEAR_ACTION");
+      setIntent(intent);
+   }
+
+   @Override
+   protected void onStop()
+   {
+      super.onStop();
+      // The activity is no longer visible (it is now "stopped")
+      Log.i(TAG, "%% onStop");
+
+      // Unbind from the service
+      if (serviceBound) {
+         device.detach();
+         unbindService(this);
+         serviceBound = false;
+      }
+   }
+
+   @Override
+   protected void onDestroy()
+   {
+      super.onDestroy();
+      // The activity is about to be destroyed.
+      Log.i(TAG, "%% onDestroy");
+   }
+
+   // We 've set MessageActivity to be 'singleTop' on the manifest to be able to receive messages while already open, without instantiating
+   // a new activity. When that happens we receive onNewIntent()
+   // An activity will always be paused before receiving a new intent, so you can count on onResume() being called after this method
+   @Override
+   public void onNewIntent(Intent intent)
+   {
+      super.onNewIntent(intent);
+      // Note that getIntent() still returns the original Intent. You can use setIntent(Intent) to update it to this new Intent.
+      setIntent(intent);
+
+      // if a mesage arrives after we have created activity it will land here
+      handleMessage(intent);
+   }
+
+   // Callbacks for service binding, passed to bindService()
+   @Override
+   public void onServiceConnected(ComponentName className, IBinder service)
+   {
+      Log.i(TAG, "%% onServiceConnected");
+      // We've bound to LocalService, cast the IBinder and get LocalService instance
+      RCDevice.RCDeviceBinder binder = (RCDevice.RCDeviceBinder) service;
+      device = binder.getService();
+
+      // We have the device reference, let's handle the call
+      handleMessage(getIntent());
+
+      serviceBound = true;
+   }
+
+   @Override
+   public void onServiceDisconnected(ComponentName arg0)
+   {
+      Log.i(TAG, "%% onServiceDisconnected");
+      serviceBound = false;
+   }
+
+   private void handleMessage(Intent intent)
+   {
       if (device.getState() == RCDevice.DeviceState.OFFLINE) {
          getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorTextSecondary)));
       }
@@ -120,13 +205,7 @@ public class MessageActivity extends AppCompatActivity
          getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
       }
 
-      if (device != null) {
-         // needed if we are returning from Message screen that becomes the Device listener
-         device.setDeviceListener(this);
-      }
-
       // Get Intent parameters.
-      final Intent intent = getIntent();
       if (intent.getAction().equals(RCDevice.OPEN_MESSAGE_SCREEN)) {
          params.put(RCConnection.ParameterKeys.CONNECTION_PEER, intent.getStringExtra(RCDevice.EXTRA_DID));
          String shortname = intent.getStringExtra(RCDevice.EXTRA_DID).replaceAll("^sip:", "").replaceAll("@.*$", "");
@@ -157,45 +236,6 @@ public class MessageActivity extends AppCompatActivity
          }
          listFragment.addRemoteMessage(message, shortname);
       }
-   }
-
-   @Override
-   protected void onPause()
-   {
-      super.onPause();
-      // Another activity is taking focus (this activity is about to be "paused").
-      Log.i(TAG, "%% onPause");
-      Intent intent = getIntent();
-      // #129: clear the action so that on subsequent indirect activity open (i.e. via lock & unlock) we don't get the old action firing again
-      intent.setAction("CLEAR_ACTION");
-      setIntent(intent);
-   }
-
-   @Override
-   protected void onStop()
-   {
-      super.onStop();
-      // The activity is no longer visible (it is now "stopped")
-      Log.i(TAG, "%% onStop");
-   }
-
-   @Override
-   protected void onDestroy()
-   {
-      super.onDestroy();
-      // The activity is about to be destroyed.
-      Log.i(TAG, "%% onDestroy");
-   }
-
-   // We 've set MessageActivity to be 'singleTop' on the manifest to be able to receive messages while already open, without instantiating
-   // a new activity. When that happens we receive onNewIntent()
-   // An activity will always be paused before receiving a new intent, so you can count on onResume() being called after this method
-   @Override
-   public void onNewIntent(Intent intent)
-   {
-      super.onNewIntent(intent);
-      // Note that getIntent() still returns the original Intent. You can use setIntent(Intent) to update it to this new Intent.
-      setIntent(intent);
    }
 
    /**

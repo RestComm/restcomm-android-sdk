@@ -22,10 +22,6 @@
 
 package org.mobicents.restcomm.android.client.sdk;
 
-import org.mobicents.restcomm.android.client.sdk.RCDevice;
-
-import java.util.HashMap;
-
 /**
  * RCDevice notifies its listener for RCDevice related events defined in this interface
  */

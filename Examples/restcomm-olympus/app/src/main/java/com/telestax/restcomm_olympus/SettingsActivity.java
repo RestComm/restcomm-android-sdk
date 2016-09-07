@@ -23,15 +23,21 @@
 package com.telestax.restcomm_olympus;
 
 import android.app.AlertDialog;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.MenuItem;
 
 import org.mobicents.restcomm.android.client.sdk.RCClient;
@@ -41,12 +47,15 @@ import org.mobicents.restcomm.android.client.sdk.util.RCUtils;
 
 import java.util.HashMap;
 
-public class SettingsActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
+public class SettingsActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener,
+      ServiceConnection {
    SharedPreferences prefs;
    HashMap<String, Object> params;
    RCDevice device;
+   boolean serviceBound = false;
    boolean updated;
    private AlertDialog alertDialog;
+   private static final String TAG = "SettingsActivity";
 
    @Override
    protected void onCreate(Bundle savedInstanceState)
@@ -67,7 +76,6 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
       // Display the fragment as the main content.
       getFragmentManager().beginTransaction().replace(R.id.content_frame, new SettingsFragment()).commit();
 
-      device = RCClient.listDevices().get(0);
       params = new HashMap<String, Object>();
 
       prefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -81,15 +89,55 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
       super.onResume();
 
       updated = false;
-      // retrieve the device
-      //RCDevice device = RCClient.listDevices().get(0);
+   }
 
+   @Override
+   protected void onStart() {
+      super.onStart();
+      Log.i(TAG, "%% onStart");
+
+      //handleCall(getIntent());
+      bindService(new Intent(this, RCDevice.class), this, Context.BIND_AUTO_CREATE);
+   }
+
+   @Override
+   protected void onStop() {
+      super.onStop();
+      Log.i(TAG, "%% onStop");
+
+      // Unbind from the service
+      if (serviceBound) {
+         device.detach();
+         unbindService(this);
+         serviceBound = false;
+      }
+   }
+
+   // Callbacks for service binding, passed to bindService()
+   @Override
+   public void onServiceConnected(ComponentName className, IBinder service)
+   {
+      Log.i(TAG, "%% onServiceConnected");
+      // We've bound to LocalService, cast the IBinder and get LocalService instance
+      RCDevice.RCDeviceBinder binder = (RCDevice.RCDeviceBinder) service;
+      device = binder.getService();
+
+      // We have the device reference
       if (device.getState() == RCDevice.DeviceState.OFFLINE) {
          getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorTextSecondary)));
       }
       else {
          getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
       }
+
+      serviceBound = true;
+   }
+
+   @Override
+   public void onServiceDisconnected(ComponentName arg0)
+   {
+      Log.i(TAG, "%% onServiceDisconnected");
+      serviceBound = false;
    }
 
    @Override

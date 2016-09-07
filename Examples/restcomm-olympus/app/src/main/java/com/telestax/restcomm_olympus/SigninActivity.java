@@ -40,9 +40,6 @@ import android.widget.TextView;
 
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
 
-import java.util.ArrayList;
-import java.util.Map;
-
 /**
  * A login screen that offers Restcomm login.
  */

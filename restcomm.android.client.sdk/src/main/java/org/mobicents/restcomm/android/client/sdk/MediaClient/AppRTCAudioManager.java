@@ -55,7 +55,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.media.AudioManager;
-import android.media.MediaPlayer;
 
 //import org.appspot.apprtc.util.AppRTCUtils;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
@@ -188,6 +187,9 @@ public class AppRTCAudioManager {
          return;
       }
 
+      audioManager = ((AudioManager) apprtcContext.getSystemService(
+            Context.AUDIO_SERVICE));
+
       this.resourceIds = resourceIds;
       mediaPlayerWrapper = new MediaPlayerWrapper(apprtcContext);
 
@@ -212,9 +214,6 @@ public class AppRTCAudioManager {
       if (callAudioInitialized) {
          return;
       }
-
-      audioManager = ((AudioManager) apprtcContext.getSystemService(
-            Context.AUDIO_SERVICE));
 
       // Create and initialize the proximity sensor.
       // Tablet devices (e.g. Nexus 7) does not support proximity sensors.

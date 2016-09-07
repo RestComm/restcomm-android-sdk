@@ -38,6 +38,11 @@ public class RCUtils {
             ((Boolean)parameters.get(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED))) {
             */
 
+      if (!parameters.containsKey(RCDevice.ParameterKeys.INTENT_INCOMING_CALL) ||
+            !parameters.containsKey(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE)) {
+         return new ErrorStruct(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_USERNAME);
+      }
+
       if (!parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_USERNAME) ||
             parameters.get(RCDevice.ParameterKeys.SIGNALING_USERNAME).equals("")) {
          return new ErrorStruct(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_USERNAME);

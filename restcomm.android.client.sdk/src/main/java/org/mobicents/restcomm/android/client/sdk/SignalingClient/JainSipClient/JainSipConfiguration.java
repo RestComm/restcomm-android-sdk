@@ -22,10 +22,6 @@
 
 package org.mobicents.restcomm.android.client.sdk.SignalingClient.JainSipClient;
 
-import org.mobicents.restcomm.android.client.sdk.RCConnection;
-import org.mobicents.restcomm.android.client.sdk.RCDevice;
-import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
-
 import java.util.HashMap;
 import java.util.Map;
 

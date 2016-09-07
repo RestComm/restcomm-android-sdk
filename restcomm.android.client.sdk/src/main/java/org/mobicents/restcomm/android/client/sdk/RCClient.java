@@ -40,16 +40,17 @@ import org.mobicents.restcomm.android.client.sdk.util.RCUtils;
  * @see RCDevice
  * @see RCConnection
  */
-public class RCClient {
+public final class RCClient {
    private static RCClient instance = null;
    private static boolean initialized = false;
 
-   /*
+   /**
     * Error codes for the SDK. They can be broken into three categories: 1. RCDevice related, starting with ERROR_DEVICE_*,
     * 2. RCConnection related, starting with ERROR_CONNECTION_*, and 4. Text message related, starting with ERROR_MESSAGE_*,
     */
    public enum ErrorCodes {
       SUCCESS,
+      ERROR_DEVICE_MISSING_INTENTS,
       ERROR_DEVICE_MISSING_USERNAME,
       ERROR_DEVICE_MISSING_ICE_URL,
       ERROR_DEVICE_MISSING_ICE_USERNAME,
@@ -97,13 +98,16 @@ public class RCClient {
       ERROR_MESSAGE_UNTRUSTED_SERVER,
    }
 
-   /*
+   /**
     * Maps the error codes above with an error description, to get more detailed information on what happened
     */
    public static String errorText(ErrorCodes errorCode)
    {
       if (errorCode == ErrorCodes.SUCCESS) {
          return "Success";
+      }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_MISSING_INTENTS) {
+         return "Device parameter validation error; Call and/or Message intents are missing";
       }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_MISSING_USERNAME) {
          return "Device parameter validation error; username is mandatory";
@@ -239,15 +243,15 @@ public class RCClient {
       return "Unmapped Restcomm Client error";
    }
 
-   static ArrayList<RCDevice> list;
-   static Context context;
-   private static final String TAG = "RCClient";
-
-
    protected RCClient()
    {
       // Exists to defeat instantiation.
    }
+
+   /*
+   static ArrayList<RCDevice> list;
+   static Context context;
+
 
    // SDK users need to use initialize()
    private static RCClient getInstance()
@@ -263,12 +267,6 @@ public class RCClient {
       return context;
    }
 
-   /**
-    * Initialize the Restcomm Client SDK
-    *
-    * @param context  The Android Activity context
-    * @param listener The listener for upcoming events from Restcomm Client
-    */
    public static void initialize(Context context, final RCInitListener listener)
    {
       if (context == null) {
@@ -284,25 +282,9 @@ public class RCClient {
          initialized = true;
 
          listener.onInitialized();
-
-            /*
-            TODO: this would probably make more sense at some point
-            Handler mainHandler = new Handler(RCClient.getInstance().context.getMainLooper());
-            Runnable myRunnable = new Runnable() {
-                @Override
-                public void run() {
-                    // notify that we are initialized
-                    listener.onInitialized();
-                }
-            };
-            mainHandler.post(myRunnable);
-            */
       }
    }
 
-   /**
-    * Shut down the Restcomm Client
-    */
    public static void shutdown()
    {
       if (!initialized) {
@@ -326,42 +308,11 @@ public class RCClient {
       initialized = false;
    }
 
-   /**
-    * Retrieve whether Restcomm Client is initialized
-    *
-    * @return Whether Restcomm Client is initialized or not
-    */
    public static boolean isInitialized()
    {
       return initialized;
    }
 
-   /**
-    *  Initialize a new RCDevice object with parameters
-    *
-    * @param parameters  Parameters for the Device entity (prefer using the string constants shown below, i.e. RCDevice.ParameterKeys.*, instead of
-    *                    using strings like 'signaling-secure', etc. Possible keys: <br>
-    *   <b>RCDevice.ParameterKeys.SIGNALING_USERNAME</b>: Identity for the client, like <i>'bob'</i> (mandatory) <br>
-    *   <b>RCDevice.ParameterKeys.SIGNALING_PASSWORD</b>: Password for the client (mandatory) <br>
-    *   <b>RCDevice.ParameterKeys.SIGNALING_DOMAIN</b>: Restcomm instance to use, like <i>'cloud.restcomm.com'</i>. Leave empty for registrar-less mode<br>
-    *   <b>RCDevice.ParameterKeys.MEDIA_ICE_URL</b>: ICE url to use, like <i>'https://turn.provider.com/turn'</i> (mandatory) <br>
-    *   <b>RCDevice.ParameterKeys.MEDIA_ICE_USERNAME</b>: ICE username for authentication (mandatory) <br>
-    *   <b>RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD</b>: ICE password for authentication (mandatory) <br>
-    *   <b>RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED</b>: Should signaling traffic be encrypted? If this is the case, then a key pair is generated when
-    *                    signaling facilities are initialized and added to a custom keystore. Also, added to this custom keystore are all the trusted certificates from
-    *                    the System Wide Android CA Store, so that we properly accept legit server certificates (optional) <br>
-    *   <b>RCDevice.ParameterKeys.MEDIA_TURN_ENABLED</b>: Should TURN be enabled for webrtc media? (optional) <br>
-    *   <b>RCDevice.ParameterKeys.SIGNALING_LOCAL_PORT</b>: Local port to use for signaling (optional) <br>
-    *   <b>RCDevice.ParameterKeys.RESOURCE_SOUND_CALLING</b>: The SDK provides the user with default sounds for calling, ringing, busy (declined) and message events, but the user can override them
-    *                    by providing their own resource files (i.e. .wav, .mp3, etc) at res/raw passing them here with Resource IDs like R.raw.user_provided_calling_sound. This parameter
-    *                    configures the sound you will hear when you make a call and until the call is either replied or you hang up<br>
-    *   <b>RCDevice.ParameterKeys.RESOURCE_SOUND_RINGING</b>: The sound you will hear when you receive a call <br>
-    *   <b>RCDevice.ParameterKeys.RESOURCE_SOUND_DECLINED</b>: The sound you will hear when your call is declined <br>
-    *   <b>RCDevice.ParameterKeys.RESOURCE_SOUND_MESSAGE</b>: The sound you will hear when you receive a message <br>
-    * @param deviceListener  The listener for upcoming RCDevice events
-    * @return The newly created RCDevice
-    * @see RCDevice
-    */
    public static RCDevice createDevice(HashMap<String, Object> parameters, RCDeviceListener deviceListener)
    {
       if (!initialized) {
@@ -386,11 +337,6 @@ public class RCClient {
       return list.get(0);
    }
 
-   /**
-    * Retrieve a list of active Devices
-    *
-    * @return List of Devices
-    */
    public static ArrayList<RCDevice> listDevices()
    {
       if (!initialized) {
@@ -409,26 +355,9 @@ public class RCClient {
       RCLogger.setLogLevel(level);
    }
 
-    /*
-    // TODO: implement
-    public static String getVersion()
-    {
-        return "";
-    }
-    */
-
-   /**
-    * Interface defining callbacks for RCClient, such as when it is fully initialized and in case of error
-    */
    public interface RCInitListener {
-      /**
-       * Callback that is called when RCClient is fully initialized
-       */
       void onInitialized();
-
-      /**
-       * Callback that is called if there's an error during initialization
-       */
       void onError(Exception exception);
    }
+   */
 }

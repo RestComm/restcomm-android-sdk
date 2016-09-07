@@ -24,15 +24,16 @@ package com.telestax.restcomm_olympus;
 
 import android.app.AlertDialog;
 import android.app.DialogFragment;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.res.Configuration;
-import android.database.Cursor;
-import android.database.sqlite.SQLiteDatabase;
-import android.database.sqlite.SQLiteQueryBuilder;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -49,9 +50,7 @@ import org.mobicents.restcomm.android.client.sdk.RCDevice;
 import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
 import org.mobicents.restcomm.android.client.sdk.RCPresenceEvent;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Map;
 
 import static com.telestax.restcomm_olympus.ContactsController.CONTACT_KEY;
 import static com.telestax.restcomm_olympus.ContactsController.CONTACT_VALUE;
@@ -59,11 +58,14 @@ import static com.telestax.restcomm_olympus.ContactsController.CONTACT_VALUE;
 public class MainActivity extends AppCompatActivity
       implements MainFragment.Callbacks, RCDeviceListener,
       View.OnClickListener, SharedPreferences.OnSharedPreferenceChangeListener,
-      AddUserDialogFragment.ContactDialogListener, ActionFragment.ActionListener {
+      AddUserDialogFragment.ContactDialogListener, ActionFragment.ActionListener,
+      ServiceConnection {
+
+   private RCDevice device = null;
+   boolean serviceBound = false;
 
    private static final String TAG = "MainActivity";
    SharedPreferences prefs;
-   private RCDevice device;
    private HashMap<String, Object> params;
    private MainFragment listFragment;
    private AlertDialog alertDialog;
@@ -99,20 +101,96 @@ public class MainActivity extends AppCompatActivity
       PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
       prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
-      RCClient.setLogLevel(Log.VERBOSE);
-      RCClient.initialize(getApplicationContext(), new RCClient.RCInitListener() {
-         public void onInitialized()
-         {
-            Log.i(TAG, "RCClient initialized");
-         }
+      // Start Service
+      startService(new Intent(this, RCDevice.class));
 
-         public void onError(Exception exception)
-         {
-            Log.e(TAG, "RCClient initialization error");
-         }
-      });
+      // preferences
+      prefs.registerOnSharedPreferenceChangeListener(this);
 
-      params = new HashMap<String, Object>();
+      // No longer needed, we'll change with toast
+      // set it to wifi by default to avoid the status message when starting with wifi
+      //previousConnectivityStatus = RCConnectivityStatus.RCConnectivityStatusWiFi;
+   }
+
+   @Override
+   protected void onStart()
+   {
+      super.onStart();
+      // The activity is about to become visible.
+      Log.i(TAG, "%% onStart");
+
+      bindService(new Intent(this, RCDevice.class), this, Context.BIND_AUTO_CREATE);
+   }
+
+   @Override
+   protected void onResume()
+   {
+      super.onResume();
+
+      // The activity has become visible (it is now "resumed").
+      Log.i(TAG, "%% onResume");
+
+      if (device != null) {
+         // needed if we are returning from Message screen that becomes the Device listener
+         device.setDeviceListener(this);
+      }
+   }
+
+   @Override
+   protected void onPause()
+   {
+      super.onPause();
+      // Another activity is taking focus (this activity is about to be "paused").
+      Log.i(TAG, "%% onPause");
+   }
+
+   @Override
+   protected void onStop()
+   {
+      super.onStop();
+      // The activity is no longer visible (it is now "stopped")
+      Log.i(TAG, "%% onStop");
+
+      // Unbind from the service
+      if (serviceBound) {
+         device.detach();
+         unbindService(this);
+         serviceBound = false;
+      }
+   }
+
+   @Override
+   protected void onDestroy()
+   {
+      super.onDestroy();
+      // The activity is about to be destroyed.
+      Log.i(TAG, "%% onDestroy");
+      /*
+      RCClient.shutdown();
+      device = null;
+      */
+      prefs.unregisterOnSharedPreferenceChangeListener(this);
+   }
+
+   @Override
+   public void onNewIntent(Intent intent)
+   {
+      super.onNewIntent(intent);
+      setIntent(intent);
+   }
+
+   // Callbacks for service binding, passed to bindService()
+   @Override
+   public void onServiceConnected(ComponentName className, IBinder service)
+   {
+      Log.i(TAG, "%% onServiceConnected");
+      // We've bound to LocalService, cast the IBinder and get LocalService instance
+      RCDevice.RCDeviceBinder binder = (RCDevice.RCDeviceBinder) service;
+      device = binder.getService();
+
+      HashMap<String, Object> params = new HashMap<String, Object>();
+      params.put(RCDevice.ParameterKeys.INTENT_INCOMING_CALL, new Intent(RCDevice.INCOMING_CALL, null, getApplicationContext(), CallActivity.class));
+      params.put(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE, new Intent(RCDevice.INCOMING_MESSAGE, null, getApplicationContext(), MessageActivity.class));
       params.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN, prefs.getString(RCDevice.ParameterKeys.SIGNALING_DOMAIN, ""));
       params.put(RCDevice.ParameterKeys.SIGNALING_USERNAME, prefs.getString(RCDevice.ParameterKeys.SIGNALING_USERNAME, "android-sdk"));
       params.put(RCDevice.ParameterKeys.SIGNALING_PASSWORD, prefs.getString(RCDevice.ParameterKeys.SIGNALING_PASSWORD, "1234"));
@@ -130,33 +208,9 @@ public class MainActivity extends AppCompatActivity
 
       // This is for debugging purposes, not for release builds
       //params.put(RCDevice.ParameterKeys.SIGNALING_JAIN_SIP_LOGGING_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_JAIN_SIP_LOGGING_ENABLED, true));
-      device = RCClient.createDevice(params, this);
-      device.setPendingIntents(new Intent(getApplicationContext(), CallActivity.class),
-            new Intent(getApplicationContext(), MessageActivity.class));
 
-      // preferences
-      prefs.registerOnSharedPreferenceChangeListener(this);
-
-      // No longer needed, we'll change with toast
-      // set it to wifi by default to avoid the status message when starting with wifi
-      //previousConnectivityStatus = RCConnectivityStatus.RCConnectivityStatusWiFi;
-   }
-
-   @Override
-   protected void onStart()
-   {
-      super.onStart();
-      // The activity is about to become visible.
-      Log.i(TAG, "%% onStart");
-   }
-
-   @Override
-   protected void onResume()
-   {
-      super.onResume();
-
-      // The activity has become visible (it is now "resumed").
-      Log.i(TAG, "%% onResume");
+      device.attach(getApplicationContext(), params, this);
+      device.setLogLevel(Log.VERBOSE);
 
       if (device.getState() == RCDevice.DeviceState.OFFLINE) {
          getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorTextSecondary)));
@@ -166,45 +220,14 @@ public class MainActivity extends AppCompatActivity
          handleExternalCall();
       }
 
-      if (device != null) {
-         // needed if we are returning from Message screen that becomes the Device listener
-         device.setDeviceListener(this);
-      }
-
+      serviceBound = true;
    }
 
    @Override
-   protected void onPause()
+   public void onServiceDisconnected(ComponentName arg0)
    {
-      super.onPause();
-      // Another activity is taking focus (this activity is about to be "paused").
-      Log.i(TAG, "%% onPause");
-   }
-
-   @Override
-   protected void onStop()
-   {
-      super.onStop();
-      // The activity is no longer visible (it is now "stopped")
-      Log.i(TAG, "%% onStop");
-   }
-
-   @Override
-   protected void onDestroy()
-   {
-      super.onDestroy();
-      // The activity is about to be destroyed.
-      Log.i(TAG, "%% onDestroy");
-      RCClient.shutdown();
-      device = null;
-      prefs.unregisterOnSharedPreferenceChangeListener(this);
-   }
-
-   @Override
-   public void onNewIntent(Intent intent)
-   {
-      super.onNewIntent(intent);
-      setIntent(intent);
+      Log.i(TAG, "%% onServiceDisconnected");
+      serviceBound = false;
    }
 
    /**
@@ -469,6 +492,7 @@ public class MainActivity extends AppCompatActivity
    {
 
    }
+
 
    /**
     * Helpers
