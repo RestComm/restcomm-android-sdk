@@ -124,6 +124,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       DISCONNECTED,  /** Connection is in state disconnected */
    }
 
+   /**
+    * Media Type
+    */
    public enum ConnectionMediaType {
       UNDEFINED, /**
        * We don't know the type of media yet, for example for remote video before they answer
@@ -170,11 +173,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
     */
    private RCConnectionListener listener;
 
-   /**
-    * Is connection currently muted? If a connection is muted the remote party cannot hear the local party
-    */
-   private boolean muted;
-
 
    /**
     * Parameter keys for RCCDevice.connect() and RCConnection.accept()
@@ -202,6 +200,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       private String jobId = null;
       private RCConnectionListener listener = null;
       private String incomingCallSdp = null;
+      private String peer = null;
       private ConnectionMediaType remoteMediaType = ConnectionMediaType.UNDEFINED;
 
       public Builder(boolean incoming, RCConnection.ConnectionState state, RCDevice device, SignalingClient signalingClient, AppRTCAudioManager audioManager)
@@ -222,6 +221,12 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       public Builder listener(RCConnectionListener val)
       {
          listener = val;
+         return this;
+      }
+
+      public Builder peer(String val)
+      {
+         peer = val;
          return this;
       }
 
@@ -247,6 +252,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private String jobId;
    private SignalingClient signalingClient;
    private String incomingCallSdp = "";
+   private String peer;
    private EglBase rootEglBase;
    private boolean localVideoReceived = false;
    private boolean remoteVideoReceived = false;
@@ -262,6 +268,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private PeerConnectionClient.PeerConnectionParameters peerConnectionParameters;
    private boolean iceConnected;
    private HashMap<String, Object> callParams = null;
+   // Has user muted video? Notice the distinction between user having muted video and video being actually muted in PeerConnection level. For example when a call is paused via pauseVideo(), then
+   // automatically video will be muted in PeerConnection level, but user hasn't actually muted it. We need that state to properly handle transitions
+   private boolean videoExpectedMuted;
    private long callStartedTimeMs = 0;
    private final boolean DO_TOAST = false;
    // if a call takes too long to establish this handler is used to emit a time out
@@ -325,6 +334,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       if (incomingCallSdp != null) {
          remoteMediaType = RCConnection.sdp2Mediatype(builder.incomingCallSdp);
       }
+      peer = builder.peer;
 
       audioManager.startCall();
       if (incoming) {
@@ -419,6 +429,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
       if (state == ConnectionState.CONNECTING) {
          this.callParams = (HashMap<String, Object>) parameters;
+         // Especially, for incoming connections the peer DID is provided when the connection arrives in RCDevice and at that point RCConnection.peer is populated
+         //this.callParams.put(ParameterKeys.CONNECTION_PEER, this.peer);
          initializeWebrtc((Boolean) this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED),
                (PercentFrameLayout) parameters.get(ParameterKeys.CONNECTION_LOCAL_VIDEO),
                (PercentFrameLayout) parameters.get(ParameterKeys.CONNECTION_REMOTE_VIDEO),
@@ -550,11 +562,23 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void setVideoMuted(boolean muted)
    {
       RCLogger.i(TAG, "setVideoMuted(): " + muted);
+      videoExpectedMuted = muted;
+      handleVideoMuted(muted);
+   }
 
+   private void handleVideoMuted(boolean muted)
+   {
       if (this.peerConnectionClient != null) {
          this.peerConnectionClient.setLocalVideoEnabled(!muted);
+         if (muted) {
+            localRender.setVisibility(View.INVISIBLE);
+         }
+         else {
+            localRender.setVisibility(View.VISIBLE);
+         }
       }
    }
+
 
    /**
     * Retrieve whether connection video is muted or not
@@ -772,6 +796,11 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       return jobId;
    }
 
+   public String getPeer()
+   {
+      return peer;
+   }
+
    // ------ WebRTC stuff:
    // IceServerFetcher callbacks
    @Override
@@ -792,8 +821,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
                   sipHeaders = (HashMap<String, String>) RCConnection.this.callParams.get(ParameterKeys.CONNECTION_CUSTOM_SIP_HEADERS);
                }
 
-               RCConnection.this.signalingParameters = new SignalingParameters(iceServers, true, "",
-                     (String) RCConnection.this.callParams.get(ParameterKeys.CONNECTION_PEER),
+               RCConnection.this.signalingParameters = new SignalingParameters(iceServers, true, "", peer,
                      "", null, null, sipHeaders, (Boolean) RCConnection.this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED));
             }
             else {
@@ -928,15 +956,109 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
    }
 
-   // initialize webrtc facilities for the call
-   private void initializeWebrtc(boolean videoEnabled, PercentFrameLayout localRenderLayout, PercentFrameLayout remoteRenderLayout, String preferredVideoCodec)
+   /*
+   // DEBUG
+   public void off()
    {
-      PercentFrameLayout test;
-      RCLogger.i(TAG, "initializeWebrtc  ");
-      //Context context = RCClient.getContext();
+      peerConnectionClient.off();
+   }
+   // DEBUG
+   public void on(final PercentFrameLayout localRenderLayout, final PercentFrameLayout remoteRenderLayout)
+   {
+      initializeVideo(true, localRenderLayout, remoteRenderLayout);
+      peerConnectionClient.on((SurfaceViewRenderer)localRenderLayout.getChildAt(0), (SurfaceViewRenderer)remoteRenderLayout.getChildAt(0));
+   }
+   */
 
-      iceConnected = false;
-      signalingParameters = null;
+   // Pause webrtc video, intented for allowing a call to transition to the background where we only want audio enabled
+   public void pauseVideo()
+   {
+      handleVideoMuted(true);
+      peerConnectionClient.stopVideoSource();
+   }
+   // Resume webrtc video, intented for allowing a call to transition from the background into the foreground where we want video enabled (it it was enabled to start with)
+   public void resumeVideo()
+   {
+      peerConnectionClient.startVideoSource();
+      setVideoMuted(videoExpectedMuted);
+   }
+
+   /*
+   // TODO: We should uncomment this once we figure out https://groups.google.com/forum/#!searchin/discuss-webrtc/tsakiridis$20android%7Csort:relevance/discuss-webrtc/XE2Ok67B1Ks/RrqmfZh9AQAJ
+   // Implementation above is meant to be a temporary solution, as it doesn't allow for the call Activity to be destroyed and then re-created
+   public void pauseVideo()
+   {
+      // TODO: handle case of audio only call
+      localRender.setVisibility(View.INVISIBLE);
+      remoteRender.setVisibility(View.INVISIBLE);
+      peerConnectionClient.pauseVideo();
+   }
+   public void resumeVideo(final PercentFrameLayout localRenderLayout, final PercentFrameLayout remoteRenderLayout)
+   {
+      boolean videoEnabled = false;
+      if ((isIncoming() && getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) ||
+              (!isIncoming() && getLocalMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO))  {
+         videoEnabled = true;
+      }
+
+      initializeVideo(videoEnabled, localRenderLayout, remoteRenderLayout);
+      peerConnectionClient.resumeVideo(localRender, remoteRender);
+   }
+   */
+
+   // Callback fired when video is paused after call to pauseVideo()
+   // IMPORTANT: runs in media thread, need to post on Main thread
+   public void onVideoPaused()
+   {
+      Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+      Runnable myRunnable = new Runnable() {
+         @Override
+         public void run()
+         {
+            RCLogger.i(TAG, "onVideoPaused");
+            releaseVideo();
+         }
+      };
+      mainHandler.post(myRunnable);
+   }
+
+   // Callback fired when video is resumed after call to resumeVideo()
+   // IMPORTANT: runs in media thread, need to post on Main thread
+   public void onVideoResumed()
+   {
+      Handler mainHandler = new Handler(RCClient.getContext().getMainLooper());
+      Runnable myRunnable = new Runnable() {
+         @Override
+         public void run()
+         {
+            RCLogger.i(TAG, "onVideoResumed");
+            updateVideoView(VideoViewState.ICE_CONNECTED);
+
+            /*
+            remoteRenderLayout.setPosition(REMOTE_X, REMOTE_Y, REMOTE_WIDTH, REMOTE_HEIGHT);
+            remoteRender.setScalingType(scalingType);
+            remoteRender.setMirror(false);
+            remoteRender.setVisibility(View.VISIBLE);
+
+            if (localRender.getVisibility() != View.VISIBLE) {
+               localRender.setVisibility(View.VISIBLE);
+            }
+            localRenderLayout.setPosition(
+                  LOCAL_X_CONNECTED, LOCAL_Y_CONNECTED, LOCAL_WIDTH_CONNECTED, LOCAL_HEIGHT_CONNECTED);
+            localRender.setScalingType(ScalingType.SCALE_ASPECT_FIT);
+            localRender.setMirror(true);
+
+            localRender.requestLayout();
+            remoteRender.requestLayout();
+            */
+         }
+      };
+      mainHandler.post(myRunnable);
+
+   }
+
+   private void initializeVideo(boolean videoEnabled, PercentFrameLayout localRenderLayout, PercentFrameLayout remoteRenderLayout)
+   {
       scalingType = ScalingType.SCALE_ASPECT_FILL;
 
       this.localRenderLayout = localRenderLayout;
@@ -957,6 +1079,18 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       localRender.setZOrderMediaOverlay(true);
       remoteRender.init(rootEglBase.getEglBaseContext(), null);
       updateVideoView(VideoViewState.NONE);
+   }
+
+   // initialize webrtc facilities for the call
+   private void initializeWebrtc(boolean videoEnabled, PercentFrameLayout localRenderLayout, PercentFrameLayout remoteRenderLayout, String preferredVideoCodec)
+   {
+      RCLogger.i(TAG, "initializeWebrtc  ");
+      //Context context = RCClient.getContext();
+
+      iceConnected = false;
+      signalingParameters = null;
+
+      initializeVideo(videoEnabled, localRenderLayout, remoteRenderLayout);
 
       // default to VP8 as VP9 doesn't seem to have that great android device support
       if (preferredVideoCodec == null) {
@@ -982,22 +1116,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
       createPeerConnectionFactory();
    }
-
-   /*
-   private void updateVideoView()
-   {
-      if (remoteRender != null) {
-         remoteRender.setScalingType(scalingType);
-         remoteRender.setMirror(false);
-         remoteRender.requestLayout();
-      }
-
-      if (localRender != null) {
-         localRender.setMirror(true);
-         localRender.requestLayout();
-      }
-   }
-   */
 
    private void updateVideoView(VideoViewState state)
    {
@@ -1030,6 +1148,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             remoteRender.setScalingType(scalingType);
             remoteRender.setMirror(false);
 
+            if (localRender.getVisibility() != View.VISIBLE) {
+               localRender.setVisibility(View.VISIBLE);
+            }
             localRenderLayout.setPosition(
                   LOCAL_X_CONNECTED, LOCAL_Y_CONNECTED, LOCAL_WIDTH_CONNECTED, LOCAL_HEIGHT_CONNECTED);
             localRender.setScalingType(ScalingType.SCALE_ASPECT_FIT);
@@ -1039,28 +1160,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             remoteRender.requestLayout();
          }
       }
-
-      /*
-
-      remoteRenderLayout.setPosition(REMOTE_X, REMOTE_Y, REMOTE_WIDTH, REMOTE_HEIGHT);
-      remoteRender.setScalingType(scalingType);
-      remoteRender.setMirror(false);
-
-      if (iceConnected) {
-         localRenderLayout.setPosition(
-               LOCAL_X_CONNECTED, LOCAL_Y_CONNECTED, LOCAL_WIDTH_CONNECTED, LOCAL_HEIGHT_CONNECTED);
-         localRender.setScalingType(ScalingType.SCALE_ASPECT_FIT);
-      }
-      else {
-         localRenderLayout.setPosition(
-               LOCAL_X_CONNECTING, LOCAL_Y_CONNECTING, LOCAL_WIDTH_CONNECTING, LOCAL_HEIGHT_CONNECTING);
-         localRender.setScalingType(scalingType);
-      }
-      localRender.setMirror(true);
-
-      localRender.requestLayout();
-      remoteRender.requestLayout();
-      */
    }
 
    private void startCall(SignalingParameters signalingParameters)
@@ -1086,21 +1185,28 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          peerConnectionClient.close();
          peerConnectionClient = null;
       }
+
+      releaseVideo();
+      audioManager.endCall();
+   }
+
+   private void releaseVideo()
+   {
       if (localRender != null) {
          localRender.release();
          localRender = null;
+      }
+      if (localRenderLayout != null) {
+         localRenderLayout = null;
       }
       if (remoteRender != null) {
          remoteRender.release();
          remoteRender = null;
       }
-      audioManager.endCall();
-      /*
-      if (audioManager != null) {
-         audioManager.close();
-         audioManager = null;
+      if (remoteRenderLayout != null) {
+         remoteRenderLayout = null;
       }
-      */
+
       if (rootEglBase != null) {
          rootEglBase.release();
          rootEglBase = null;
@@ -1290,9 +1396,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             RCConnection.this.state = ConnectionState.CONNECTED;
             updateVideoView(VideoViewState.ICE_CONNECTED);
 
-            HashMap<String,String> customHeaders = null;
+            HashMap<String, String> customHeaders = null;
             if (callParams.containsKey(ParameterKeys.CONNECTION_CUSTOM_INCOMING_SIP_HEADERS)) {
-               customHeaders = (HashMap<String,String>)callParams.get(ParameterKeys.CONNECTION_CUSTOM_INCOMING_SIP_HEADERS);
+               customHeaders = (HashMap<String, String>) callParams.get(ParameterKeys.CONNECTION_CUSTOM_INCOMING_SIP_HEADERS);
             }
             listener.onConnected(RCConnection.this, customHeaders);
          }

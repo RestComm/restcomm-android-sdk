@@ -58,6 +58,7 @@ import org.mobicents.restcomm.android.client.sdk.RCConnectionListener;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
 import org.mobicents.restcomm.android.client.sdk.util.PercentFrameLayout;
 
+
 public class CallActivity extends AppCompatActivity implements RCConnectionListener, View.OnClickListener,
         KeypadFragment.OnFragmentInteractionListener {
 
@@ -154,7 +155,7 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         ft.hide(keypadFragment);
         ft.commit();
 
-        //handleCall(intent);
+        handleCall(intent);
     }
 
     @Override
@@ -162,23 +163,9 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         super.onPause();
         Log.i(TAG, "%% onPause");
 
-        /*
-        if (pendingConnection != null) {
-            // incoming ringing
-            pendingConnection.reject();
-            pendingConnection = null;
-        } else {
-            if (connection != null) {
-                // incoming established or outgoing any state (pending, connecting, connected)
-                if (connection.getState() == RCConnection.ConnectionState.CONNECTED) {
-                    connection.disconnect();
-                }
-                connection = null;
-                pendingConnection = null;
-            }
+        if (connection != null && connection.getState() == RCConnection.ConnectionState.CONNECTED) {
+            connection.pauseVideo();
         }
-        finish();
-        */
     }
 
     @Override
@@ -187,7 +174,7 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         Log.i(TAG, "%% onStart");
         activityVisible = true;
 
-        handleCall(getIntent());
+        //handleCall(getIntent());
     }
 
     @Override
@@ -195,6 +182,26 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         super.onStop();
         Log.i(TAG, "%% onStop");
         activityVisible = false;
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // The activity has become visible (it is now "resumed").
+        Log.i(TAG, "%% onResume");
+        if (connection != null && connection.getState() == RCConnection.ConnectionState.CONNECTED) {
+            connection.resumeVideo();
+        }
+    }
+
+    @Override
+    protected void onDestroy()
+    {
+        super.onDestroy();
+        // The activity is about to be destroyed.
+        Log.i(TAG, "%% onDestroy");
+
         if (timerHandler != null) {
             timerHandler.removeCallbacksAndMessages(null);
         }
@@ -207,21 +214,16 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
             if (connection != null) {
                 // incoming established or outgoing any state (pending, connecting, connected)
                 if (connection.getState() == RCConnection.ConnectionState.CONNECTED) {
+                    // If user leaves activity while on call we need to stop local video
+                    //connection.pauseVideo();
                     connection.disconnect();
                 }
-                connection = null;
-                pendingConnection = null;
+                else {
+                    connection = null;
+                    pendingConnection = null;
+                }
             }
         }
-        //finish();
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        // The activity has become visible (it is now "resumed").
-        Log.i(TAG, "%% onResume");
     }
 
     private void handleCall(Intent intent) {
@@ -275,8 +277,48 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
             if (customHeaders != null) {
                 Log.i(TAG, "Got custom headers in incoming call: " + customHeaders.toString());
             }
-
         }
+        /*
+        if (intent.getAction().equals(RCDevice.LIVE_CALL)) {
+            String text;
+            connection = device.getLiveConnection();
+            connection.setConnectionListener(this);
+
+            if (connection.isIncoming()) {
+                // Incoming
+                if (connection.getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) {
+                    text = "Video Call from ";
+                }
+                else {
+                    text = "Audio Call from ";
+                }
+            }
+            else {
+                // Outgoing
+                if (connection.getLocalMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) {
+                    text = "Video Calling ";
+                }
+                else {
+                    text = "Audio Calling ";
+                }
+            }
+
+            lblCall.setText(text + connection.getPeer().replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
+            lblStatus.setText("Connected");
+            connection.resumeVideo((PercentFrameLayout)findViewById(R.id.local_video_layout),
+                    (PercentFrameLayout)findViewById(R.id.remote_video_layout));
+
+            // Hide answering buttons and show mute & keypad
+            btnAnswer.setVisibility(View.INVISIBLE);
+            btnAnswerAudio.setVisibility(View.INVISIBLE);
+            btnMuteAudio.setVisibility(View.VISIBLE);
+            btnMuteVideo.setVisibility(View.VISIBLE);
+            btnKeypad.setVisibility(View.VISIBLE);
+
+            lblTimer.setVisibility(View.VISIBLE);
+            //startTimer();
+        }
+        */
     }
 
     // UI Events
@@ -344,13 +386,17 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
             }
         } else if (view.getId() == R.id.button_mute_video) {
             if (connection != null) {
-                if (!muteVideo) {
+                muteVideo = !muteVideo;
+                if (muteVideo) {
                     btnMuteVideo.setImageResource(R.drawable.video_muted_50x50);
+                    //connection.off();
+                    //connection.pauseVideo();
                 } else {
                     btnMuteVideo.setImageResource(R.drawable.video_active_50x50);
+                    //connection.on((PercentFrameLayout)findViewById(R.id.local_video_layout), (PercentFrameLayout)findViewById(R.id.remote_video_layout));
+                    //connection.resumeVideo((PercentFrameLayout)findViewById(R.id.local_video_layout), (PercentFrameLayout)findViewById(R.id.remote_video_layout));
                 }
 
-                muteVideo = !muteVideo;
                 connection.setVideoMuted(muteVideo);
             }
         }

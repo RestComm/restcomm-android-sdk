@@ -142,6 +142,7 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
    //private static boolean online = false;
    public static String OUTGOING_CALL = "ACTION_OUTGOING_CALL";
    public static String INCOMING_CALL = "ACTION_INCOMING_CALL";
+   public static String LIVE_CALL = "ACTION_LIVE_CALL";
    public static String OPEN_MESSAGE_SCREEN = "ACTION_OPEN_MESSAGE_SCREEN";
    public static String INCOMING_MESSAGE = "ACTION_INCOMING_MESSAGE";
    public static String INCOMING_MESSAGE_TEXT = "INCOMING_MESSAGE_TEXT";
@@ -380,6 +381,7 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
 
          RCConnection connection = new RCConnection.Builder(false, RCConnection.ConnectionState.PENDING, this, signalingClient, audioManager)
                .listener(listener)
+               .peer((String)parameters.get(RCConnection.ParameterKeys.CONNECTION_PEER))
                .build();
          connection.open(parameters);
 
@@ -470,6 +472,7 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
       pendingMessageIntent = PendingIntent.getActivity(RCClient.getContext(), 0, messageIntent, PendingIntent.FLAG_UPDATE_CURRENT);
    }
 
+   // Get incoming ringing connection
    public RCConnection getPendingConnection()
    {
       Iterator it = connections.entrySet().iterator();
@@ -477,6 +480,21 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
          Map.Entry pair = (Map.Entry) it.next();
          RCConnection connection = (RCConnection) pair.getValue();
          if (connection.incoming && connection.state == RCConnection.ConnectionState.CONNECTING) {
+            return connection;
+         }
+      }
+
+      return null;
+   }
+
+   // Get live connection, to reference live calls after we have left the call window
+   public RCConnection getLiveConnection()
+   {
+      Iterator it = connections.entrySet().iterator();
+      while (it.hasNext()) {
+         Map.Entry pair = (Map.Entry) it.next();
+         RCConnection connection = (RCConnection) pair.getValue();
+         if (connection.state == RCConnection.ConnectionState.CONNECTED) {
             return connection;
          }
       }
@@ -666,6 +684,7 @@ public class RCDevice implements SignalingClient.SignalingClientListener {
       RCConnection connection = new RCConnection.Builder(true, RCConnection.ConnectionState.CONNECTING, this, signalingClient, audioManager)
             .jobId(jobId)
             .incomingCallSdp(sdpOffer)
+            .peer(peer)
             .build();
 
       // keep connection in the connections hashmap

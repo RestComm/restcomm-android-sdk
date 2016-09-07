@@ -50,10 +50,14 @@ public class SignalingParameters {
 
    public SignalingParameters(
          List<PeerConnection.IceServer> iceServers,
-         boolean initiator, String clientId,
-         String sipUrl, String wssPostUrl,
-         SessionDescription offerSdp, List<IceCandidate> iceCandidates,
-         HashMap<String, String> sipHeaders, boolean videoEnabled)
+         boolean initiator,
+         String clientId,
+         String sipUrl,
+         String wssPostUrl,
+         SessionDescription offerSdp,
+         List<IceCandidate> iceCandidates,
+         HashMap<String, String> sipHeaders,
+         boolean videoEnabled)
    {
       this.iceServers = iceServers;
       this.initiator = initiator;
