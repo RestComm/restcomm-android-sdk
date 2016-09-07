@@ -898,7 +898,7 @@ public class PeerConnectionClient {
    }
 
    /*
-   // ------ DEBUG
+   // ------ DEBUG (Issue #380)
    public void off()
    {
       executor.execute(new Runnable() {
@@ -922,7 +922,7 @@ public class PeerConnectionClient {
       });
 
    }
-   // ------ DEBUG
+   // ------ DEBUG (Issue #380)
    public void on(final VideoRenderer.Callbacks localRender, final VideoRenderer.Callbacks remoteRender)
    {
       this.localRender = localRender;
@@ -946,7 +946,7 @@ public class PeerConnectionClient {
    }
    */
 
-   // TODO: These are currently not used as I got stuck during implementation and remote view shows up black after resumeVideo() is called
+   // TODO: Issue #380: These are currently not used as I got stuck during implementation and remote view shows up black after resumeVideo() is called
    // Let's monitor this discussion: https://groups.google.com/forum/#!searchin/discuss-webrtc/tsakiridis$20android%7Csort:relevance/discuss-webrtc/XE2Ok67B1Ks/RrqmfZh9AQAJ
    // Pause webrtc video, intented for allowing a call to transition to the background where we only want audio enabled
    public void pauseVideo()

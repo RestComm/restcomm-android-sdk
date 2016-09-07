@@ -957,7 +957,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    }
 
    /*
-   // DEBUG
+   // DEBUG (Issue #380)
    public void off()
    {
       peerConnectionClient.off();
@@ -984,7 +984,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    }
 
    /*
-   // TODO: We should uncomment this once we figure out https://groups.google.com/forum/#!searchin/discuss-webrtc/tsakiridis$20android%7Csort:relevance/discuss-webrtc/XE2Ok67B1Ks/RrqmfZh9AQAJ
+   // TODO: Issue #380: We should uncomment this once we figure out https://groups.google.com/forum/#!searchin/discuss-webrtc/tsakiridis$20android%7Csort:relevance/discuss-webrtc/XE2Ok67B1Ks/RrqmfZh9AQAJ
    // Implementation above is meant to be a temporary solution, as it doesn't allow for the call Activity to be destroyed and then re-created
    public void pauseVideo()
    {

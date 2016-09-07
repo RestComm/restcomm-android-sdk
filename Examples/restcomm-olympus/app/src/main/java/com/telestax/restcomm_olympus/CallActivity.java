@@ -278,7 +278,7 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
                 Log.i(TAG, "Got custom headers in incoming call: " + customHeaders.toString());
             }
         }
-        /*
+        /* TODO: Issue #380: once we figure out the issue with the backgrounding we need to uncomment this
         if (intent.getAction().equals(RCDevice.LIVE_CALL)) {
             String text;
             connection = device.getLiveConnection();
@@ -316,7 +316,6 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
             btnKeypad.setVisibility(View.VISIBLE);
 
             lblTimer.setVisibility(View.VISIBLE);
-            //startTimer();
         }
         */
     }
