@@ -334,9 +334,11 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       peer = builder.peer;
 
       audioManager.startCall();
+      /*
       if (incoming) {
          audioManager.playRingingSound();
       }
+      */
 
       timeoutHandler = new Handler(device.getMainLooper());
    }
@@ -1145,7 +1147,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             remoteRender.setScalingType(scalingType);
             remoteRender.setMirror(false);
 
-            if (localRender.getVisibility() != View.VISIBLE) {
+            if (this.callParams.containsKey(ParameterKeys.CONNECTION_VIDEO_ENABLED) &&
+                  ((Boolean) this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED)) &&
+                  localRender.getVisibility() != View.VISIBLE) {
                localRender.setVisibility(View.VISIBLE);
             }
             localRenderLayout.setPosition(

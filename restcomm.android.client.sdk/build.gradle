@@ -37,6 +37,12 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
+
+        shrunk {
+            minifyEnabled true
+            shrinkResources true
+        }
+
     }
     sourceSets.main {
         jni.srcDirs = [] // This prevents the auto generation of Android.mk
@@ -45,10 +51,13 @@ android {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
     compile files('libs/libjingle_peerconnection_java.jar')
     compile 'com.android.support:appcompat-v7:24.2.0'
+    // This is a dependency for JAIN SIP library (android-jain-sip-ri). Tried to replace it with maven 'org.apache.logging.log4j:log4j:2.6.2' but didn't work so until we update JAIN SIP library
+    // accordingly we 're stuck with this local dependency
+    compile files('libs/log4j-1.2.15.jar')
     compile 'javax.sip:android-jain-sip-ri:1.2.293'
+    // Provide JAIN SIP with proper Bouncy Castle encryption facilities (although Android seems to support BC, it appears that it has issues)
     compile 'com.madgag.spongycastle:core:1.54.0.0'
     compile 'com.madgag.spongycastle:prov:1.54.0.0'
     compile 'com.madgag.spongycastle:pkix:1.54.0.0'

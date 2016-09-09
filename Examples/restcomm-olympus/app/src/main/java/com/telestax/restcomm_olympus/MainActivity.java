@@ -101,9 +101,6 @@ public class MainActivity extends AppCompatActivity
       PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
       prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
-      // Start Service
-      startService(new Intent(this, RCDevice.class));
-
       // preferences
       prefs.registerOnSharedPreferenceChangeListener(this);
 
@@ -153,7 +150,7 @@ public class MainActivity extends AppCompatActivity
 
       // Unbind from the service
       if (serviceBound) {
-         device.detach();
+         //device.detach();
          unbindService(this);
          serviceBound = false;
       }
@@ -209,8 +206,10 @@ public class MainActivity extends AppCompatActivity
       // This is for debugging purposes, not for release builds
       //params.put(RCDevice.ParameterKeys.SIGNALING_JAIN_SIP_LOGGING_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_JAIN_SIP_LOGGING_ENABLED, true));
 
-      device.attach(getApplicationContext(), params, this);
-      device.setLogLevel(Log.VERBOSE);
+      if (!device.isInitialized()) {
+         device.initialize(getApplicationContext(), params, this);
+         device.setLogLevel(Log.VERBOSE);
+      }
 
       if (device.getState() == RCDevice.DeviceState.OFFLINE) {
          getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorTextSecondary)));

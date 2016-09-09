@@ -146,7 +146,7 @@ public class MessageActivity extends AppCompatActivity
 
       // Unbind from the service
       if (serviceBound) {
-         device.detach();
+         //device.detach();
          unbindService(this);
          serviceBound = false;
       }

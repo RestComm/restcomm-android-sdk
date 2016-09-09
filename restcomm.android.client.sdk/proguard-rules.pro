@@ -20,3 +20,7 @@
 -keep class com.testfairy.** { *; }
 -dontwarn com.testfairy.**
 -keepattributes Exceptions, Signature, LineNumberTable
+
+# For some reason, when I try to minify I get 'unresolved references to classes or interfaces'. Yet the code functions just fine. Let's remove the warnings
+#-dontwarn
+#-libraryjars mylibrary.jar(!someunusedpackage/**)

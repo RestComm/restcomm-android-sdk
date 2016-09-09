@@ -185,7 +185,7 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
 
         // Unbind from the service
         if (serviceBound) {
-            device.detach();
+            //device.detach();
             unbindService(this);
             serviceBound = false;
         }
@@ -256,6 +256,10 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
     }
 
     private void handleCall(Intent intent) {
+        if (connection != null) {
+            return;
+        }
+
         isVideo = intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false);
         if (intent.getAction().equals(RCDevice.OUTGOING_CALL)) {
             String text;
@@ -284,7 +288,8 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
 
             handlePermissions(isVideo);
         }
-        if (intent.getAction().equals(RCDevice.INCOMING_CALL)) {
+        if (intent.getAction().equals(RCDevice.INCOMING_CALL) || intent.getAction().equals(RCDevice.INCOMING_CALL_DECLINE) ||
+              intent.getAction().equals(RCDevice.INCOMING_CALL_ANSWER_AUDIO) || intent.getAction().equals(RCDevice.INCOMING_CALL_ANSWER_VIDEO)) {
             String text;
             if (isVideo) {
                 text = "Video Call from ";
@@ -302,9 +307,28 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
 
             // the number from which we got the call
             String incomingCallDid = intent.getStringExtra(RCDevice.EXTRA_DID);
-            HashMap<String, String> customHeaders = (HashMap<String, String>)intent.getSerializableExtra(RCDevice.EXTRA_CUSTOM_HEADERS);
+            HashMap<String, String> customHeaders = (HashMap<String, String>) intent.getSerializableExtra(RCDevice.EXTRA_CUSTOM_HEADERS);
             if (customHeaders != null) {
                 Log.i(TAG, "Got custom headers in incoming call: " + customHeaders.toString());
+            }
+
+            if (intent.getAction().equals(RCDevice.INCOMING_CALL_DECLINE)) {
+                pendingConnection.reject();
+            }
+
+            if (intent.getAction().equals(RCDevice.INCOMING_CALL_ANSWER_AUDIO) || intent.getAction().equals(RCDevice.INCOMING_CALL_ANSWER_VIDEO)) {
+                // The Intent has been sent from the Notification subsystem. It can be either of type 'decline', 'video answer and 'audio answer'
+                boolean answerVideo = intent.getAction().equals(RCDevice.INCOMING_CALL_ANSWER_VIDEO);
+                btnAnswer.setVisibility(View.INVISIBLE);
+                btnAnswerAudio.setVisibility(View.INVISIBLE);
+
+                acceptParams = new HashMap<String, Object>();
+                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, answerVideo);
+                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
+                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
+
+                // Check permissions asynchronously and then accept the call
+                handlePermissions(true);
             }
         }
         /* TODO: Issue #380: once we figure out the issue with the backgrounding we need to uncomment this

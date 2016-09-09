@@ -57,6 +57,7 @@ import android.content.pm.PackageManager;
 import android.media.AudioManager;
 
 //import org.appspot.apprtc.util.AppRTCUtils;
+import org.mobicents.restcomm.android.client.sdk.R;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;
 import org.mobicents.restcomm.android.client.sdk.util.RCLogger;
 import org.mobicents.restcomm.android.client.sdk.MediaClient.util.AppRTCUtils;
@@ -180,17 +181,18 @@ public class AppRTCAudioManager {
       AppRTCUtils.logDeviceInfo(TAG);
    }
 
-   public void init(HashMap<String, Integer> resourceIds)
+   public void init(HashMap<String, Object> parameters)
    {
       RCLogger.d(TAG, "init");
       if (initialized) {
          return;
       }
 
+      populateAudioResourceIds(parameters);
+
       audioManager = ((AudioManager) apprtcContext.getSystemService(
             Context.AUDIO_SERVICE));
 
-      this.resourceIds = resourceIds;
       mediaPlayerWrapper = new MediaPlayerWrapper(apprtcContext);
 
       initialized = true;
@@ -279,6 +281,53 @@ public class AppRTCAudioManager {
       }
 
       callAudioInitialized = false;
+   }
+
+   /**
+    * Populate audio resource ids for various sounds like calling, ringing, etc. The logic here is that
+    * we have default resources in the SDK level, found at R.raw.*, and if the user wants to override
+    * them they need to update R.raw in the Application level.
+    *
+    * @param parameters Dictionary of all parameters passed to RCDevice from the App
+    * @return Resource ids per resource name
+    */
+   public void populateAudioResourceIds(HashMap<String, Object> parameters)
+   {
+      resourceIds = new HashMap<String, Integer>();
+
+      if (parameters.containsKey(RCDevice.ParameterKeys.RESOURCE_SOUND_CALLING)) {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_CALLING, (Integer)parameters.get(RCDevice.ParameterKeys.RESOURCE_SOUND_CALLING));
+      }
+      else {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_CALLING, R.raw.calling_sample);
+      }
+
+      if (parameters.containsKey(RCDevice.ParameterKeys.RESOURCE_SOUND_RINGING)) {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_RINGING, (Integer)parameters.get(RCDevice.ParameterKeys.RESOURCE_SOUND_RINGING));
+      }
+      else {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_RINGING, R.raw.ringing_sample);
+      }
+
+      if (parameters.containsKey(RCDevice.ParameterKeys.RESOURCE_SOUND_DECLINED)) {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_DECLINED, (Integer)parameters.get(RCDevice.ParameterKeys.RESOURCE_SOUND_DECLINED));
+      }
+      else {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_DECLINED, R.raw.busy_tone_sample);
+      }
+
+      if (parameters.containsKey(RCDevice.ParameterKeys.RESOURCE_SOUND_MESSAGE)) {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_MESSAGE, (Integer)parameters.get(RCDevice.ParameterKeys.RESOURCE_SOUND_MESSAGE));
+      }
+      else {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_MESSAGE, R.raw.message_sample);
+      }
+
+   }
+
+   public int getResourceIdForKey(String key)
+   {
+      return resourceIds.get(key);
    }
 
    /**

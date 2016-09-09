@@ -1,9 +1,19 @@
 apply plugin: 'com.android.application'
 
 android {
+    signingConfigs {
+        // IMPORTANT: This is just a test config where keystore & password will be readable in GitHub, not to be used with Google Play Store at any circumstances
+        signingConfig {
+            keyAlias 'key-alias'
+            keyPassword 'changeit'
+            storeFile file('/Users/antonis/Documents/telestax/code/restcomm-android-sdk/Examples/restcomm-olympus/test-keystore.jks')
+            storePassword 'changeit'
+        }
+    }
     compileSdkVersion 24
     buildToolsVersion '23.0.2'
 
+    /**/
     // Retrieve build number from properties file, increment and use as versionCode. Finally, store new build number in properties file
     def versionPropertiesFile = file('olympus-version.properties')
     if (versionPropertiesFile.canRead()) {
@@ -21,27 +31,61 @@ android {
             versionCode version
             versionName "1.0.0-BETA4"
         }
-    }
-    else {
+    } else {
         throw new GradleException("Could not read file olympus-version.properties")
     }
-
+    /**/
     /*
     defaultConfig {
         applicationId "com.telestax.restcomm_olympus"
         minSdkVersion 16
-        targetSdkVersion 22
-        versionCode version
-        versionName "1.0.0-BETA4"
+        targetSdkVersion 24
+        versionCode 1
+        versionName "1.0.0"
     }
     */
-
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.signingConfig
+            //versionNameSuffix "-BETA4"
+        }
+
+        debug {
+            //versionNameSuffix "-DEBUG"
+        }
+
+        shrunk {
+            minifyEnabled true
+            shrinkResources true
         }
     }
+
+    /*
+    productFlavors {
+        development {
+
+        }
+        // Let's us a flavor to to handle automatic increment of versionCode for release or debug builds we wish to publish
+        publish {
+            // Retrieve build number from properties file, increment and use as versionCode. Finally, store new build number in properties file
+            def versionPropertiesFile = file('olympus-version.properties')
+            if (versionPropertiesFile.canRead()) {
+                def Properties versionProperties = new Properties()
+                versionProperties.load(new FileInputStream(versionPropertiesFile))
+
+                def version = versionProperties['VERSION_CODE'].toInteger() + 1
+                versionProperties['VERSION_CODE'] = version.toString()
+                versionProperties.store(versionPropertiesFile.newWriter(), null)
+
+                versionCode version
+            } else {
+                throw new GradleException("Could not read file olympus-version.properties")
+            }
+        }
+    }
+    */
 }
 
 repositories {
@@ -49,7 +93,6 @@ repositories {
 }
 
 dependencies {
-    compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
     compile project(':restcomm.android.client.sdk')
     compile 'com.android.support:appcompat-v7:24.2.0'
