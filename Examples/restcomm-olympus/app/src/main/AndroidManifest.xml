@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest package="com.telestax.restcomm_olympus"
+<manifest package="org.restcomm.android.olympus"
           xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-feature android:name="android.hardware.camera"/>
@@ -30,7 +30,7 @@
         android:theme="@style/AppTheme">
 
         <activity
-            android:name=".SigninActivity"
+            android:name="org.restcomm.android.olympus.SigninActivity"
             android:label="@string/title_activity_signin"
             android:screenOrientation="portrait">
             <intent-filter>
@@ -51,32 +51,32 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".MainActivity"
+            android:name="org.restcomm.android.olympus.MainActivity"
             android:label="@string/app_name"
             android:launchMode="singleTask"
             android:screenOrientation="portrait">
 
         </activity>
         <activity
-            android:name=".CallActivity"
+            android:name="org.restcomm.android.olympus.CallActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:label="@string/title_activity_call"
-            android:parentActivityName=".MainActivity"
+            android:parentActivityName="org.restcomm.android.olympus.MainActivity"
             android:screenOrientation="portrait">
         </activity>
         <activity
-            android:name=".MessageActivity"
+            android:name="org.restcomm.android.olympus.MessageActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:label="@string/title_activity_message"
             android:launchMode="singleTop"
-            android:parentActivityName=".MainActivity"
+            android:parentActivityName="org.restcomm.android.olympus.MainActivity"
             android:screenOrientation="portrait">
         </activity>
         <activity
-            android:name=".SettingsActivity"
+            android:name="org.restcomm.android.olympus.SettingsActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:label="@string/title_activity_settings"
-            android:parentActivityName=".MainActivity"
+            android:parentActivityName="org.restcomm.android.olympus.MainActivity"
             android:screenOrientation="portrait">
         </activity>
         <!--  -->

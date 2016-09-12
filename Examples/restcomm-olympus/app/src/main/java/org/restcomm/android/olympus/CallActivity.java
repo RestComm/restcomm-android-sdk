@@ -20,7 +20,7 @@
  *
  */
 
-package com.telestax.restcomm_olympus;
+package org.restcomm.android.olympus;
 
 import android.Manifest;
 import android.app.AlertDialog;
@@ -53,7 +53,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.ListIterator;
 
-import org.mobicents.restcomm.android.client.sdk.RCClient;
 import org.mobicents.restcomm.android.client.sdk.RCConnection;
 import org.mobicents.restcomm.android.client.sdk.RCConnectionListener;
 import org.mobicents.restcomm.android.client.sdk.RCDevice;

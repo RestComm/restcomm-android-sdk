@@ -20,7 +20,7 @@
  *
  */
 
-package com.telestax.restcomm_olympus;
+package org.restcomm.android.olympus;
 
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -31,8 +31,8 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.EditText;
 
-import static com.telestax.restcomm_olympus.ContactsController.CONTACT_KEY;
-import static com.telestax.restcomm_olympus.ContactsController.CONTACT_VALUE;
+import static org.restcomm.android.olympus.ContactsController.CONTACT_KEY;
+import static org.restcomm.android.olympus.ContactsController.CONTACT_VALUE;
 
 public class AddUserDialogFragment extends DialogFragment {
    public static final int DIALOG_TYPE_ADD_CONTACT = 0;

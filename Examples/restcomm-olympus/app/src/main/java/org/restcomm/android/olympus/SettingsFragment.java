@@ -20,7 +20,7 @@
  *
  */
 
-package com.telestax.restcomm_olympus;
+package org.restcomm.android.olympus;
 
 import android.os.Bundle;
 import android.preference.PreferenceFragment;

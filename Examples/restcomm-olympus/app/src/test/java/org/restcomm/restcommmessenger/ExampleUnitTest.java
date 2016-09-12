@@ -1,4 +1,4 @@
-package com.telestax.restcomm_olympus;
+package org.restcomm.restcommmessenger;
 
 import org.junit.Test;
 

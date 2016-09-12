@@ -20,7 +20,7 @@
  *
  */
 
-package com.telestax.restcomm_olympus;
+package org.restcomm.android.olympus;
 
 import android.app.AlertDialog;
 import android.app.DialogFragment;
@@ -52,8 +52,8 @@ import org.mobicents.restcomm.android.client.sdk.RCPresenceEvent;
 
 import java.util.HashMap;
 
-import static com.telestax.restcomm_olympus.ContactsController.CONTACT_KEY;
-import static com.telestax.restcomm_olympus.ContactsController.CONTACT_VALUE;
+import static org.restcomm.android.olympus.ContactsController.CONTACT_KEY;
+import static org.restcomm.android.olympus.ContactsController.CONTACT_VALUE;
 
 public class MainActivity extends AppCompatActivity
       implements MainFragment.Callbacks, RCDeviceListener,

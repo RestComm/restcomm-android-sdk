@@ -20,7 +20,7 @@
  *
  */
 
-package com.telestax.restcomm_olympus;
+package org.restcomm.android.olympus;
 
 // ContactAdapter used callbacks
 public interface ContactAdapterListener {

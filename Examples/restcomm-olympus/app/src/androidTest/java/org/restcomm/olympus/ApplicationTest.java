@@ -1,4 +1,4 @@
-package com.telestax.restcomm_olympus;
+package org.restcomm.olympus;
 
 import android.app.Application;
 import android.test.ApplicationTestCase;

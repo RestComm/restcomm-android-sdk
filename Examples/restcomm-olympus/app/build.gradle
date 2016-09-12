@@ -25,7 +25,7 @@ android {
         versionProperties.store(versionPropertiesFile.newWriter(), null)
 
         defaultConfig {
-            applicationId "com.telestax.restcomm_olympus"
+            applicationId "org.restcomm.android.olympus"
             minSdkVersion 16
             targetSdkVersion 24
             versionCode version

@@ -20,12 +20,11 @@
  *
  */
 
-package com.telestax.restcomm_olympus;
+package org.restcomm.android.olympus;
 
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.SQLException;
-import android.util.Log;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -20,13 +20,12 @@
  *
  */
 
-package com.telestax.restcomm_olympus;
+package org.restcomm.android.olympus;
 
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.database.SQLException;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
 import android.util.Log;
@@ -47,8 +46,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import static com.telestax.restcomm_olympus.ContactsController.CONTACT_KEY;
-import static com.telestax.restcomm_olympus.ContactsController.CONTACT_VALUE;
+import static org.restcomm.android.olympus.ContactsController.CONTACT_KEY;
+import static org.restcomm.android.olympus.ContactsController.CONTACT_VALUE;
 
 public class MainFragment extends ListFragment implements ContactAdapterListener {
    private ContactsController contactsController;
