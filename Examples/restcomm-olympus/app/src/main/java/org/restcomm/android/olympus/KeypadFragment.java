@@ -33,7 +33,7 @@ import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
 
-import org.mobicents.restcomm.android.client.sdk.RCConnection;
+import org.restcomm.android.sdk.RCConnection;
 
 
 public class KeypadFragment extends Fragment implements View.OnClickListener {

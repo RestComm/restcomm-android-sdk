@@ -32,7 +32,7 @@ import android.view.View;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
 
-import org.mobicents.restcomm.android.client.sdk.RCDevice;
+import org.restcomm.android.sdk.RCDevice;
 
 import java.util.ArrayList;
 import java.util.HashMap;

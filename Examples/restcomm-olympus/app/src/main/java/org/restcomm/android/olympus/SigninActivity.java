@@ -38,7 +38,7 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import org.mobicents.restcomm.android.client.sdk.RCDevice;
+import org.restcomm.android.sdk.RCDevice;
 
 /**
  * A login screen that offers Restcomm login.
@@ -167,7 +167,7 @@ public class SigninActivity extends AppCompatActivity {
          // values are valid let's update prefs
          updatePrefs();
          Intent intent = new Intent(this, MainActivity.class);
-         //intent.setAction(RCDevice.OUTGOING_CALL);
+         //intent.setAction(RCDevice.ACTION_OUTGOING_CALL);
          //intent.putExtra(RCDevice.EXTRA_DID, sipuri);
          //intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, true);
          startActivity(intent);

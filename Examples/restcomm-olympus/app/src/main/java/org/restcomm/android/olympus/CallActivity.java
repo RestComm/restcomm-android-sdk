@@ -53,9 +53,9 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.ListIterator;
 
-import org.mobicents.restcomm.android.client.sdk.RCConnection;
-import org.mobicents.restcomm.android.client.sdk.RCConnectionListener;
-import org.mobicents.restcomm.android.client.sdk.RCDevice;
+import org.restcomm.android.sdk.RCConnection;
+import org.restcomm.android.sdk.RCConnectionListener;
+import org.restcomm.android.sdk.RCDevice;
 
 
 public class CallActivity extends AppCompatActivity implements RCConnectionListener, View.OnClickListener,
@@ -131,7 +131,7 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
 
         // Get Intent parameters.
         final Intent intent = getIntent();
-        if (intent.getAction().equals(RCDevice.OUTGOING_CALL)) {
+        if (intent.getAction().equals(RCDevice.ACTION_OUTGOING_CALL)) {
             btnAnswer.setVisibility(View.INVISIBLE);
             btnAnswerAudio.setVisibility(View.INVISIBLE);
         } else {
@@ -260,7 +260,7 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         }
 
         isVideo = intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false);
-        if (intent.getAction().equals(RCDevice.OUTGOING_CALL)) {
+        if (intent.getAction().equals(RCDevice.ACTION_OUTGOING_CALL)) {
             String text;
             if (isVideo) {
                 text = "Video Calling ";
@@ -287,8 +287,8 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
 
             handlePermissions(isVideo);
         }
-        if (intent.getAction().equals(RCDevice.INCOMING_CALL) || intent.getAction().equals(RCDevice.INCOMING_CALL_DECLINE) ||
-              intent.getAction().equals(RCDevice.INCOMING_CALL_ANSWER_AUDIO) || intent.getAction().equals(RCDevice.INCOMING_CALL_ANSWER_VIDEO)) {
+        if (intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL) || intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_DECLINE) ||
+              intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_ANSWER_AUDIO) || intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_ANSWER_VIDEO)) {
             String text;
             if (isVideo) {
                 text = "Video Call from ";
@@ -311,13 +311,13 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
                 Log.i(TAG, "Got custom headers in incoming call: " + customHeaders.toString());
             }
 
-            if (intent.getAction().equals(RCDevice.INCOMING_CALL_DECLINE)) {
+            if (intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_DECLINE)) {
                 pendingConnection.reject();
             }
 
-            if (intent.getAction().equals(RCDevice.INCOMING_CALL_ANSWER_AUDIO) || intent.getAction().equals(RCDevice.INCOMING_CALL_ANSWER_VIDEO)) {
+            if (intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_ANSWER_AUDIO) || intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_ANSWER_VIDEO)) {
                 // The Intent has been sent from the Notification subsystem. It can be either of type 'decline', 'video answer and 'audio answer'
-                boolean answerVideo = intent.getAction().equals(RCDevice.INCOMING_CALL_ANSWER_VIDEO);
+                boolean answerVideo = intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_ANSWER_VIDEO);
                 btnAnswer.setVisibility(View.INVISIBLE);
                 btnAnswerAudio.setVisibility(View.INVISIBLE);
 

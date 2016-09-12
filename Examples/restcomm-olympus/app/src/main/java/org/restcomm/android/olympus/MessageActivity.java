@@ -41,11 +41,11 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
-import org.mobicents.restcomm.android.client.sdk.RCClient;
-import org.mobicents.restcomm.android.client.sdk.RCConnection;
-import org.mobicents.restcomm.android.client.sdk.RCDevice;
-import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
-import org.mobicents.restcomm.android.client.sdk.RCPresenceEvent;
+import org.restcomm.android.sdk.RCClient;
+import org.restcomm.android.sdk.RCConnection;
+import org.restcomm.android.sdk.RCDevice;
+import org.restcomm.android.sdk.RCDeviceListener;
+import org.restcomm.android.sdk.RCPresenceEvent;
 
 import java.util.HashMap;
 
@@ -211,7 +211,7 @@ public class MessageActivity extends AppCompatActivity
          String shortname = intent.getStringExtra(RCDevice.EXTRA_DID).replaceAll("^sip:", "").replaceAll("@.*$", "");
          setTitle(shortname);
       }
-      if (intent.getAction().equals(RCDevice.INCOMING_MESSAGE)) {
+      if (intent.getAction().equals(RCDevice.ACTION_INCOMING_MESSAGE)) {
          String message = intent.getStringExtra(RCDevice.EXTRA_MESSAGE_TEXT);
          //HashMap<String, String> intentParams = (HashMap<String, String>) finalIntent.getSerializableExtra(RCDevice.INCOMING_MESSAGE_PARAMS);
          //String username = intentParams.get(RCConnection.ParameterKeys.CONNECTION_PEER);

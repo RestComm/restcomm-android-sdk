@@ -45,10 +45,10 @@ import android.widget.ImageButton;
 import android.widget.Toast;
 import com.testfairy.TestFairy;
 
-import org.mobicents.restcomm.android.client.sdk.RCClient;
-import org.mobicents.restcomm.android.client.sdk.RCDevice;
-import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
-import org.mobicents.restcomm.android.client.sdk.RCPresenceEvent;
+import org.restcomm.android.sdk.RCClient;
+import org.restcomm.android.sdk.RCDevice;
+import org.restcomm.android.sdk.RCDeviceListener;
+import org.restcomm.android.sdk.RCPresenceEvent;
 
 import java.util.HashMap;
 
@@ -186,8 +186,8 @@ public class MainActivity extends AppCompatActivity
       device = binder.getService();
 
       HashMap<String, Object> params = new HashMap<String, Object>();
-      params.put(RCDevice.ParameterKeys.INTENT_INCOMING_CALL, new Intent(RCDevice.INCOMING_CALL, null, getApplicationContext(), CallActivity.class));
-      params.put(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE, new Intent(RCDevice.INCOMING_MESSAGE, null, getApplicationContext(), MessageActivity.class));
+      params.put(RCDevice.ParameterKeys.INTENT_INCOMING_CALL, new Intent(RCDevice.ACTION_INCOMING_CALL, null, getApplicationContext(), CallActivity.class));
+      params.put(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE, new Intent(RCDevice.ACTION_INCOMING_MESSAGE, null, getApplicationContext(), MessageActivity.class));
       params.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN, prefs.getString(RCDevice.ParameterKeys.SIGNALING_DOMAIN, ""));
       params.put(RCDevice.ParameterKeys.SIGNALING_USERNAME, prefs.getString(RCDevice.ParameterKeys.SIGNALING_USERNAME, "android-sdk"));
       params.put(RCDevice.ParameterKeys.SIGNALING_PASSWORD, prefs.getString(RCDevice.ParameterKeys.SIGNALING_PASSWORD, "1234"));
@@ -275,14 +275,14 @@ public class MainActivity extends AppCompatActivity
 
       if (action == ActionFragment.ActionType.ACTION_TYPE_VIDEO_CALL) {
          Intent intent = new Intent(this, CallActivity.class);
-         intent.setAction(RCDevice.OUTGOING_CALL);
+         intent.setAction(RCDevice.ACTION_OUTGOING_CALL);
          intent.putExtra(RCDevice.EXTRA_DID, sipuri);
          intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, true);
          startActivityForResult(intent, CONNECTION_REQUEST);
       }
       if (action == ActionFragment.ActionType.ACTION_TYPE_AUDIO_CALL) {
          Intent intent = new Intent(this, CallActivity.class);
-         intent.setAction(RCDevice.OUTGOING_CALL);
+         intent.setAction(RCDevice.ACTION_OUTGOING_CALL);
          intent.putExtra(RCDevice.EXTRA_DID, sipuri);
          intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, false);
          startActivityForResult(intent, CONNECTION_REQUEST);
@@ -425,7 +425,7 @@ public class MainActivity extends AppCompatActivity
          }
 
          Intent intent = new Intent(this, CallActivity.class);
-         intent.setAction(RCDevice.OUTGOING_CALL);
+         intent.setAction(RCDevice.ACTION_OUTGOING_CALL);
          intent.putExtra(RCDevice.EXTRA_DID, parsedUriString);
          intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, true);
          startActivityForResult(intent, CONNECTION_REQUEST);

@@ -40,10 +40,10 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
 
-import org.mobicents.restcomm.android.client.sdk.RCClient;
-import org.mobicents.restcomm.android.client.sdk.RCDevice;
-import org.mobicents.restcomm.android.client.sdk.util.ErrorStruct;
-import org.mobicents.restcomm.android.client.sdk.util.RCUtils;
+import org.restcomm.android.sdk.RCClient;
+import org.restcomm.android.sdk.RCDevice;
+import org.restcomm.android.sdk.util.ErrorStruct;
+import org.restcomm.android.sdk.util.RCUtils;
 
 import java.util.HashMap;
 

@@ -1,0 +1,591 @@
+/*
+ * libjingle
+ * Copyright 2014 Google Inc.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *  1. Redistributions of source code must retain the above copyright notice,
+ *     this list of conditions and the following disclaimer.
+ *  2. Redistributions in binary form must reproduce the above copyright notice,
+ *     this list of conditions and the following disclaimer in the documentation
+ *     and/or other materials provided with the distribution.
+ *  3. The name of the author may not be used to endorse or promote products
+ *     derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO
+ * EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+ * OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+ * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ * ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/*
+ * TeleStax, Open Source Cloud Communications
+ * Copyright 2011-2015, Telestax Inc and individual contributors
+ * by the @authors tag.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation; either version 3 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ *
+ * For questions related to commercial use licensing, please contact sales@telestax.com.
+ *
+ */
+
+package org.restcomm.android.sdk.MediaClient;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.content.pm.PackageManager;
+import android.media.AudioManager;
+
+//import org.appspot.apprtc.util.AppRTCUtils;
+import org.restcomm.android.sdk.R;
+import org.restcomm.android.sdk.RCDevice;
+import org.restcomm.android.sdk.util.RCLogger;
+import org.restcomm.android.sdk.MediaClient.util.AppRTCUtils;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
+
+/**
+ * AppRTCAudioManager manages all audio related parts of the AppRTC demo.
+ */
+public class AppRTCAudioManager {
+   private static final String TAG = "AppRTCAudioManager";
+
+   /**
+    * AudioDevice is the names of possible audio devices that we currently
+    * support.
+    */
+   // TODO(henrika): add support for BLUETOOTH as well.
+   public enum AudioDevice {
+      SPEAKER_PHONE,
+      WIRED_HEADSET,
+      EARPIECE,
+   }
+
+   private final Context apprtcContext;
+   private final Runnable onStateChangeListener;
+   private boolean initialized = false;
+   private boolean callAudioInitialized = false;
+   private AudioManager audioManager;
+   private int savedAudioMode = AudioManager.MODE_INVALID;
+   private boolean savedIsSpeakerPhoneOn = false;
+   private boolean savedIsMicrophoneMute = false;
+   private HashMap<String, Integer> resourceIds;
+
+   // For now; always use the speaker phone as default device selection when
+   // there is a choice between SPEAKER_PHONE and EARPIECE.
+   // TODO(henrika): it is possible that EARPIECE should be preferred in some
+   // cases. If so, we should set this value at construction instead.
+   private final AudioDevice defaultAudioDevice = AudioDevice.SPEAKER_PHONE;
+
+   // Proximity sensor object. It measures the proximity of an object in cm
+   // relative to the view screen of a device and can therefore be used to
+   // assist device switching (close to ear <=> use headset earpiece if
+   // available, far from ear <=> use speaker phone).
+   private AppRTCProximitySensor proximitySensor = null;
+
+   // Contains the currently selected audio device.
+   private AudioDevice selectedAudioDevice;
+
+   // Contains a list of available audio devices. A Set collection is used to
+   // avoid duplicate elements.
+   private final Set<AudioDevice> audioDevices = new HashSet<AudioDevice>();
+
+   // Broadcast receiver for wired headset intent broadcasts.
+   private BroadcastReceiver wiredHeadsetReceiver;
+
+   // Media player for playback of calling/ringing/message sounds
+   private MediaPlayerWrapper mediaPlayerWrapper;
+
+   // This method is called when the proximity sensor reports a state change,
+   // e.g. from "NEAR to FAR" or from "FAR to NEAR".
+   private void onProximitySensorChangedState()
+   {
+      // The proximity sensor should only be activated when there are exactly two
+      // available audio devices.
+      if (audioDevices.size() == 2
+            && audioDevices.contains(AppRTCAudioManager.AudioDevice.EARPIECE)
+            && audioDevices.contains(
+            AppRTCAudioManager.AudioDevice.SPEAKER_PHONE)) {
+         if (proximitySensor != null) {
+            if (proximitySensor.sensorReportsNearState()) {
+               // Sensor reports that a "handset is being held up to a person's ear",
+               // or "something is covering the light sensor".
+               setAudioDevice(AppRTCAudioManager.AudioDevice.EARPIECE);
+            }
+            else {
+               // Sensor reports that a "handset is removed from a person's ear", or
+               // "the light sensor is no longer covered".
+               setAudioDevice(AppRTCAudioManager.AudioDevice.SPEAKER_PHONE);
+            }
+         }
+         else {
+            RCLogger.e(TAG, "onProximitySensorChangedState called on null proximitySensor -check mem management");
+         }
+      }
+   }
+
+   /**
+    * Construction
+    */
+   public static AppRTCAudioManager create(Context context,
+                                    Runnable deviceStateChangeListener)
+   {
+      return new AppRTCAudioManager(context, deviceStateChangeListener);
+   }
+
+   private AppRTCAudioManager(Context context,
+                              Runnable deviceStateChangeListener)
+   {
+      apprtcContext = context;
+      onStateChangeListener = deviceStateChangeListener;
+      /*
+      audioManager = ((AudioManager) context.getSystemService(
+            Context.AUDIO_SERVICE));
+
+      // Create and initialize the proximity sensor.
+      // Tablet devices (e.g. Nexus 7) does not support proximity sensors.
+      // Note that, the sensor will not be active until start() has been called.
+      proximitySensor = AppRTCProximitySensor.create(context, new Runnable() {
+         // This method will be called each time a state change is detected.
+         // Example: user holds his hand over the device (closer than ~5 cm),
+         // or removes his hand from the device.
+         public void run()
+         {
+            onProximitySensorChangedState();
+         }
+      });
+      */
+      AppRTCUtils.logDeviceInfo(TAG);
+   }
+
+   public void init(HashMap<String, Object> parameters)
+   {
+      RCLogger.d(TAG, "init");
+      if (initialized) {
+         return;
+      }
+
+      populateAudioResourceIds(parameters);
+
+      audioManager = ((AudioManager) apprtcContext.getSystemService(
+            Context.AUDIO_SERVICE));
+
+      mediaPlayerWrapper = new MediaPlayerWrapper(apprtcContext);
+
+      initialized = true;
+   }
+
+   public void close()
+   {
+      RCLogger.d(TAG, "close");
+      if (!initialized) {
+         return;
+      }
+
+      mediaPlayerWrapper.close();
+
+      initialized = false;
+   }
+
+   public void startCall()
+   {
+      RCLogger.d(TAG, "startCall");
+      if (callAudioInitialized) {
+         return;
+      }
+
+      // Create and initialize the proximity sensor.
+      // Tablet devices (e.g. Nexus 7) does not support proximity sensors.
+      // Note that, the sensor will not be active until start() has been called.
+      proximitySensor = AppRTCProximitySensor.create(apprtcContext, new Runnable() {
+         // This method will be called each time a state change is detected.
+         // Example: user holds his hand over the device (closer than ~5 cm),
+         // or removes his hand from the device.
+         public void run()
+         {
+            onProximitySensorChangedState();
+         }
+      });
+
+      // Store current audio state so we can restore it when close() is called.
+      savedAudioMode = audioManager.getMode();
+      savedIsSpeakerPhoneOn = audioManager.isSpeakerphoneOn();
+      savedIsMicrophoneMute = audioManager.isMicrophoneMute();
+
+      // Request audio focus before making any device switch.
+      audioManager.requestAudioFocus(null, AudioManager.STREAM_VOICE_CALL,
+            AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+
+      // Start by setting MODE_IN_COMMUNICATION as default audio mode. It is
+      // required to be in this mode when playout and/or recording starts for
+      // best possible VoIP performance.
+      // TODO(henrika): we migh want to start with RINGTONE mode here instead.
+      audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+
+      // Always disable microphone mute during a WebRTC call.
+      setMicrophoneMute(false);
+
+      // Do initial selection of audio device. This setting can later be changed
+      // either by adding/removing a wired headset or by covering/uncovering the
+      // proximity sensor.
+      updateAudioDeviceState(hasWiredHeadset());
+
+      // Register receiver for broadcast intents related to adding/removing a
+      // wired headset (Intent.ACTION_HEADSET_PLUG).
+      registerForWiredHeadsetIntentBroadcast();
+
+      callAudioInitialized = true;
+   }
+
+   public void endCall()
+   {
+      RCLogger.d(TAG, "endCall");
+      if (!callAudioInitialized) {
+         return;
+      }
+
+      unregisterForWiredHeadsetIntentBroadcast();
+
+      // Restore previously stored audio states.
+      setSpeakerphoneOn(savedIsSpeakerPhoneOn);
+      setMicrophoneMute(savedIsMicrophoneMute);
+      audioManager.setMode(savedAudioMode);
+      audioManager.abandonAudioFocus(null);
+
+      if (proximitySensor != null) {
+         proximitySensor.stop();
+         proximitySensor = null;
+      }
+
+      callAudioInitialized = false;
+   }
+
+   /**
+    * Populate audio resource ids for various sounds like calling, ringing, etc. The logic here is that
+    * we have default resources in the SDK level, found at R.raw.*, and if the user wants to override
+    * them they need to update R.raw in the Application level.
+    *
+    * @param parameters Dictionary of all parameters passed to RCDevice from the App
+    * @return Resource ids per resource name
+    */
+   public void populateAudioResourceIds(HashMap<String, Object> parameters)
+   {
+      resourceIds = new HashMap<String, Integer>();
+
+      if (parameters.containsKey(RCDevice.ParameterKeys.RESOURCE_SOUND_CALLING)) {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_CALLING, (Integer)parameters.get(RCDevice.ParameterKeys.RESOURCE_SOUND_CALLING));
+      }
+      else {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_CALLING, R.raw.calling_sample);
+      }
+
+      if (parameters.containsKey(RCDevice.ParameterKeys.RESOURCE_SOUND_RINGING)) {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_RINGING, (Integer)parameters.get(RCDevice.ParameterKeys.RESOURCE_SOUND_RINGING));
+      }
+      else {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_RINGING, R.raw.ringing_sample);
+      }
+
+      if (parameters.containsKey(RCDevice.ParameterKeys.RESOURCE_SOUND_DECLINED)) {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_DECLINED, (Integer)parameters.get(RCDevice.ParameterKeys.RESOURCE_SOUND_DECLINED));
+      }
+      else {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_DECLINED, R.raw.busy_tone_sample);
+      }
+
+      if (parameters.containsKey(RCDevice.ParameterKeys.RESOURCE_SOUND_MESSAGE)) {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_MESSAGE, (Integer)parameters.get(RCDevice.ParameterKeys.RESOURCE_SOUND_MESSAGE));
+      }
+      else {
+         resourceIds.put(RCDevice.ParameterKeys.RESOURCE_SOUND_MESSAGE, R.raw.message_sample);
+      }
+
+   }
+
+   public int getResourceIdForKey(String key)
+   {
+      return resourceIds.get(key);
+   }
+
+   /**
+    * Changes selection of the currently active audio device.
+    */
+   public void setAudioDevice(AudioDevice device)
+   {
+      RCLogger.d(TAG, "setAudioDevice(device=" + device + ")");
+      AppRTCUtils.assertIsTrue(audioDevices.contains(device));
+
+      switch (device) {
+         case SPEAKER_PHONE:
+            setSpeakerphoneOn(true);
+            selectedAudioDevice = AudioDevice.SPEAKER_PHONE;
+            break;
+         case EARPIECE:
+            setSpeakerphoneOn(false);
+            selectedAudioDevice = AudioDevice.EARPIECE;
+            break;
+         case WIRED_HEADSET:
+            setSpeakerphoneOn(false);
+            selectedAudioDevice = AudioDevice.WIRED_HEADSET;
+            break;
+         default:
+            RCLogger.e(TAG, "Invalid audio device selection");
+            break;
+      }
+      onAudioManagerChangedState();
+   }
+
+   /**
+    * Returns current set of available/selectable audio devices.
+    */
+   public Set<AudioDevice> getAudioDevices()
+   {
+      return Collections.unmodifiableSet(new HashSet<AudioDevice>(audioDevices));
+   }
+
+   /**
+    * Returns the currently selected audio device.
+    */
+   public AudioDevice getSelectedAudioDevice()
+   {
+      return selectedAudioDevice;
+   }
+
+   /**
+    * Registers receiver for the broadcasted intent when a wired headset is
+    * plugged in or unplugged. The received intent will have an extra
+    * 'state' value where 0 means unplugged, and 1 means plugged.
+    */
+   private void registerForWiredHeadsetIntentBroadcast()
+   {
+      IntentFilter filter = new IntentFilter(Intent.ACTION_HEADSET_PLUG);
+
+      /** Receiver which handles changes in wired headset availability. */
+      wiredHeadsetReceiver = new BroadcastReceiver() {
+         private static final int STATE_UNPLUGGED = 0;
+         private static final int STATE_PLUGGED = 1;
+         private static final int HAS_NO_MIC = 0;
+         private static final int HAS_MIC = 1;
+
+         @Override
+         public void onReceive(Context context, Intent intent)
+         {
+            int state = intent.getIntExtra("state", STATE_UNPLUGGED);
+            int microphone = intent.getIntExtra("microphone", HAS_NO_MIC);
+            String name = intent.getStringExtra("name");
+            RCLogger.d(TAG, "BroadcastReceiver.onReceive" + AppRTCUtils.getThreadInfo()
+                  + ": "
+                  + "a=" + intent.getAction()
+                  + ", s=" + (state == STATE_UNPLUGGED ? "unplugged" : "plugged")
+                  + ", m=" + (microphone == HAS_MIC ? "mic" : "no mic")
+                  + ", n=" + name
+                  + ", sb=" + isInitialStickyBroadcast());
+
+            boolean hasWiredHeadset = (state == STATE_PLUGGED) ? true : false;
+            switch (state) {
+               case STATE_UNPLUGGED:
+                  updateAudioDeviceState(hasWiredHeadset);
+                  break;
+               case STATE_PLUGGED:
+                  if (selectedAudioDevice != AudioDevice.WIRED_HEADSET) {
+                     updateAudioDeviceState(hasWiredHeadset);
+                  }
+                  break;
+               default:
+                  RCLogger.e(TAG, "Invalid state");
+                  break;
+            }
+         }
+      };
+
+      apprtcContext.registerReceiver(wiredHeadsetReceiver, filter);
+   }
+
+   /**
+    * Unregister receiver for broadcasted ACTION_HEADSET_PLUG intent.
+    */
+   private void unregisterForWiredHeadsetIntentBroadcast()
+   {
+      apprtcContext.unregisterReceiver(wiredHeadsetReceiver);
+      wiredHeadsetReceiver = null;
+   }
+
+   /**
+    * Sets the speaker phone mode.
+    */
+   private void setSpeakerphoneOn(boolean on)
+   {
+      boolean wasOn = audioManager.isSpeakerphoneOn();
+      if (wasOn == on) {
+         return;
+      }
+      audioManager.setSpeakerphoneOn(on);
+   }
+
+   /**
+    * Sets the microphone mute state.
+    */
+   private void setMicrophoneMute(boolean on)
+   {
+      boolean wasMuted = audioManager.isMicrophoneMute();
+      if (wasMuted == on) {
+         return;
+      }
+      audioManager.setMicrophoneMute(on);
+   }
+
+   public void setMute(boolean on)
+   {
+      audioManager.setMicrophoneMute(on);
+   }
+
+   public boolean getMute()
+   {
+      return audioManager.isMicrophoneMute();
+   }
+
+   /**
+    * Gets the current earpiece state.
+    */
+   private boolean hasEarpiece()
+   {
+      return apprtcContext.getPackageManager().hasSystemFeature(
+            PackageManager.FEATURE_TELEPHONY);
+   }
+
+   /**
+    * Checks whether a wired headset is connected or not.
+    * This is not a valid indication that audio playback is actually over
+    * the wired headset as audio routing depends on other conditions. We
+    * only use it as an early indicator (during initialization) of an attached
+    * wired headset.
+    */
+   @Deprecated
+   private boolean hasWiredHeadset()
+   {
+      return audioManager.isWiredHeadsetOn();
+   }
+
+   /**
+    * Update list of possible audio devices and make new device selection.
+    */
+   private void updateAudioDeviceState(boolean hasWiredHeadset)
+   {
+      // Update the list of available audio devices.
+      audioDevices.clear();
+      if (hasWiredHeadset) {
+         // If a wired headset is connected, then it is the only possible option.
+         audioDevices.add(AudioDevice.WIRED_HEADSET);
+      }
+      else {
+         // No wired headset, hence the audio-device list can contain speaker
+         // phone (on a tablet), or speaker phone and earpiece (on mobile phone).
+         audioDevices.add(AudioDevice.SPEAKER_PHONE);
+         if (hasEarpiece()) {
+            audioDevices.add(AudioDevice.EARPIECE);
+         }
+      }
+      RCLogger.d(TAG, "audioDevices: " + audioDevices);
+
+      // Switch to correct audio device given the list of available audio devices.
+      if (hasWiredHeadset) {
+         setAudioDevice(AudioDevice.WIRED_HEADSET);
+      }
+      else {
+         setAudioDevice(defaultAudioDevice);
+      }
+   }
+
+   /**
+    * Called each time a new audio device has been added or removed.
+    */
+   private void onAudioManagerChangedState()
+   {
+      RCLogger.d(TAG, "onAudioManagerChangedState: devices=" + audioDevices
+            + ", selected=" + selectedAudioDevice);
+
+      // Enable the proximity sensor if there are two available audio devices
+      // in the list. Given the current implementation, we know that the choice
+      // will then be between EARPIECE and SPEAKER_PHONE.
+      if (audioDevices.size() == 2) {
+         AppRTCUtils.assertIsTrue(audioDevices.contains(AudioDevice.EARPIECE)
+               && audioDevices.contains(AudioDevice.SPEAKER_PHONE));
+         // Start the proximity sensor.
+         proximitySensor.start();
+      }
+      else if (audioDevices.size() == 1) {
+         // Stop the proximity sensor since it is no longer needed.
+         proximitySensor.stop();
+      }
+      else {
+         RCLogger.e(TAG, "Invalid device list");
+      }
+
+      if (onStateChangeListener != null) {
+         // Run callback to notify a listening client. The client can then
+         // use public getters to query the new state.
+         onStateChangeListener.run();
+      }
+   }
+
+   // MediaPlayer related methods
+   public void playCallingSound()
+   {
+      play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_CALLING), true);
+      //mediaPlayerWrapper.play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_CALLING), true);
+   }
+   public void playRingingSound()
+   {
+      play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_RINGING), true);
+      //mediaPlayerWrapper.play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_RINGING), true);
+   }
+   public void playDeclinedSound()
+   {
+      play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_DECLINED), false);
+      //mediaPlayerWrapper.play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_DECLINED), false);
+   }
+   public void playMessageSound()
+   {
+      play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_MESSAGE), false);
+      //mediaPlayerWrapper.play(resourceIds.get(RCDevice.ParameterKeys.RESOURCE_SOUND_MESSAGE), false);
+   }
+
+   public void play(int resid, boolean loop)
+   {
+      // Request audio focus before making any device switch.
+      audioManager.requestAudioFocus(null, AudioManager.STREAM_VOICE_CALL,
+            AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+
+      mediaPlayerWrapper.play(resid, loop);
+   }
+
+   public void stop()
+   {
+      mediaPlayerWrapper.stop();
+
+      audioManager.abandonAudioFocus(null);
+   }
+}
