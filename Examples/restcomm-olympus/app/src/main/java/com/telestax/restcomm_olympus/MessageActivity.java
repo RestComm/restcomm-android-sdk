@@ -206,13 +206,13 @@ public class MessageActivity extends AppCompatActivity
       }
 
       // Get Intent parameters.
-      if (intent.getAction().equals(RCDevice.OPEN_MESSAGE_SCREEN)) {
+      if (intent.getAction().equals(RCDevice.ACTION_OPEN_MESSAGE_SCREEN)) {
          params.put(RCConnection.ParameterKeys.CONNECTION_PEER, intent.getStringExtra(RCDevice.EXTRA_DID));
          String shortname = intent.getStringExtra(RCDevice.EXTRA_DID).replaceAll("^sip:", "").replaceAll("@.*$", "");
          setTitle(shortname);
       }
       if (intent.getAction().equals(RCDevice.INCOMING_MESSAGE)) {
-         String message = intent.getStringExtra(RCDevice.INCOMING_MESSAGE_TEXT);
+         String message = intent.getStringExtra(RCDevice.EXTRA_MESSAGE_TEXT);
          //HashMap<String, String> intentParams = (HashMap<String, String>) finalIntent.getSerializableExtra(RCDevice.INCOMING_MESSAGE_PARAMS);
          //String username = intentParams.get(RCConnection.ParameterKeys.CONNECTION_PEER);
          String username = intent.getStringExtra(RCDevice.EXTRA_DID);

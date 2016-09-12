@@ -106,15 +106,20 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    public static String INCOMING_CALL_ANSWER_VIDEO = "ACTION_INCOMING_CALL_ANSWER_VIDEO";
    public static String INCOMING_CALL_DECLINE = "ACTION_INCOMING_CALL_DECLINE";
    //public static String LIVE_CALL = "ACTION_LIVE_CALL";
-   public static String OPEN_MESSAGE_SCREEN = "ACTION_OPEN_MESSAGE_SCREEN";
+   public static String ACTION_OPEN_MESSAGE_SCREEN = "ACTION_OPEN_MESSAGE_SCREEN";
    public static String INCOMING_MESSAGE = "ACTION_INCOMING_MESSAGE";
-   public static String ACTION_NOTIFICATION_DEFAULT = "ACTION_NOTIFICATION_DEFAULT";
-   public static String ACTION_NOTIFICATION_ACCEPT_VIDEO = "ACTION_NOTIFICATION_ACCEPT_VIDEO";
-   public static String ACTION_NOTIFICATION_ACCEPT_AUDIO = "ACTION_NOTIFICATION_ACCEPT_AUDIO";
-   public static String ACTION_NOTIFICATION_DECLINE = "ACTION_NOTIFICATION_DECLINE";
+   public static String ACTION_NOTIFICATION_CALL_DEFAULT = "ACTION_NOTIFICATION_CALL_DEFAULT";
+   public static String ACTION_NOTIFICATION_CALL_ACCEPT_VIDEO = "ACTION_NOTIFICATION_CALL_ACCEPT_VIDEO";
+   public static String ACTION_NOTIFICATION_CALL_ACCEPT_AUDIO = "ACTION_NOTIFICATION_CALL_ACCEPT_AUDIO";
+   public static String ACTION_NOTIFICATION_CALL_DECLINE = "ACTION_NOTIFICATION_CALL_DECLINE";
+   public static String ACTION_NOTIFICATION_MESSAGE_DEFAULT = "ACTION_NOTIFICATION_MESSAGE_DEFAULT";
+
+   private final int NOTIFICATION_ID_CALL = 1;
+   private final int NOTIFICATION_ID_MESSAGE = 2;
+
 
    //public static String EXTRA_NOTIFICATION_TYPE = "com.telestax.restcomm_messenger.NOTIFICATION_TYPE";
-   public static String INCOMING_MESSAGE_TEXT = "INCOMING_MESSAGE_TEXT";
+   public static String EXTRA_MESSAGE_TEXT = "com.telestax.restcomm_messenger.EXTRA_MESSAGE_TEXT";
    //public static String INCOMING_MESSAGE_PARAMS = "INCOMING_MESSAGE_PARAMS";
    public static String EXTRA_DID = "com.telestax.restcomm_messenger.DID";
    public static String EXTRA_CUSTOM_HEADERS = "com.telestax.restcomm_messenger.CUSTOM_HEADERS";
@@ -238,6 +243,11 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       return isServiceInitialized;
    }
 
+
+   public boolean isAttached()
+   {
+      return isServiceAttached;
+   }
 
    /**
     * Attach and initialize (if not already initialized) the RCDevice Service with parameters
@@ -733,14 +743,25 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       RCLogger.i(TAG, "onOpenReply(): id: " + jobId + ", connectivityStatus: " + connectivityStatus + ", status: " + status + ", text: " + text);
       cachedConnectivityStatus = connectivityStatus;
       if (status != RCClient.ErrorCodes.SUCCESS) {
-         // TODO: Maybe we should introduce separate message specifically for RCDevice initialization. Using onStopListening() looks weird
-         //listener.onStopListening(this, status.ordinal(), text);
-         listener.onInitialized(this, connectivityStatus, status.ordinal(), text);
+         if (isServiceAttached) {
+            listener.onInitialized(this, connectivityStatus, status.ordinal(), text);
+         }
+         else {
+            RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
+                  RCClient.errorText(status));
+         }
          return;
       }
 
       state = DeviceState.READY;
-      listener.onInitialized(this, connectivityStatus, RCClient.ErrorCodes.SUCCESS.ordinal(), RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
+      if (isServiceAttached) {
+         listener.onInitialized(this, connectivityStatus, RCClient.ErrorCodes.SUCCESS.ordinal(), RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
+      }
+      else {
+         RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
+               RCClient.errorText(status));
+      }
+
    }
 
    public void onCloseReply(String jobId, RCClient.ErrorCodes status, String text)
@@ -763,11 +784,24 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       cachedConnectivityStatus = connectivityStatus;
       if (status == RCClient.ErrorCodes.SUCCESS) {
          state = DeviceState.READY;
-         listener.onStartListening(this, connectivityStatus);
+         if (isServiceAttached) {
+            listener.onStartListening(this, connectivityStatus);
+         }
+         else {
+            RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onStartListening(): " +
+                  RCClient.errorText(status));
+         }
+
       }
       else {
          state = DeviceState.OFFLINE;
-         listener.onStopListening(this, status.ordinal(), text);
+         if (isServiceAttached) {
+            listener.onStopListening(this, status.ordinal(), text);
+         }
+         else {
+            RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: isServiceAttached(): " +
+                  RCClient.errorText(status));
+         }
       }
    }
 
@@ -782,7 +816,14 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    {
       RCLogger.i(TAG, "onMessageReply(): id: " + jobId + ", status: " + status + ", text: " + text);
 
-      listener.onMessageSent(this, status.ordinal(), text);
+      if (isServiceAttached) {
+         listener.onMessageSent(this, status.ordinal(), text);
+      }
+      else {
+         RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onMessageSent(): " +
+               RCClient.errorText(status));
+      }
+
    }
 
    // Unsolicited Events
@@ -831,107 +872,71 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
             text = "Incoming audio call";
          }
 
-         // Update the call intent with the needed extras
-         callIntent.putExtra(RCDevice.EXTRA_DID, peer);
-         callIntent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, (connection.getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO));
-         if (customHeaders != null) {
-            callIntent.putExtra(RCDevice.EXTRA_CUSTOM_HEADERS, customHeaders);
-         }
-         // Pending intent to open the call activity (for when tapping on the general notification area)
-         //PendingIntent openPendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, callIntent, PendingIntent.FLAG_ONE_SHOT);
-
-         //Intent(String action, Uri uri, Context packageContext, Class<?> cls)
-         Intent serviceIntent = new Intent(ACTION_NOTIFICATION_DEFAULT, null, getApplicationContext(), RCDevice.class);
-         //serviceIntent.putExtra(EXTRA_NOTIFICATION_TYPE, NotificationType.ACCEPT_CALL_VIDEO);
-         PendingIntent openPendingIntent = PendingIntent.getService(getApplicationContext(), 0, serviceIntent, PendingIntent.FLAG_ONE_SHOT);
-
-         /*
-         // clone callIntent to create an intent to handle answering the call as video
-         Intent answerVideoIntent = new Intent(callIntent);
-         //answerVideoIntent.putExtra(EXTRA_NOTIFICATION_ACTION_TYPE, "answer-video");
-         answerVideoIntent.setAction(INCOMING_CALL_ANSWER_VIDEO);
-         PendingIntent answerVideoPendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, answerVideoIntent, PendingIntent.FLAG_ONE_SHOT);
-
-         // clone callIntent to create an intent to handle answering the call as audio
-         Intent answerAudioIntent = new Intent(callIntent);
-         //answerAudioIntent.putExtra(EXTRA_NOTIFICATION_ACTION_TYPE, "answer-audio");
-         answerAudioIntent.setAction(INCOMING_CALL_ANSWER_AUDIO);
-         PendingIntent answerAudioPendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, answerAudioIntent, PendingIntent.FLAG_ONE_SHOT);
-
-         // clone callIntent to create an intent to handle declining the call
-         Intent declineIntent = new Intent(callIntent);
-         //declineIntent.putExtra(EXTRA_NOTIFICATION_ACTION_TYPE, "decline");
-         declineIntent.setAction(INCOMING_CALL_DECLINE);
-         PendingIntent declinePendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, declineIntent, PendingIntent.FLAG_ONE_SHOT);
-         */
+         // Intent to open the call activity (for when tapping on the general notification area)
+         Intent serviceIntentDefault = new Intent(ACTION_NOTIFICATION_CALL_DEFAULT, null, getApplicationContext(), RCDevice.class);
+         // Intent to directly answer the call as video
+         Intent serviceIntentVideo = new Intent(ACTION_NOTIFICATION_CALL_ACCEPT_VIDEO, null, getApplicationContext(), RCDevice.class);
+         // Intent to directly answer the call as audio
+         Intent serviceIntentAudio = new Intent(ACTION_NOTIFICATION_CALL_ACCEPT_AUDIO, null, getApplicationContext(), RCDevice.class);
+         // Intent to decline the call without opening the App Activity
+         Intent serviceIntentDecline = new Intent(ACTION_NOTIFICATION_CALL_DECLINE, null, getApplicationContext(), RCDevice.class);
 
          // Service is not attached to an activity, let's use a notification instead
-         NotificationCompat.Builder mBuilder =
+         NotificationCompat.Builder builder =
                new NotificationCompat.Builder(RCDevice.this)
                      .setSmallIcon(R.drawable.ic_call_24dp)
                      .setContentTitle(peer.replaceAll(".*?sip:", "").replaceAll("@.*$", ""))
                      .setContentText(text)
-                     .setSound(Uri.parse("android.resource://" + getPackageName() + "/" + audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_RINGING)))  // R.raw.message_sample))
+                     .setSound(Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.ringing_sample)) // audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_RINGING)))
                      // Need this to show up as Heads-up Notification
                      .setPriority(NotificationCompat.PRIORITY_HIGH)
                      .setAutoCancel(true)  // cancel notification when user acts on it
-                     //.addAction(R.drawable.ic_videocam_24dp, "", answerVideoPendingIntent)
-                     //.addAction(R.drawable.ic_call_24dp, "", answerAudioPendingIntent)
-                     //.addAction(R.drawable.ic_call_end_24dp, "", declinePendingIntent)
-                     .setContentIntent(openPendingIntent);
+                     .addAction(R.drawable.ic_videocam_24dp, "", PendingIntent.getService(getApplicationContext(), 0, serviceIntentVideo, PendingIntent.FLAG_ONE_SHOT))
+                     .addAction(R.drawable.ic_call_24dp, "", PendingIntent.getService(getApplicationContext(), 0, serviceIntentAudio, PendingIntent.FLAG_ONE_SHOT))
+                     .addAction(R.drawable.ic_call_end_24dp, "", PendingIntent.getService(getApplicationContext(), 0, serviceIntentDecline, PendingIntent.FLAG_ONE_SHOT))
+                     .setContentIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDefault, PendingIntent.FLAG_ONE_SHOT));
 
-         //.setCategory(Notification.CATEGORY_CALL);
-
-         /*
-         // --- Expanded Layout
-         NotificationCompat.InboxStyle inboxStyle = new NotificationCompat.InboxStyle();
-         String[] events = new String[]{"Event-1", "Event-2", "Event-3", "Event-4", "Event-5", "Event-6"};
-         // Sets a title for the Inbox in expanded layout
-         inboxStyle.setBigContentTitle("Event tracker details:");
-         // Moves events into the expanded layout
-         for (int i = 0; i < events.length; i++) {
-
-            inboxStyle.addLine(events[i]);
-         }
-         // Moves the expanded layout object into the notification object.
-         mBuilder.setStyle(inboxStyle);
-         // ~~~ Expanded Layout
-         */
-
-         /*
-         // Creates an explicit intent for an Activity in your app
-         Intent resultIntent = new Intent(activityContext, MainActivity.class);
-
-         // The stack builder object will contain an artificial back stack for the
-         // started Activity.
-         // This ensures that navigating backward from the Activity leads out of
-         // your application to the Home screen.
-         TaskStackBuilder stackBuilder = TaskStackBuilder.create(activityContext);
-         // Adds the back stack for the Intent (but not the Intent itself)
-         stackBuilder.addParentStack(MainActivity.class);
-         // Adds the Intent that starts the Activity to the top of the stack
-         stackBuilder.addNextIntent(resultIntent);
-         PendingIntent resultPendingIntent =
-               stackBuilder.getPendingIntent(
-                     0,
-                     PendingIntent.FLAG_UPDATE_CURRENT
-               );
-         */
-
-         NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+         Notification notification = builder.build();
+         // Add FLAG_INSISTENT so that the notification rings repeatedly (FLAG_INSISTENT is not exposed via builder, let's add manually)
+         notification.flags = notification.flags | Notification.FLAG_INSISTENT;
+         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
          // mId allows you to update the notification later on.
-         mNotificationManager.notify(1, mBuilder.build());
+         notificationManager.notify(NOTIFICATION_ID_CALL, notification);
       }
    }
 
    void handleNotification(Intent intent)
    {
-      //int notificationType = intent.getIntExtra(EXTRA_NOTIFICATION_TYPE, NotificationType.ACCEPT_CALL_VIDEO.ordinal());
+      // The user has acted on the notification, let's cancel it
+      NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+      notificationManager.cancel(NOTIFICATION_ID_CALL);
 
-      if (intent.getAction().equals(ACTION_NOTIFICATION_DEFAULT)) {
+      String intentAction = intent.getAction();
+      if (intentAction.equals(ACTION_NOTIFICATION_CALL_DEFAULT)) {
+         callIntent.setAction(INCOMING_CALL);
+         callIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+         startActivity(callIntent);
+      }
+      else if (intentAction.equals(ACTION_NOTIFICATION_CALL_ACCEPT_VIDEO)) {
          callIntent.setAction(INCOMING_CALL_ANSWER_VIDEO);
          callIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
          startActivity(callIntent);
+      }
+      else if (intentAction.equals(ACTION_NOTIFICATION_CALL_ACCEPT_AUDIO)) {
+         callIntent.setAction(INCOMING_CALL_ANSWER_AUDIO);
+         callIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+         startActivity(callIntent);
+      }
+      else if (intentAction.equals(ACTION_NOTIFICATION_CALL_DECLINE)) {
+         RCConnection pendingConnection = getPendingConnection();
+         if (pendingConnection != null) {
+            pendingConnection.reject();
+         }
+      }
+      else if (intentAction.equals(ACTION_NOTIFICATION_MESSAGE_DEFAULT)) {
+         messageIntent.setAction(INCOMING_MESSAGE);
+         messageIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+         startActivity(messageIntent);
       }
    }
 
@@ -940,7 +945,13 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    {
       RCLogger.i(TAG, "onRegisteringEvent(): id: " + jobId);
       state = DeviceState.OFFLINE;
-      listener.onStopListening(this, RCClient.ErrorCodes.SUCCESS.ordinal(), "Trying to register with Service");
+      if (isServiceAttached) {
+         listener.onStopListening(this, RCClient.ErrorCodes.SUCCESS.ordinal(), "Trying to register with Service");
+      }
+      else {
+         RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onStopListening()");
+      }
+
    }
 
 
@@ -954,18 +965,44 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       String from = peer.replaceAll("^<", "").replaceAll(">$", "");
       //parameters.put(RCConnection.ParameterKeys.CONNECTION_PEER, from);
 
-      try {
-         Intent dataIntent = new Intent();
-         dataIntent.setAction(INCOMING_MESSAGE);
-         //dataIntent.putExtra(INCOMING_MESSAGE_PARAMS, parameters);
-         dataIntent.putExtra(EXTRA_DID, from);
-         dataIntent.putExtra(INCOMING_MESSAGE_TEXT, messageText);
+      if (isServiceAttached) {
+         try {
+            Intent dataIntent = new Intent();
+            dataIntent.setAction(INCOMING_MESSAGE);
+            //dataIntent.putExtra(INCOMING_MESSAGE_PARAMS, parameters);
+            dataIntent.putExtra(EXTRA_DID, from);
+            dataIntent.putExtra(EXTRA_MESSAGE_TEXT, messageText);
 
-         PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, messageIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-         pendingIntent.send(getApplicationContext(), 0, dataIntent);
+            PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, messageIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+            pendingIntent.send(getApplicationContext(), 0, dataIntent);
+         }
+         catch (PendingIntent.CanceledException e) {
+            e.printStackTrace();
+         }
       }
-      catch (PendingIntent.CanceledException e) {
-         e.printStackTrace();
+      else {
+         // Intent to open the call activity (for when tapping on the general notification area)
+         Intent serviceIntentDefault = new Intent(ACTION_NOTIFICATION_MESSAGE_DEFAULT, null, getApplicationContext(), RCDevice.class);
+         serviceIntentDefault.putExtra(EXTRA_MESSAGE_TEXT, messageText);
+
+         // Service is not attached to an activity, let's use a notification instead
+         NotificationCompat.Builder builder =
+               new NotificationCompat.Builder(RCDevice.this)
+                     .setSmallIcon(R.drawable.ic_chat_24dp)
+                     .setContentTitle(peer.replaceAll(".*?sip:", "").replaceAll("@.*$", ""))
+                     .setContentText(messageText)
+                     .setSound(Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.message_sample)) // audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_RINGING)))
+                     // Need this to show up as Heads-up Notification
+                     .setPriority(NotificationCompat.PRIORITY_HIGH)
+                     .setAutoCancel(true)  // cancel notification when user acts on it
+                     .setContentIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDefault, PendingIntent.FLAG_ONE_SHOT));
+
+         Notification notification = builder.build();
+         // Add FLAG_INSISTENT so that the notification rings repeatedly (FLAG_INSISTENT is not exposed via builder, let's add manually)
+         //notification.flags = notification.flags | Notification.FLAG_INSISTENT;
+         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+         // mId allows you to update the notification later on.
+         notificationManager.notify(NOTIFICATION_ID_MESSAGE, notification);
       }
    }
 
@@ -976,7 +1013,14 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       if (status == RCClient.ErrorCodes.SUCCESS) {
       }
       else {
-         listener.onStopListening(this, status.ordinal(), text);
+         if (isServiceAttached) {
+            listener.onStopListening(this, status.ordinal(), text);
+         }
+         else {
+            RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onStopListening(): " +
+                  RCClient.errorText(status));
+         }
+
       }
    }
 
@@ -990,7 +1034,14 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       if (state != DeviceState.OFFLINE && connectivityStatus == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
          state = DeviceState.OFFLINE;
       }
-      listener.onConnectivityUpdate(this, connectivityStatus);
+      if (isServiceAttached) {
+         listener.onConnectivityUpdate(this, connectivityStatus);
+      }
+      else {
+         RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onConnectivityUpdate(): " +
+               connectivityStatus);
+      }
+
    }
 
    // ------ Helpers

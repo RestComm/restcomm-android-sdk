@@ -444,8 +444,14 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
                   @Override
                   public void run()
                   {
-                     listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_ACCEPT_WRONG_STATE.ordinal(),
-                           RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_ACCEPT_WRONG_STATE));
+                     if (device.isAttached()) {
+                        listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_ACCEPT_WRONG_STATE.ordinal(),
+                              RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_ACCEPT_WRONG_STATE));
+                     }
+                     else {
+                        RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onError(): " +
+                              RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_ACCEPT_WRONG_STATE));
+                     }
                   }
                }
                , 1);
@@ -468,8 +474,15 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
                   @Override
                   public void run()
                   {
-                     listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_IGNORE_WRONG_STATE.ordinal(),
-                           RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_IGNORE_WRONG_STATE));
+                     if (device.isAttached()) {
+                        listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_IGNORE_WRONG_STATE.ordinal(),
+                              RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_IGNORE_WRONG_STATE));
+                     }
+                     else {
+                        RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onError(): " +
+                              RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_IGNORE_WRONG_STATE));
+                     }
+
                   }
                }
                , 1);
@@ -505,8 +518,14 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
                   @Override
                   public void run()
                   {
-                     listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_REJECT_WRONG_STATE.ordinal(),
-                           RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_REJECT_WRONG_STATE));
+                     if (device.isAttached()) {
+                        listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_REJECT_WRONG_STATE.ordinal(),
+                              RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_REJECT_WRONG_STATE));
+                     }
+                     else {
+                        RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onError(): " +
+                              RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_REJECT_WRONG_STATE));
+                     }
                   }
                }
                , 1);
@@ -611,8 +630,14 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
                   @Override
                   public void run()
                   {
-                     listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_DTMF_DIGITS_WRONG_STATE.ordinal(),
-                           RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_DTMF_DIGITS_WRONG_STATE));
+                     if (device.isAttached()) {
+                        listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_DTMF_DIGITS_WRONG_STATE.ordinal(),
+                              RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_DTMF_DIGITS_WRONG_STATE));
+                     }
+                     else {
+                        RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onError(): " +
+                              RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_DTMF_DIGITS_WRONG_STATE));
+                     }
                   }
                }
                , 1);
@@ -641,7 +666,12 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       //audioManager.play(R.raw.calling, true);
       audioManager.playCallingSound();
       state = ConnectionState.CONNECTING;
-      listener.onConnecting(this);
+      if (device.isAttached()) {
+         listener.onConnecting(this);
+      }
+      else {
+         RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onConnecting()");
+      }
 
       // Phone state Intents to capture connecting event
       sendQoSConnectionIntent("connecting");
@@ -693,7 +723,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void onCallSentDigitsEvent(String jobId, RCClient.ErrorCodes statusCode, String statusText)
    {
       RCLogger.i(TAG, "onCallSentDigitsEvent(): jobId: " + jobId + ", status: " + statusCode + ", text: " + statusText);
-      listener.onDigitSent(this, statusCode.ordinal(), statusText);
+      if (device.isAttached()) {
+         listener.onDigitSent(this, statusCode.ordinal(), statusText);
+      }
+      else {
+         RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onDigitSent()");
+      }
+
    }
 
    public void onCallErrorEvent(String jobId, RCClient.ErrorCodes errorCode, String errorText)
@@ -715,9 +751,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       this.state = ConnectionState.DISCONNECTED;
       device.removeConnection(jobId);
 
-      if (listener != null) {
+      if (device.isAttached() && listener != null) {
          listener.onDisconnected(this, errorCode.ordinal(), errorText);
       }
+      else {
+         RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onDisconnected()");
+      }
+
    }
 
    // Common disconnect code for local/remote disconnect and remote cancel
@@ -744,7 +784,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          disconnectWebrtc();
       }
 
-      listener.onDisconnected(this);
+      if (device.isAttached()) {
+         listener.onDisconnected(this);
+      }
+      else {
+         RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onDisconnected()");
+      }
+
 
       RCDevice.state = RCDevice.DeviceState.READY;
       this.state = ConnectionState.DISCONNECTED;
@@ -782,8 +828,15 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
                   @Override
                   public void run()
                   {
-                     listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_WRONG_STATE.ordinal(),
-                           RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_WRONG_STATE));
+                     if (device.isAttached()) {
+                        listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_WRONG_STATE.ordinal(),
+                              RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_WRONG_STATE));
+                     }
+                     else {
+                        RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onError(): " +
+                              RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_WRONG_STATE));
+                     }
+
                   }
                }
                , 1);
@@ -852,7 +905,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
                RCDevice.state = RCDevice.DeviceState.READY;
             }
 
-            RCConnection.this.listener.onDisconnected(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_WEBRTC_TURN_ERROR.ordinal(), description);
+            if (device.isAttached()) {
+               RCConnection.this.listener.onDisconnected(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_WEBRTC_TURN_ERROR.ordinal(), description);
+            }
+            else {
+               RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onDisconnected()");
+            }
+
          }
       };
       mainHandler.post(myRunnable);
@@ -918,8 +977,15 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
             handleDisconnect("Device-Permissions-Denied");
 
-            listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_PERMISSION_DENIED.ordinal(),
-                    RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_PERMISSION_DENIED));
+            if (device.isAttached()) {
+               listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_PERMISSION_DENIED.ordinal(),
+                     RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_PERMISSION_DENIED));
+            }
+            else {
+               RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onError(): " +
+                     RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_PERMISSION_DENIED));
+            }
+
 
             if (!isIncoming()) {
                // Only remove connection in outgoing calls where no signaling ever starts (hence we are really done with the connection).
@@ -947,9 +1013,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
          handleDisconnect(reason);
 
-         if (this.listener != null) {
+         if (device.isAttached() && listener != null) {
             this.listener.onDisconnected(this, errorCode.ordinal(), RCClient.errorText(errorCode));
          }
+         else {
+            RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onDisconnected()");
+         }
+
          // Phone state Intents to capture dropped call event
          sendQoSDisconnectErrorIntent(errorCode.ordinal(), RCClient.errorText(errorCode));
       }
@@ -1401,7 +1471,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             if (callParams.containsKey(ParameterKeys.CONNECTION_CUSTOM_INCOMING_SIP_HEADERS)) {
                customHeaders = (HashMap<String, String>) callParams.get(ParameterKeys.CONNECTION_CUSTOM_INCOMING_SIP_HEADERS);
             }
-            listener.onConnected(RCConnection.this, customHeaders);
+            if (device.isAttached()) {
+               listener.onConnected(RCConnection.this, customHeaders);
+            }
+            else {
+               RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onConnected()");
+            }
+
          }
       };
       mainHandler.post(myRunnable);
@@ -1464,9 +1540,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             }
             handleDisconnect(reason);
 
-            if (connection.listener != null) {
+            if (device.isAttached() && connection.listener != null) {
                connection.listener.onDisconnected(connection, RCClient.ErrorCodes.ERROR_CONNECTION_WEBRTC_PEERCONNECTION_ERROR.ordinal(), description);
             }
+            else {
+               RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onDisconnected()");
+            }
+
             // Phone state Intents to capture dropped call event
             sendQoSDisconnectErrorIntent(RCClient.ErrorCodes.ERROR_CONNECTION_WEBRTC_PEERCONNECTION_ERROR.ordinal(), description);
          }
@@ -1484,7 +1564,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             RCLogger.i(TAG, "onLocalVideo");
             localVideoReceived = true;
             updateVideoView(VideoViewState.LOCAL_VIEW_RECEIVED);
-            listener.onLocalVideo(RCConnection.this);
+            if (device.isAttached()) {
+               listener.onLocalVideo(RCConnection.this);
+            }
+            else {
+               RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onLocalVideo()");
+            }
+
          }
       };
       mainHandler.post(myRunnable);
@@ -1500,7 +1586,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             RCLogger.i(TAG, "onRemoteVideo");
             remoteVideoReceived = true;
             updateVideoView(VideoViewState.REMOTE_VIEW_RECEIVED);
-            listener.onRemoteVideo(RCConnection.this);
+            if (device.isAttached()) {
+               listener.onRemoteVideo(RCConnection.this);
+            }
+            else {
+               RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onRemoteVideo()");
+            }
+
          }
       };
       mainHandler.post(myRunnable);
