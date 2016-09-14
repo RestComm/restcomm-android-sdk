@@ -275,11 +275,13 @@ public class MainActivity extends AppCompatActivity
       //retrieveContactsArray();
 
       if (action == ActionFragment.ActionType.ACTION_TYPE_VIDEO_CALL) {
+         //Intent intent = new Intent(RCDevice.ACTION_INCOMING_CALL, null, getApplicationContext(), CallActivity.class);
          Intent intent = new Intent(this, CallActivity.class);
          intent.setAction(RCDevice.ACTION_OUTGOING_CALL);
          intent.putExtra(RCDevice.EXTRA_DID, sipuri);
          intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, true);
          startActivityForResult(intent, CONNECTION_REQUEST);
+         //startActivityForResult(intent, CONNECTION_REQUEST);
       }
       if (action == ActionFragment.ActionType.ACTION_TYPE_AUDIO_CALL) {
          Intent intent = new Intent(this, CallActivity.class);

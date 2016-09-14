@@ -235,8 +235,13 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
     @Override
     public void onNewIntent(Intent intent)
     {
+        Log.i(TAG, "%% onNewIntent");
         super.onNewIntent(intent);
         setIntent(intent);
+
+        if (intent.getAction().equals(RCDevice.ACTION_CALL_DISCONNECT)) {
+            finish();
+        }
     }
 
 

@@ -762,7 +762,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    // Common disconnect code for local/remote disconnect and remote cancel
    // If this is called after we have disconnected locally (i.e. RCConnection.disconnect() was called) we
-   // don't need to media
+   // don't need to disconnect media
    private void handleDisconnected(String jobId, boolean haveDisconnectedLocally)
    {
       // IMPORTANT: we 're first notifying listener and then setting new state because we want the listener to be able to
@@ -783,6 +783,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          // disconnect and when the remote party does
          disconnectWebrtc();
       }
+
+      device.stopForegroundNotification(this);
 
       if (listener != null && device.isAttached()) {
          listener.onDisconnected(this);
@@ -1472,6 +1474,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
                customHeaders = (HashMap<String, String>) callParams.get(ParameterKeys.CONNECTION_CUSTOM_INCOMING_SIP_HEADERS);
             }
             if (device.isAttached()) {
+               device.startForegroundNotification(RCConnection.this);
                listener.onConnected(RCConnection.this, customHeaders);
             }
             else {

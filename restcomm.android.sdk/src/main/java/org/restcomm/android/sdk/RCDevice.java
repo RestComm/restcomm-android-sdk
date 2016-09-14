@@ -1,5 +1,7 @@
 package org.restcomm.android.sdk;
 
+import android.app.Activity;
+import android.app.Application;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -9,6 +11,7 @@ import android.content.Intent;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Bundle;
 import android.os.IBinder;
 import android.service.notification.StatusBarNotification;
 import android.support.v4.app.NotificationCompat;
@@ -130,7 +133,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
    private static final String TAG = "RCDevice";
 
-   // Service Intent actions
+   // Service Intent actions sent from RCDevice Service -> Call Activity
    public static String ACTION_OUTGOING_CALL = "org.restcomm.android.sdk.ACTION_OUTGOING_CALL";
    public static String ACTION_INCOMING_CALL = "org.restcomm.android.sdk.ACTION_INCOMING_CALL";
    public static String ACTION_INCOMING_CALL_ANSWER_AUDIO = "org.restcomm.android.sdk.ACTION_INCOMING_CALL_ANSWER_AUDIO";
@@ -138,9 +141,15 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    public static String ACTION_INCOMING_CALL_DECLINE = "org.restcomm.android.sdk.ACTION_INCOMING_CALL_DECLINE";
    public static String ACTION_OPEN_MESSAGE_SCREEN = "org.restcomm.android.sdk.ACTION_OPEN_MESSAGE_SCREEN";
    public static String ACTION_INCOMING_MESSAGE = "org.restcomm.android.sdk.ACTION_INCOMING_MESSAGE";
+   public static String ACTION_CALL_DISCONNECT = "org.restcomm.android.sdk.ACTION_CALL_DISCONNECT";
 
    // Intents sent by Notification subsystem -> RCDevice Service when user acts on the Notifications
+   // Used when user taps in a missed call, where we want it to trigger a new call towards the caller
    public static String ACTION_NOTIFICATION_CALL_DEFAULT = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_DEFAULT";
+   // Used when there's an active call and a foreground notification, and hence the user wants to go back the existing call activity without doing anything else
+   public static String ACTION_NOTIFICATION_CALL_OPEN = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_OPEN";
+   // Used when there's an active call and a foreground notification, and the user wants to disconnect
+   public static String ACTION_NOTIFICATION_CALL_DISCONNECT = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_DISCONNECT";
    // User deleted the notification (by swiping on the left/right, or deleting all notifications)
    public static String ACTION_NOTIFICATION_CALL_DELETE = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_DELETE";
    public static String ACTION_NOTIFICATION_CALL_ACCEPT_VIDEO = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_ACCEPT_VIDEO";
@@ -148,6 +157,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    public static String ACTION_NOTIFICATION_CALL_DECLINE = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_DECLINE";
    public static String ACTION_NOTIFICATION_MESSAGE_DEFAULT = "org.restcomm.android.sdk.ACTION_NOTIFICATION_MESSAGE_DEFAULT";
 
+   // Intent EXTRAs keys
    public static String EXTRA_MESSAGE_TEXT = "org.restcomm.android.sdk.EXTRA_MESSAGE_TEXT";
    public static String EXTRA_DID = "org.restcomm.android.sdk.EXTRA_DID";
    public static String EXTRA_CUSTOM_HEADERS = "org.restcomm.android.sdk.CUSTOM_HEADERS";
@@ -161,8 +171,10 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    // too much value, at least for now
    private HashMap<String, Integer> callNotifications;
    private HashMap<String, Integer> messageNotifications;
-   // Unique notification id (incremented for each new notification)
-   private int notificationId = 1;
+
+   private final int ONCALL_NOTIFICATION_ID = 1;
+   // Unique notification id (incremented for each new notification). Notice that '1' is reserved for RCConnection.ONCALL_NOTIFICATION_ID
+   private int notificationId = 2;
    //private final int NOTIFICATION_ID_CALL = 1;
    //private final int NOTIFICATION_ID_MESSAGE = 2;
    // is an incoming call ringing, triggered by the Notification subsystem?
@@ -171,6 +183,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    long[] notificationVibrationPattern = { 0, 300, 300, 300, 300 };
    int notificationColor =  Color.parseColor("#3c5866");
    int[] notificationColorPattern = { 2000, 2000 };
+   private boolean foregroundNoticationActive = false;
 
    //public static String EXTRA_NOTIFICATION_ACTION_TYPE = "org.restcomm.android.sdk.NOTIFICATION_ACTION_TYPE";
    //public static String EXTRA_SDP = "com.telestax.restcomm_messenger.SDP";
@@ -236,18 +249,27 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       // Runs whenever the user calls startService()
       Log.i(TAG, "%% onStartCommand");
 
+      if (intent == null) {
+         // TODO: this might be an issue, if it happens often. If the service is killed all context will be lost, so it won't
+         // be able to automatically re-initialize. The only possible way to avoid this would be to return START_REDELIVER_INTENT
+         // but then we would need to retrieve the parameters the Service was started with, and for that we 'd need to pack
+         // all parameters inside the original intent. something which I tried but failed back when I implemented backgrounding,
+         // and main reason was that I wasn't able to pack other intents in that Intent
+         Log.e(TAG, "%% onStartCommand after having been killed");
+      }
 
       if (intent != null && intent.getAction() != null) {
          String intentAction = intent.getAction();
          // if action originates at Notification subsystem, need to handle it
          if (intentAction.equals(ACTION_NOTIFICATION_CALL_DEFAULT) || intentAction.equals(ACTION_NOTIFICATION_CALL_ACCEPT_VIDEO) ||
                intentAction.equals(ACTION_NOTIFICATION_CALL_ACCEPT_AUDIO) || intentAction.equals(ACTION_NOTIFICATION_CALL_DECLINE) ||
-               intentAction.equals(ACTION_NOTIFICATION_CALL_DELETE) || intentAction.equals(ACTION_NOTIFICATION_MESSAGE_DEFAULT)) {
+               intentAction.equals(ACTION_NOTIFICATION_CALL_DELETE) || intentAction.equals(ACTION_NOTIFICATION_MESSAGE_DEFAULT) ||
+               intentAction.equals(ACTION_NOTIFICATION_CALL_OPEN) || intentAction.equals(ACTION_NOTIFICATION_CALL_DISCONNECT)) {
             handleNotification(intent);
          }
       }
 
-      // If we get killed, after returning from here, restart
+      // If we get killed (usually due to memory pressure), after returning from here, restart
       return START_STICKY;
    }
 
@@ -390,6 +412,52 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
          callNotifications = new HashMap<>();
          messageNotifications = new HashMap<>();
+
+         /* Used for debugging purposes
+         getApplication().registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
+            @Override
+            public void onActivityCreated(Activity activity, Bundle bundle)
+            {
+               RCLogger.e(TAG, activity.getClass().getName() + ".onActivityCreated()");
+            }
+
+            @Override
+            public void onActivityStarted(Activity activity)
+            {
+               RCLogger.e(TAG, activity.getClass().getName() + ".onActivityStarted()");
+            }
+
+            @Override
+            public void onActivityResumed(Activity activity)
+            {
+               RCLogger.e(TAG, activity.getClass().getName() + ".onActivityResumed()");
+            }
+
+            @Override
+            public void onActivityPaused(Activity activity)
+            {
+               RCLogger.e(TAG, activity.getClass().getName() + ".onActivityPaused()");
+            }
+
+            @Override
+            public void onActivityStopped(Activity activity)
+            {
+               RCLogger.e(TAG, activity.getClass().getName() + ".onActivityStopped()");
+            }
+
+            @Override
+            public void onActivitySaveInstanceState(Activity activity, Bundle bundle)
+            {
+               RCLogger.e(TAG, activity.getClass().getName() + ".onActivitySaveInstanceState()");
+            }
+
+            @Override
+            public void onActivityDestroyed(Activity activity)
+            {
+               RCLogger.e(TAG, activity.getClass().getName() + ".onActivityDestroyed()");
+            }
+         });
+         */
 
          return true;
       }
@@ -1001,7 +1069,10 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    {
       String intentAction = intent.getAction();
 
-      if (!intentAction.equals(ACTION_NOTIFICATION_MESSAGE_DEFAULT)) {
+      //if (!intentAction.equals(ACTION_NOTIFICATION_MESSAGE_DEFAULT)) {
+      if (intentAction.equals(ACTION_NOTIFICATION_CALL_DEFAULT) || intentAction.equals(ACTION_NOTIFICATION_CALL_ACCEPT_VIDEO) ||
+            intentAction.equals(ACTION_NOTIFICATION_CALL_ACCEPT_AUDIO) || intentAction.equals(ACTION_NOTIFICATION_CALL_DECLINE) ||
+            intentAction.equals(ACTION_NOTIFICATION_CALL_DELETE)) {
          // The user has acted on a call notification, let's cancel it
          String username = intent.getStringExtra(EXTRA_DID).replaceAll(".*?sip:", "").replaceAll("@.*$", "");
 
@@ -1014,7 +1085,22 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
 
       Intent actionIntent = null;
-      if (intentAction.equals(ACTION_NOTIFICATION_CALL_DEFAULT)) {
+      if (intentAction.equals(ACTION_NOTIFICATION_CALL_OPEN)) {
+         RCConnection connection = getLiveConnection();
+         if (connection != null) {
+            if (connection.isIncoming()) {
+               callIntent.setAction(ACTION_INCOMING_CALL);
+            }
+            else {
+               callIntent.setAction(ACTION_OUTGOING_CALL);
+            }
+            callIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            // don't forget to copy the extras to callIntent
+            callIntent.putExtras(intent);
+            actionIntent = callIntent;
+         }
+      }
+      else if (intentAction.equals(ACTION_NOTIFICATION_CALL_DEFAULT)) {
          callIntent.setAction(ACTION_INCOMING_CALL);
          // don't forget to copy the extras to callIntent
          callIntent.putExtras(intent);
@@ -1039,6 +1125,17 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          }
          // if the call has been requested to be declined, we shouldn't do any UI handling
          return;
+      }
+      else if (intentAction.equals(ACTION_NOTIFICATION_CALL_DISCONNECT)) {
+         RCConnection liveConnection = getLiveConnection();
+         if (liveConnection != null) {
+            liveConnection.disconnect();
+         }
+         // if the call has been requested to be disconnected, we shouldn't do any UI handling
+         // TODOOOOOOOOOO: 
+         callIntent.setAction(ACTION_CALL_DISCONNECT);
+         callIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+         actionIntent = callIntent;
       }
       else if (intentAction.equals(ACTION_NOTIFICATION_MESSAGE_DEFAULT)) {
          messageIntent.setAction(ACTION_INCOMING_MESSAGE);
@@ -1066,7 +1163,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
    }
 
-
    public void onRegisteringEvent(String jobId)
    {
       RCLogger.i(TAG, "onRegisteringEvent(): id: " + jobId);
@@ -1080,7 +1176,51 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
    }
 
-   public void cancelNotificationSoundIfNeeded(RCConnection connection)
+   public void startForegroundNotification(RCConnection connection)
+   {
+      if (!foregroundNoticationActive) {
+         foregroundNoticationActive = true;
+         String peerUsername = connection.getPeer().replaceAll(".*?sip:", "").replaceAll("@.*$", "");
+         //NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+         //notificationManager.cancel(callNotifications.get(peerUsername));
+
+         callIntent.setAction(ACTION_OUTGOING_CALL);
+         callIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+         /*
+         // Intent to open the call activity (for when tapping on the general notification area)
+         Intent serviceIntentDefault = new Intent(ACTION_NOTIFICATION_CALL_OPEN, null, getApplicationContext(), RCDevice.class);
+         serviceIntentDefault.putExtra(RCDevice.EXTRA_DID, connection.getPeer());
+         serviceIntentDefault.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, (connection.getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO));
+         */
+
+         // Intent to decline the call without opening the App Activity
+         Intent serviceIntentDisconnect = new Intent(ACTION_NOTIFICATION_CALL_DISCONNECT, null, getApplicationContext(), RCDevice.class);
+         //serviceIntentDecline.putExtras(serviceIntentDefault);
+
+         // Service is not attached to an activity, let's use a notification instead
+         NotificationCompat.Builder builder =
+               new NotificationCompat.Builder(RCDevice.this)
+                     .setSmallIcon(R.drawable.ic_phone_in_talk_24dp)
+                     .setContentTitle(peerUsername)
+                     .setContentText("Tap to return to call")
+                     .addAction(R.drawable.ic_call_end_24dp, "Hang up", PendingIntent.getService(getApplicationContext(), 0, serviceIntentDisconnect, PendingIntent.FLAG_ONE_SHOT))
+                     .setContentIntent(PendingIntent.getActivity(getApplicationContext(), 0, callIntent, PendingIntent.FLAG_ONE_SHOT));
+
+         //Notification notification = builder.build();
+         startForeground(ONCALL_NOTIFICATION_ID, builder.build());
+      }
+   }
+
+   public void stopForegroundNotification(RCConnection connection)
+   {
+      if (foregroundNoticationActive) {
+         stopForeground(true);
+         foregroundNoticationActive = false;
+      }
+   }
+
+      public void cancelNotificationSoundIfNeeded(RCConnection connection)
    {
       if (activeCallNotification) {
          // Peer has canceled the call and there's an active call ringing, we need to cancel the notification
