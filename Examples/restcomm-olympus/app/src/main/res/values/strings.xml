@@ -70,7 +70,7 @@
     <string name="pref_ringtone_silent">Silent</string>
 
     <string name="pref_title_vibrate">Vibrate</string>
-    <string name="title_activity_signin">Restcomm Olympus Sign in</string>
+    <string name="title_activity_signin">Restcomm Olympus</string>
 
     <!-- Strings related to login -->
     <string name="prompt_email">Email</string>

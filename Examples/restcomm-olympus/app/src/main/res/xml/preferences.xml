@@ -21,7 +21,7 @@
         android:title="Domain"
         android:summary="Restcomm-Connect domain, like: 'cloud.restcomm.com'"/>
     <CheckBoxPreference
-        android:defaultValue="false"
+        android:defaultValue="true"
         android:key="signaling-secure"
         android:title="Secure Signaling"
         android:summary="Encrypt signaling communications (notice that media communications are always encrypted so no need for an extra option)"/>

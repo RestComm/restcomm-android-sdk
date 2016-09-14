@@ -709,6 +709,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void onCallIncomingCanceledEvent(String jobId)
    {
       RCLogger.i(TAG, "onCallIncomingCanceledEvent(): jobId: " + jobId);
+      device.cancelNotificationSoundIfNeeded(this);
       handleDisconnected(jobId, false);
    }
 
@@ -783,11 +784,11 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          disconnectWebrtc();
       }
 
-      if (device.isAttached()) {
+      if (listener != null && device.isAttached()) {
          listener.onDisconnected(this);
       }
       else {
-         RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onDisconnected()");
+         RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached or listener not set: onDisconnected()");
       }
 
 

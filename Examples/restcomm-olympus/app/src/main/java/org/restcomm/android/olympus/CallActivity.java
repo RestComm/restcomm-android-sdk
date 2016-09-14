@@ -232,6 +232,14 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         }
     }
 
+    @Override
+    public void onNewIntent(Intent intent)
+    {
+        super.onNewIntent(intent);
+        setIntent(intent);
+    }
+
+
     // Callbacks for service binding, passed to bindService()
     @Override
     public void onServiceConnected(ComponentName className, IBinder service)
@@ -277,8 +285,9 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
             connectParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
             connectParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
             connectParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
-            // by default we use VP8 for video as it tends to be more adopted, but you can override that and specify VP9 as follows:
+            // by default we use VP8 for video as it tends to be more adopted, but you can override that and specify VP9 or H264 as follows:
             //connectParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC, "VP9");
+            //connectParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC, "H264");
 
             // *** if you want to add custom SIP headers, please uncomment this
             //HashMap<String, String> sipHeaders = new HashMap<>();

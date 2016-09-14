@@ -30,6 +30,7 @@
         <include layout="@layout/fragment_main" />
     </FrameLayout>
 
+    <!--
     <ImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -38,7 +39,20 @@
         android:background="@android:color/transparent"
         android:layout_margin="@dimen/fab_margin"
         android:layout_gravity="bottom|end" />
+        -->
 
+    <android.support.design.widget.FloatingActionButton
+        android:id="@+id/imageButton_add"
+        android:src="@drawable/ic_add_24dp"
+        app:fabSize="normal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/fab_margin"
+        android:layout_gravity="bottom|end"
+        android:clickable="true"
+        app:backgroundTint="@color/colorPrimary"
+        android:tint="@color/colorButtonWhite"
+        />
     <!--
     <android.support.design.widget.FloatingActionButton
         android:id="@+id/fab"

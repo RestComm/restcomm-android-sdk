@@ -35,6 +35,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -71,7 +72,7 @@ public class MainActivity extends AppCompatActivity
    private AlertDialog alertDialog;
    private RCConnectivityStatus previousConnectivityStatus = RCConnectivityStatus.RCConnectivityStatusNone;
    private static final String APP_VERSION = "Restcomm Android Olympus Client " + BuildConfig.VERSION_NAME + "#" + BuildConfig.VERSION_CODE; //"Restcomm Android Olympus Client 1.0.0-BETA4#20";
-   ImageButton btnAdd;
+   FloatingActionButton btnAdd;
 
    private static final int CONNECTION_REQUEST = 1;
 
@@ -93,7 +94,7 @@ public class MainActivity extends AppCompatActivity
 
       listFragment = (MainFragment) getSupportFragmentManager().findFragmentById(R.id.item_list);
 
-      btnAdd = (ImageButton) findViewById(R.id.imageButton_add);
+      btnAdd = (FloatingActionButton) findViewById(R.id.imageButton_add);
       btnAdd.setOnClickListener(this);
 
       alertDialog = new AlertDialog.Builder(MainActivity.this).create();

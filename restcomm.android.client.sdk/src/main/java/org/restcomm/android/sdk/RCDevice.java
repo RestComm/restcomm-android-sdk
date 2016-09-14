@@ -6,10 +6,13 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.net.Uri;
 import android.os.Binder;
 import android.os.IBinder;
+import android.service.notification.StatusBarNotification;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
 
 import org.restcomm.android.sdk.MediaClient.AppRTCAudioManager;
@@ -23,6 +26,34 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
+/**
+ * <p>RCDevice represents an abstraction of a communications device able to make and receive calls, send and receive messages etc. Remember that
+ * in order to be notified of Restcomm Client events you need to set a listener to RCDevice and implement the applicable methods, and also 'register'
+ * to the applicable intents by calling RCDevice.setPendingIntents() and provide one intent for whichever activity will be receiving calls and another
+ * intent for the activity receiving messages.
+ * If you want to initiate a media connection towards another party you use RCDevice.connect() which returns an RCConnection object representing
+ * the new outgoing connection. From then on you can act on the new connection by applying RCConnection methods on the handle you got from RCDevice.connect().
+ * If there is an incoming connection you will be receiving an intent with action 'RCDevice.INCOMING_CALL', and with it you will get:
+ * <ol>
+ *    <li>The calling party id via string extra named RCDevice.EXTRA_DID, like: <i>intent.getStringExtra(RCDevice.EXTRA_DID)</i></li>
+ *    <li>Whether the incoming call has video enabled via boolean extra named RCDevice.EXTRA_VIDEO_ENABLED, like:
+ *       <i>intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false)</i></li>
+ *    <li>Restcomm parameters via serializable extra named RCDevice.EXTRA_CUSTOM_HEADERS, like: <i>intent.getSerializableExtra(RCDevice.EXTRA_CUSTOM_HEADERS)</i>
+ *    where you need to cast the result to HashMap<String, String> where each entry is a Restcomm parameter with key and value of type string
+ *    (for example you will find the Restcomm Call-Sid under 'X-RestComm-CallSid' key).</li>
+ * </ol>
+ * At that point you can use RCConnection methods to accept or reject the connection.
+ * </p>
+ * <p>
+ * As far as instant messages are concerned you can send a message using RCDevice.sendMessage() and you will be notified of an incoming message
+ * through an intent with action 'RCDevice.INCOMING_MESSAGE'. For an incoming message you can retrieve:
+ * <ol>
+ *    <li>The sending party id via string extra named RCDevice.EXTRA_DID, like: <i>intent.getStringExtra(RCDevice.EXTRA_DID)</i></li>
+ *    <li>The actual message text via string extra named RCDevice.INCOMING_MESSAGE_TEXT, like: <i>intent.getStringExtra(RCDevice.INCOMING_MESSAGE_TEXT)</i></li>
+ * </ol>
+ * </p>
+ * @see RCConnection
+ */
 public class RCDevice extends Service implements SignalingClient.SignalingClientListener {
    /**
     * Device state
@@ -110,6 +141,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
    // Intents sent by Notification subsystem -> RCDevice Service when user acts on the Notifications
    public static String ACTION_NOTIFICATION_CALL_DEFAULT = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_DEFAULT";
+   // User deleted the notification (by swiping on the left/right, or deleting all notifications)
+   public static String ACTION_NOTIFICATION_CALL_DELETE = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_DELETE";
    public static String ACTION_NOTIFICATION_CALL_ACCEPT_VIDEO = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_ACCEPT_VIDEO";
    public static String ACTION_NOTIFICATION_CALL_ACCEPT_AUDIO = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_ACCEPT_AUDIO";
    public static String ACTION_NOTIFICATION_CALL_DECLINE = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_DECLINE";
@@ -119,10 +152,25 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    public static String EXTRA_DID = "org.restcomm.android.sdk.EXTRA_DID";
    public static String EXTRA_CUSTOM_HEADERS = "org.restcomm.android.sdk.CUSTOM_HEADERS";
    public static String EXTRA_VIDEO_ENABLED = "org.restcomm.android.sdk.VIDEO_ENABLED";
+   //public static String EXTRA_ACCEPT_WITH_VIDEO = "org.restcomm.android.sdk.EXTRA_ACCEPT_WITH_VIDEO";
 
-   // Notification ids for calls and mesages
-   private final int NOTIFICATION_ID_CALL = 1;
-   private final int NOTIFICATION_ID_MESSAGE = 2;
+   // Notification ids for calls and messages. Key is the sender and value in the notification id. We mainly need those
+   // to make sure that notifications from a specific user are shown in a single slot, to avoid confusing the user. This means
+   // that after we add a user in one of the maps they are never removed. Reason is there's a lot of overhead needed of
+   // passing all intents back to RCDevice service even for messages and missed calls which are auto-answered, with not
+   // too much value, at least for now
+   private HashMap<String, Integer> callNotifications;
+   private HashMap<String, Integer> messageNotifications;
+   // Unique notification id (incremented for each new notification)
+   private int notificationId = 1;
+   //private final int NOTIFICATION_ID_CALL = 1;
+   //private final int NOTIFICATION_ID_MESSAGE = 2;
+   // is an incoming call ringing, triggered by the Notification subsystem?
+   private boolean activeCallNotification = false;
+   // Numbers here refer to: delay duration, on duration 1, off duration 1, on duration 2, off duration2, ...
+   long[] notificationVibrationPattern = { 0, 300, 300, 300, 300 };
+   int notificationColor =  Color.parseColor("#3c5866");
+   int[] notificationColorPattern = { 2000, 2000 };
 
    //public static String EXTRA_NOTIFICATION_ACTION_TYPE = "org.restcomm.android.sdk.NOTIFICATION_ACTION_TYPE";
    //public static String EXTRA_SDP = "com.telestax.restcomm_messenger.SDP";
@@ -190,7 +238,13 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
 
       if (intent != null && intent.getAction() != null) {
-         handleNotification(intent);
+         String intentAction = intent.getAction();
+         // if action originates at Notification subsystem, need to handle it
+         if (intentAction.equals(ACTION_NOTIFICATION_CALL_DEFAULT) || intentAction.equals(ACTION_NOTIFICATION_CALL_ACCEPT_VIDEO) ||
+               intentAction.equals(ACTION_NOTIFICATION_CALL_ACCEPT_AUDIO) || intentAction.equals(ACTION_NOTIFICATION_CALL_DECLINE) ||
+               intentAction.equals(ACTION_NOTIFICATION_CALL_DELETE) || intentAction.equals(ACTION_NOTIFICATION_MESSAGE_DEFAULT)) {
+            handleNotification(intent);
+         }
       }
 
       // If we get killed, after returning from here, restart
@@ -333,6 +387,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          // MODE_IN_COMMUNICATION for best possible VoIP performance.
          RCLogger.d(TAG, "Initializing the audio manager...");
          audioManager.init(parameters);
+
+         callNotifications = new HashMap<>();
+         messageNotifications = new HashMap<>();
 
          return true;
       }
@@ -806,13 +863,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
    }
 
-   /*
-   public void onCallReply(String jobId, RCClient.ErrorCodes status, String text)
-   {
-
-   }
-   */
-
    public void onMessageReply(String jobId, RCClient.ErrorCodes status, String text)
    {
       RCLogger.i(TAG, "onMessageReply(): id: " + jobId + ", status: " + status + ", text: " + text);
@@ -832,10 +882,14 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    {
       RCLogger.i(TAG, "onCallArrivedEvent(): id: " + jobId + ", peer: " + peer);
 
+      // filter out potential '<' and '>' and leave just the SIP URI
+      String peerSipUri = peer.replaceAll("^<", "").replaceAll(">$", "");
+      String peerUsername = peerSipUri.replaceAll(".*?sip:", "").replaceAll("@.*$", "");
+
       RCConnection connection = new RCConnection.Builder(true, RCConnection.ConnectionState.CONNECTING, this, signalingClient, audioManager)
             .jobId(jobId)
             .incomingCallSdp(sdpOffer)
-            .peer(peer)
+            .peer(peerSipUri)
             .build();
 
       // keep connection in the connections hashmap
@@ -846,23 +900,24 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       if (isServiceAttached) {
          // Service is attached to an activity, let's send the intent normally that will open the call activity
          audioManager.playRingingSound();
-         try {
-            Intent dataIntent = new Intent();
-            dataIntent.setAction(ACTION_INCOMING_CALL);
-            dataIntent.putExtra(RCDevice.EXTRA_DID, peer);
-            dataIntent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, (connection.getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO));
-            if (customHeaders != null) {
-               dataIntent.putExtra(RCDevice.EXTRA_CUSTOM_HEADERS, customHeaders);
-            }
-            PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, callIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-            pendingIntent.send(getApplicationContext(), 0, dataIntent);
 
-            // Phone state Intents to capture incoming phone call event
-            sendQoSIncomingConnectionIntent(peer, connection);
+         callIntent.setAction(ACTION_INCOMING_CALL);
+         callIntent.putExtra(RCDevice.EXTRA_DID, peerSipUri);
+         callIntent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, (connection.getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO));
+         if (customHeaders != null) {
+            callIntent.putExtra(RCDevice.EXTRA_CUSTOM_HEADERS, customHeaders);
+         }
+         //startActivity(callIntent);
+         PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, callIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+         try {
+            pendingIntent.send();
          }
          catch (PendingIntent.CanceledException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Pending Intent cancelled", e);
          }
+
+         // Phone state Intents to capture incoming phone call event
+         sendQoSIncomingConnectionIntent(peerSipUri, connection);
       }
       else {
          String text;
@@ -875,69 +930,139 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
          // Intent to open the call activity (for when tapping on the general notification area)
          Intent serviceIntentDefault = new Intent(ACTION_NOTIFICATION_CALL_DEFAULT, null, getApplicationContext(), RCDevice.class);
-         // Intent to directly answer the call as video
+         serviceIntentDefault.putExtra(RCDevice.EXTRA_DID, peerSipUri);
+         serviceIntentDefault.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, (connection.getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO));
+         if (customHeaders != null) {
+            serviceIntentDefault.putExtra(RCDevice.EXTRA_CUSTOM_HEADERS, customHeaders);
+         }
+
+         // Intent to directly answer the call as video (using separate actions instead of EXTRAs, cause with EXTRAs the intents aren't actually differentiated: see PendingIntent reference documentation)
          Intent serviceIntentVideo = new Intent(ACTION_NOTIFICATION_CALL_ACCEPT_VIDEO, null, getApplicationContext(), RCDevice.class);
+         serviceIntentVideo.putExtras(serviceIntentDefault);
+
          // Intent to directly answer the call as audio
          Intent serviceIntentAudio = new Intent(ACTION_NOTIFICATION_CALL_ACCEPT_AUDIO, null, getApplicationContext(), RCDevice.class);
+         serviceIntentAudio.putExtras(serviceIntentDefault);
+
          // Intent to decline the call without opening the App Activity
          Intent serviceIntentDecline = new Intent(ACTION_NOTIFICATION_CALL_DECLINE, null, getApplicationContext(), RCDevice.class);
+         serviceIntentDecline.putExtras(serviceIntentDefault);
+
+         // Intent for when the user deletes notification
+         Intent serviceIntentDelete = new Intent(ACTION_NOTIFICATION_CALL_DELETE, null, getApplicationContext(), RCDevice.class);
+         serviceIntentDelete.putExtras(serviceIntentDefault);
 
          // Service is not attached to an activity, let's use a notification instead
          NotificationCompat.Builder builder =
                new NotificationCompat.Builder(RCDevice.this)
                      .setSmallIcon(R.drawable.ic_call_24dp)
-                     .setContentTitle(peer.replaceAll(".*?sip:", "").replaceAll("@.*$", ""))
+                     .setContentTitle(peerUsername)
                      .setContentText(text)
-                     .setSound(Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.ringing_sample)) // audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_RINGING)))
+                     .setSound(Uri.parse("android.resource://" + getPackageName() + "/" + audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_RINGING)))
                      // Need this to show up as Heads-up Notification
                      .setPriority(NotificationCompat.PRIORITY_HIGH)
-                     .setAutoCancel(true)  // cancel notification when user acts on it
+                     .setAutoCancel(true)  // cancel notification when user acts on it (Important: only applies to default notification area, not additional actions)
                      .addAction(R.drawable.ic_videocam_24dp, "", PendingIntent.getService(getApplicationContext(), 0, serviceIntentVideo, PendingIntent.FLAG_ONE_SHOT))
                      .addAction(R.drawable.ic_call_24dp, "", PendingIntent.getService(getApplicationContext(), 0, serviceIntentAudio, PendingIntent.FLAG_ONE_SHOT))
                      .addAction(R.drawable.ic_call_end_24dp, "", PendingIntent.getService(getApplicationContext(), 0, serviceIntentDecline, PendingIntent.FLAG_ONE_SHOT))
-                     .setContentIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDefault, PendingIntent.FLAG_ONE_SHOT));
+                     .setVibrate(notificationVibrationPattern)
+                     .setLights(notificationColor, notificationColorPattern[0], notificationColorPattern[1])
+                     .setContentIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDefault, PendingIntent.FLAG_ONE_SHOT))
+                     .setDeleteIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDelete, PendingIntent.FLAG_ONE_SHOT));
 
          Notification notification = builder.build();
          // Add FLAG_INSISTENT so that the notification rings repeatedly (FLAG_INSISTENT is not exposed via builder, let's add manually)
-         notification.flags = notification.flags | Notification.FLAG_INSISTENT;
+         //notification.flags = notification.flags | Notification.FLAG_INSISTENT;
+
+         boolean notificationIdExists = true;
+         Integer activeNotificationId = callNotifications.get(peerUsername);
+         if (activeNotificationId == null) {
+            // get new notification id
+            activeNotificationId = notificationId;
+            notificationIdExists = false;
+         }
+
          NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
          // mId allows you to update the notification later on.
-         notificationManager.notify(NOTIFICATION_ID_CALL, notification);
+         notificationManager.notify(activeNotificationId, notification);
+
+         if (!notificationIdExists) {
+            // We used a new notification id, so we need to update call notifications
+            callNotifications.put(peerUsername, notificationId);
+            notificationId++;
+         }
+
+         activeCallNotification = true;
       }
    }
 
+   // Handles intents from the Notifications subsystem and sends them to UI entities for processing if applicable
    void handleNotification(Intent intent)
    {
-      // The user has acted on the notification, let's cancel it
-      NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-      notificationManager.cancel(NOTIFICATION_ID_CALL);
-
       String intentAction = intent.getAction();
+
+      if (!intentAction.equals(ACTION_NOTIFICATION_MESSAGE_DEFAULT)) {
+         // The user has acted on a call notification, let's cancel it
+         String username = intent.getStringExtra(EXTRA_DID).replaceAll(".*?sip:", "").replaceAll("@.*$", "");
+
+         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+         notificationManager.cancel(callNotifications.get(username));
+
+         //callNotifications.remove(username);
+
+         activeCallNotification = false;
+      }
+
+      Intent actionIntent = null;
       if (intentAction.equals(ACTION_NOTIFICATION_CALL_DEFAULT)) {
          callIntent.setAction(ACTION_INCOMING_CALL);
-         callIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-         startActivity(callIntent);
+         // don't forget to copy the extras to callIntent
+         callIntent.putExtras(intent);
+         actionIntent = callIntent;
       }
       else if (intentAction.equals(ACTION_NOTIFICATION_CALL_ACCEPT_VIDEO)) {
          callIntent.setAction(ACTION_INCOMING_CALL_ANSWER_VIDEO);
-         callIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-         startActivity(callIntent);
+         // don't forget to copy the extras
+         callIntent.putExtras(intent);
+         actionIntent = callIntent;
       }
       else if (intentAction.equals(ACTION_NOTIFICATION_CALL_ACCEPT_AUDIO)) {
          callIntent.setAction(ACTION_INCOMING_CALL_ANSWER_AUDIO);
-         callIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-         startActivity(callIntent);
+         // don't forget to copy the extras
+         callIntent.putExtras(intent);
+         actionIntent = callIntent;
       }
-      else if (intentAction.equals(ACTION_NOTIFICATION_CALL_DECLINE)) {
+      else if (intentAction.equals(ACTION_NOTIFICATION_CALL_DECLINE) || intentAction.equals(ACTION_NOTIFICATION_CALL_DELETE)) {
          RCConnection pendingConnection = getPendingConnection();
          if (pendingConnection != null) {
             pendingConnection.reject();
          }
+         // if the call has been requested to be declined, we shouldn't do any UI handling
+         return;
       }
       else if (intentAction.equals(ACTION_NOTIFICATION_MESSAGE_DEFAULT)) {
          messageIntent.setAction(ACTION_INCOMING_MESSAGE);
-         messageIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-         startActivity(messageIntent);
+         // don't forget to copy the extras
+         messageIntent.putExtras(intent);
+         actionIntent = messageIntent;
+      }
+      else {
+         throw new RuntimeException("Failed to handle Notification");
+      }
+
+      // We need to create a Task Stack to make sure we maintain proper flow at all times
+      TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+      // Adds either call or message intent's Component in the stack together with all its parent activities (remember that for this to work the App Manifest needs to describe their relationship)
+      stackBuilder.addParentStack(actionIntent.getComponent());
+      // Adds the target Intent to the top of the stack
+      stackBuilder.addNextIntent(actionIntent);
+      // Gets a PendingIntent containing the entire back stack, but with Component as the active Activity
+      PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+      try {
+         resultPendingIntent.send();
+      }
+      catch (PendingIntent.CanceledException e) {
+         throw new RuntimeException("Pending Intent cancelled", e);
       }
    }
 
@@ -955,6 +1080,50 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
    }
 
+   public void cancelNotificationSoundIfNeeded(RCConnection connection)
+   {
+      if (activeCallNotification) {
+         // Peer has canceled the call and there's an active call ringing, we need to cancel the notification
+         String peerUsername = connection.getPeer().replaceAll(".*?sip:", "").replaceAll("@.*$", "");
+         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+         notificationManager.cancel(callNotifications.get(peerUsername));
+
+         // And then create a new notification to show that the call is missed, together with a means to call the peer. Notice
+         // that if this notification is tapped, the peer will be called using the video preference of
+         callIntent.setAction(ACTION_OUTGOING_CALL);
+         callIntent.putExtra(RCDevice.EXTRA_DID, connection.getPeer());
+         callIntent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, (connection.getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO));
+         //startActivityForResult(intent, CONNECTION_REQUEST);
+
+         // We need to create a Task Stack to make sure we maintain proper flow at all times
+         TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+         // Adds either call or message intent's Component in the stack together with all its parent activities (remember that for this to work the App Manifest needs to describe their relationship)
+         stackBuilder.addParentStack(callIntent.getComponent());
+         // Adds the target Intent to the top of the stack
+         stackBuilder.addNextIntent(callIntent);
+         // Gets a PendingIntent containing the entire back stack, but with Component as the active Activity
+         PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+
+         // Service is not attached to an activity, let's use a notification instead
+         NotificationCompat.Builder builder =
+               new NotificationCompat.Builder(RCDevice.this)
+                     .setSmallIcon(R.drawable.ic_phone_missed_24dp)
+                     .setContentTitle(connection.getPeer().replaceAll(".*?sip:", "").replaceAll("@.*$", ""))
+                     .setContentText("Missed call")
+                     //.setSound(Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.ringing_sample)) // audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_RINGING)))
+                     // Need this to show up as Heads-up Notification
+                     .setPriority(NotificationCompat.PRIORITY_HIGH)
+                     .setAutoCancel(true)  // cancel notification when user acts on it (Important: only applies to default notification area, not additional actions)
+                     .setContentIntent(resultPendingIntent);
+
+         Notification notification = builder.build();
+         notificationManager.notify(callNotifications.get(peerUsername), notification);
+         // Remove the call notification, as it will be removed automatically
+         //callNotifications.remove(peerUsername);
+
+         activeCallNotification = false;
+      }
+   }
 
    public void onMessageArrivedEvent(String jobId, String peer, String messageText)
    {
@@ -962,48 +1131,62 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
       audioManager.playMessageSound();
       HashMap<String, String> parameters = new HashMap<String, String>();
-      // filter out SIP URI stuff and leave just the name
-      String from = peer.replaceAll("^<", "").replaceAll(">$", "");
+      // filter out potential '<' and '>' and leave just the SIP URI
+      String peerSipUri = peer.replaceAll("^<", "").replaceAll(">$", "");
+      String peerUsername = peerSipUri.replaceAll(".*?sip:", "").replaceAll("@.*$", "");
+
       //parameters.put(RCConnection.ParameterKeys.CONNECTION_PEER, from);
 
       if (isServiceAttached) {
-         try {
-            Intent dataIntent = new Intent();
-            dataIntent.setAction(ACTION_INCOMING_MESSAGE);
-            //dataIntent.putExtra(INCOMING_MESSAGE_PARAMS, parameters);
-            dataIntent.putExtra(EXTRA_DID, from);
-            dataIntent.putExtra(EXTRA_MESSAGE_TEXT, messageText);
+         messageIntent.setAction(ACTION_INCOMING_MESSAGE);
+         messageIntent.putExtra(EXTRA_DID, peerSipUri);
+         messageIntent.putExtra(EXTRA_MESSAGE_TEXT, messageText);
+         //startActivity(messageIntent);
 
-            PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, messageIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-            pendingIntent.send(getApplicationContext(), 0, dataIntent);
+         PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, messageIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+         try {
+            pendingIntent.send();
          }
          catch (PendingIntent.CanceledException e) {
-            e.printStackTrace();
+            throw new RuntimeException("Pending Intent cancelled", e);
          }
       }
       else {
          // Intent to open the call activity (for when tapping on the general notification area)
          Intent serviceIntentDefault = new Intent(ACTION_NOTIFICATION_MESSAGE_DEFAULT, null, getApplicationContext(), RCDevice.class);
+         serviceIntentDefault.putExtra(RCDevice.EXTRA_DID, peerSipUri);
          serviceIntentDefault.putExtra(EXTRA_MESSAGE_TEXT, messageText);
 
          // Service is not attached to an activity, let's use a notification instead
          NotificationCompat.Builder builder =
                new NotificationCompat.Builder(RCDevice.this)
                      .setSmallIcon(R.drawable.ic_chat_24dp)
-                     .setContentTitle(peer.replaceAll(".*?sip:", "").replaceAll("@.*$", ""))
+                     .setContentTitle(peerUsername)
                      .setContentText(messageText)
-                     .setSound(Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.message_sample)) // audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_RINGING)))
+                     .setSound(Uri.parse("android.resource://" + getPackageName() + "/" + audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_MESSAGE)))  // R.raw.message_sample)) //
                      // Need this to show up as Heads-up Notification
                      .setPriority(NotificationCompat.PRIORITY_HIGH)
                      .setAutoCancel(true)  // cancel notification when user acts on it
+                     .setVibrate(notificationVibrationPattern)
+                     .setLights(notificationColor, notificationColorPattern[0], notificationColorPattern[1])
                      .setContentIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDefault, PendingIntent.FLAG_ONE_SHOT));
 
+         boolean notificationIdExists = true;
+         Integer activeNotificationId = messageNotifications.get(peerUsername);
+         if (activeNotificationId == null) {
+            // get new notification id
+            activeNotificationId = notificationId;
+            notificationIdExists = false;
+         }
+
          Notification notification = builder.build();
-         // Add FLAG_INSISTENT so that the notification rings repeatedly (FLAG_INSISTENT is not exposed via builder, let's add manually)
-         //notification.flags = notification.flags | Notification.FLAG_INSISTENT;
          NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
          // mId allows you to update the notification later on.
-         notificationManager.notify(NOTIFICATION_ID_MESSAGE, notification);
+         notificationManager.notify(activeNotificationId, notification);
+         if (!notificationIdExists) {
+            messageNotifications.put(peerUsername, notificationId);
+            notificationId++;
+         }
       }
    }
 

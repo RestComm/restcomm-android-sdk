@@ -71,7 +71,7 @@ public class RCLogger {
     public static void v(String tag, String msg, Throwable t)
     {
         if (RCLogger.isVerboseEnabled()) {
-            Log.v(tag, msg, t);
+            Log.v(tag, escape(msg), t);
         }
     }
 
@@ -96,70 +96,70 @@ public class RCLogger {
             }
             */
 
-            Log.d(tag, msg, t);
+            Log.d(tag, escape(msg), t);
         }
     }
 
     public static void d(String tag, String msg)
     {
         if (RCLogger.isDebugEnabled()) {
-            Log.d(tag, msg);
+            Log.d(tag, escape(msg));
         }
     }
 
     public static void i(String tag, String msg, Throwable t)
     {
         if (RCLogger.isInfoEnabled()) {
-            Log.i(tag, msg, t);
+            Log.i(tag, escape(msg), t);
         }
     }
 
     public static void i(String tag, String msg)
     {
         if (RCLogger.isInfoEnabled()) {
-            Log.i(tag, msg);
+            Log.i(tag, escape(msg));
         }
     }
 
     public static void w(String tag, String msg, Throwable t)
     {
         if (RCLogger.isWarnEnabled()) {
-            Log.w(tag, msg, t);
+            Log.w(tag, escape(msg), t);
         }
     }
 
     public static void w(String tag, String msg)
     {
         if (RCLogger.isWarnEnabled()) {
-            Log.w(tag, msg);
+            Log.w(tag, escape(msg));
         }
     }
 
     public static void e(String tag, String msg, Throwable t)
     {
         if (RCLogger.isErrorEnabled()) {
-            Log.e(tag, msg, t);
+            Log.e(tag, escape(msg), t);
         }
     }
 
     public static void e(String tag, String msg)
     {
         if (RCLogger.isErrorEnabled()) {
-            Log.e(tag, msg);
+            Log.e(tag, escape(msg));
         }
     }
 
     public static void wtf(String tag, String msg, Throwable t)
     {
         if (RCLogger.isAssertEnabled()) {
-            Log.wtf(tag, msg, t);
+            Log.wtf(tag, escape(msg), t);
         }
     }
 
     public static void wtf(String tag, String msg)
     {
         if (RCLogger.isAssertEnabled()) {
-            Log.wtf(tag, msg);
+            Log.wtf(tag, escape(msg));
         }
     }
 
