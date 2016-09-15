@@ -110,7 +110,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
        * A Connection enters this state a. when it is outgoing and peer starts ringing, b. when it is incoming and at the point it first arrives at RCDevice listener
        */
       SIGNALING_CONNECTED, /**
-       * A Connection enters this intermediate state when signaling is connected but before media is connected and RCConnection is deemed actually connected
+       * A Connection *might* enter this intermediate state when signaling is connected but before media is connected. We use 'might' because there's a chance, only in inbound connections,
+       * that media starts flowing before signaling is connected (remember that for inbound connections signaling is deemed connected when SIP ACK is received). For outbound connections
+       * we always enter the SIGNALING_CONNECTED because 200 OK comes always before media is setup.
        */
       CONNECTED, /**
        * A Connection enters this state when actual media starts flowing
@@ -553,6 +555,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       if (audioManager != null) {
          audioManager.setMute(muted);
       }
+
+      device.onMuteChanged(this);
    }
 
    /**
@@ -681,7 +685,11 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       // no need to do any notifying as the App is notified when ICE is connected
       RCLogger.i(TAG, "onCallIncomingConnectedEvent(): jobId: " + jobId);
 
-      state = ConnectionState.SIGNALING_CONNECTED;
+      // In inbound connections there's a chance that media starts flowing before signaling is connected (remember that for inbound connections signaling is deemed connected when SIP ACK is received).
+      // If that happens we don't want to update to SIGNALLING_CONNECTED
+      if (state != ConnectionState.CONNECTED) {
+         state = ConnectionState.SIGNALING_CONNECTED;
+      }
    }
 
    public void onCallOutgoingConnectedEvent(String jobId, String sdpAnswer, HashMap<String, String> customHeaders)

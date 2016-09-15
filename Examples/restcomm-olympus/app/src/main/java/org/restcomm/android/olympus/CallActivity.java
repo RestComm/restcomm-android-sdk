@@ -167,13 +167,20 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
-        Log.i(TAG, "%% onStart");
-        activityVisible = true;
+    protected void onStart()
+    {
+       super.onStart();
+       Log.i(TAG, "%% onStart");
 
-        //handleCall(getIntent());
-        bindService(new Intent(this, RCDevice.class), this, Context.BIND_AUTO_CREATE);
+       // User requested to disconnect via foreground service notification. At this point the service has already
+       // disconnected the call, so let's close the call activity
+       if (getIntent().getAction().equals(RCDevice.ACTION_CALL_DISCONNECT)) {
+          finish();
+       }
+
+       activityVisible = true;
+
+       bindService(new Intent(this, RCDevice.class), this, Context.BIND_AUTO_CREATE);
     }
 
     @Override
@@ -198,6 +205,16 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         Log.i(TAG, "%% onResume");
         if (connection != null && connection.getState() == RCConnection.ConnectionState.CONNECTED) {
             connection.resumeVideo();
+
+           // Now that we can mute/umnute via notification, we need to update the UI accordingly if there was a change
+           // while we were not in the foreground
+           muteAudio = connection.isAudioMuted();
+           if (!muteAudio) {
+              btnMuteAudio.setImageResource(R.drawable.audio_active_50x50);
+           }
+           else {
+              btnMuteAudio.setImageResource(R.drawable.audio_muted_50x50);
+           }
         }
     }
 
@@ -238,10 +255,11 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         Log.i(TAG, "%% onNewIntent");
         super.onNewIntent(intent);
         setIntent(intent);
-
+         /*
         if (intent.getAction().equals(RCDevice.ACTION_CALL_DISCONNECT)) {
             finish();
         }
+        */
     }
 
 

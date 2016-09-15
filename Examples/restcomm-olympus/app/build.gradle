@@ -95,8 +95,8 @@ repositories {
 dependencies {
     testCompile 'junit:junit:4.12'
     compile project(':restcomm.android.sdk')
-    compile 'com.android.support:appcompat-v7:24.2.0'
-    compile 'com.android.support:design:24.2.0'
-    compile 'com.android.support:support-v4:24.2.0'
+    compile 'com.android.support:appcompat-v7:24.2.1'
+    compile 'com.android.support:design:24.2.1'
+    compile 'com.android.support:support-v4:24.2.1'
     compile 'testfairy:testfairy-android-sdk:1.+@aar'
 }

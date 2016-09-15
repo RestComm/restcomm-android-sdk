@@ -156,6 +156,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    public static String ACTION_NOTIFICATION_CALL_ACCEPT_AUDIO = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_ACCEPT_AUDIO";
    public static String ACTION_NOTIFICATION_CALL_DECLINE = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_DECLINE";
    public static String ACTION_NOTIFICATION_MESSAGE_DEFAULT = "org.restcomm.android.sdk.ACTION_NOTIFICATION_MESSAGE_DEFAULT";
+   public static String ACTION_NOTIFICATION_CALL_MUTE_AUDIO = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_MUTE_AUDIO";
 
    // Intent EXTRAs keys
    public static String EXTRA_MESSAGE_TEXT = "org.restcomm.android.sdk.EXTRA_MESSAGE_TEXT";
@@ -264,7 +265,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          if (intentAction.equals(ACTION_NOTIFICATION_CALL_DEFAULT) || intentAction.equals(ACTION_NOTIFICATION_CALL_ACCEPT_VIDEO) ||
                intentAction.equals(ACTION_NOTIFICATION_CALL_ACCEPT_AUDIO) || intentAction.equals(ACTION_NOTIFICATION_CALL_DECLINE) ||
                intentAction.equals(ACTION_NOTIFICATION_CALL_DELETE) || intentAction.equals(ACTION_NOTIFICATION_MESSAGE_DEFAULT) ||
-               intentAction.equals(ACTION_NOTIFICATION_CALL_OPEN) || intentAction.equals(ACTION_NOTIFICATION_CALL_DISCONNECT)) {
+               intentAction.equals(ACTION_NOTIFICATION_CALL_OPEN) || intentAction.equals(ACTION_NOTIFICATION_CALL_DISCONNECT) ||
+               intentAction.equals(ACTION_NOTIFICATION_CALL_MUTE_AUDIO)) {
             handleNotification(intent);
          }
       }
@@ -1126,16 +1128,47 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          // if the call has been requested to be declined, we shouldn't do any UI handling
          return;
       }
+      else if (intentAction.equals(ACTION_NOTIFICATION_CALL_MUTE_AUDIO)) {
+         RCConnection liveConnection = getLiveConnection();
+         if (liveConnection != null) {
+            if (liveConnection.isAudioMuted()) {
+               liveConnection.setAudioMuted(false);
+            }
+            else {
+               liveConnection.setAudioMuted(true);
+            }
+         }
+
+         // if the call has been requested to be muted, we shouldn't do any UI handling
+         return;
+      }
       else if (intentAction.equals(ACTION_NOTIFICATION_CALL_DISCONNECT)) {
          RCConnection liveConnection = getLiveConnection();
          if (liveConnection != null) {
             liveConnection.disconnect();
+
+            // if the call has been requested to be disconnected, we shouldn't do any UI handling
+            callIntent.setAction(ACTION_CALL_DISCONNECT);
+            callIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);  //FLAG_ACTIVITY_SINGLE_TOP
+            actionIntent = callIntent;
+
+            // Important if we just trigger the call intent, then after the call is disconnected we will land to the previous screen in
+            // that Task Stack, which is not what we want. Instead, we want the call activity to be finished and to just remain where
+            // we were. To do that we need to create a new Task Stack were we only place the call activity
+            TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
+            // Adds the target Intent to the top of the stack
+            stackBuilder.addNextIntent(actionIntent);
+            // Gets a PendingIntent containing the entire back stack, but with Component as the active Activity
+            PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
+            try {
+               resultPendingIntent.send();
+            }
+            catch (PendingIntent.CanceledException e) {
+               throw new RuntimeException("Pending Intent cancelled", e);
+            }
          }
-         // if the call has been requested to be disconnected, we shouldn't do any UI handling
-         // TODOOOOOOOOOO: 
-         callIntent.setAction(ACTION_CALL_DISCONNECT);
-         callIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-         actionIntent = callIntent;
+
+         return;
       }
       else if (intentAction.equals(ACTION_NOTIFICATION_MESSAGE_DEFAULT)) {
          messageIntent.setAction(ACTION_INCOMING_MESSAGE);
@@ -1176,39 +1209,49 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
    }
 
+
+
+   void onMuteChanged(RCConnection connection)
+   {
+      updateForegroundNotification(connection);
+   }
+
+   private void updateForegroundNotification(RCConnection connection)
+   {
+      String peerUsername = connection.getPeer().replaceAll(".*?sip:", "").replaceAll("@.*$", "");
+
+      callIntent.setAction(ACTION_OUTGOING_CALL);
+      callIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
+
+      // Intent to open the call activity (for when tapping on the general notification area)
+      Intent serviceIntentMute = new Intent(ACTION_NOTIFICATION_CALL_MUTE_AUDIO, null, getApplicationContext(), RCDevice.class);
+      // Intent to decline the call without opening the App Activity
+      Intent serviceIntentDisconnect = new Intent(ACTION_NOTIFICATION_CALL_DISCONNECT, null, getApplicationContext(), RCDevice.class);
+
+      int resId = R.drawable.ic_mic_24dp;
+      if (connection.isAudioMuted()) {
+         resId = R.drawable.ic_mic_off_24dp;
+      }
+
+      // Service is not attached to an activity, let's use a notification instead
+      NotificationCompat.Builder builder =
+            new NotificationCompat.Builder(RCDevice.this)
+                  .setSmallIcon(R.drawable.ic_phone_in_talk_24dp)
+                  .setContentTitle(peerUsername)
+                  .setContentText("Tap to return to call")
+                  .addAction(R.drawable.ic_call_end_24dp, "Hang up", PendingIntent.getService(getApplicationContext(), 0, serviceIntentDisconnect, PendingIntent.FLAG_ONE_SHOT))
+                  .addAction(resId, "Mute", PendingIntent.getService(getApplicationContext(), 0, serviceIntentMute, PendingIntent.FLAG_ONE_SHOT))
+                  .setContentIntent(PendingIntent.getActivity(getApplicationContext(), 0, callIntent, PendingIntent.FLAG_ONE_SHOT));
+
+      startForeground(ONCALL_NOTIFICATION_ID, builder.build());
+   }
+
    public void startForegroundNotification(RCConnection connection)
    {
       if (!foregroundNoticationActive) {
          foregroundNoticationActive = true;
-         String peerUsername = connection.getPeer().replaceAll(".*?sip:", "").replaceAll("@.*$", "");
-         //NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-         //notificationManager.cancel(callNotifications.get(peerUsername));
 
-         callIntent.setAction(ACTION_OUTGOING_CALL);
-         callIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
-
-         /*
-         // Intent to open the call activity (for when tapping on the general notification area)
-         Intent serviceIntentDefault = new Intent(ACTION_NOTIFICATION_CALL_OPEN, null, getApplicationContext(), RCDevice.class);
-         serviceIntentDefault.putExtra(RCDevice.EXTRA_DID, connection.getPeer());
-         serviceIntentDefault.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, (connection.getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO));
-         */
-
-         // Intent to decline the call without opening the App Activity
-         Intent serviceIntentDisconnect = new Intent(ACTION_NOTIFICATION_CALL_DISCONNECT, null, getApplicationContext(), RCDevice.class);
-         //serviceIntentDecline.putExtras(serviceIntentDefault);
-
-         // Service is not attached to an activity, let's use a notification instead
-         NotificationCompat.Builder builder =
-               new NotificationCompat.Builder(RCDevice.this)
-                     .setSmallIcon(R.drawable.ic_phone_in_talk_24dp)
-                     .setContentTitle(peerUsername)
-                     .setContentText("Tap to return to call")
-                     .addAction(R.drawable.ic_call_end_24dp, "Hang up", PendingIntent.getService(getApplicationContext(), 0, serviceIntentDisconnect, PendingIntent.FLAG_ONE_SHOT))
-                     .setContentIntent(PendingIntent.getActivity(getApplicationContext(), 0, callIntent, PendingIntent.FLAG_ONE_SHOT));
-
-         //Notification notification = builder.build();
-         startForeground(ONCALL_NOTIFICATION_ID, builder.build());
+         updateForegroundNotification(connection);
       }
    }
 
@@ -1220,7 +1263,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
    }
 
-      public void cancelNotificationSoundIfNeeded(RCConnection connection)
+   public void cancelNotificationSoundIfNeeded(RCConnection connection)
    {
       if (activeCallNotification) {
          // Peer has canceled the call and there's an active call ringing, we need to cancel the notification
@@ -1233,7 +1276,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          callIntent.setAction(ACTION_OUTGOING_CALL);
          callIntent.putExtra(RCDevice.EXTRA_DID, connection.getPeer());
          callIntent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, (connection.getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO));
-         //startActivityForResult(intent, CONNECTION_REQUEST);
 
          // We need to create a Task Stack to make sure we maintain proper flow at all times
          TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
