@@ -181,10 +181,11 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       // the SIP stack is ready to support it
       String keystoreFilename = "restcomm-android.keystore";
       HashMap<String, String> securityParameters = JainSipSecurityHelper.generateKeystore(androidContext, keystoreFilename);
-      JainSipSecurityHelper.setProperties(properties, securityParameters.get("keystore-path"), securityParameters.get("keystore-password"));
+      JainSipSecurityHelper.setProperties(properties, securityParameters.get("keystore-path"), securityParameters.get("keystore-password"),
+            (Boolean)configuration.get(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION));
 
-      if (configuration.containsKey(RCDevice.ParameterKeys.SIGNALING_JAIN_SIP_LOGGING_ENABLED) &&
-            (Boolean)configuration.get(RCDevice.ParameterKeys.SIGNALING_JAIN_SIP_LOGGING_ENABLED)) {
+      if (configuration.containsKey(RCDevice.ParameterKeys.DEBUG_JAIN_SIP_LOGGING_ENABLED) &&
+            (Boolean)configuration.get(RCDevice.ParameterKeys.DEBUG_JAIN_SIP_LOGGING_ENABLED)) {
          // You need 16 for logging traces. 32 for debug + traces.
          // Your code will limp at 32 but it is best for debugging.
          properties.setProperty("android.gov.nist.javax.sip.TRACE_LEVEL", "32");

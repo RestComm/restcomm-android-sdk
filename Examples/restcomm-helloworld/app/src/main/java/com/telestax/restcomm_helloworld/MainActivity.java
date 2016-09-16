@@ -190,6 +190,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
       Log.i(TAG, "%% onServiceDisconnected");
       serviceBound = false;
    }
+
    @Override
    public boolean onCreateOptionsMenu(Menu menu)
    {

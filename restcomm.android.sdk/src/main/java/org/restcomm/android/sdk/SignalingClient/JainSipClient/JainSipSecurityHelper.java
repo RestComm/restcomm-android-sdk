@@ -185,12 +185,15 @@ public class JainSipSecurityHelper {
         return certGen.generateX509Certificate(pair.getPrivate(), "BC");
     }
 
-    public static void setProperties(Properties properties, String keystorePath, String keystorePassword) {
-        properties.setProperty( "javax.net.ssl.keyStore", keystorePath);
-        properties.setProperty( "javax.net.ssl.trustStore", keystorePath);
-        properties.setProperty( "javax.net.ssl.keyStorePassword", keystorePassword );
-        properties.setProperty( "javax.net.ssl.keyStoreType", "bks" );
-        properties.setProperty( "android.gov.nist.javax.sip.ENABLED_CIPHER_SUITES", "TLS_RSA_WITH_AES_128_CBC_SHA SSL_RSA_WITH_3DES_EDE_CBC_SHA" );
+    public static void setProperties(Properties properties, String keystorePath, String keystorePassword, Boolean disableCertVerification) {
+        properties.setProperty("javax.net.ssl.keyStore", keystorePath);
+        properties.setProperty("javax.net.ssl.trustStore", keystorePath);
+        properties.setProperty("javax.net.ssl.keyStorePassword", keystorePassword );
+        properties.setProperty("javax.net.ssl.keyStoreType", "bks" );
+        properties.setProperty("android.gov.nist.javax.sip.ENABLED_CIPHER_SUITES", "TLS_RSA_WITH_AES_128_CBC_SHA SSL_RSA_WITH_3DES_EDE_CBC_SHA" );
+        if (disableCertVerification != null && disableCertVerification) {
+            properties.setProperty("android.gov.nist.javax.sip.TLS_CLIENT_AUTH_TYPE", "DisabledAll");
+        }
     }
 
 }

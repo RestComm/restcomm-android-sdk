@@ -116,7 +116,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       public static final String SIGNALING_PASSWORD = "pref_sip_password";
       public static final String SIGNALING_SECURE_ENABLED = "signaling-secure";
       public static final String SIGNALING_LOCAL_PORT = "signaling-local-port";
-      public static final String SIGNALING_JAIN_SIP_LOGGING_ENABLED = "jain-sip-logging-enabled";
+      public static final String DEBUG_JAIN_SIP_LOGGING_ENABLED = "jain-sip-logging-enabled";
+      public static final String DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION = "jain-sip-disable-certificate-verification";
       public static final String MEDIA_TURN_ENABLED = "turn-enabled";
       public static final String MEDIA_ICE_URL = "turn-url";
       public static final String MEDIA_ICE_USERNAME = "turn-username";
