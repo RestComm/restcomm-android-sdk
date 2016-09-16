@@ -175,12 +175,17 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
        // User requested to disconnect via foreground service notification. At this point the service has already
        // disconnected the call, so let's close the call activity
        if (getIntent().getAction().equals(RCDevice.ACTION_CALL_DISCONNECT)) {
-          finish();
+          Intent intent = new Intent(this, MainActivity.class);
+           intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+           intent.setAction(MainActivity.ACTION_DISCONNECTED_BACKGROUND);
+           startActivity(intent);
        }
+       else {
 
-       activityVisible = true;
+           activityVisible = true;
 
-       bindService(new Intent(this, RCDevice.class), this, Context.BIND_AUTO_CREATE);
+           bindService(new Intent(this, RCDevice.class), this, Context.BIND_AUTO_CREATE);
+       }
     }
 
     @Override

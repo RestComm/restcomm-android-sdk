@@ -334,7 +334,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
       peer = builder.peer;
 
-      audioManager.startCall();
+      audioManager.startCallMedia();
       /*
       if (incoming) {
          audioManager.playRingingSound();
@@ -556,7 +556,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          audioManager.setMute(muted);
       }
 
-      device.onMuteChanged(this);
+      device.onNotificationMuteChanged(this);
    }
 
    /**
@@ -717,7 +717,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void onCallIncomingCanceledEvent(String jobId)
    {
       RCLogger.i(TAG, "onCallIncomingCanceledEvent(): jobId: " + jobId);
-      device.cancelNotificationSoundIfNeeded(this);
+      device.onNotificationCallCanceled(this);
       handleDisconnected(jobId, false);
    }
 
@@ -792,7 +792,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          disconnectWebrtc();
       }
 
-      device.stopForegroundNotification(this);
+      device.onNotificationCallDisconnected(this);
 
       if (listener != null && device.isAttached()) {
          listener.onDisconnected(this);
@@ -1482,7 +1482,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
                customHeaders = (HashMap<String, String>) callParams.get(ParameterKeys.CONNECTION_CUSTOM_INCOMING_SIP_HEADERS);
             }
             if (device.isAttached()) {
-               device.startForegroundNotification(RCConnection.this);
+               device.onNotificationCallConnected(RCConnection.this);
                listener.onConnected(RCConnection.this, customHeaders);
             }
             else {

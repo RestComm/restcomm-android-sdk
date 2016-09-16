@@ -73,6 +73,7 @@ public class MainActivity extends AppCompatActivity
    private RCConnectivityStatus previousConnectivityStatus = RCConnectivityStatus.RCConnectivityStatusNone;
    private static final String APP_VERSION = "Restcomm Android Olympus Client " + BuildConfig.VERSION_NAME + "#" + BuildConfig.VERSION_CODE; //"Restcomm Android Olympus Client 1.0.0-BETA4#20";
    FloatingActionButton btnAdd;
+   public static String ACTION_DISCONNECTED_BACKGROUND = "org.restcomm.android.olympus.ACTION_DISCONNECTED_BACKGROUND";
 
    private static final int CONNECTION_REQUEST = 1;
 
@@ -174,7 +175,12 @@ public class MainActivity extends AppCompatActivity
    public void onNewIntent(Intent intent)
    {
       super.onNewIntent(intent);
-      setIntent(intent);
+
+      // We get this intent from CallActivity, when the App is in the background and the user has requested hangup via notification
+      // In that case we don't wont to interrupt the user from what they are currently doing in the foreground, so we just finish()
+      if (intent.getAction().equals(ACTION_DISCONNECTED_BACKGROUND)) {
+         finish();
+      }
    }
 
    // Callbacks for service binding, passed to bindService()
@@ -196,7 +202,7 @@ public class MainActivity extends AppCompatActivity
       params.put(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME, prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME, ""));
       params.put(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD, prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD, ""));
       params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
-      params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false));
+      params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, true));
       // The SDK provides the user with default sounds for calling, ringing, busy (declined) and message, but the user can override them
       // by providing their own resource files (i.e. .wav, .mp3, etc) at res/raw passing them with Resource IDs like R.raw.user_provided_calling_sound
       //params.put(RCDevice.ParameterKeys.RESOURCE_SOUND_CALLING, R.raw.user_provided_calling_sound);

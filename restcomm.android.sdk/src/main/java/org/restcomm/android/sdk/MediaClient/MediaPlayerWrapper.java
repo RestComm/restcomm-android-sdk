@@ -4,6 +4,8 @@ import android.content.Context;
 import android.media.AudioManager;
 import android.media.MediaPlayer;
 
+import org.restcomm.android.sdk.util.RCLogger;
+
 /*
  * Notice that I'm doing everything in main thread right now, which is bad practice, but since all audio files are so small it doesn't
  * seem to cause any issues and I would like to avoid spending the time to make all this work properly asynchronously.
@@ -18,9 +20,10 @@ import android.media.MediaPlayer;
  * - 'PhoneRinging.mp3' by 'acclivity' ( http://www.freesound.org/people/acclivity/ )
  */
 
-public class MediaPlayerWrapper {
+public class MediaPlayerWrapper implements MediaPlayer.OnCompletionListener {
    private final Context androidContext;
    private MediaPlayer mediaPlayer = null;
+   private static final String TAG = "MediaPlayerWrapper";
 
    MediaPlayerWrapper(Context androidContext)
    {
@@ -35,10 +38,18 @@ public class MediaPlayerWrapper {
          mediaPlayer = null;
       }
 
+      // Request audio focus before making any device switch.
+      ((AudioManager) androidContext.getSystemService(Context.AUDIO_SERVICE)).requestAudioFocus(null, AudioManager.STREAM_MUSIC,
+            AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+
       mediaPlayer = MediaPlayer.create(androidContext, resid);
       mediaPlayer.setAudioStreamType(AudioManager.STREAM_MUSIC);
       mediaPlayer.setLooping(loop);
       mediaPlayer.start();
+      if (!loop) {
+         // For non-looping sounds we want an event when they are done so that we can abandon focus
+         mediaPlayer.setOnCompletionListener(this);
+      }
    }
 
    void stop()
@@ -47,6 +58,8 @@ public class MediaPlayerWrapper {
          mediaPlayer.stop();
          mediaPlayer.release();
          mediaPlayer = null;
+
+         ((AudioManager) androidContext.getSystemService(Context.AUDIO_SERVICE)).abandonAudioFocus(null);
       }
    }
 
@@ -56,7 +69,19 @@ public class MediaPlayerWrapper {
          mediaPlayer.stop();
          mediaPlayer.release();
          mediaPlayer = null;
+
+         ((AudioManager) androidContext.getSystemService(Context.AUDIO_SERVICE)).abandonAudioFocus(null);
       }
    }
 
+   public void onCompletion(MediaPlayer mediaPlayer)
+   {
+      RCLogger.i(TAG, "onCompletion()");
+      ((AudioManager) androidContext.getSystemService(Context.AUDIO_SERVICE)).abandonAudioFocus(null);
+
+      this.mediaPlayer.stop();
+      //   mediaPlayer.reset();
+      this.mediaPlayer.release();
+      this.mediaPlayer = null;
+   }
 }

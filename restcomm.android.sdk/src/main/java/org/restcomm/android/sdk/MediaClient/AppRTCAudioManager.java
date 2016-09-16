@@ -70,7 +70,7 @@ import java.util.Set;
 /**
  * AppRTCAudioManager manages all audio related parts of the AppRTC demo.
  */
-public class AppRTCAudioManager {
+public class AppRTCAudioManager implements AudioManager.OnAudioFocusChangeListener {
    private static final String TAG = "AppRTCAudioManager";
 
    /**
@@ -210,7 +210,7 @@ public class AppRTCAudioManager {
       initialized = false;
    }
 
-   public void startCall()
+   public void startCallMedia()
    {
       RCLogger.d(TAG, "startCall");
       if (callAudioInitialized) {
@@ -237,7 +237,7 @@ public class AppRTCAudioManager {
 
       // Request audio focus before making any device switch.
       audioManager.requestAudioFocus(null, AudioManager.STREAM_VOICE_CALL,
-            AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
+            AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
 
       // Start by setting MODE_IN_COMMUNICATION as default audio mode. It is
       // required to be in this mode when playout and/or recording starts for
@@ -258,6 +258,16 @@ public class AppRTCAudioManager {
       registerForWiredHeadsetIntentBroadcast();
 
       callAudioInitialized = true;
+   }
+
+   public void requestFocus()
+   {
+
+   }
+
+   public void abandonFocus()
+   {
+
    }
 
    public void endCall()
@@ -575,17 +585,29 @@ public class AppRTCAudioManager {
 
    public void play(int resid, boolean loop)
    {
-      // Request audio focus before making any device switch.
-      audioManager.requestAudioFocus(null, AudioManager.STREAM_VOICE_CALL,
-            AudioManager.AUDIOFOCUS_GAIN_TRANSIENT);
-
       mediaPlayerWrapper.play(resid, loop);
    }
 
    public void stop()
    {
       mediaPlayerWrapper.stop();
+   }
 
-      audioManager.abandonAudioFocus(null);
+   public void onAudioFocusChange(int focusChange)
+   {
+      if (focusChange == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT) {
+         // Pause playback
+         RCLogger.i(TAG, "onAudioFocusChange(): AUDIOFOCUS_LOSS_TRANSIENT");
+      }
+      else if (focusChange == AudioManager.AUDIOFOCUS_GAIN) {
+         // Resume playback
+         RCLogger.i(TAG, "onAudioFocusChange(): AUDIOFOCUS_GAIN");
+      }
+      else if (focusChange == AudioManager.AUDIOFOCUS_LOSS) {
+         // Stop playback
+         //am.unregisterMediaButtonEventReceiver(RemoteControlReceiver);
+         //am.abandonAudioFocus(afChangeListener);
+         RCLogger.i(TAG, "onAudioFocusChange(): AUDIOFOCUS_GAIN");
+      }
    }
 }
