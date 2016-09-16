@@ -1,13 +1,40 @@
+/*
+ * TeleStax, Open Source Cloud Communications
+ * Copyright 2011-2015, Telestax Inc and individual contributors
+ * by the @authors tag.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * under the terms of the GNU Affero General Public License as
+ * published by the Free Software Foundation; either version 3 of
+ * the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>
+ *
+ * For questions related to commercial use licensing, please contact sales@telestax.com.
+ *
+ */
+
 package com.telestax.restcomm_helloworld;
 
 //import android.support.v7.app.ActionBarActivity;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.content.pm.PackageManager;
+import android.graphics.drawable.ColorDrawable;
 import android.opengl.GLSurfaceView;
 import android.os.Bundle;
+import android.os.IBinder;
 import android.support.v4.app.ActivityCompat;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -23,19 +50,22 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.ListIterator;
 
-import org.mobicents.restcomm.android.client.sdk.RCClient;
-import org.mobicents.restcomm.android.client.sdk.RCConnection;
-import org.mobicents.restcomm.android.client.sdk.RCConnectionListener;
-import org.mobicents.restcomm.android.client.sdk.RCDevice;
-import org.mobicents.restcomm.android.client.sdk.RCDeviceListener;
-import org.mobicents.restcomm.android.client.sdk.RCPresenceEvent;
+import org.restcomm.android.sdk.RCClient;
+import org.restcomm.android.sdk.RCConnection;
+import org.restcomm.android.sdk.RCConnectionListener;
+import org.restcomm.android.sdk.RCDevice;
+import org.restcomm.android.sdk.RCDeviceListener;
+import org.restcomm.android.sdk.RCPresenceEvent;
 import org.webrtc.VideoRenderer;
 import org.webrtc.VideoRendererGui;
 import org.webrtc.VideoTrack;
 
-public class MainActivity extends Activity implements RCDeviceListener, RCConnectionListener, OnClickListener {
+public class MainActivity extends Activity implements RCDeviceListener, RCConnectionListener, OnClickListener,
+        ServiceConnection {
 
    private RCDevice device;
+   boolean serviceBound = false;
+
    private RCConnection connection, pendingConnection;
    private HashMap<String, Object> params;
    private static final String TAG = "MainActivity";
@@ -71,35 +101,33 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
       btnDial.setOnClickListener(this);
       btnHangup = (Button) findViewById(R.id.button_hangup);
       btnHangup.setOnClickListener(this);
-
-      // Initialized Restcomm Client SDK entities
-      RCClient.setLogLevel(Log.VERBOSE);
-      RCClient.initialize(getApplicationContext(), new RCClient.RCInitListener() {
-         public void onInitialized()
-         {
-            Log.i(TAG, "RCClient initialized");
-         }
-
-         public void onError(Exception exception)
-         {
-            Log.e(TAG, "RCClient initialization error");
-         }
-      });
-
-      params = new HashMap<String, Object>();
-      // update the IP address to your Restcomm instance
-      params.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN, "");
-      params.put(RCDevice.ParameterKeys.SIGNALING_USERNAME, "android-sdk");
-      params.put(RCDevice.ParameterKeys.SIGNALING_PASSWORD, "1234");
-      params.put(RCDevice.ParameterKeys.MEDIA_ICE_URL, "https://service.xirsys.com/ice");
-      params.put(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME, "atsakiridis");
-      params.put(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD, "4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7");
-      params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
-      device = RCClient.createDevice(params, this);
-      Intent intent = new Intent(getApplicationContext(), MainActivity.class);
-      // we don't have a separate activity for the calls and messages, so let's use the same intent both for calls and messages
-      device.setPendingIntents(intent, intent);
    }
+
+   @Override
+   protected void onStart()
+   {
+      super.onStart();
+      // The activity is about to become visible.
+      Log.i(TAG, "%% onStart");
+
+      bindService(new Intent(this, RCDevice.class), this, Context.BIND_AUTO_CREATE);
+   }
+
+   @Override
+   protected void onStop()
+   {
+      super.onStop();
+      // The activity is no longer visible (it is now "stopped")
+      Log.i(TAG, "%% onStop");
+
+      // Unbind from the service
+      if (serviceBound) {
+         //device.detach();
+         unbindService(this);
+         serviceBound = false;
+      }
+   }
+
 
    @Override
    protected void onDestroy()
@@ -107,17 +135,61 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
       super.onDestroy();
       // The activity is about to be destroyed.
       Log.i(TAG, "%% onDestroy");
+      device.release();
+      /*
       RCClient.shutdown();
       device = null;
+      */
    }
 
-   /*
-   private void videoContextReady()
+   // Callbacks for service binding, passed to bindService()
+   @Override
+   public void onServiceConnected(ComponentName className, IBinder service)
    {
-      videoReady = true;
-   }
-   */
+      Log.i(TAG, "%% onServiceConnected");
+      // We've bound to LocalService, cast the IBinder and get LocalService instance
+      RCDevice.RCDeviceBinder binder = (RCDevice.RCDeviceBinder) service;
+      device = binder.getService();
 
+      Intent intent = new Intent(getApplicationContext(), MainActivity.class);
+
+      HashMap<String, Object> params = new HashMap<String, Object>();
+      // we don't have a separate activity for the calls and messages, so let's use the same intent both for calls and messages
+      params.put(RCDevice.ParameterKeys.INTENT_INCOMING_CALL, intent);
+      params.put(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE, intent);
+      params.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN, "");
+      params.put(RCDevice.ParameterKeys.SIGNALING_USERNAME, "android-sdk");
+      params.put(RCDevice.ParameterKeys.SIGNALING_PASSWORD, "1234");
+      params.put(RCDevice.ParameterKeys.MEDIA_ICE_URL, "https://service.xirsys.com/ice");
+      params.put(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME, "atsakiridis");
+      params.put(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD, "4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7");
+      params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
+      //params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false));
+
+      // The SDK provides the user with default sounds for calling, ringing, busy (declined) and message, but the user can override them
+      // by providing their own resource files (i.e. .wav, .mp3, etc) at res/raw passing them with Resource IDs like R.raw.user_provided_calling_sound
+      //params.put(RCDevice.ParameterKeys.RESOURCE_SOUND_CALLING, R.raw.user_provided_calling_sound);
+      //params.put(RCDevice.ParameterKeys.RESOURCE_SOUND_RINGING, R.raw.user_provided_ringing_sound);
+      //params.put(RCDevice.ParameterKeys.RESOURCE_SOUND_DECLINED, R.raw.user_provided_declined_sound);
+      //params.put(RCDevice.ParameterKeys.RESOURCE_SOUND_MESSAGE, R.raw.user_provided_message_sound);
+
+      // This is for debugging purposes, not for release builds
+      //params.put(RCDevice.ParameterKeys.SIGNALING_JAIN_SIP_LOGGING_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_JAIN_SIP_LOGGING_ENABLED, true));
+
+      if (!device.isInitialized()) {
+         device.initialize(getApplicationContext(), params, this);
+         device.setLogLevel(Log.VERBOSE);
+      }
+
+      serviceBound = true;
+   }
+
+   @Override
+   public void onServiceDisconnected(ComponentName arg0)
+   {
+      Log.i(TAG, "%% onServiceDisconnected");
+      serviceBound = false;
+   }
    @Override
    public boolean onCreateOptionsMenu(Menu menu)
    {
