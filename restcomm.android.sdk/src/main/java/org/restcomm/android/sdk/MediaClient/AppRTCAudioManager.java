@@ -237,7 +237,7 @@ public class AppRTCAudioManager implements AudioManager.OnAudioFocusChangeListen
 
       // Request audio focus before making any device switch.
       audioManager.requestAudioFocus(null, AudioManager.STREAM_VOICE_CALL,
-            AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK);
+            AudioManager.AUDIOFOCUS_GAIN);
 
       // Start by setting MODE_IN_COMMUNICATION as default audio mode. It is
       // required to be in this mode when playout and/or recording starts for

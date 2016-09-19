@@ -333,14 +333,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          remoteMediaType = RCConnection.sdp2Mediatype(builder.incomingCallSdp);
       }
       peer = builder.peer;
-
-      audioManager.startCallMedia();
-      /*
-      if (incoming) {
-         audioManager.playRingingSound();
-      }
-      */
-
       timeoutHandler = new Handler(device.getMainLooper());
    }
 
@@ -1468,6 +1460,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
             // stop any calling or ringing sound
             audioManager.stop();
+            audioManager.startCallMedia();
 
             // we 're connected, cancel any pending timeout timers
             timeoutHandler.removeCallbacksAndMessages(null);

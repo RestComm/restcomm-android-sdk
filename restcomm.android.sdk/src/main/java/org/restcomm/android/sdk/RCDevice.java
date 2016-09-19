@@ -949,7 +949,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    {
       RCLogger.i(TAG, "onCallArrivedEvent(): id: " + jobId + ", peer: " + peer);
 
-      audioManager.playRingingSound();
+      //audioManager.playRingingSound();
 
       // filter out potential '<' and '>' and leave just the SIP URI
       String peerSipUri = peer.replaceAll("^<", "").replaceAll(">$", "");
@@ -966,6 +966,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       state = DeviceState.BUSY;
 
       if (isServiceAttached) {
+         audioManager.playRingingSound();
          // Service is attached to an activity, let's send the intent normally that will open the call activity
          callIntent.setAction(ACTION_INCOMING_CALL);
          callIntent.putExtra(RCDevice.EXTRA_DID, peerSipUri);
@@ -1116,7 +1117,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
                   .setSmallIcon(R.drawable.ic_call_24dp)
                   .setContentTitle(peerUsername)
                   .setContentText(text)
-                  //.setSound(Uri.parse("android.resource://" + getPackageName() + "/" + audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_RINGING)))
+                  .setSound(Uri.parse("android.resource://" + getPackageName() + "/" + audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_RINGING)))
                   // Need this to show up as Heads-up Notification
                   .setPriority(NotificationCompat.PRIORITY_HIGH)
                   .setAutoCancel(true)  // cancel notification when user acts on it (Important: only applies to default notification area, not additional actions)
@@ -1130,7 +1131,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
       Notification notification = builder.build();
       // Add FLAG_INSISTENT so that the notification rings repeatedly (FLAG_INSISTENT is not exposed via builder, let's add manually)
-      //notification.flags = notification.flags | Notification.FLAG_INSISTENT;
+      notification.flags = notification.flags | Notification.FLAG_INSISTENT;
 
       boolean notificationIdExists = true;
       Integer activeNotificationId = callNotifications.get(peerUsername);
