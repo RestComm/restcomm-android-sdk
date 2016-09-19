@@ -27,12 +27,15 @@ public class MediaPlayerWrapper implements MediaPlayer.OnCompletionListener {
 
    MediaPlayerWrapper(Context androidContext)
    {
+      RCLogger.v(TAG, "MediaPlayerWrapper()");
       this.androidContext = androidContext;
    }
 
    void play(int resid, boolean loop)
    {
+      RCLogger.v(TAG, "MediaPlayerWrapper.play(): " + resid);
       if (mediaPlayer != null) {
+         RCLogger.v(TAG, "MediaPlayerWrapper.play(): reset");
          mediaPlayer.stop();
          mediaPlayer.release();
          mediaPlayer = null;
@@ -54,7 +57,9 @@ public class MediaPlayerWrapper implements MediaPlayer.OnCompletionListener {
 
    void stop()
    {
+      RCLogger.v(TAG, "MediaPlayerWrapper.stop()");
       if (mediaPlayer != null) {
+         RCLogger.v(TAG, "MediaPlayerWrapper.stop(): stopping");
          mediaPlayer.stop();
          mediaPlayer.release();
          mediaPlayer = null;
@@ -65,6 +70,7 @@ public class MediaPlayerWrapper implements MediaPlayer.OnCompletionListener {
 
    void close()
    {
+      RCLogger.v(TAG, "MediaPlayerWrapper.close()");
       if (mediaPlayer != null) {
          mediaPlayer.stop();
          mediaPlayer.release();
@@ -76,12 +82,15 @@ public class MediaPlayerWrapper implements MediaPlayer.OnCompletionListener {
 
    public void onCompletion(MediaPlayer mediaPlayer)
    {
-      RCLogger.i(TAG, "onCompletion()");
+      RCLogger.v(TAG, "onCompletion()");
       ((AudioManager) androidContext.getSystemService(Context.AUDIO_SERVICE)).abandonAudioFocus(null);
 
-      this.mediaPlayer.stop();
-      //   mediaPlayer.reset();
-      this.mediaPlayer.release();
-      this.mediaPlayer = null;
+      if (this.mediaPlayer != null) {
+         RCLogger.v(TAG, "onCompletion(): reset");
+         this.mediaPlayer.stop();
+         //   mediaPlayer.reset();
+         this.mediaPlayer.release();
+         this.mediaPlayer = null;
+      }
    }
 }

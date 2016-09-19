@@ -270,9 +270,9 @@ public class AppRTCAudioManager implements AudioManager.OnAudioFocusChangeListen
 
    }
 
-   public void endCall()
+   public void endCallMedia()
    {
-      RCLogger.d(TAG, "endCall");
+      RCLogger.d(TAG, "endCallMedia");
       if (!callAudioInitialized) {
          return;
       }

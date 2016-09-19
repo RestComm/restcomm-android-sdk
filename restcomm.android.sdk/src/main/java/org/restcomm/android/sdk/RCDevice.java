@@ -1426,6 +1426,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
                   .setSmallIcon(R.drawable.ic_phone_in_talk_24dp)
                   .setContentTitle(peerUsername)
                   .setContentText("Tap to return to call")
+                  // Notice that for some reason using FLAG_UPDATE_CURRENT doesn't work. The problem is that the intent creates a new Call Activity instead of
+                  // taking us to the existing.
                   .addAction(resId, muteString, PendingIntent.getService(getApplicationContext(), 0, serviceIntentMute, PendingIntent.FLAG_CANCEL_CURRENT))
                   .addAction(R.drawable.ic_call_end_24dp, "Hang up", PendingIntent.getService(getApplicationContext(), 0, serviceIntentDisconnect, PendingIntent.FLAG_CANCEL_CURRENT))
                   .setContentIntent(PendingIntent.getActivity(getApplicationContext(), 0, callIntent, PendingIntent.FLAG_CANCEL_CURRENT));

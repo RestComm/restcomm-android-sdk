@@ -1268,7 +1268,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
 
       releaseVideo();
-      audioManager.endCall();
+      audioManager.endCallMedia();
    }
 
    private void releaseVideo()
