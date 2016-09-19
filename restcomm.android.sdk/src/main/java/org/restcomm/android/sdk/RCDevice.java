@@ -26,6 +26,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
+ * <h3>General Operation</h3>
  * <p>RCDevice represents an abstraction of a communications device able to make and receive calls, send and receive messages etc. Remember that
  * in order to be notified of Restcomm Client events you need to set a listener to RCDevice and implement the applicable methods, and also 'register'
  * to the applicable intents by calling RCDevice.setPendingIntents() and provide one intent for whichever activity will be receiving calls and another
@@ -50,6 +51,24 @@ import java.util.Map;
  *    <li>The sending party id via string extra named RCDevice.EXTRA_DID, like: <i>intent.getStringExtra(RCDevice.EXTRA_DID)</i></li>
  *    <li>The actual message text via string extra named RCDevice.INCOMING_MESSAGE_TEXT, like: <i>intent.getStringExtra(RCDevice.INCOMING_MESSAGE_TEXT)</i></li>
  * </ol>
+ * </p>
+ * <p>
+ * <h3>Taking advantage of Android Notifications</h3>
+ * The Restcomm  SDK comes integrated with Android Notifications. This means that while your App is in the
+ * background all events from incoming calls/messages are conveyed via (Heads up) Notifications. Depending on the type of event the designated Intent is used
+ * to deliver the event. For example if an incoming text message arrives and your App is in the background, then the message will be shown as a notification and if
+ * the user taps on it, then whichever intent you passed as RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE in RCDevice.initialize() will be sent to your App with
+ * the extras already discussed previously in normal (i.e. foreground) operation. Likewise, if an incoming call arrives and your App is in the background, then
+ * the call will be shown as a notification and the user will be able to:
+ * <ol>
+ *    <li>Decline it by swiping the notification left, right, or tapping on the hang up Action Button. Then, no intent is sent to the App, as the user most likely doesn't want it opened at this point.</li>
+ *    <li>Accept it as audio & video call by tapping on the video Action Button. In this case, whichever intent you passed as RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE in RCDevice.initialize() will be sent to your App with
+ * the extras already discussed previously in normal (i.e. foreground) operation. The only difference is the action, which will be ACTION_INCOMING_CALL_ANSWER_VIDEO. So from App perspective when you get this action
+ * you should answer the call as audio & video</li>
+ *    <li>Accept it as audio-only call by tapping on the audio Action Button. Same as previously with the only difference that the action will be ACTION_INCOMING_CALL_ANSWER_AUDIO</li>
+ * </ol>
+ * Keep in mind that once the call is answered then you get a foreground (i.e. sticky) notification in the Notification Drawer for the duration of the call via which you can either mute audio or hang up the call
+ * while working on other Android Apps without interruption.
  * </p>
  * @see RCConnection
  */
@@ -131,36 +150,89 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    private static final String TAG = "RCDevice";
 
    // Service Intent actions sent from RCDevice Service -> Call Activity
-   public static String ACTION_OUTGOING_CALL = "org.restcomm.android.sdk.ACTION_OUTGOING_CALL";
-   public static String ACTION_INCOMING_CALL = "org.restcomm.android.sdk.ACTION_INCOMING_CALL";
-   public static String ACTION_INCOMING_CALL_ANSWER_AUDIO = "org.restcomm.android.sdk.ACTION_INCOMING_CALL_ANSWER_AUDIO";
-   public static String ACTION_INCOMING_CALL_ANSWER_VIDEO = "org.restcomm.android.sdk.ACTION_INCOMING_CALL_ANSWER_VIDEO";
-   public static String ACTION_INCOMING_CALL_DECLINE = "org.restcomm.android.sdk.ACTION_INCOMING_CALL_DECLINE";
-   public static String ACTION_OPEN_MESSAGE_SCREEN = "org.restcomm.android.sdk.ACTION_OPEN_MESSAGE_SCREEN";
-   public static String ACTION_INCOMING_MESSAGE = "org.restcomm.android.sdk.ACTION_INCOMING_MESSAGE";
-   public static String ACTION_CALL_DISCONNECT = "org.restcomm.android.sdk.ACTION_CALL_DISCONNECT";
 
-   // Intents sent by Notification subsystem -> RCDevice Service when user acts on the Notifications
+   /**
+    * Call Activity Intent action sent when a new call is requested by tapping on a missed call on the Notification Drawer
+    */
+   public static String ACTION_OUTGOING_CALL = "org.restcomm.android.sdk.ACTION_OUTGOING_CALL";
+
+   /**
+    * Call Activity Intent action sent when a incoming call arrives
+    */
+   public static String ACTION_INCOMING_CALL = "org.restcomm.android.sdk.ACTION_INCOMING_CALL";
+   /**
+    * Call Activity Intent action sent when an incoming call is requested to be answered with audio only via Notification Drawer. Notice that
+    * the application still has control and needs to answer the call depending on its preference with RCConnection.accept(). Also, extras are
+    * exactly the same as for ACTION_OUTGOING_CALL, for example the peer DID will be at 'EXTRA_DID'
+    */
+   public static String ACTION_INCOMING_CALL_ANSWER_AUDIO = "org.restcomm.android.sdk.ACTION_INCOMING_CALL_ANSWER_AUDIO";
+   /**
+    * Call Activity Intent action sent when an incoming call is requested to be answered with audio & video via Notification Drawer. Notice that
+    * the application still has control and needs to answer the call depending on its preference with RCConnection.accept(). Also, extras are
+    * exactly the same as for ACTION_OUTGOING_CALL, for example the peer DID will be at 'EXTRA_DID'
+    */
+   public static String ACTION_INCOMING_CALL_ANSWER_VIDEO = "org.restcomm.android.sdk.ACTION_INCOMING_CALL_ANSWER_VIDEO";
+
+   /**
+    * Call Activity Intent action sent when a live background call is resumed via Notification Drawer. The Application
+    * should just allow the existing Call Activity to open.
+    */
+   public static String ACTION_RESUME_CALL = "org.restcomm.android.sdk.ACTION_RESUME_CALL";
+   /**
+    * Call Activity Intent action sent when a ringing call was declined via Notification Drawer. You don't have to act on that,
+    * but it usually provides a better user experience if you do. If you don't act on that then the Call Activity
+    * will be opened, right after the call is disconnected from the SDK. This is usually poor experience as it takes you back
+    * to the App for a call you just disconnected, and hence of little interest. Instead, a better approach close the
+    * Call Activity behind the scenes and remain in you current workflow.
+    */
+   //public static String ACTION_INCOMING_CALL_DECLINE = "org.restcomm.android.sdk.ACTION_INCOMING_CALL_DECLINE";
+   /**
+    * Call Activity Intent action sent when a live call was disconnected via Notification Drawer. You don't have to act on that,
+    * but it usually provides a better user experience if you do. If you don't act on that then the Call Activity
+    * will be opened, right after the call is disconnected from the SDK. This is usually poor experience as it takes you back
+    * to the App for a call you just disconnected, and hence of little interest. Instead, a better approach close the
+    * Call Activity behind the scenes and remain in you current workflow.
+    */
+   public static String ACTION_CALL_DISCONNECT = "org.restcomm.android.sdk.ACTION_CALL_DISCONNECT";
+   /**
+    * Message Activity Intent action sent by the SDK when an incoming text message arrived
+    */
+   public static String ACTION_INCOMING_MESSAGE = "org.restcomm.android.sdk.ACTION_INCOMING_MESSAGE";
+
+
+   // Internal intents sent by Notification subsystem -> RCDevice Service when user acts on the Notifications
    // Used when user taps in a missed call, where we want it to trigger a new call towards the caller
-   public static String ACTION_NOTIFICATION_CALL_DEFAULT = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_DEFAULT";
+   private static String ACTION_NOTIFICATION_CALL_DEFAULT = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_DEFAULT";
    // Used when there's an active call and a foreground notification, and hence the user wants to go back the existing call activity without doing anything else
-   public static String ACTION_NOTIFICATION_CALL_OPEN = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_OPEN";
+   //private static String ACTION_NOTIFICATION_CALL_OPEN = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_OPEN";
    // Used when there's an active call and a foreground notification, and the user wants to disconnect
-   public static String ACTION_NOTIFICATION_CALL_DISCONNECT = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_DISCONNECT";
+   private static String ACTION_NOTIFICATION_CALL_DISCONNECT = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_DISCONNECT";
    // User deleted the notification (by swiping on the left/right, or deleting all notifications)
-   public static String ACTION_NOTIFICATION_CALL_DELETE = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_DELETE";
-   public static String ACTION_NOTIFICATION_CALL_ACCEPT_VIDEO = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_ACCEPT_VIDEO";
-   public static String ACTION_NOTIFICATION_CALL_ACCEPT_AUDIO = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_ACCEPT_AUDIO";
-   public static String ACTION_NOTIFICATION_CALL_DECLINE = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_DECLINE";
-   public static String ACTION_NOTIFICATION_MESSAGE_DEFAULT = "org.restcomm.android.sdk.ACTION_NOTIFICATION_MESSAGE_DEFAULT";
-   public static String ACTION_NOTIFICATION_CALL_MUTE_AUDIO = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_MUTE_AUDIO";
+   private static String ACTION_NOTIFICATION_CALL_DELETE = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_DELETE";
+   private static String ACTION_NOTIFICATION_CALL_ACCEPT_VIDEO = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_ACCEPT_VIDEO";
+   private static String ACTION_NOTIFICATION_CALL_ACCEPT_AUDIO = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_ACCEPT_AUDIO";
+   private static String ACTION_NOTIFICATION_CALL_DECLINE = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_DECLINE";
+   private static String ACTION_NOTIFICATION_MESSAGE_DEFAULT = "org.restcomm.android.sdk.ACTION_NOTIFICATION_MESSAGE_DEFAULT";
+   private static String ACTION_NOTIFICATION_CALL_MUTE_AUDIO = "org.restcomm.android.sdk.ACTION_NOTIFICATION_CALL_MUTE_AUDIO";
 
    // Intent EXTRAs keys
+
+   /**
+    * The actual message text
+    */
    public static String EXTRA_MESSAGE_TEXT = "org.restcomm.android.sdk.EXTRA_MESSAGE_TEXT";
+   /**
+    * The caller-id for the incoming call or message
+    */
    public static String EXTRA_DID = "org.restcomm.android.sdk.EXTRA_DID";
+   /**
+    * Potential custom SIP headers sent by Restcomm-Connect
+    */
    public static String EXTRA_CUSTOM_HEADERS = "org.restcomm.android.sdk.CUSTOM_HEADERS";
+   /**
+    * Whether the peer started the incoming call with video enabled or not
+    */
    public static String EXTRA_VIDEO_ENABLED = "org.restcomm.android.sdk.VIDEO_ENABLED";
-   //public static String EXTRA_ACCEPT_WITH_VIDEO = "org.restcomm.android.sdk.EXTRA_ACCEPT_WITH_VIDEO";
 
    // Notification ids for calls and messages. Key is the sender and value in the notification id. We mainly need those
    // to make sure that notifications from a specific user are shown in a single slot, to avoid confusing the user. This means
@@ -178,7 +250,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    // is an incoming call ringing, triggered by the Notification subsystem?
    private boolean activeCallNotification = false;
    // Numbers here refer to: delay duration, on duration 1, off duration 1, on duration 2, off duration2, ...
-   long[] notificationVibrationPattern = { 0, 300, 300, 300, 300 };
+   long[] notificationVibrationPattern = { 0, 100, 200, 100, 200 };
    int notificationColor =  Color.parseColor("#3c5866");
    int[] notificationColorPattern = { 2000, 2000 };
    private boolean foregroundNoticationActive = false;
@@ -262,7 +334,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          if (intentAction.equals(ACTION_NOTIFICATION_CALL_DEFAULT) || intentAction.equals(ACTION_NOTIFICATION_CALL_ACCEPT_VIDEO) ||
                intentAction.equals(ACTION_NOTIFICATION_CALL_ACCEPT_AUDIO) || intentAction.equals(ACTION_NOTIFICATION_CALL_DECLINE) ||
                intentAction.equals(ACTION_NOTIFICATION_CALL_DELETE) || intentAction.equals(ACTION_NOTIFICATION_MESSAGE_DEFAULT) ||
-               intentAction.equals(ACTION_NOTIFICATION_CALL_OPEN) || intentAction.equals(ACTION_NOTIFICATION_CALL_DISCONNECT) ||
+               /*intentAction.equals(ACTION_NOTIFICATION_CALL_OPEN) || */ intentAction.equals(ACTION_NOTIFICATION_CALL_DISCONNECT) ||
                intentAction.equals(ACTION_NOTIFICATION_CALL_MUTE_AUDIO)) {
             onNotificationIntent(intent);
          }
@@ -374,7 +446,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
             throw new RuntimeException(RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_INTENTS));
          }
 
-         setPendingIntents((Intent) parameters.get(RCDevice.ParameterKeys.INTENT_INCOMING_CALL),
+         setIntents((Intent) parameters.get(RCDevice.ParameterKeys.INTENT_INCOMING_CALL),
                (Intent) parameters.get(ParameterKeys.INTENT_INCOMING_MESSAGE));
 
          // TODO: check if those headers are needed
@@ -703,7 +775,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     * @param callIntent    an intent that will be sent on an incoming call
     * @param messageIntent an intent that will be sent on an incoming text message
     */
-   public void setPendingIntents(Intent callIntent, Intent messageIntent)
+   public void setIntents(Intent callIntent, Intent messageIntent)
    {
       RCLogger.i(TAG, "setPendingIntents()");
 
@@ -1008,7 +1080,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    {
       RCLogger.i(TAG, "onMessageArrivedEvent(): id: " + jobId + ", peer: " + peer + ", text: " + messageText);
 
-      audioManager.playMessageSound();
       HashMap<String, String> parameters = new HashMap<String, String>();
       // filter out potential '<' and '>' and leave just the SIP URI
       String peerSipUri = peer.replaceAll("^<", "").replaceAll(">$", "");
@@ -1016,6 +1087,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       //parameters.put(RCConnection.ParameterKeys.CONNECTION_PEER, from);
 
       if (isServiceAttached) {
+         audioManager.playMessageSound();
+
          messageIntent.setAction(ACTION_INCOMING_MESSAGE);
          messageIntent.putExtra(EXTRA_DID, peerSipUri);
          messageIntent.putExtra(EXTRA_MESSAGE_TEXT, messageText);
@@ -1170,7 +1243,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
                   .setSmallIcon(R.drawable.ic_chat_24dp)
                   .setContentTitle(peerUsername)
                   .setContentText(messageText)
-                  //.setSound(Uri.parse("android.resource://" + getPackageName() + "/" + audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_MESSAGE)))  // R.raw.message_sample)) //
+                  .setSound(Uri.parse("android.resource://" + getPackageName() + "/" + audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_MESSAGE)))  // R.raw.message_sample)) //
                   // Need this to show up as Heads-up Notification
                   .setPriority(NotificationCompat.PRIORITY_HIGH)
                   .setAutoCancel(true)  // cancel notification when user acts on it
@@ -1217,6 +1290,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
 
       Intent actionIntent = null;
+      /*
       if (intentAction.equals(ACTION_NOTIFICATION_CALL_OPEN)) {
          RCConnection connection = getLiveConnection();
          if (connection != null) {
@@ -1232,7 +1306,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
             actionIntent = callIntent;
          }
       }
-      else if (intentAction.equals(ACTION_NOTIFICATION_CALL_DEFAULT)) {
+      */
+      if (intentAction.equals(ACTION_NOTIFICATION_CALL_DEFAULT)) {
          callIntent.setAction(ACTION_INCOMING_CALL);
          // don't forget to copy the extras to callIntent
          callIntent.putExtras(intent);
@@ -1406,7 +1481,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    {
       String peerUsername = connection.getPeer().replaceAll(".*?sip:", "").replaceAll("@.*$", "");
 
-      callIntent.setAction(ACTION_OUTGOING_CALL);
+      callIntent.setAction(ACTION_RESUME_CALL);
       callIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
 
       // Intent to open the call activity (for when tapping on the general notification area)

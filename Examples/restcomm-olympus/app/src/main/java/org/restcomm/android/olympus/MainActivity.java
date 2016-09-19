@@ -299,7 +299,7 @@ public class MainActivity extends AppCompatActivity
       }
       if (action == ActionFragment.ActionType.ACTION_TYPE_TEXT_MESSAGE) {
          Intent intent = new Intent(this, MessageActivity.class);
-         intent.setAction(RCDevice.ACTION_OPEN_MESSAGE_SCREEN);
+         intent.setAction(MessageActivity.ACTION_OPEN_MESSAGE_SCREEN);
          intent.putExtra(RCDevice.EXTRA_DID, sipuri);
          startActivity(intent);
       }

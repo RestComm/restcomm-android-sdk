@@ -62,7 +62,7 @@ public class MessageActivity extends AppCompatActivity
 
    ImageButton btnSend;
    EditText txtMessage;
-
+   public static String ACTION_OPEN_MESSAGE_SCREEN = "org.restcomm.android.olympus.ACTION_OPEN_MESSAGE_SCREEN";
 
    private MessageFragment listFragment;
 
@@ -206,7 +206,7 @@ public class MessageActivity extends AppCompatActivity
       }
 
       // Get Intent parameters.
-      if (intent.getAction().equals(RCDevice.ACTION_OPEN_MESSAGE_SCREEN)) {
+      if (intent.getAction().equals(ACTION_OPEN_MESSAGE_SCREEN)) {
          params.put(RCConnection.ParameterKeys.CONNECTION_PEER, intent.getStringExtra(RCDevice.EXTRA_DID));
          String shortname = intent.getStringExtra(RCDevice.EXTRA_DID).replaceAll("^sip:", "").replaceAll("@.*$", "");
          setTitle(shortname);

@@ -87,6 +87,8 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
     KeypadFragment keypadFragment;
     TextView lblCall, lblStatus, lblTimer;
 
+    //public static String ACTION_OUTGOING_CALL = "org.restcomm.android.olympus.ACTION_OUTGOING_CALL";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -260,11 +262,6 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         Log.i(TAG, "%% onNewIntent");
         super.onNewIntent(intent);
         setIntent(intent);
-         /*
-        if (intent.getAction().equals(RCDevice.ACTION_CALL_DISCONNECT)) {
-            finish();
-        }
-        */
     }
 
 
@@ -324,7 +321,7 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
 
             handlePermissions(isVideo);
         }
-        if (intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL) || intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_DECLINE) ||
+        if (intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL) ||
               intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_ANSWER_AUDIO) || intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_ANSWER_VIDEO)) {
             String text;
             if (isVideo) {
@@ -346,10 +343,6 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
             HashMap<String, String> customHeaders = (HashMap<String, String>) intent.getSerializableExtra(RCDevice.EXTRA_CUSTOM_HEADERS);
             if (customHeaders != null) {
                 Log.i(TAG, "Got custom headers in incoming call: " + customHeaders.toString());
-            }
-
-            if (intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_DECLINE)) {
-                pendingConnection.reject();
             }
 
             if (intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_ANSWER_AUDIO) || intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_ANSWER_VIDEO)) {
