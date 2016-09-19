@@ -1426,9 +1426,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
                   .setSmallIcon(R.drawable.ic_phone_in_talk_24dp)
                   .setContentTitle(peerUsername)
                   .setContentText("Tap to return to call")
-                  .addAction(resId, muteString, PendingIntent.getService(getApplicationContext(), 0, serviceIntentMute, PendingIntent.FLAG_ONE_SHOT))
-                  .addAction(R.drawable.ic_call_end_24dp, "Hang up", PendingIntent.getService(getApplicationContext(), 0, serviceIntentDisconnect, PendingIntent.FLAG_ONE_SHOT))
-                  .setContentIntent(PendingIntent.getActivity(getApplicationContext(), 0, callIntent, PendingIntent.FLAG_ONE_SHOT));
+                  .addAction(resId, muteString, PendingIntent.getService(getApplicationContext(), 0, serviceIntentMute, PendingIntent.FLAG_CANCEL_CURRENT))
+                  .addAction(R.drawable.ic_call_end_24dp, "Hang up", PendingIntent.getService(getApplicationContext(), 0, serviceIntentDisconnect, PendingIntent.FLAG_CANCEL_CURRENT))
+                  .setContentIntent(PendingIntent.getActivity(getApplicationContext(), 0, callIntent, PendingIntent.FLAG_CANCEL_CURRENT));
 
       startForeground(ONCALL_NOTIFICATION_ID, builder.build());
    }
