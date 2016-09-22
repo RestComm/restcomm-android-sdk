@@ -32,6 +32,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -56,6 +57,8 @@ import java.util.ListIterator;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCConnectionListener;
 import org.restcomm.android.sdk.RCDevice;
+import org.restcomm.android.sdk.util.PercentFrameLayout;
+import org.webrtc.SurfaceViewRenderer;
 
 
 public class CallActivity extends AppCompatActivity implements RCConnectionListener, View.OnClickListener,
@@ -124,7 +127,7 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         lblStatus = (TextView) findViewById(R.id.label_status);
         lblTimer = (TextView) findViewById(R.id.label_timer);
 
-        alertDialog = new AlertDialog.Builder(CallActivity.this).create();
+        alertDialog = new AlertDialog.Builder(CallActivity.this, R.style.SimpleAlertStyle).create();
 
         //device = RCClient.listDevices().get(0);
 
@@ -451,6 +454,8 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         } else if (view.getId() == R.id.button_keypad) {
             keypadFragment.setConnection(connection);
 
+            View rootView = getWindow().getDecorView().findViewById(android.R.id.content);
+
             // show keypad
             FragmentTransaction ft = getFragmentManager().beginTransaction();
             ft.show(keypadFragment);
@@ -458,9 +463,9 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         } else if (view.getId() == R.id.button_mute_audio) {
             if (connection != null) {
                 if (!muteAudio) {
-                    btnMuteAudio.setImageResource(R.drawable.audio_muted_50x50);
+                    btnMuteAudio.setImageResource(R.drawable.audio_muted);
                 } else {
-                    btnMuteAudio.setImageResource(R.drawable.audio_active_50x50);
+                    btnMuteAudio.setImageResource(R.drawable.audio_unmuted);
                 }
                 muteAudio = !muteAudio;
                 connection.setAudioMuted(muteAudio);
@@ -469,11 +474,11 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
             if (connection != null) {
                 muteVideo = !muteVideo;
                 if (muteVideo) {
-                    btnMuteVideo.setImageResource(R.drawable.video_muted_50x50);
+                    btnMuteVideo.setImageResource(R.drawable.video_muted);
                     //connection.off();
                     //connection.pauseVideo();
                 } else {
-                    btnMuteVideo.setImageResource(R.drawable.video_active_50x50);
+                    btnMuteVideo.setImageResource(R.drawable.video_unmuted);
                     //connection.on((PercentFrameLayout)findViewById(R.id.local_video_layout), (PercentFrameLayout)findViewById(R.id.remote_video_layout));
                     //connection.resumeVideo((PercentFrameLayout)findViewById(R.id.local_video_layout), (PercentFrameLayout)findViewById(R.id.remote_video_layout));
                 }

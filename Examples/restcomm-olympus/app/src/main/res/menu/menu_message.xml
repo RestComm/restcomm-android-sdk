@@ -1,7 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    tools:context="com.telestax.restcomm_messenger.MessageActivity">
-    <item android:id="@+id/action_settings" android:title="@string/action_settings"
-        android:orderInCategory="100" app:showAsAction="never" />
+      xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item android:id="@+id/action_video_call"
+          android:icon="@drawable/bar_video_call"
+          android:title="@string/action_video_call"
+          app:showAsAction="ifRoom"/>
+
+    <item
+        android:id="@+id/action_audio_call"
+        android:icon="@drawable/bar_audio_call"
+        android:title="@string/action_settings"
+        app:showAsAction="ifRoom"/>
+
 </menu>

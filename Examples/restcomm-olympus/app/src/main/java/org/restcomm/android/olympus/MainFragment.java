@@ -28,6 +28,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.os.Bundle;
 import android.support.v4.app.ListFragment;
+import android.text.Html;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.ContextMenu;
@@ -49,7 +50,7 @@ import java.util.Map;
 import static org.restcomm.android.olympus.ContactsController.CONTACT_KEY;
 import static org.restcomm.android.olympus.ContactsController.CONTACT_VALUE;
 
-public class MainFragment extends ListFragment implements ContactAdapterListener {
+public class MainFragment extends ListFragment {
    private ContactsController contactsController;
    private ContactAdapter listViewAdapter;
    private ArrayList<Map<String, String>> contactList;
@@ -87,11 +88,11 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
       /**
        * Callback for when an item has been selected.
        */
-      public void onItemSelected(HashMap<String, String> contact, ContactSelectionType type);
+      void onItemSelected(HashMap<String, String> contact, ContactSelectionType type);
 
-      public void onContactUpdate(HashMap<String, String> contact, int type);
+      void onContactUpdate(HashMap<String, String> contact, int type);
 
-      public void onAccessoryClicked(HashMap<String, String> contact);
+      //public void onAccessoryClicked(HashMap<String, String> contact);
    }
 
    /**
@@ -126,7 +127,7 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
 
       contactList = contactsController.retrieveContacts();
 
-      listViewAdapter = new ContactAdapter(getActivity().getApplicationContext(), contactList, this);
+      listViewAdapter = new ContactAdapter(getActivity().getApplicationContext(), contactList);
       setListAdapter(listViewAdapter);
    }
 
@@ -230,7 +231,10 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
       if (v.getId() == android.R.id.list) {
          AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
 
-         menu.setHeaderTitle("Edit '" + contactList.get(info.position).get(CONTACT_KEY) + "'");
+         //menu.setHeaderTitle("Edit " + contactList.get(info.position).get(CONTACT_KEY));
+         // TODO: pretty bad logic, let's revisit this at some point so that we can use style resources instead
+         menu.setHeaderTitle(Html.fromHtml("<font color='#DF3D00'>Settings</font>"));
+
          menu.add("Update Contact");
          menu.add("Remove Contact");
       }
@@ -281,17 +285,19 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
       this.listViewAdapter.notifyDataSetChanged();
    }
 
+   /*
    public void onAccessoryClick(int position)
    {
       HashMap<String, String> contact = (HashMap) contactList.get(position);
 
       mCallbacks.onAccessoryClicked(contact);
    }
+   */
 
    // Helper methods
    private void showOkAlert(final String title, final String detail)
    {
-      AlertDialog alertDialog = new AlertDialog.Builder(getActivity()).create();
+      AlertDialog alertDialog = new AlertDialog.Builder(getActivity(), R.style.SimpleAlertStyle).create();
       alertDialog.setTitle(title);
       alertDialog.setMessage(detail);
       alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
@@ -308,11 +314,11 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
       private ArrayList<Map<String, String>> contactList;
       private ContactAdapterListener listener;
 
-      public ContactAdapter(Context context, ArrayList<Map<String, String>> contactList, ContactAdapterListener listener)
+      public ContactAdapter(Context context, ArrayList<Map<String, String>> contactList)
       {
          mInflater = LayoutInflater.from(context);
          this.contactList = contactList;
-         this.listener = listener;
+         //this.listener = listener;
       }
 
       @Override
@@ -343,7 +349,7 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
             holder = new ViewHolder();
             holder.username = (TextView) view.findViewById(R.id.contact_username);
             holder.sipuri = (TextView) view.findViewById(R.id.contact_sipuri);
-            ((ImageButton) view.findViewById(R.id.btn_accessory)).setOnClickListener(ContactButtonClickListener);
+            //((ImageButton) view.findViewById(R.id.btn_accessory)).setOnClickListener(ContactButtonClickListener);
             view.setTag(holder);
          }
          else {
@@ -358,6 +364,7 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
          return view;
       }
 
+      /*
       private View.OnClickListener ContactButtonClickListener = new View.OnClickListener() {
          @Override
          public void onClick(View v)
@@ -368,6 +375,7 @@ public class MainFragment extends ListFragment implements ContactAdapterListener
             }
          }
       };
+      */
 
       private class ViewHolder {
          public TextView username, sipuri;

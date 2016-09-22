@@ -1,6 +1,9 @@
 <resources>
     <string name="app_name">Restcomm Olympus</string>
 
+    <string name="action_audio_call">Make Audio Call</string>
+    <string name="action_video_call">Make Video Call</string>
+
     <string name="messenger">Messenger</string>
     <string name="action_settings">Settings</string>
     <string name="action_about">About</string>

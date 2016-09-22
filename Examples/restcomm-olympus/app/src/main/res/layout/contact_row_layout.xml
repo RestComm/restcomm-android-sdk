@@ -28,6 +28,7 @@
             />
     </LinearLayout>
 
+    <!--
     <ImageButton
         android:id="@+id/btn_accessory"
         android:layout_width="wrap_content"
@@ -38,5 +39,6 @@
         android:tint="@color/colorTextSecondary"
         android:layout_alignParentRight="true"
         android:layout_centerInParent="true" />
+        -->
 
 </RelativeLayout>

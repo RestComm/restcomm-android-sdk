@@ -28,13 +28,14 @@ import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.DialogInterface;
 import android.os.Bundle;
+import android.support.v7.app.AppCompatDialogFragment;
 import android.view.View;
 import android.widget.EditText;
 
 import static org.restcomm.android.olympus.ContactsController.CONTACT_KEY;
 import static org.restcomm.android.olympus.ContactsController.CONTACT_VALUE;
 
-public class AddUserDialogFragment extends DialogFragment {
+public class AddUserDialogFragment extends AppCompatDialogFragment {
    public static final int DIALOG_TYPE_ADD_CONTACT = 0;
    public static final int DIALOG_TYPE_UPDATE_CONTACT = 1;
    EditText txtUsername;
@@ -137,7 +138,7 @@ public class AddUserDialogFragment extends DialogFragment {
          txtUsername.setEnabled(false);
       }
 
-      AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+      AlertDialog.Builder builder = new AlertDialog.Builder(getActivity(), R.style.AppCompatAlertDialogStyle);
 
       // Inflate and set the layout for the dialog
       // Pass null as the parent view because its going in the dialog layout

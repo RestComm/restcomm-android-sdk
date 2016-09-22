@@ -5,14 +5,26 @@
         <!-- Customize your theme here. -->
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
-        <item name="colorAccent">@color/colorTextSecondary</item>
+        <item name="colorAccent">@color/colorAccent</item>
+
+        <!--
+        <item name="colorControlNormal">#1111DD</item>
+        <item name="colorControlActivated">#55AAD0</item>
+        <item name="colorControlHighlight">#123456</item>
+        <item name="colorSwitchThumbNormal">#AA3DD0</item>
+        -->
+
         <item name="android:textColorPrimary">@color/colorTextPrimary</item>
         <item name="android:textColorSecondary">@color/colorTextSecondary</item>
 
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
+
+        <item name="android:itemTextAppearance">@style/AppTheme.ItemTextStyle</item>
         <!-- TODO: Failed attempt to change the Dialog Style, and specifically header color
         <item name="alertDialogStyle">@style/AppTheme_Dialog_Alert</item>
+        <item name="colorAccent">@color/colorTextSecondary</item>
+        <item name="colorSwitchThumbNormal">@color/colorSwitchThumbNormal</item>
         -->
     </style>
 
@@ -30,6 +42,44 @@
         <item name="android:textColor">@color/colorPrimary</item>
     </style>
     -->
+
+    <!-- Styling for Dialogs -->
+    <style name="AppCompatAlertDialogStyle" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:textColorPrimary">@color/colorAccent</item>
+        <!--
+        <item name="android:background">#5fa3d0</item>
+        -->
+    </style>
+
+    <style name="SimpleAlertStyle" parent="Theme.AppCompat.Light.Dialog.Alert">
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:textColorPrimary">@color/colorTextPrimary</item>
+        <item name="android:textColorSecondary">@color/colorTextSecondary</item>
+        <item name="android:windowMinWidthMajor">@android:dimen/dialog_min_width_major</item>
+        <item name="android:windowMinWidthMinor">@android:dimen/dialog_min_width_minor</item>
+        <item name="android:windowTitleStyle">@style/SimpleAlertTitleStyle</item>
+        <!--
+        <item name="android:background">#5fa3d0</item>
+        -->
+    </style>
+
+    <style name="SimpleAlertTitleStyle" parent="SimpleAlertStyle">
+        <item name="android:textAppearance">@style/SimpleAlertTitleTextStyle</item>
+    </style>
+
+    <style name="SimpleAlertTitleTextStyle" parent="SimpleAlertTitleStyle">
+        <item name="android:textColor">@color/colorPrimary</item>
+        <item name="android:textSize">30sp</item>
+    </style>
+
+
+    <style name="AppTheme.ItemTextStyle" parent="@android:style/TextAppearance.Widget.IconMenu.Item">
+        <!--
+        <item name="android:textColor">@color/colorAccent</item>
+        -->
+        <item name="android:textColorPrimary">@color/colorAccent</item>
+    </style>
 
     <style name="AppTheme.NoActionBar">
         <item name="windowActionBar">false</item>

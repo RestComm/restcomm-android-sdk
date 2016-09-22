@@ -13,8 +13,8 @@
         android:id="@+id/imageView_logo"
         android:layout_alignParentTop="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginTop="64dp"
-        android:src="@drawable/restcomm_logo_call_139x54"/>
+        android:layout_marginTop="110dp"
+        android:src="@drawable/olympus_logo"/>
 
     <!-- IMPORTANT: seems that visibility="gone" below fixes the flashing issue somehow (restcomm-android-sdk #354) -->
     <org.restcomm.android.sdk.util.PercentFrameLayout
@@ -96,7 +96,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@android:color/transparent"
-        android:src="@drawable/hangup_74x74"
+        android:src="@drawable/disconnect_call"
         android:id="@+id/button_hangup"
         android:layout_marginBottom="20dp"
         android:layout_alignParentBottom="true"
@@ -106,27 +106,25 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@android:color/transparent"
-        android:src="@drawable/answer_video_50x50"
+        android:src="@drawable/answer_call_video"
         android:id="@+id/button_answer"
         android:layout_alignBottom="@+id/button_hangup"
-        android:layout_toLeftOf="@+id/button_keypad"
-        android:layout_toStartOf="@+id/button_keypad"
+        android:layout_toLeftOf="@+id/button_hangup"
+        android:layout_toStartOf="@+id/button_hangup"
         android:layout_marginRight="58dp"
-        android:layout_marginEnd="58dp"
-        android:layout_marginBottom="10dp"/>
+        android:layout_marginEnd="58dp" />
 
     <ImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/button_answer_audio"
         android:background="@android:color/transparent"
-        android:src="@drawable/answer_audio_50x50"
+        android:src="@drawable/answer_call_audio"
         android:layout_alignBottom="@+id/button_hangup"
-        android:layout_toRightOf="@+id/button_keypad"
-        android:layout_toEndOf="@+id/button_keypad"
+        android:layout_toRightOf="@+id/button_hangup"
+        android:layout_toEndOf="@+id/button_hangup"
         android:layout_marginLeft="58dp"
-        android:layout_marginStart="58dp"
-        android:layout_marginBottom="10dp"/>
+        android:layout_marginStart="58dp" />
 
 
     <ImageButton
@@ -135,7 +133,7 @@
         android:id="@+id/button_keypad"
         android:layout_gravity="center_horizontal|bottom"
         android:background="@android:color/transparent"
-        android:src="@drawable/keypad"
+        android:src="@drawable/call_dialpad"
         android:layout_above="@+id/button_hangup"
         android:layout_centerHorizontal="true"
         android:layout_marginBottom="20dp" />
@@ -144,27 +142,25 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:background="@android:color/transparent"
-        android:src="@drawable/video_active_50x50"
+        android:src="@drawable/video_unmuted"
         android:id="@+id/button_mute_video"
         android:layout_alignBottom="@+id/button_hangup"
-        android:layout_toLeftOf="@+id/button_keypad"
-        android:layout_toStartOf="@+id/button_keypad"
+        android:layout_toLeftOf="@+id/button_hangup"
+        android:layout_toStartOf="@+id/button_hangup"
         android:layout_marginRight="58dp"
-        android:layout_marginEnd="58dp"
-        android:layout_marginBottom="10dp"/>
+        android:layout_marginEnd="58dp" />
 
     <ImageButton
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/button_mute_audio"
         android:background="@android:color/transparent"
-        android:src="@drawable/audio_active_50x50"
+        android:src="@drawable/audio_unmuted"
         android:layout_alignBottom="@+id/button_hangup"
-        android:layout_toRightOf="@+id/button_keypad"
-        android:layout_toEndOf="@+id/button_keypad"
+        android:layout_toRightOf="@+id/button_hangup"
+        android:layout_toEndOf="@+id/button_hangup"
         android:layout_marginLeft="58dp"
-        android:layout_marginStart="58dp"
-        android:layout_marginBottom="10dp"/>
+        android:layout_marginStart="58dp" />
 
     <!-- placeholder for keypad fragment -->
     <FrameLayout

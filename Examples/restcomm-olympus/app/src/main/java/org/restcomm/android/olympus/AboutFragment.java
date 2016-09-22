@@ -77,7 +77,7 @@ public class AboutFragment extends DialogFragment {
       versionTextView.setText(BuildConfig.APPLICATION_ID + " " + BuildConfig.VERSION_NAME  + "#" + BuildConfig.VERSION_CODE);
 
 
-      AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+      AlertDialog.Builder builder = new AlertDialog.Builder(getActivity(), R.style.AppCompatAlertDialogStyle);
 
       // Inflate and set the layout for the dialog
       // Pass null as the parent view because its going in the dialog layout

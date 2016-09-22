@@ -20,7 +20,7 @@
         android:key="pref_proxy_domain"
         android:title="Domain"
         android:summary="Restcomm-Connect domain, like: 'cloud.restcomm.com'"/>
-    <CheckBoxPreference
+    <SwitchPreference
         android:defaultValue="true"
         android:key="signaling-secure"
         android:title="Secure Signaling"
@@ -46,7 +46,7 @@
             android:title="ICE Password"
             android:inputType="textPassword"
             android:summary="Password to use for authentication for ICE"/>
-        <CheckBoxPreference
+        <SwitchPreference
             android:defaultValue="true"
             android:key="turn-enabled"
             android:title="Enable TURN"

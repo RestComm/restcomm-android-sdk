@@ -20,6 +20,7 @@
  *
  */
 
+/*
 package org.restcomm.android.olympus;
 
 import android.app.Activity;
@@ -43,10 +44,6 @@ public class ActionFragment extends DialogFragment {
    // Use this instance of the interface to deliver action events
    ActionListener listener;
 
-   /**
-    * Create a new instance of MyDialogFragment, providing "num"
-    * as an argument.
-    */
    public static ActionFragment newInstance(String username, String sipuri)
    {
       ActionFragment f = new ActionFragment();
@@ -91,53 +88,6 @@ public class ActionFragment extends DialogFragment {
 
    }
 
-    /*
-    // Notice that for this doesn't work if onCreateView has been overriden as described above. To add
-    // custom view when using alert we need to use builder.setView() as seen below
-    @Override
-    public Dialog onCreateDialog(Bundle savedInstanceState) {
-        // Get the layout inflater
-        View view = getActivity().getLayoutInflater().inflate(R.layout.fragment_dialog_add_contact, null);
-        txtUsername = (EditText)view.findViewById(R.id.editText_username);
-        txtSipuri = (EditText)view.findViewById(R.id.editText_sipuri);
-
-        String title = "Add Contact";
-        String positiveText = "Add";
-        if (getArguments().getInt("type") == DIALOG_TYPE_UPDATE_CONTACT) {
-            title = "Update Contact";
-            positiveText = "Update";
-
-            txtUsername.setText(getArguments().getString("username", ""));
-            txtSipuri.setText(getArguments().getString("sipuri", ""));
-            // sipuri is not modifiable
-            txtSipuri.setEnabled(false);
-        }
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
-
-        // Inflate and set the layout for the dialog
-        // Pass null as the parent view because its going in the dialog layout
-        builder.setView(view)
-                .setTitle(title)
-                .setPositiveButton(positiveText,
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int whichButton) {
-                                listener.onDialogPositiveClick(getArguments().getInt("type"), txtUsername.getText().toString(),
-                                        txtSipuri.getText().toString());
-                            }
-                        }
-                )
-                .setNegativeButton("Cancel",
-                        new DialogInterface.OnClickListener() {
-                            public void onClick(DialogInterface dialog, int whichButton) {
-                                listener.onDialogNegativeClick();
-                            }
-                        }
-                );
-        return builder.create();
-    }
-    */
-
    @Override
    public Dialog onCreateDialog(Bundle savedInstanceState)
    {
@@ -163,3 +113,4 @@ public class ActionFragment extends DialogFragment {
    }
 
 }
+*/

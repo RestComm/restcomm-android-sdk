@@ -24,6 +24,7 @@ package org.restcomm.android.olympus;
 
 import android.app.AlertDialog;
 import android.app.DialogFragment;
+import android.app.FragmentManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -35,8 +36,11 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
+import android.provider.SyncStateContract;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.AppCompatDialog;
+import android.support.v7.app.AppCompatDialogFragment;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.Menu;
@@ -59,8 +63,7 @@ import static org.restcomm.android.olympus.ContactsController.CONTACT_VALUE;
 public class MainActivity extends AppCompatActivity
       implements MainFragment.Callbacks, RCDeviceListener,
       View.OnClickListener, SharedPreferences.OnSharedPreferenceChangeListener,
-      AddUserDialogFragment.ContactDialogListener, ActionFragment.ActionListener,
-      ServiceConnection {
+      AddUserDialogFragment.ContactDialogListener, ServiceConnection {
 
    private RCDevice device = null;
    boolean serviceBound = false;
@@ -91,6 +94,8 @@ public class MainActivity extends AppCompatActivity
 
       Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
       setSupportActionBar(toolbar);
+      // TODO set proper image at xhdpi with 48x48
+      toolbar.setNavigationIcon(R.drawable.bar_icon_24dp);
       toolbar.setTitle(getTitle());
 
       listFragment = (MainFragment) getSupportFragmentManager().findFragmentById(R.id.item_list);
@@ -98,7 +103,7 @@ public class MainActivity extends AppCompatActivity
       btnAdd = (FloatingActionButton) findViewById(R.id.imageButton_add);
       btnAdd.setOnClickListener(this);
 
-      alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+      alertDialog = new AlertDialog.Builder(MainActivity.this, R.style.SimpleAlertStyle).create();
 
       PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
       prefs = PreferenceManager.getDefaultSharedPreferences(this);
@@ -243,22 +248,30 @@ public class MainActivity extends AppCompatActivity
    @Override
    public void onItemSelected(HashMap<String, String> contact, MainFragment.ContactSelectionType type)
    {
+      Intent intent = new Intent(this, MessageActivity.class);
+      intent.setAction(MessageActivity.ACTION_OPEN_MESSAGE_SCREEN);
+      intent.putExtra(MessageActivity.EXTRA_CONTACT_NAME, contact.get(CONTACT_KEY));
+      intent.putExtra(RCDevice.EXTRA_DID, contact.get(CONTACT_VALUE));
+      startActivity(intent);
+
       // forward to onActionClicked
-      onActionClicked(ActionFragment.ActionType.ACTION_TYPE_VIDEO_CALL, contact.get(CONTACT_KEY), contact.get(CONTACT_VALUE));
+      //onActionClicked(ActionFragment.ActionType.ACTION_TYPE_VIDEO_CALL, contact.get(CONTACT_KEY), contact.get(CONTACT_VALUE));
    }
 
    public void onContactUpdate(HashMap<String, String> contact, int type)
    {
-      DialogFragment newFragment = AddUserDialogFragment.newInstance(AddUserDialogFragment.DIALOG_TYPE_UPDATE_CONTACT, contact.get(CONTACT_KEY), contact.get(CONTACT_VALUE));
-      newFragment.show(getFragmentManager(), "dialog");
+      AddUserDialogFragment newFragment = AddUserDialogFragment.newInstance(AddUserDialogFragment.DIALOG_TYPE_UPDATE_CONTACT, contact.get(CONTACT_KEY), contact.get(CONTACT_VALUE));
+      newFragment.show(getSupportFragmentManager(), "dialog");
+      //newFragment.show(getFragmentManager(), "dialog");
    }
 
+   /*
    public void onAccessoryClicked(HashMap<String, String> contact)
    {
       DialogFragment actionFragment = ActionFragment.newInstance(contact.get(CONTACT_KEY), contact.get(CONTACT_VALUE));
       actionFragment.show(getFragmentManager(), "dialog-accessory");
    }
-
+   */
 
    /**
     * Callbacks for AddUserDialogFragment
@@ -276,19 +289,15 @@ public class MainActivity extends AppCompatActivity
    /**
     * Callbacks for ActionFragment
     */
+   /*
    public void onActionClicked(ActionFragment.ActionType action, String username, String sipuri)
    {
-      //DatabaseManager.getInstance().retrieveContactsArray();
-      //retrieveContactsArray();
-
       if (action == ActionFragment.ActionType.ACTION_TYPE_VIDEO_CALL) {
-         //Intent intent = new Intent(RCDevice.ACTION_INCOMING_CALL, null, getApplicationContext(), CallActivity.class);
          Intent intent = new Intent(this, CallActivity.class);
          intent.setAction(RCDevice.ACTION_OUTGOING_CALL);
          intent.putExtra(RCDevice.EXTRA_DID, sipuri);
          intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, true);
          startActivityForResult(intent, CONNECTION_REQUEST);
-         //startActivityForResult(intent, CONNECTION_REQUEST);
       }
       if (action == ActionFragment.ActionType.ACTION_TYPE_AUDIO_CALL) {
          Intent intent = new Intent(this, CallActivity.class);
@@ -304,6 +313,7 @@ public class MainActivity extends AppCompatActivity
          startActivity(intent);
       }
    }
+   */
 
    /**
     * Main Activity onClick
@@ -316,8 +326,11 @@ public class MainActivity extends AppCompatActivity
          intent.setAction(RCDevice.LIVE_CALL);
          startActivityForResult(intent, CONNECTION_REQUEST);
          */
-         DialogFragment newFragment = AddUserDialogFragment.newInstance(AddUserDialogFragment.DIALOG_TYPE_ADD_CONTACT, "", "");
-         newFragment.show(getFragmentManager(), "dialog");
+         //DialogFragment newFragment = AddUserDialogFragment.newInstance(AddUserDialogFragment.DIALOG_TYPE_ADD_CONTACT, "", "");
+         //newFragment.show(getFragmentManager(), "dialog");
+
+         AddUserDialogFragment newFragment = AddUserDialogFragment.newInstance(AddUserDialogFragment.DIALOG_TYPE_ADD_CONTACT, "", "");
+         newFragment.show(getSupportFragmentManager(), "dialog");
       }
    }
 

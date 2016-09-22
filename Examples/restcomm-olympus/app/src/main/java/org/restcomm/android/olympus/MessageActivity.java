@@ -24,6 +24,7 @@
 package org.restcomm.android.olympus;
 
 import android.app.AlertDialog;
+import android.app.DialogFragment;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -36,6 +37,8 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -59,10 +62,12 @@ public class MessageActivity extends AppCompatActivity
    private static final String TAG = "MessageActivity";
    private AlertDialog alertDialog;
    private String currentPeer;
+   private String fullPeer;
 
    ImageButton btnSend;
    EditText txtMessage;
    public static String ACTION_OPEN_MESSAGE_SCREEN = "org.restcomm.android.olympus.ACTION_OPEN_MESSAGE_SCREEN";
+   public static String EXTRA_CONTACT_NAME = "org.restcomm.android.olympus.EXTRA_CONTACT_NAME";
 
    private MessageFragment listFragment;
 
@@ -90,13 +95,14 @@ public class MessageActivity extends AppCompatActivity
 
       listFragment = (MessageFragment) getSupportFragmentManager().findFragmentById(R.id.message_list);
 
-      alertDialog = new AlertDialog.Builder(MessageActivity.this).create();
+      alertDialog = new AlertDialog.Builder(MessageActivity.this, R.style.SimpleAlertStyle).create();
 
       btnSend = (ImageButton) findViewById(R.id.button_send);
       btnSend.setOnClickListener(this);
       txtMessage = (EditText) findViewById(R.id.text_message);
       txtMessage.setOnClickListener(this);
 
+      fullPeer = getIntent().getStringExtra(RCDevice.EXTRA_DID);
       // keep on note of the current peer we are texting with
       currentPeer = getIntent().getStringExtra(RCDevice.EXTRA_DID).replaceAll("^sip:", "").replaceAll("@.*$", "");
       setTitle(currentPeer);
@@ -350,6 +356,39 @@ public class MessageActivity extends AppCompatActivity
          }
       });
       alertDialog.show();
+   }
+
+   @Override
+   public boolean onCreateOptionsMenu(Menu menu)
+   {
+      // Inflate the menu; this adds items to the action bar if it is present.
+      getMenuInflater().inflate(R.menu.menu_message, menu);
+      return true;
+   }
+
+
+   @Override
+   public boolean onOptionsItemSelected(MenuItem item)
+   {
+      // Handle action bar item clicks here. The action bar will
+      // automatically handle clicks on the Home/Up button, so long
+      // as you specify a parent activity in AndroidManifest.xml.
+      int id = item.getItemId();
+      if (id == R.id.action_video_call) {
+         Intent intent = new Intent(this, CallActivity.class);
+         intent.setAction(RCDevice.ACTION_OUTGOING_CALL);
+         intent.putExtra(RCDevice.EXTRA_DID, fullPeer);
+         intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, true);
+         startActivity(intent);
+      }
+      if (id == R.id.action_audio_call) {
+         Intent intent = new Intent(this, CallActivity.class);
+         intent.setAction(RCDevice.ACTION_OUTGOING_CALL);
+         intent.putExtra(RCDevice.EXTRA_DID, fullPeer);
+         intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, false);
+         startActivity(intent);
+      }
+      return super.onOptionsItemSelected(item);
    }
 
 }

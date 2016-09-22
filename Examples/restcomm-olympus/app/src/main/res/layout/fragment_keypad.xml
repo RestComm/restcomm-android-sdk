@@ -17,11 +17,32 @@
         android:layout_height="match_parent"
         android:layout_gravity="center_horizontal|top">
 
-        <View
+        <ImageView
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="#FFFFFF"
+            android:background="#EF222222"
             android:id="@+id/backgroundView" />
+
+        <ImageButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/ic_clear_24dp"
+            android:background="@android:color/transparent"
+            android:id="@+id/button_cancel"
+            android:padding="10dp"
+            android:layout_margin="10dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:fontFamily=""
+            android:textSize="30sp"
+            android:textColor="@color/colorDtmfColor"
+            android:text="DTMF Keypad"
+            android:id="@+id/textView"
+            android:layout_alignParentTop="true"
+            android:layout_centerHorizontal="true"
+            android:layout_marginTop="70dp"/>
 
         <ImageButton
             android:layout_width="wrap_content"
@@ -37,7 +58,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/imageButton_2"
-            android:layout_marginTop="30dp"
+            android:layout_marginTop="170dp"
             android:background="@android:color/transparent"
             android:src="@drawable/two_digit"
             android:layout_alignParentTop="true"
@@ -142,18 +163,6 @@
             android:layout_toRightOf="@+id/imageButton_0"
             android:layout_toEndOf="@+id/imageButton_0"
             android:layout_marginLeft="30dp" />
-
-        <Button
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Close"
-            android:background="@android:color/transparent"
-            android:id="@+id/button_cancel"
-            android:layout_alignParentBottom="true"
-            android:layout_alignParentRight="true"
-            android:layout_alignParentEnd="true"
-            android:layout_marginRight="10dp"
-            android:layout_marginBottom="10dp" />
 
     </RelativeLayout>
 

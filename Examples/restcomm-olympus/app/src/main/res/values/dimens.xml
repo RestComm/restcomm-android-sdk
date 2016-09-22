@@ -6,4 +6,5 @@
     <dimen name="dialog_left_right_margin">24dp</dimen>
     <dimen name="about_header_font_size">18sp</dimen>
     <dimen name="about_value_font_size">16sp</dimen>
+    <dimen name="dimen_call_controls">52dp</dimen>
 </resources>

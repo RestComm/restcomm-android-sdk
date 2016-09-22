@@ -81,7 +81,7 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
       prefs = PreferenceManager.getDefaultSharedPreferences(this);
       prefs.registerOnSharedPreferenceChangeListener(this);
 
-      alertDialog = new AlertDialog.Builder(SettingsActivity.this).create();
+      alertDialog = new AlertDialog.Builder(SettingsActivity.this, R.style.SimpleAlertStyle).create();
    }
 
    protected void onResume()

@@ -1,9 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!--
+    <color name="colorPrimary">#DF3D00</color>
+    <color name="colorPrimaryDark">#9A2A00</color>
+    <color name="colorAccent">#44A5AB</color>
+    -->
+    <color name="colorPrimary">#44A5AB</color>
+    <color name="colorPrimaryDark">#3C5866</color>
+    <color name="colorAccent">#DF3D00</color>
+
+    <color name="colorSwitchThumbNormal">#DF3D00</color>
+
+    <!--
     <color name="colorPrimary">#EB5B29</color>
     <color name="colorPrimaryDark">#803116</color>
-    <color name="colorButtonWhite">#EEEEEE</color>
     <color name="colorAccent">#1D1D1D</color>
+    -->
+    <color name="colorDtmfColor">#6D6E70</color>
+    <color name="colorPrimaryLight">#FF5FDFDA</color>
+    <color name="colorButtonWhite">#EEEEEE</color>
     <color name="colorTextPrimary">#3D3D3D</color>
     <color name="colorTextSecondary">#6D6D6D</color>
     <color name="colorSeparator">#CDCDCD</color>

@@ -23,17 +23,34 @@
 package org.restcomm.android.olympus;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.Canvas;
+import android.graphics.ColorMatrix;
+import android.graphics.ColorMatrixColorFilter;
+import android.graphics.Paint;
+import android.graphics.drawable.BitmapDrawable;
 import android.media.AudioManager;
 import android.media.ToneGenerator;
 import android.os.Bundle;
 import android.app.Fragment;
+import android.os.Handler;
+import android.renderscript.Allocation;
+import android.renderscript.Element;
+import android.renderscript.RenderScript;
+import android.renderscript.ScriptIntrinsicBlur;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 
 import org.restcomm.android.sdk.RCConnection;
+import org.restcomm.android.sdk.RCDevice;
 
 
 public class KeypadFragment extends Fragment implements View.OnClickListener {
@@ -41,9 +58,11 @@ public class KeypadFragment extends Fragment implements View.OnClickListener {
    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
    private static final String ARG_PARAM1 = "param1";
    private static final String ARG_PARAM2 = "param2";
+   private static final String TAG = "KeypadFragment";
 
    private View controlView;
    private RCConnection connection;
+   //private Bitmap screenshotBitmap;
    private ToneGenerator toneGenerator;
 
    ImageButton btnOne;
@@ -58,7 +77,8 @@ public class KeypadFragment extends Fragment implements View.OnClickListener {
    ImageButton btnZero;
    ImageButton btnHash;
    ImageButton btnStar;
-   Button btnCancel;
+   ImageButton btnCancel;
+   ImageView backgroundView;
 
 
    // TODO: Rename and change types of parameters
@@ -78,6 +98,7 @@ public class KeypadFragment extends Fragment implements View.OnClickListener {
    // TODO: Rename and change types and number of parameters
    public static KeypadFragment newInstance(String param1, String param2)
    {
+      Log.i(TAG, "%% newInstance");
       KeypadFragment fragment = new KeypadFragment();
       Bundle args = new Bundle();
       args.putString(ARG_PARAM1, param1);
@@ -94,6 +115,7 @@ public class KeypadFragment extends Fragment implements View.OnClickListener {
    @Override
    public void onCreate(Bundle savedInstanceState)
    {
+      Log.i(TAG, "%% onCreate");
       super.onCreate(savedInstanceState);
       if (getArguments() != null) {
          mParam1 = getArguments().getString(ARG_PARAM1);
@@ -107,6 +129,7 @@ public class KeypadFragment extends Fragment implements View.OnClickListener {
    public View onCreateView(LayoutInflater inflater, ViewGroup container,
                             Bundle savedInstanceState)
    {
+      Log.i(TAG, "%% onCreateView");
       controlView = inflater.inflate(R.layout.fragment_keypad, container, false);
 
       btnOne = (ImageButton) controlView.findViewById(R.id.imageButton_1);
@@ -134,16 +157,105 @@ public class KeypadFragment extends Fragment implements View.OnClickListener {
       btnHash = (ImageButton) controlView.findViewById(R.id.imageButton_hash);
       btnHash.setOnClickListener(this);
 
-      btnCancel = (Button) controlView.findViewById(R.id.button_cancel);
+      btnCancel = (ImageButton) controlView.findViewById(R.id.button_cancel);
       btnCancel.setOnClickListener(this);
+
+      backgroundView = (ImageView)controlView.findViewById(R.id.backgroundView);
 
       // Inflate the layout for this fragment
       return controlView;
    }
 
    @Override
+   public void onStart()
+   {
+      super.onStart();
+      Log.i(TAG, "%% onStart");
+
+   }
+
+   @Override
+   public void onStop()
+   {
+      super.onStop();
+      Log.i(TAG, "%% onStop");
+
+   }
+
+   @Override
+   public void onResume()
+   {
+      super.onResume();
+      Log.i(TAG, "%% onResume");
+
+   }
+
+   @Override
+   public void onHiddenChanged(boolean hidden)
+   {
+      super.onHiddenChanged(hidden);
+      Log.i(TAG, "%% onHiddenChanged");
+
+      // The idea here was to create a variable alpha bitmap, to  give a nice cloudy effect where
+      // other areas are more and others are less concealed from the background (i.e. call). Turned out
+      // to be a big pain so I'm leaving out for now
+      /*
+      if (!hidden) {
+         // Need to defer a bit as the view is not yet ready and the bitmap creation breaks (TODO: need to find a proper event for that)
+         Handler handler = new Handler();
+         // schedule a registration update after 'registrationRefresh' seconds
+         Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+               //Bitmap bitmap = getScreenShot(backgroundView);
+               //Bitmap blurredBitmap = blurBitmap(bitmap);
+               //backgroundView.setImageBitmap(blurredBitmap);
+
+               final BitmapFactory.Options options = new BitmapFactory.Options();
+               options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+               options.inScaled = false;
+
+               // Load source grayscale bitmap
+               Bitmap grayscale = BitmapFactory.decodeResource(getResources(), R.drawable.dtmf_pattern, options);
+               // Place for  alpha mask. It's specifically ARGB_8888 not ALPHA_8,
+               // ALPHA_8 for some reason didn't work out for me.
+               Bitmap alpha = Bitmap.createBitmap(grayscale.getWidth(), grayscale.getHeight(), Bitmap.Config.ARGB_8888);
+               float[] matrix = new float[] {
+                     0, 0, 0, 0, 0,
+                     0, 0, 0, 0, 0,
+                     0, 0, 0, 0, 0,
+                     1, 0, 0, 0, 0
+               };
+               Paint grayToAlpha = new Paint();
+               grayToAlpha.setColorFilter(new ColorMatrixColorFilter(new ColorMatrix(matrix)));
+               Canvas alphaCanvas = new Canvas(alpha);
+               // Make sure nothing gets scaled during drawing
+               alphaCanvas.setDensity(Bitmap.DENSITY_NONE);
+               // Draw grayscale bitmap on to alpha canvas, using color filter that
+               // takes alpha from red channel
+               alphaCanvas.drawBitmap(grayscale, 0, 0, grayToAlpha);
+               // Bitmap alpha now has usable alpha channel!
+
+               backgroundView.setBackground(new BitmapDrawable(getResources(), alpha));
+            }
+         };
+         handler.postDelayed(runnable, 0);
+      }
+      */
+   }
+
+   @Override
+   public void onPause()
+   {
+      super.onPause();
+      Log.i(TAG, "%% onPause");
+
+   }
+
+   @Override
    public void onAttach(Activity activity)
    {
+      Log.i(TAG, "%% onAttach");
       super.onAttach(activity);
       try {
          mListener = (OnFragmentInteractionListener) activity;
@@ -157,6 +269,7 @@ public class KeypadFragment extends Fragment implements View.OnClickListener {
    @Override
    public void onDetach()
    {
+      Log.i(TAG, "%% onDetach");
       super.onDetach();
       mListener = null;
    }
@@ -229,12 +342,57 @@ public class KeypadFragment extends Fragment implements View.OnClickListener {
     */
    public interface OnFragmentInteractionListener {
       // TODO: Update argument type and name
-      public void onFragmentInteraction(String action);
+      void onFragmentInteraction(String action);
    }
 
    public void setConnection(RCConnection connection)
    {
       this.connection = connection;
+   }
+
+   private Bitmap getScreenShot(View view) {
+      //View screenView = view.getRootView();
+      View screenView = view;
+
+      screenView.setDrawingCacheEnabled(true);
+      //screenView.buildDrawingCache();
+      Bitmap bitmap = Bitmap.createBitmap(screenView.getDrawingCache());
+      screenView.setDrawingCacheEnabled(false);
+      return bitmap;
+   }
+
+   private Bitmap blurBitmap(Bitmap bitmap) {
+
+      //Let's create an empty bitmap with the same size of the bitmap we want to blur
+      Bitmap outBitmap = Bitmap.createBitmap(bitmap.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
+
+      //Instantiate a new Renderscript
+      RenderScript rs = RenderScript.create(getActivity().getApplicationContext());
+
+      //Create an Intrinsic Blur Script using the Renderscript
+      ScriptIntrinsicBlur blurScript = ScriptIntrinsicBlur.create(rs, Element.U8_4(rs));
+
+      //Create the in/out Allocations with the Renderscript and the in/out bitmaps
+      Allocation allIn = Allocation.createFromBitmap(rs, bitmap);
+      Allocation allOut = Allocation.createFromBitmap(rs, outBitmap);
+
+      //Set the radius of the blur
+      blurScript.setRadius(25.f);
+
+      //Perform the Renderscript
+      blurScript.setInput(allIn);
+      blurScript.forEach(allOut);
+
+      //Copy the final bitmap created by the out Allocation to the outBitmap
+      allOut.copyTo(outBitmap);
+
+      //recycle the original bitmap
+      bitmap.recycle();
+
+      //After finishing everything, we destroy the Renderscript.
+      rs.destroy();
+
+      return outBitmap;
    }
 
 }
