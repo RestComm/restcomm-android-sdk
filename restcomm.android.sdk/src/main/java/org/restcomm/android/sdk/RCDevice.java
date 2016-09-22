@@ -250,7 +250,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    // is an incoming call ringing, triggered by the Notification subsystem?
    private boolean activeCallNotification = false;
    // Numbers here refer to: delay duration, on duration 1, off duration 1, on duration 2, off duration2, ...
-   long[] notificationVibrationPattern = { 0, 100, 200, 100, 200 };
+   long[] notificationVibrationPattern = { 0, 100, 100, 100, 1000 };
    int notificationColor =  Color.parseColor("#3c5866");
    int[] notificationColorPattern = { 2000, 2000 };
    private boolean foregroundNoticationActive = false;

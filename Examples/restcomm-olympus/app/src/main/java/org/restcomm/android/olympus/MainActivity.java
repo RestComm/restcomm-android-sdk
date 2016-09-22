@@ -418,11 +418,8 @@ public class MainActivity extends AppCompatActivity
          handleExternalCall();
       }
 
-      //if (connectivityStatus != this.previousConnectivityStatus) {
-         //showOkAlert("RCDevice connectivity change", text);
-         Toast.makeText(getApplicationContext(), text, Toast.LENGTH_LONG).show();
-         this.previousConnectivityStatus = connectivityStatus;
-      //}
+      Toast.makeText(getApplicationContext(), text, Toast.LENGTH_LONG).show();
+      this.previousConnectivityStatus = connectivityStatus;
    }
 
    // Handle call issued by external App via CALL intent

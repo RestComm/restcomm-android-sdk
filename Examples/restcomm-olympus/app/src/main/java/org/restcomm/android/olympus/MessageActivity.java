@@ -189,6 +189,9 @@ public class MessageActivity extends AppCompatActivity
       RCDevice.RCDeviceBinder binder = (RCDevice.RCDeviceBinder) service;
       device = binder.getService();
 
+      // needed if we are returning from Message screen that becomes the Device listener
+      device.setDeviceListener(this);
+
       // We have the device reference, let's handle the call
       handleMessage(getIntent());
 
@@ -270,43 +273,39 @@ public class MessageActivity extends AppCompatActivity
     */
    public void onInitialized(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus, int statusCode, String statusText)
    {
-
+      Log.i(TAG, "%% onInitialized");
    }
 
    public void onInitializationError(int errorCode, String errorText)
    {
-
+      Log.i(TAG, "%% onInitializationError");
    }
 
    public void onStartListening(RCDevice device, RCConnectivityStatus connectivityStatus)
    {
-
+      Log.i(TAG, "%% onStartListening");
    }
 
    public void onStopListening(RCDevice device)
    {
-
+      Log.i(TAG, "%% onStopListening");
    }
 
    public void onStopListening(RCDevice device, int errorCode, String errorText)
    {
-      showOkAlert("RCDevice Error", errorText);
-        /*
-        if (errorCode == RCClient.ErrorCodes.NO_CONNECTIVITY.ordinal()) {
-            showOkAlert("No Wifi Connectivity", errorText);
-        }
-        else if (errorCode == RCClient.ErrorCodes.GENERIC_ERROR.ordinal()) {
-            showOkAlert("Generic Error", errorText);
-        }
-        else {
-            showOkAlert("Unknown Error", "Unknown Restcomm Client error");
-        }
-        */
+      if (errorCode == RCClient.ErrorCodes.SUCCESS.ordinal()) {
+         handleConnectivityUpdate(RCConnectivityStatus.RCConnectivityStatusNone, "RCDevice: " + errorText);
+      }
+      else {
+         handleConnectivityUpdate(RCConnectivityStatus.RCConnectivityStatusNone, "RCDevice Error: " + errorText);
+      }
    }
 
    public void onConnectivityUpdate(RCDevice device, RCConnectivityStatus connectivityStatus)
    {
+      Log.i(TAG, "%% onConnectivityUpdate");
 
+      handleConnectivityUpdate(connectivityStatus, null);
    }
 
    public void onMessageSent(RCDevice device, int statusCode, String statusText)
@@ -389,6 +388,30 @@ public class MessageActivity extends AppCompatActivity
          startActivity(intent);
       }
       return super.onOptionsItemSelected(item);
+   }
+
+   public void handleConnectivityUpdate(RCConnectivityStatus connectivityStatus, String text)
+   {
+      if (text == null) {
+         if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusNone) {
+            text = "RCDevice connectivity change: Lost connectivity";
+         }
+         if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusWiFi) {
+            text = "RCDevice connectivity change: Reestablished connectivity (Wifi)";
+         }
+         if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusCellular) {
+            text = "RCDevice connectivity change: Reestablished connectivity (Cellular)";
+         }
+      }
+
+      if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusNone) {
+         getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorTextSecondary)));
+      }
+      else {
+         getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
+      }
+
+      Toast.makeText(getApplicationContext(), text, Toast.LENGTH_LONG).show();
    }
 
 }

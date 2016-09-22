@@ -12,8 +12,6 @@
 
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
-        <item name="android:switchPreferenceStyle">@android:style/Preference.DeviceDefault.SwitchPreference</item>
-        <item name="android:switchStyle">@android:style/Widget.Material.Light.CompoundButton.Switch</item>
     </style>
 
     <!-- Styling for Alert Dialogs -->
