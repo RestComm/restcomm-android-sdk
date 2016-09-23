@@ -1212,7 +1212,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          //remoteRender.setVisibility(View.VISIBLE);
       }
       else if (state == VideoViewState.ICE_CONNECTED) {
-         if (remoteVideoReceived) {
+         if (remoteVideoReceived && localMediaType == ConnectionMediaType.AUDIO_VIDEO) {
             remoteRender.setVisibility(View.VISIBLE);
 
             remoteRenderLayout.setPosition(REMOTE_X, REMOTE_Y, REMOTE_WIDTH, REMOTE_HEIGHT);
