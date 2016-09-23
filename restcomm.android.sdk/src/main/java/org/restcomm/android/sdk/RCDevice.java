@@ -26,7 +26,6 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * <h3>General Operation</h3>
  * <p>RCDevice represents an abstraction of a communications device able to make and receive calls, send and receive messages etc. Remember that
  * in order to be notified of Restcomm Client events you need to set a listener to RCDevice and implement the applicable methods, and also 'register'
  * to the applicable intents by calling RCDevice.setPendingIntents() and provide one intent for whichever activity will be receiving calls and another
@@ -52,6 +51,7 @@ import java.util.Map;
  *    <li>The actual message text via string extra named RCDevice.INCOMING_MESSAGE_TEXT, like: <i>intent.getStringExtra(RCDevice.INCOMING_MESSAGE_TEXT)</i></li>
  * </ol>
  * </p>
+ *
  * <p>
  * <h3>Taking advantage of Android Notifications</h3>
  * The Restcomm  SDK comes integrated with Android Notifications. This means that while your App is in the
@@ -62,13 +62,29 @@ import java.util.Map;
  * the call will be shown as a notification and the user will be able to:
  * <ol>
  *    <li>Decline it by swiping the notification left, right, or tapping on the hang up Action Button. Then, no intent is sent to the App, as the user most likely doesn't want it opened at this point.</li>
- *    <li>Accept it as audio & video call by tapping on the video Action Button. In this case, whichever intent you passed as RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE in RCDevice.initialize() will be sent to your App with
+ *    <li>Accept it as audio and video call by tapping on the video Action Button. In this case, whichever intent you passed as RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE in RCDevice.initialize() will be sent to your App with
  * the extras already discussed previously in normal (i.e. foreground) operation. The only difference is the action, which will be ACTION_INCOMING_CALL_ANSWER_VIDEO. So from App perspective when you get this action
- * you should answer the call as audio & video</li>
+ * you should answer the call as audio and video</li>
  *    <li>Accept it as audio-only call by tapping on the audio Action Button. Same as previously with the only difference that the action will be ACTION_INCOMING_CALL_ANSWER_AUDIO</li>
  * </ol>
  * Keep in mind that once the call is answered then you get a foreground (i.e. sticky) notification in the Notification Drawer for the duration of the call via which you can either mute audio or hang up the call
  * while working on other Android Apps without interruption.
+ * </p>
+ *
+ * <p>
+ * <h3>Android Service</h3>
+ * You need to keep in mind that RCDevice is an Android Service, to facilitiate proper backgrounding functionality. Also this service is both 'bound' and 'started'. Bound
+ * to be able to access it via easy-to-use API and started to make sure that it doesn't shut down when all Activities have been unbounded. Also, notice that although it
+ * is a 'started' service you don't need to call startService(), because that happens internally the first time the service is bound.
+ *
+ * <h2>How to use RCDevice Service</h2>
+ * You typically bind to the service with bindService() at your Activity's onStart() method and unbind using unbindService() at your Activity's onStop() method. Your
+ * Activity needs to extend ServiceConnection to be able to receive binding events and then once you receive onServiceConnected() which means that your Activity is successfully
+ * bound to the RCDevice service, you need to initialize RCDevice with your parameters (Important: only if NOT already initialized). Remember that once the service starts,
+ * it will continue run even if you Activity is not around (that is unless you stop it with RCDevice.release()). This means that you will need to initialize it only once
+ * -the first time an Activity ever binds to it, hence the need to check if initialized, with RCDevice.isInitialized().
+ *
+ * You can also check the Sample Applications on how to properly use that at the Examples directory in the GitHub repository
  * </p>
  * @see RCConnection
  */
@@ -167,7 +183,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     */
    public static String ACTION_INCOMING_CALL_ANSWER_AUDIO = "org.restcomm.android.sdk.ACTION_INCOMING_CALL_ANSWER_AUDIO";
    /**
-    * Call Activity Intent action sent when an incoming call is requested to be answered with audio & video via Notification Drawer. Notice that
+    * Call Activity Intent action sent when an incoming call is requested to be answered with audio and video via Notification Drawer. Notice that
     * the application still has control and needs to answer the call depending on its preference with RCConnection.accept(). Also, extras are
     * exactly the same as for ACTION_OUTGOING_CALL, for example the peer DID will be at 'EXTRA_DID'
     */
@@ -288,7 +304,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    }
 
    // Apps must not have access to the constructor, as it is created inside the service
-   public RCDevice()
+   RCDevice()
    {
    }
 
@@ -305,6 +321,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    }
 
 
+   /**
+    * Internal service callback; not meant for application use
+    */
    @Override
    public void onCreate()
    {
@@ -313,6 +332,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
    }
 
+   /**
+    * Internal service callback; not meant for application use
+    */
    @Override
    public int onStartCommand(Intent intent, int flags, int startId)
    {
@@ -344,6 +366,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       return START_STICKY;
    }
 
+   /**
+    * Internal service callback; not meant for application use
+    */
    @Override
    public IBinder onBind(Intent intent)
    {
@@ -359,6 +384,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       return deviceBinder;
    }
 
+   /**
+    * Internal service callback; not meant for application use
+    */
    @Override
    public void onRebind(Intent intent)
    {
@@ -367,12 +395,18 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       isServiceAttached = true;
    }
 
+   /**
+    * Internal service callback; not meant for application use
+    */
    @Override
    public void onDestroy()
    {
       Log.i(TAG, "%% onDestroy");
    }
 
+   /**
+    * Internal service callback; not meant for application use
+    */
    @Override
    public boolean onUnbind(Intent intent)
    {
@@ -384,7 +418,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    }
 
    /*
-    * Methods for clients to use
+    * Check if RCDevice is already initialized. Since RCDevice is an Android Service that is supposed to run in the background,
+    * this is needed to make sure that RCDevice.initialize() is only invoked once, the first time an Activity binds to the service
     */
    public boolean isInitialized()
    {
@@ -392,13 +427,13 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    }
 
 
-   public boolean isAttached()
+   boolean isAttached()
    {
       return isServiceAttached;
    }
 
    /**
-    * Attach and initialize (if not already initialized) the RCDevice Service with parameters
+    * Initialize RCDevice (if not already initialized) the RCDevice Service with parameters. Notice that this needs to happen after the service has been bound
     *
     * @param activityContext Activity context
     * @param parameters      Parameters for the Device entity (prefer using the string constants shown below, i.e. RCDevice.ParameterKeys.*, instead of
@@ -484,52 +519,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          callNotifications = new HashMap<>();
          messageNotifications = new HashMap<>();
 
-         /* Used for debugging purposes
-         getApplication().registerActivityLifecycleCallbacks(new Application.ActivityLifecycleCallbacks() {
-            @Override
-            public void onActivityCreated(Activity activity, Bundle bundle)
-            {
-               RCLogger.e(TAG, activity.getClass().getName() + ".onActivityCreated()");
-            }
-
-            @Override
-            public void onActivityStarted(Activity activity)
-            {
-               RCLogger.e(TAG, activity.getClass().getName() + ".onActivityStarted()");
-            }
-
-            @Override
-            public void onActivityResumed(Activity activity)
-            {
-               RCLogger.e(TAG, activity.getClass().getName() + ".onActivityResumed()");
-            }
-
-            @Override
-            public void onActivityPaused(Activity activity)
-            {
-               RCLogger.e(TAG, activity.getClass().getName() + ".onActivityPaused()");
-            }
-
-            @Override
-            public void onActivityStopped(Activity activity)
-            {
-               RCLogger.e(TAG, activity.getClass().getName() + ".onActivityStopped()");
-            }
-
-            @Override
-            public void onActivitySaveInstanceState(Activity activity, Bundle bundle)
-            {
-               RCLogger.e(TAG, activity.getClass().getName() + ".onActivitySaveInstanceState()");
-            }
-
-            @Override
-            public void onActivityDestroyed(Activity activity)
-            {
-               RCLogger.e(TAG, activity.getClass().getName() + ".onActivityDestroyed()");
-            }
-         });
-         */
-
          return true;
       }
 
@@ -540,29 +529,25 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    }
 
    /**
-    * Call when App is inactive (i.e. in the background) and hence notifications should be used instead of firing intents right away.
-    * This typically needs to be called at onStop() of your Activity
+    * Set level for SDK logging
+    * @param level  Level to set, following the Android logging lever defined at Log.*
     */
-   /*
-   public void detach()
-   {
-      //isServiceAttached = false;
-      //serviceReferenceCount--;
-   }
-   */
    public void setLogLevel(int level)
    {
       RCLogger.setLogLevel(level);
    }
 
-   // TODO: this is for RCConnection, but see if they can figure out the connectivity in a different way, like asking the signaling thread directly?
-   public RCDeviceListener.RCConnectivityStatus getConnectivityStatus()
+   /**
+    * Used internally in the library to get the current connectivity status
+    * @return The connectivity status
+    */
+   RCDeviceListener.RCConnectivityStatus getConnectivityStatus()
    {
       return cachedConnectivityStatus;
    }
 
    // 'Copy' constructor
-   public RCDevice(RCDevice device)
+   RCDevice(RCDevice device)
    {
       this.incomingSoundEnabled = device.incomingSoundEnabled;
       this.outgoingSoundEnabled = device.outgoingSoundEnabled;
@@ -574,7 +559,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    }
 
    /**
-    * Shut down and release the RCDevice Service
+    * Shut down and release the RCDevice Service. Notice that the actual release of the Android Service happens when we get a reply from Signaling
     */
    public void release()
    {
@@ -595,34 +580,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    }
 
    /**
-    * Start listening for incoming connections
-    */
-   public void listen()
-   {
-      RCLogger.i(TAG, "listen()");
-
-      if (state == DeviceState.READY) {
-         // TODO: implement with new signaling
-
-      }
-   }
-
-   /**
-    * Stop listening for incoming connections
-    */
-   public void unlisten()
-   {
-      RCLogger.i(TAG, "unlisten()");
-
-      if (state == DeviceState.READY) {
-         // TODO: implement with new signaling
-      }
-   }
-
-   /**
-    * Update Device listener to be receiving Device related events. This is
-    * usually needed when we switch activities and want the new activity to receive
-    * events
+    * Update Device listener to be receiving Device related events. This is usually needed when we switch activities and want the new activity
+    * to continue receiving RCDevice events
     *
     * @param listener New device listener
     */
@@ -634,7 +593,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    }
 
    /**
-    * Retrieves the capability token passed to RCClient.createDevice
+    * Retrieves the capability token passed to RCClient.createDevice (<b>Not implemented yet</b>)
     *
     * @return Capability token
     */
@@ -917,13 +876,17 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       return true;
    }
 
-   public HashMap<String, Object> getParameters()
+   HashMap<String, Object> getParameters()
    {
       return parameters;
    }
 
+   /**
+    * Internal method; not meant for application use.
+    */
    public SignalingClient.SignalingClientCallListener getConnectionByJobId(String jobId)
    {
+      // TODO: we can't make it package-local as signaling facilities reside at a separate package,but still this needs to be hidden from App use
       if (connections.containsKey(jobId)) {
          return connections.get(jobId);
       }
@@ -934,7 +897,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
    // -- SignalingClientListener events for incoming messages from signaling thread
    // Replies
-
+   /**
+    * Internal service callback; not meant for application use
+    */
    public void onOpenReply(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
       RCLogger.i(TAG, "onOpenReply(): id: " + jobId + ", connectivityStatus: " + connectivityStatus + ", status: " + status + ", text: " + text);
@@ -961,6 +926,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
    }
 
+   /**
+    * Internal service callback; not meant for application use
+    */
    public void onCloseReply(String jobId, RCClient.ErrorCodes status, String text)
    {
       RCLogger.i(TAG, "onCloseReply(): id: " + jobId + ", status: " + status + ", text: " + text);
@@ -975,6 +943,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       stopSelf();
    }
 
+   /**
+    * Internal service callback; not meant for application use
+    */
    public void onReconfigureReply(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
       RCLogger.i(TAG, "onReconfigureReply(): id: " + jobId + ", connectivityStatus: " + connectivityStatus + ", status: " + status + ", text: " + text);
@@ -1002,6 +973,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
    }
 
+   /**
+    * Internal service callback; not meant for application use
+    */
    public void onMessageReply(String jobId, RCClient.ErrorCodes status, String text)
    {
       RCLogger.i(TAG, "onMessageReply(): id: " + jobId + ", status: " + status + ", text: " + text);
@@ -1017,6 +991,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    }
 
    // Unsolicited Events
+   /**
+    * Internal service callback; not meant for application use
+    */
    public void onCallArrivedEvent(String jobId, String peer, String sdpOffer, HashMap<String, String> customHeaders)
    {
       RCLogger.i(TAG, "onCallArrivedEvent(): id: " + jobId + ", peer: " + peer);
@@ -1063,6 +1040,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
    }
 
+   /**
+    * Internal service callback; not meant for application use
+    */
    public void onRegisteringEvent(String jobId)
    {
       RCLogger.i(TAG, "onRegisteringEvent(): id: " + jobId);
@@ -1076,6 +1056,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
    }
 
+   /**
+    * Internal signaling callback; not meant for application use
+    */
    public void onMessageArrivedEvent(String jobId, String peer, String messageText)
    {
       RCLogger.i(TAG, "onMessageArrivedEvent(): id: " + jobId + ", peer: " + peer + ", text: " + messageText);
@@ -1107,6 +1090,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
    }
 
+   /**
+    * Internal signaling callback; not meant for application use
+    */
    public void onErrorEvent(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
       RCLogger.e(TAG, "onErrorEvent(): id: " + jobId + ", connectivityStatus: " + connectivityStatus + ", status: " + status + ", text: " + text);
@@ -1125,6 +1111,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
    }
 
+   /**
+    * Internal signaling callback; not meant for application use
+    */
    public void onConnectivityEvent(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus)
    {
       RCLogger.i(TAG, "onConnectivityEvent(): id: " + jobId + ", connectivityStatus: " + connectivityStatus);

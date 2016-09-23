@@ -23,7 +23,7 @@
 package org.restcomm.android.sdk;
 
 /**
- * RCPresenceEvent represents a Presence event that is sent through RCDeviceListener
+ * RCPresenceEvent represents a Presence event that is sent through RCDeviceListener (Not Implemented yet)
  */
 public class RCPresenceEvent {
    String name;

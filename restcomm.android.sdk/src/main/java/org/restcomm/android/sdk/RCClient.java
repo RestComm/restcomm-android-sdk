@@ -24,9 +24,7 @@ package org.restcomm.android.sdk;
 
 
 /**
- * Top level singleton to initialize and shut down the Restcomm Client SDK. RCClient is also responsible
- * for creating the RCDevice object that represents a virtual device that can create connections and
- * send text messages.
+ * Facility class to publish library's Error Codes and mapping with Error Text
  *
  * @see RCDevice
  * @see RCConnection
