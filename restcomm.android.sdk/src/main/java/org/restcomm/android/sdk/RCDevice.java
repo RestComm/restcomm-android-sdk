@@ -1183,9 +1183,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
                   // Need this to show up as Heads-up Notification
                   .setPriority(NotificationCompat.PRIORITY_HIGH)
                   .setAutoCancel(true)  // cancel notification when user acts on it (Important: only applies to default notification area, not additional actions)
-                  .addAction(R.drawable.ic_videocam_24dp, "", PendingIntent.getService(getApplicationContext(), 0, serviceIntentVideo, PendingIntent.FLAG_UPDATE_CURRENT))
-                  .addAction(R.drawable.ic_call_24dp, "", PendingIntent.getService(getApplicationContext(), 0, serviceIntentAudio, PendingIntent.FLAG_UPDATE_CURRENT))
-                  .addAction(R.drawable.ic_call_end_24dp, "", PendingIntent.getService(getApplicationContext(), 0, serviceIntentDecline, PendingIntent.FLAG_UPDATE_CURRENT))
+                  .addAction(R.drawable.ic_videocam_24dp, "Video", PendingIntent.getService(getApplicationContext(), 0, serviceIntentVideo, PendingIntent.FLAG_UPDATE_CURRENT))
+                  .addAction(R.drawable.ic_call_24dp, "Audio", PendingIntent.getService(getApplicationContext(), 0, serviceIntentAudio, PendingIntent.FLAG_UPDATE_CURRENT))
+                  .addAction(R.drawable.ic_call_end_24dp, "Hang Up", PendingIntent.getService(getApplicationContext(), 0, serviceIntentDecline, PendingIntent.FLAG_UPDATE_CURRENT))
                   .setVibrate(notificationVibrationPattern)
                   .setLights(notificationColor, notificationColorPattern[0], notificationColorPattern[1])
                   .setContentIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDefault, PendingIntent.FLAG_UPDATE_CURRENT))
