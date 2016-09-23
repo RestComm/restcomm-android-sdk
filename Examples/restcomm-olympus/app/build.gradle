@@ -26,8 +26,7 @@ android {
 
         defaultConfig {
             applicationId "org.restcomm.android.olympus"
-            // Increased from 16 -> 17 to add some blur effects in the App
-            minSdkVersion 17
+            minSdkVersion 16
             targetSdkVersion 24
             versionCode version
             versionName "1.0.0-BETA4"

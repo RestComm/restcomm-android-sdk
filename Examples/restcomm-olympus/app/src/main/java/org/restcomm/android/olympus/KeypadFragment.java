@@ -350,6 +350,9 @@ public class KeypadFragment extends Fragment implements View.OnClickListener {
       this.connection = connection;
    }
 
+   // Bluring didn't work 100% so let's keep it commented out in case we revisit in the future.
+   // Note that this needs minSdkVersion 17
+   /*
    private Bitmap getScreenShot(View view) {
       //View screenView = view.getRootView();
       View screenView = view;
@@ -394,5 +397,6 @@ public class KeypadFragment extends Fragment implements View.OnClickListener {
 
       return outBitmap;
    }
+   */
 
 }
