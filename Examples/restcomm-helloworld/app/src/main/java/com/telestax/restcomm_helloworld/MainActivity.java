@@ -227,10 +227,6 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
          connectParams = new HashMap<String, Object>();
          // CHANGEME: You can update the IP address to your Restcomm instance. Also, you can update the number
          // from '1235' to any Restcomm application you wish to reach
-         /*
-         connectParams.put("username", "sip:+1235@cloud.restcomm.com");
-         connectParams.put("video-enabled", true);
-         */
          connectParams.put(RCConnection.ParameterKeys.CONNECTION_PEER, "sip:+1235@cloud.restcomm.com");
          connectParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, true);
          connectParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));

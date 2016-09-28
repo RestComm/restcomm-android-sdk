@@ -429,6 +429,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
                (String) parameters.get(ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC));
 
          startTurn();
+         startMediaTimer();
       }
       else {
          // let's delay a millisecond to avoid calling code in the App getting intertwined with App listener code
@@ -689,6 +690,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       RCLogger.i(TAG, "onCallOutgoingConnectedEvent(): jobId: " + jobId + " customHeaders: " + customHeaders);
 
       state = ConnectionState.SIGNALING_CONNECTED;
+      startMediaTimer();
+
       if (customHeaders != null) {
          callParams.put(ParameterKeys.CONNECTION_CUSTOM_INCOMING_SIP_HEADERS, customHeaders);
       }
@@ -950,7 +953,10 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
       //String url = "https://service.xirsys.com/ice?ident=atsakiridis&secret=4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7&domain=cloud.restcomm.com&application=default&room=default&secure=1";
       new IceServerFetcher(url, turnEnabled, this).makeRequest();
+   }
 
+   private void startMediaTimer()
+   {
       // cancel any pending timers before we start new one
       timeoutHandler.removeCallbacksAndMessages(null);
       Runnable runnable = new Runnable() {
@@ -1005,26 +1011,22 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    // Called if call hasn't been established in the predefined period
    private void onCallTimeout()
    {
-      // This situation can be legit, as long as we not SIGNALING_CONNECTED. If we are, then it means that signaling is established but
-      // media takes way too long
-      if (state == ConnectionState.SIGNALING_CONNECTED) {
-         RCLogger.e(TAG, "onCallTimeout(): State: " + state + ", after: " + CALL_TIMEOUT_DURATION_MILIS);
+      RCLogger.e(TAG, "onCallTimeout(): State: " + state + ", after: " + CALL_TIMEOUT_DURATION_MILIS);
 
-         String reason = "Call-Timeout-Media";
-         RCClient.ErrorCodes errorCode = RCClient.ErrorCodes.ERROR_CONNECTION_MEDIA_TIMEOUT;
+      String reason = "Call-Timeout-Media";
+      RCClient.ErrorCodes errorCode = RCClient.ErrorCodes.ERROR_CONNECTION_MEDIA_TIMEOUT;
 
-         handleDisconnect(reason);
+      handleDisconnect(reason);
 
-         if (device.isAttached() && listener != null) {
-            this.listener.onDisconnected(this, errorCode.ordinal(), RCClient.errorText(errorCode));
-         }
-         else {
-            RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onDisconnected()");
-         }
-
-         // Phone state Intents to capture dropped call event
-         sendQoSDisconnectErrorIntent(errorCode.ordinal(), RCClient.errorText(errorCode));
+      if (device.isAttached() && listener != null) {
+         this.listener.onDisconnected(this, errorCode.ordinal(), RCClient.errorText(errorCode));
       }
+      else {
+         RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onDisconnected()");
+      }
+
+      // Phone state Intents to capture dropped call event
+      sendQoSDisconnectErrorIntent(errorCode.ordinal(), RCClient.errorText(errorCode));
    }
 
    /*
