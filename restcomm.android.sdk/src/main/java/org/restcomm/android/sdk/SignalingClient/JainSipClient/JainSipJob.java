@@ -76,7 +76,7 @@ class JainSipJob {
     * to go through. For example job of type TYPE_OPEN needs to start the signaling stack, bind to networking facilities, register, authorize and finally
     * notify the App. These steps are reflected in the states member variable and initialized when the job is constructed.
     *
-    * Once the FSM is initialized we can then call JainSipFsm.process() that will do the actual FSM processing based on current state (i.e. states variable) and the event (i.e. FrmEvents)
+    * Once the FSM is initialized we can then call JainSipFsm.process() that will do the actual FSM processing based on current state (i.e. states variable) and the event (i.e. FsmEvents)
     * passed by the caller (check JainSipFsm.process())
     *
     * It's important to avoid calling any methods within JainSipFsm.process() that inside them call JainSipFsm.process(), cause that would probably cause corruption
@@ -666,6 +666,7 @@ class JainSipJob {
                      catch (JainSipException e) {
                         e.printStackTrace();
                         jainSipClient.listener.onClientErrorReply(jobId, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone, e.errorCode, e.errorText);
+                        jainSipJobManager.remove(jobId);
                      }
                   }
                   else if (states[index].equals(FsmStates.AUTH)) {
@@ -678,6 +679,7 @@ class JainSipJob {
                         catch (JainSipException e) {
                            e.printStackTrace();
                            jainSipClient.listener.onClientErrorReply(jobId, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone, e.errorCode, e.errorText);
+                           jainSipJobManager.remove(jobId);
                         }
                      }
                      else {

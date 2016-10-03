@@ -745,6 +745,12 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          // only disconnect signaling facilities if we are not already disconnecting
          signalingClient.disconnect(jobId, null);
       }
+      else {
+         // an error has occured while we are disconnecting. Since the normal disconnect flow is being interrupted, we need to tell notification
+         // facilities that forground service notification needs to stop.
+         device.onNotificationCallDisconnected(this);
+      }
+
       disconnectWebrtc();
 
       if (RCDevice.state == RCDevice.DeviceState.BUSY) {

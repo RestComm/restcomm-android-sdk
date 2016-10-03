@@ -61,6 +61,7 @@ public final class RCClient {
       ERROR_CONNECTION_COULD_NOT_CONNECT,
       ERROR_CONNECTION_PEER_NOT_FOUND,
       ERROR_CONNECTION_SERVICE_UNAVAILABLE,
+      ERROR_CONNECTION_SERVICE_INTERNAL_ERROR,
       ERROR_CONNECTION_PARSE_CUSTOM_SIP_HEADERS,
       ERROR_CONNECTION_ACCEPT_FAILED,
       ERROR_CONNECTION_ACCEPT_WRONG_STATE,
@@ -161,6 +162,9 @@ public final class RCClient {
       }
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_SERVICE_UNAVAILABLE) {
          return "Failed to initiate connection; service is unavailable";
+      }
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_SERVICE_INTERNAL_ERROR) {
+         return "Failed to initiate connection; service internal error";
       }
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_PARSE_CUSTOM_SIP_HEADERS) {
          return "Failed to initiate connection; error parsing custom SIP headers";

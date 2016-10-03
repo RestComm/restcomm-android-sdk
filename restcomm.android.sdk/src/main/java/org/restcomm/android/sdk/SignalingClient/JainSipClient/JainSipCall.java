@@ -466,9 +466,17 @@ public class JainSipCall {
             // we are done with this call, let's remove job
             jainSipClient.jainSipJobManager.remove(jainSipJob.jobId);
          }
-         else {
-            RCLogger.e(TAG, "processResponse(): unhandled SIP response: " + response.getStatusCode());
+      }
+      else if (response.getStatusCode() == Response.SERVER_INTERNAL_ERROR) {
+         if (method.equals(Request.BYE)) {
+            listener.onCallErrorEvent(jainSipJob.jobId, RCClient.ErrorCodes.ERROR_CONNECTION_SERVICE_INTERNAL_ERROR,
+                  RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_SERVICE_INTERNAL_ERROR));
+            // we are done with this call, let's remove job
+            jainSipClient.jainSipJobManager.remove(jainSipJob.jobId);
          }
+      }
+      else {
+         RCLogger.e(TAG, "processResponse(): unhandled SIP response: " + response.getStatusCode());
       }
       /*
       else if (response.getStatusCode() == Response.REQUEST_TERMINATED) {

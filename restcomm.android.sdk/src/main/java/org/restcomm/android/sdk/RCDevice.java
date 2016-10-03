@@ -1543,7 +1543,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    void removeConnection(String jobId)
    {
       RCLogger.i(TAG, "removeConnection(): id: " + jobId + ", total connections before removal: " + connections.size());
-      connections.remove(jobId);
+      if (connections.containsKey(jobId)) {
+         connections.remove(jobId);
+      }
    }
 
    private void onAudioManagerChangedState()
