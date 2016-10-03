@@ -123,8 +123,10 @@ class JainSipMessageBuilder {
          }
          else {
             // non register
-            toAddress = jainSipAddressFactory.createAddress(toSipUri);
-            requestUri = jainSipAddressFactory.createURI(toSipUri);
+            // remove spaces and dashes from the sip uri
+            String cleanUri = toSipUri.replace(" ", "").replace("-", "");
+            toAddress = jainSipAddressFactory.createAddress(cleanUri);
+            requestUri = jainSipAddressFactory.createURI(cleanUri);
          }
 
          Request request = jainSipMessageFactory.createRequest(requestUri,

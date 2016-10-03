@@ -74,7 +74,7 @@ public class SigninActivity extends AppCompatActivity {
 
       // see if we are called from an external App trying to make a call
       if (getIntent().getAction().equals(Intent.ACTION_CALL) && getIntent().getData() != null) {
-         if (getIntent().getData().getHost() != null) {
+         if (getIntent().getData() != null) {
             // note down the fact that we are signed up so that
             //SharedPreferences.Editor prefEdit = prefsGeneral.edit();
             //prefEdit.putString(PREFS_EXTERNAL_CALL_URI, getIntent().getData().getHost());

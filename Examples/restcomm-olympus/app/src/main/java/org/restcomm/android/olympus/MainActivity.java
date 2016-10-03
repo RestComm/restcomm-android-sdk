@@ -435,13 +435,14 @@ public class MainActivity extends AppCompatActivity
          if (externalCallUri.getScheme().contains("sip")) {
             // either 'sip' or 'restcomm-sip'
             // normalize 'restcomm-sip' and replace with 'sip'
-            String normalized =  externalCallUriString.replace("restcomm-sip", "sip"); //[[uri absoluteString] stringByReplacingOccurrencesOfString:@"restcomm-sip" withString:@"sip"];
+            //String normalized =  externalCallUriString.replace("restcomm-sip", "sip");
             // also replace '://' with ':' so that the SIP stack can understand it
-            parsedUriString = normalized.replace("://", ":");
+            //parsedUriString = normalized.replace("://", ":");
+            parsedUriString =  externalCallUriString.replace("restcomm-sip", "sip");
          }
          else {
             // either 'tel', 'restcomm-tel', 'client' or 'restcomm-client'. Return just the host part, like 'bob' or '1235' that the Restcomm SDK can handle
-            parsedUriString = externalCallUri.getHost();
+            parsedUriString = externalCallUri.getSchemeSpecificPart();
          }
 
          Intent intent = new Intent(this, CallActivity.class);
