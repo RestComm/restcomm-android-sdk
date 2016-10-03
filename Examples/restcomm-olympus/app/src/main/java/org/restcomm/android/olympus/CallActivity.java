@@ -214,16 +214,16 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         // The activity has become visible (it is now "resumed").
         Log.i(TAG, "%% onResume");
         if (connection != null && connection.getState() == RCConnection.ConnectionState.CONNECTED) {
-            connection.resumeVideo();
+           connection.resumeVideo();
 
            // Now that we can mute/umnute via notification, we need to update the UI accordingly if there was a change
            // while we were not in the foreground
            muteAudio = connection.isAudioMuted();
            if (!muteAudio) {
-              btnMuteAudio.setImageResource(R.drawable.audio_active_50x50);
+              btnMuteAudio.setImageResource(R.drawable.audio_unmuted);
            }
            else {
-              btnMuteAudio.setImageResource(R.drawable.audio_muted_50x50);
+              btnMuteAudio.setImageResource(R.drawable.audio_muted);
            }
         }
     }

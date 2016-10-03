@@ -1049,17 +1049,21 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    }
    */
 
-   // Pause webrtc video, intented for allowing a call to transition to the background where we only want audio enabled
+   // Pause webrtc video, intended for allowing a call to transition to the background where we only want audio enabled
    public void pauseVideo()
    {
-      handleVideoMuted(true);
-      peerConnectionClient.stopVideoSource();
+      if (localMediaType == ConnectionMediaType.AUDIO_VIDEO) {
+         handleVideoMuted(true);
+         peerConnectionClient.stopVideoSource();
+      }
    }
    // Resume webrtc video, intented for allowing a call to transition from the background into the foreground where we want video enabled (it it was enabled to start with)
    public void resumeVideo()
    {
-      peerConnectionClient.startVideoSource();
-      setVideoMuted(videoExpectedMuted);
+      if (localMediaType == ConnectionMediaType.AUDIO_VIDEO) {
+         peerConnectionClient.startVideoSource();
+         setVideoMuted(videoExpectedMuted);
+      }
    }
 
    /*
