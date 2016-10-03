@@ -183,7 +183,7 @@ public class MainActivity extends AppCompatActivity
 
       // We get this intent from CallActivity, when the App is in the background and the user has requested hangup via notification
       // In that case we don't wont to interrupt the user from what they are currently doing in the foreground, so we just finish()
-      if (intent.getAction().equals(ACTION_DISCONNECTED_BACKGROUND)) {
+      if (intent.getAction() != null && intent.getAction().equals(ACTION_DISCONNECTED_BACKGROUND)) {
          finish();
       }
    }
