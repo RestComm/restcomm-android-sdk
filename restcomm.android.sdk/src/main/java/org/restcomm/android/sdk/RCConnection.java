@@ -200,6 +200,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       private String incomingCallSdp = null;
       private String peer = null;
       private ConnectionMediaType remoteMediaType = ConnectionMediaType.UNDEFINED;
+      // Device is already busy with another Connection
+      private boolean deviceAlreadyBusy = false;
 
       public Builder(boolean incoming, RCConnection.ConnectionState state, RCDevice device, SignalingClient signalingClient, AppRTCAudioManager audioManager)
       {
@@ -240,6 +242,12 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          return this;
       }
 
+      public Builder deviceAlreadyBusy(boolean val)
+      {
+         deviceAlreadyBusy = val;
+         return this;
+      }
+
       public RCConnection build()
       {
          return new RCConnection(this);
@@ -275,7 +283,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private Handler timeoutHandler = null;
    // call times out if it hasn't been established after 15 seconds
    private final int CALL_TIMEOUT_DURATION_MILIS = 15 * 1000;
-
+   // Device was already busy with another Connection when this Connection arrived. If so we need to set this so that we have custom behavior later
+   private boolean deviceAlreadyBusy = false;
 
    // Local preview screen position before call is connected.
    private static final int LOCAL_X_CONNECTING = 0;
@@ -333,6 +342,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          remoteMediaType = RCConnection.sdp2Mediatype(builder.incomingCallSdp);
       }
       peer = builder.peer;
+      deviceAlreadyBusy = builder.deviceAlreadyBusy;
       timeoutHandler = new Handler(device.getMainLooper());
    }
 
@@ -491,7 +501,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       RCLogger.i(TAG, "reject()");
 
       if (state == ConnectionState.CONNECTING) {
-         audioManager.stop();
          signalingClient.disconnect(jobId, null);
 
          // TODO: (minor) if reject() is called while we are already connected then we will disconnect, but in that
@@ -499,6 +508,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
          // update state right away since rejecting a call is a response to the INVITE, so no further messages will come
          this.state = ConnectionState.DISCONNECTED;
+
+         // Device was already busy with another Connection when this Connection arrived, need to skip rest of handling here
+         if (deviceAlreadyBusy) {
+            return;
+         }
+
+         audioManager.stop();
 
          // also update RCDevice state
          if (RCDevice.state == RCDevice.DeviceState.BUSY) {
@@ -774,6 +790,11 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    // don't need to disconnect media
    private void handleDisconnected(String jobId, boolean haveDisconnectedLocally)
    {
+      // Device was already busy with another Connection, skip all handling here
+      if (deviceAlreadyBusy) {
+         return;
+      }
+
       // IMPORTANT: we 're first notifying listener and then setting new state because we want the listener to be able to
       // differentiate between disconnect and remote cancel events with the same listener method: onDisconnected.
       // In the first case listener will see state CONNECTED and in the second CONNECTING

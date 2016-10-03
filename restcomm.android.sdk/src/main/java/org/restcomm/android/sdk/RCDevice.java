@@ -998,8 +998,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    {
       RCLogger.i(TAG, "onCallArrivedEvent(): id: " + jobId + ", peer: " + peer);
 
-      //audioManager.playRingingSound();
-
       // filter out potential '<' and '>' and leave just the SIP URI
       String peerSipUri = peer.replaceAll("^<", "").replaceAll(">$", "");
 
@@ -1007,10 +1005,17 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
             .jobId(jobId)
             .incomingCallSdp(sdpOffer)
             .peer(peerSipUri)
+            .deviceAlreadyBusy(state == DeviceState.BUSY)
             .build();
 
       // keep connection in the connections hashmap
       connections.put(jobId, connection);
+
+      if (state == DeviceState.BUSY) {
+         // If we are already talking disconnect the new call
+         connection.reject();
+         return;
+      }
 
       state = DeviceState.BUSY;
 
