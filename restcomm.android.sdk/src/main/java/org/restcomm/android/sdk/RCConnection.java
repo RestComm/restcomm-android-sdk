@@ -768,6 +768,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
 
       disconnectWebrtc();
+      device.onNotificationCallDisconnected(this);
 
       if (RCDevice.state == RCDevice.DeviceState.BUSY) {
          RCDevice.state = RCDevice.DeviceState.READY;
