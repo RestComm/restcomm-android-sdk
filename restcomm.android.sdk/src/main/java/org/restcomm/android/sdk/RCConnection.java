@@ -767,6 +767,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          device.onNotificationCallDisconnected(this);
       }
 
+      audioManager.stop();
+
       disconnectWebrtc();
       device.onNotificationCallDisconnected(this);
 
