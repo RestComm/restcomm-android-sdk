@@ -25,6 +25,8 @@ package org.restcomm.android.sdk.SignalingClient.JainSipClient;
 import android.javax.sip.Transaction;
 import android.javax.sip.header.CallIdHeader;
 
+import org.restcomm.android.sdk.util.RCLogger;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,7 +36,7 @@ class JainSipJobManager {
    // TODO: consider using interface instead
    JainSipClient jainSipClient;
    HashMap<String, JainSipJob> jobs;
-
+   private static final String TAG = "JainSipJobManager";
 
    JainSipJobManager(JainSipClient jainSipClient)
    {
@@ -89,6 +91,11 @@ class JainSipJobManager {
    {
       for (Map.Entry<String, JainSipJob> entry : jobs.entrySet()) {
          JainSipJob job = entry.getValue();
+
+         if (job.transaction == null) {
+            RCLogger.w(TAG, "getByCallId(): " + callId + ", \njob: " + job + ", \ntransaction is null, check if legit");
+            continue;
+         }
 
          if (((CallIdHeader)job.transaction.getRequest().getHeader("Call-ID")).getCallId().equals(callId)) {
             return job;
