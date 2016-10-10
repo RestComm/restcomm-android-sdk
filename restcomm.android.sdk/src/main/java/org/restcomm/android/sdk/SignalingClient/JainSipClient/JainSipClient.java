@@ -176,6 +176,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
 
       Properties properties = new Properties();
       properties.setProperty("android.javax.sip.STACK_NAME", "androidSip");
+      properties.setProperty("android.gov.nist.javax.sip.MESSAGE_PROCESSOR_FACTORY", "android.gov.nist.javax.sip.stack.NioMessageProcessorFactory");
 
       // Setup TLS even if currently we aren't using it, so that if user changes the setting later
       // the SIP stack is ready to support it
@@ -412,6 +413,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
          String transport = "tcp";
          if (JainSipConfiguration.getBoolean(configuration, RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED)) {
             transport = "tls";
+            //transport = "wss";
          }
 
          Integer port = DEFAULT_LOCAL_SIP_PORT;
