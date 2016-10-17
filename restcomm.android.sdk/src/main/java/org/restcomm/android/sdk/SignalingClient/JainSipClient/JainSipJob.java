@@ -342,6 +342,7 @@ class JainSipJob {
                               throw new RuntimeException("Failed to unbind signaling facilities", e);
                            }
                            jainSipClient.listener.onClientClosedEvent(jobId, e.errorCode, e.errorText);
+                           jainSipJobManager.remove(jobId);
                         }
                      }
                      else {
@@ -370,7 +371,7 @@ class JainSipJob {
                      // where the user does such a setup that registration fails and then they change again to a valid settings. In this case
                      // the first registration will timeout, but we don't care, we still need to continue with the register step
                      if (states[index].equals(FsmStates.AUTH_1)) {
-                        // timeout occured in unregister
+                        // timeout occurred in unregister
                         RCLogger.w(TAG, "process(): unregister timed out in reconfigure, ignoring unregister step");
                         index += 1;
                         event = FsmEvents.REGISTER_FAILURE;
@@ -428,6 +429,7 @@ class JainSipJob {
                            e.printStackTrace();
                            jainSipClient.listener.onClientReconfigureReply(jobId, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipClient.jainSipNotificationManager.getNetworkStatus()),
                                  e.errorCode, e.errorText);
+                           jainSipJobManager.remove(jobId);
                         }
                      }
                      else {
@@ -530,6 +532,7 @@ class JainSipJob {
                            e.printStackTrace();
                            jainSipClient.listener.onClientReconfigureReply(jobId, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipClient.jainSipNotificationManager.getNetworkStatus()),
                                  e.errorCode, e.errorText);
+                           jainSipJobManager.remove(jobId);
                         }
                      }
                      else {
@@ -579,6 +582,7 @@ class JainSipJob {
                            e.printStackTrace();
                            jainSipClient.listener.onClientReconfigureReply(jobId, JainSipNotificationManager.networkStatus2ConnectivityStatus(jainSipClient.jainSipNotificationManager.getNetworkStatus()),
                                  e.errorCode, e.errorText);
+                           jainSipJobManager.remove(jobId);
                         }
                      }
                      else {
@@ -616,6 +620,7 @@ class JainSipJob {
                      catch (JainSipException e) {
                         e.printStackTrace();
                         jainSipClient.listener.onClientErrorReply(jobId, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone, e.errorCode, e.errorText);
+                        jainSipJobManager.remove(jobId);
                      }
                   }
                   else if (states[index].equals(FsmStates.AUTH)) {
@@ -628,6 +633,7 @@ class JainSipJob {
                         catch (JainSipException e) {
                            e.printStackTrace();
                            jainSipClient.listener.onClientErrorReply(jobId, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone, e.errorCode, e.errorText);
+                           jainSipJobManager.remove(jobId);
                         }
                      }
                      else {
@@ -647,6 +653,7 @@ class JainSipJob {
                   }
                }
                else if (type == Type.TYPE_START_NETWORKING) {
+                  RCLogger.i(TAG, "Job, TYPE_START_NETWORKING: " + this.toString());
                   if (states[index].equals(FsmStates.BIND_REGISTER)) {
                      // no need for connectivity check here, we know there is connectivity
                      try {
