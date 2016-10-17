@@ -293,7 +293,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       multipleParameters.put("old-parameters", oldParameters);
       multipleParameters.put("new-parameters", configuration);
       if (modifiedParameters.containsKey(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED)) {
-         // if signaling has changed we need to a. unregister from old using old creds, b. unbind, c. bind, d. register with new using new creds
+         // if signaling secure has changed we need to a. unregister from old using old creds, b. unbind, c. bind, d. register with new using new creds
          // start FSM and pass it both previous and current parameters
          jainSipJobManager.add(jobId, JainSipJob.Type.TYPE_RECONFIGURE_RELOAD_NETWORKING, multipleParameters);
       }
@@ -635,11 +635,18 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
             throw new RuntimeException("Failed to authenticate after max attempts");
          }
       }
+      catch (SipException e) {
+         // Got exception when trying to register with a non existing domain (for some reason it didn't break in REGISTER, but in AUTH)
+         throw new JainSipException(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_COULD_NOT_CONNECT,
+               RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_COULD_NOT_CONNECT), e);
+      }
+      /*
       catch (Exception e) {
          // TODO: let's emit a RuntimeException for now so that we get a loud and clear indication of issues involved in the field and then
          // we can adjust and only do a e.printStackTrace()
          throw new RuntimeException("Failed to authenticate", e);
       }
+      */
    }
 
    // ------ SipListener events
