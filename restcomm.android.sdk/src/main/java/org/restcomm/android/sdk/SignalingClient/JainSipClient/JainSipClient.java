@@ -909,12 +909,12 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
    // TODO: Improve this, try to not depend on such low level facilities
    public String getIPAddress(boolean useIPv4) throws SocketException
    {
-      RCLogger.v(TAG, "getIPAddress()");
+      String stringAddress = "";
       if (jainSipNotificationManager.getNetworkStatus() == JainSipNotificationManager.NetworkStatus.NetworkStatusWiFi) {
          WifiManager wifiMgr = (WifiManager) androidContext.getSystemService(Context.WIFI_SERVICE);
          WifiInfo wifiInfo = wifiMgr.getConnectionInfo();
          int ip = wifiInfo.getIpAddress();
-         return Formatter.formatIpAddress(ip);
+         stringAddress = Formatter.formatIpAddress(ip);
       }
 
       if (jainSipNotificationManager.getNetworkStatus() == JainSipNotificationManager.NetworkStatus.NetworkStatusCellular) {
@@ -928,13 +928,13 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
                      boolean isIPv4 = addr instanceof Inet4Address;  //InetAddressUtils.isIPv4Address(sAddr);
                      if (useIPv4) {
                         if (isIPv4)
-                           return sAddr;
+                           stringAddress = sAddr;
                      }
                      else {
                         if (!isIPv4) {
                            int delim = sAddr.indexOf('%'); // drop ip6 port
                            // suffix
-                           return delim < 0 ? sAddr : sAddr.substring(0,
+                           stringAddress = delim < 0 ? sAddr : sAddr.substring(0,
                                  delim);
                         }
                      }
@@ -943,7 +943,9 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
             }
          }
       }
-      return "";
+
+      RCLogger.v(TAG, "getIPAddress(): " + stringAddress);
+      return stringAddress;
    }
 
    private void updateViaReceivedAndRport(ViaHeader viaHeader)
