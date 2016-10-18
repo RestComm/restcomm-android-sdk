@@ -934,8 +934,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
                         if (!isIPv4) {
                            int delim = sAddr.indexOf('%'); // drop ip6 port
                            // suffix
-                           stringAddress = delim < 0 ? sAddr : sAddr.substring(0,
-                                 delim);
+                           stringAddress = delim < 0 ? sAddr : sAddr.substring(0, delim);
                         }
                      }
                   }

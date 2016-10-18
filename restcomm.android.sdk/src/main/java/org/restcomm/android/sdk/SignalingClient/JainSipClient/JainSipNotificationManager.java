@@ -88,6 +88,14 @@ class JainSipNotificationManager extends BroadcastReceiver {
 
       // retrieve new connectivity status
       NetworkStatus newConnectivityStatus = checkConnectivity(context);
+      /*
+      try {
+         Thread.sleep(4000);
+      }
+      catch (InterruptedException e) {
+
+      }
+      */
 
       if (newConnectivityStatus == networksStatus) {
          RCLogger.w(TAG, "Connectivity event, but remained the same: " + newConnectivityStatus);

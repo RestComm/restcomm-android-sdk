@@ -4,6 +4,7 @@ android {
     compileSdkVersion 24
     buildToolsVersion '23.0.2'
 
+    /*
     // Retrieve build number from properties file, increment and use as versionCode. Finally, store new build number in properties file
     def versionPropertiesFile = file('restcomm-android-sdk-version.properties')
     if (versionPropertiesFile.canRead()) {
@@ -24,14 +25,15 @@ android {
     else {
         throw new GradleException("Could not read file restcomm-android-sdk-version.properties")
     }
-    /*
+    */
+    /**/
     defaultConfig {
         minSdkVersion 16
-        targetSdkVersion 22
-        versionCode 1
+        targetSdkVersion 24
+        versionCode 1600
         versionName "1.0.0-BETA4"
     }
-    */
+    /**/
     buildTypes {
         release {
             minifyEnabled false
