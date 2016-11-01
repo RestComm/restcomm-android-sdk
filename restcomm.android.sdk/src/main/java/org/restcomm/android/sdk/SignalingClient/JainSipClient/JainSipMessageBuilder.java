@@ -370,7 +370,27 @@ class JainSipMessageBuilder {
          return response;
       }
       catch (ParseException e) {
-         throw new RuntimeException("Error creating Decline response", e);
+         throw new RuntimeException("Error creating response", e);
+      }
+   }
+
+   public Response buildOptions200OKResponse(Request request, ListeningPoint listeningPoint) throws JainSipException
+   {
+      Response response;
+      try {
+         response = jainSipMessageFactory.createResponse(Response.OK, request);
+         Address contactAddress = createContactAddress(listeningPoint, null, null);
+         ContactHeader contactHeader = jainSipHeaderFactory.createContactHeader(contactAddress);
+         response.addHeader(contactHeader);
+         response.removeHeader("P-Asserted-Identity");
+         response.removeHeader("P-Charging-Vector");
+         response.removeHeader("P-Charging-Function-Addresses");
+         response.removeHeader("P-Called-Party-ID");
+
+         return response;
+      }
+      catch (ParseException e) {
+         throw new RuntimeException("Error creating Options 200 OK response", e);
       }
    }
 

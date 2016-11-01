@@ -692,6 +692,21 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
                   e.printStackTrace();
                }
             }
+            else if (method.equals(Request.OPTIONS)) {
+               try {
+                  if (serverTransaction == null) {
+                     // no server transaction yet
+                     serverTransaction = jainSipProvider.getNewServerTransaction(request);
+                  }
+
+                  Response response = jainSipMessageBuilder.buildOptions200OKResponse(request, jainSipListeningPoint);
+                  RCLogger.i(TAG, "Sending SIP response: \n" + response.toString());
+                  serverTransaction.sendResponse(response);
+               }
+               catch (Exception e) {
+                  e.printStackTrace();
+               }
+            }
             else if (method.equals(Request.BYE) || method.equals(Request.CANCEL) || method.equals(Request.ACK)) {
                JainSipJob jainSipJob = jainSipJobManager.getByCallId(callId);
                if (jainSipJob == null) {
