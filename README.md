@@ -25,7 +25,7 @@ RestComm Client SDK for Android has been tested to work on Android API level 16 
 Latest Olympus .apk
 =============================
 
-Here's the .apk for the Olympus Restcomm Android App utilizing the RestComm Client SDK and providing a simple client application for Restcomm Cloud: https://tsfr.io/nL5T9L
+Here's the .apk for the Olympus Restcomm Android App utilizing the RestComm Client SDK and providing a simple client application for Restcomm Cloud: https://tsfr.io/qcn3wy
 
 Want to Contribute ? 
 ========
