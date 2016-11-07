@@ -761,11 +761,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          // only disconnect signaling facilities if we are not already disconnecting
          signalingClient.disconnect(jobId, null);
       }
+      /*
       else {
          // an error has occured while we are disconnecting. Since the normal disconnect flow is being interrupted, we need to tell notification
          // facilities that forground service notification needs to stop.
          device.onNotificationCallDisconnected(this);
       }
+      */
 
       audioManager.stop();
 
@@ -852,6 +854,10 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          if (RCDevice.state == RCDevice.DeviceState.BUSY) {
             RCDevice.state = RCDevice.DeviceState.READY;
          }
+
+         // there are cases when there's a weird error from Restcomm that might not be handled in lower level signaling facilities and hence the
+         // notification isn't removed from Android. To better handle that let's remove the notification upon local disconnect right away
+         device.onNotificationCallDisconnected(this);
       }
       else if (state == ConnectionState.DISCONNECTING) {
          RCLogger.w(TAG, "disconnect(): Attempting to disconnect while we are in state disconnecting, skipping.");
