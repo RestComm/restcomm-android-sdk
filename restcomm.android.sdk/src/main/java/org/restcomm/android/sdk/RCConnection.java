@@ -182,7 +182,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       public static final String CONNECTION_REMOTE_VIDEO = "remote-video";
       public static final String CONNECTION_PREFERRED_VIDEO_CODEC = "preferred-video-codec";
       public static final String CONNECTION_CUSTOM_SIP_HEADERS = "sip-headers";
+      // incoming headers from Restcomm both for incoming and outgoing calls
       public static final String CONNECTION_CUSTOM_INCOMING_SIP_HEADERS = "sip-headers-incoming";
+      public static final String CONNECTION_SIP_HEADER_KEY_CALL_SID = "X-RestComm-CallSid";
    }
 
    // Let's use a builder since RCConnections don't have uniform way to construct
@@ -202,6 +204,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       private ConnectionMediaType remoteMediaType = ConnectionMediaType.UNDEFINED;
       // Device is already busy with another Connection
       private boolean deviceAlreadyBusy = false;
+      // Custom headers sent by Restcomm
+      private HashMap<String, String> customHeaders;
 
       public Builder(boolean incoming, RCConnection.ConnectionState state, RCDevice device, SignalingClient signalingClient, AppRTCAudioManager audioManager)
       {
@@ -245,6 +249,12 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       public Builder deviceAlreadyBusy(boolean val)
       {
          deviceAlreadyBusy = val;
+         return this;
+      }
+
+      public Builder customHeaders(HashMap<String, String> val)
+      {
+         customHeaders = val;
          return this;
       }
 
@@ -344,6 +354,11 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       peer = builder.peer;
       deviceAlreadyBusy = builder.deviceAlreadyBusy;
       timeoutHandler = new Handler(device.getMainLooper());
+
+      callParams = new HashMap<>();
+      if (builder.customHeaders != null) {
+         callParams.put(ParameterKeys.CONNECTION_CUSTOM_INCOMING_SIP_HEADERS, builder.customHeaders);
+      }
    }
 
    /**
@@ -430,7 +445,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
 
       if (state == ConnectionState.CONNECTING) {
-         this.callParams = (HashMap<String, Object>) parameters;
+         this.callParams.putAll(parameters);
          // Especially, for incoming connections the peer DID is provided when the connection arrives in RCDevice and at that point RCConnection.peer is populated
          //this.callParams.put(ParameterKeys.CONNECTION_PEER, this.peer);
          initializeWebrtc((Boolean) this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED),
@@ -716,7 +731,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          remoteMediaType = sdp2Mediatype(sdpAnswer);
          onRemoteDescription(sdpAnswer);
       }
-      sendQoSConnectionIntent("connected");
    }
 
    public void onCallLocalDisconnectedEvent(String jobId)
@@ -965,7 +979,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          return;
       }
 
-      this.callParams = (HashMap<String, Object>) parameters;
+      this.callParams.putAll(parameters);
       initializeWebrtc((Boolean) this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED),
             (PercentFrameLayout) parameters.get(ParameterKeys.CONNECTION_LOCAL_VIDEO),
             (PercentFrameLayout) parameters.get(ParameterKeys.CONNECTION_REMOTE_VIDEO),
@@ -1516,6 +1530,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             if (callParams.containsKey(ParameterKeys.CONNECTION_CUSTOM_INCOMING_SIP_HEADERS)) {
                customHeaders = (HashMap<String, String>) callParams.get(ParameterKeys.CONNECTION_CUSTOM_INCOMING_SIP_HEADERS);
             }
+
+            sendQoSConnectionIntent("connected");
+
             if (device.isAttached()) {
                device.onNotificationCallConnected(RCConnection.this);
                listener.onConnected(RCConnection.this, customHeaders);
@@ -1807,8 +1824,17 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          intent.putExtra("VIDEO", params.videoEnabled);
          intent.putExtra("REQUEST", params.sipUrl);
       }
-      if (this.getState() != null)
+      if (this.getState() != null) {
          intent.putExtra("CONNECTIONSTATE", this.getState().toString());
+      }
+
+      // if state is connected check if we have Call-Sid custom header and is so send over to android-qos
+      if (state.equals("connected") && callParams.containsKey(ParameterKeys.CONNECTION_CUSTOM_INCOMING_SIP_HEADERS)) {
+         HashMap<String, String> customHeaders = (HashMap<String, String>) callParams.get(ParameterKeys.CONNECTION_CUSTOM_INCOMING_SIP_HEADERS);
+         if (customHeaders.containsKey(ParameterKeys.CONNECTION_SIP_HEADER_KEY_CALL_SID)) {
+            intent.putExtra("CALLSID", customHeaders.get(ParameterKeys.CONNECTION_SIP_HEADER_KEY_CALL_SID));
+         }
+      }
 
       try {
          // Restrict the Intent to MMC Handler running within the same application
@@ -1826,8 +1852,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       Intent intent = new Intent("org.restcomm.android.DISCONNECT_ERROR");
       intent.putExtra("STATE", "disconnect error");
-      if (errorText != null)
+      if (errorText != null) {
          intent.putExtra("ERRORTEXT", errorText);
+      }
       intent.putExtra("ERROR", error);
       intent.putExtra("INCOMING", this.isIncoming());
 

@@ -1006,6 +1006,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
             .incomingCallSdp(sdpOffer)
             .peer(peerSipUri)
             .deviceAlreadyBusy(state == DeviceState.BUSY)
+            .customHeaders(customHeaders)
             .build();
 
       // keep connection in the connections hashmap
