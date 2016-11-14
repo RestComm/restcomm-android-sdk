@@ -303,9 +303,10 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       NAVIGATE_TO_CALL,
    }
 
-   // Apps must not have access to the constructor, as it is created inside the service
-   RCDevice()
+   // Apps must not use the constructor, as it is created inside the service, but making it (package) private seems to cause crashes in some devices
+   public RCDevice()
    {
+      super();
    }
 
    /**
