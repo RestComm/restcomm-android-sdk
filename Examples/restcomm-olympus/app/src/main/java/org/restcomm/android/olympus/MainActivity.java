@@ -25,6 +25,8 @@ package org.restcomm.android.olympus;
 import android.app.AlertDialog;
 import android.app.DialogFragment;
 import android.app.FragmentManager;
+import android.content.ComponentCallbacks;
+import android.content.ComponentCallbacks2;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -49,12 +51,15 @@ import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
 import com.testfairy.TestFairy;
+//import net.hockeyapp.android.CrashManager;
+//import net.hockeyapp.android.UpdateManager;
 
 import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.RCDeviceListener;
 import org.restcomm.android.sdk.RCPresenceEvent;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 import static org.restcomm.android.olympus.ContactsController.CONTACT_KEY;
@@ -63,10 +68,14 @@ import static org.restcomm.android.olympus.ContactsController.CONTACT_VALUE;
 public class MainActivity extends AppCompatActivity
       implements MainFragment.Callbacks, RCDeviceListener,
       View.OnClickListener, SharedPreferences.OnSharedPreferenceChangeListener,
-      AddUserDialogFragment.ContactDialogListener, ServiceConnection {
+      AddUserDialogFragment.ContactDialogListener, ServiceConnection, ComponentCallbacks,
+      ComponentCallbacks2 {
 
    private RCDevice device = null;
    boolean serviceBound = false;
+
+   // DEBUG
+   //ArrayList<String []> list = new ArrayList<>();
 
    private static final String TAG = "MainActivity";
    SharedPreferences prefs;
@@ -174,6 +183,33 @@ public class MainActivity extends AppCompatActivity
       device = null;
       */
       prefs.unregisterOnSharedPreferenceChangeListener(this);
+   }
+
+   /*
+   private void checkForCrashes() {
+      CrashManager.register(this);
+   }
+
+   private void checkForUpdates() {
+      // Remove this for store builds!
+      UpdateManager.register(this);
+   }
+
+   private void unregisterManagers() {
+      UpdateManager.unregister();
+   }
+   */
+
+   public void onLowMemory()
+   {
+      Log.e(TAG, "onLowMemory");
+   }
+
+   @Override
+   public void onTrimMemory(int level)
+   {
+      super.onTrimMemory(level);
+      Log.e(TAG, "onTrimMemory: " + level);
    }
 
    @Override
@@ -331,6 +367,14 @@ public class MainActivity extends AppCompatActivity
 
          AddUserDialogFragment newFragment = AddUserDialogFragment.newInstance(AddUserDialogFragment.DIALOG_TYPE_ADD_CONTACT, "", "");
          newFragment.show(getSupportFragmentManager(), "dialog");
+
+         // DEBUG: for adding memory pressure to the App
+         /*
+         for (int i = 0; i < 200; i++) {
+            list.add(new String[100000]);
+         }
+         Log.i(TAG, "List size: " + list.size());
+         */
       }
    }
 
@@ -512,7 +556,6 @@ public class MainActivity extends AppCompatActivity
    {
 
    }
-
 
    /**
     * Helpers
