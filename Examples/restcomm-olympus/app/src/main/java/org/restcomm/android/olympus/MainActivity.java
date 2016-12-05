@@ -59,8 +59,12 @@ import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.RCDeviceListener;
 import org.restcomm.android.sdk.RCPresenceEvent;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.TimeZone;
 
 import static org.restcomm.android.olympus.ContactsController.CONTACT_KEY;
 import static org.restcomm.android.olympus.ContactsController.CONTACT_VALUE;
@@ -542,6 +546,42 @@ public class MainActivity extends AppCompatActivity
       if (id == R.id.action_settings) {
          Intent i = new Intent(this, SettingsActivity.class);
          startActivity(i);
+      }
+      if (id == R.id.action_submit_logs) {
+         try {
+            // retrieve all log entries from logcat in a string builder
+            Process process = Runtime.getRuntime().exec("logcat -d *:V");
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+
+            StringBuilder log = new StringBuilder();
+            String line;
+            while ((line = bufferedReader.readLine()) != null) {
+               log.append(line);
+               log.append(System.getProperty("line.separator"));
+            }
+            bufferedReader.close();
+
+            TimeZone timezone = TimeZone.getDefault();
+            //String logs ="<HTML><BODY><p style=\"font-family: 'Courier New', Courier, monospace\">";
+            String logs = log.toString();
+            //logs += "</p></BODY><HTML>";
+
+            // Send logs via email and add timezone in the subject so that we can exactly correlate
+            Intent i = new Intent(Intent.ACTION_SEND);
+            i.setType("message/rfc822");
+            i.putExtra(Intent.EXTRA_EMAIL, new String[]{"antonis.tsakiridis@telestax.com"});
+            i.putExtra(Intent.EXTRA_SUBJECT, "[restcomm-android-sdk] User request log report for Olympus - " + timezone.getDisplayName(false, TimeZone.SHORT));
+            i.putExtra(Intent.EXTRA_TEXT, logs);
+            //i.putExtra(Intent.EXTRA_HTML_TEXT, logs);
+            try {
+               startActivity(Intent.createChooser(i, "Send mail..."));
+            } catch (android.content.ActivityNotFoundException ex) {
+               Toast.makeText(MainActivity.this, "There are no email clients installed.", Toast.LENGTH_SHORT).show();
+            }
+         }
+         catch (IOException e) {
+            Log.e(TAG, "IOException when gathering logcat");
+         }
       }
       if (id == R.id.action_about) {
          DialogFragment newFragment = AboutFragment.newInstance();

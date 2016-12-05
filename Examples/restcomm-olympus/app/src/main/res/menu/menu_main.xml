@@ -2,15 +2,23 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     >
 
-<!-- "Mark Favorite", should appear as action button if possible -->
+<!-- Settings, should appear as button, if possible -->
 <item
     android:id="@+id/action_settings"
     android:icon="@drawable/ic_settings_white_24dp"
     android:title="@string/action_settings"
     app:showAsAction="ifRoom"/>
 
-<!-- Settings, should always be in the overflow -->
+<!-- About, should appear as button, if possible -->
+<item android:id="@+id/action_submit_logs"
+      android:icon="@drawable/ic_bug_report_black_24dp"
+      android:title="@string/action_submit_logs"
+      app:showAsAction="never"/>
+
+    <!-- About, should appear as button, if possible -->
 <item android:id="@+id/action_about"
+    android:icon="@drawable/ic_info_outline_black_24dp"
     android:title="@string/action_about"
     app:showAsAction="never"/>
 </menu>
+
