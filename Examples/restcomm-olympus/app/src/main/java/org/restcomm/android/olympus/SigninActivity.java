@@ -154,6 +154,21 @@ public class SigninActivity extends AppCompatActivity {
          focusView = txtDomain;
          cancel = true;
       }
+      else if (username.contains(" ")) {
+         txtUsername.setError(getString(R.string.error_field_no_whitespace));
+         focusView = txtUsername;
+         cancel = true;
+      }
+      else if (domain.contains(" ")) {
+         txtDomain.setError(getString(R.string.error_field_no_whitespace));
+         focusView = txtDomain;
+         cancel = true;
+      }
+      else if (password.contains(" ")) {
+         txtPassword.setError(getString(R.string.error_field_no_whitespace));
+         focusView = txtPassword;
+         cancel = true;
+      }
 
       if (cancel) {
          // There was an error; don't attempt login and focus the first

@@ -23,7 +23,12 @@
 package org.restcomm.android.olympus;
 
 import android.os.Bundle;
+import android.preference.EditTextPreference;
+import android.preference.Preference;
 import android.preference.PreferenceFragment;
+import android.support.v7.app.AlertDialog;
+
+import org.restcomm.android.sdk.RCDevice;
 
 public class SettingsFragment extends PreferenceFragment {
    @Override
@@ -33,6 +38,61 @@ public class SettingsFragment extends PreferenceFragment {
 
       // Load the preferences from an XML resource
       addPreferencesFromResource(R.xml.preferences);
+
+      // setup listener to be used by all EditTextPreferences
+      Preference.OnPreferenceChangeListener listener = new Preference.OnPreferenceChangeListener() {
+         @Override
+         public boolean onPreferenceChange(Preference preference, Object newValue) {
+            Boolean rtnval = true;
+
+            // don't touch non string preferences and just return true
+            if (!(newValue instanceof String)) {
+               return true;
+            }
+
+            String value = (String)newValue;
+            if (value.contains(" ")) {
+               final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+               builder.setTitle(preference.getTitle() + " validation error");
+               builder.setMessage("Should not contain space(s); edit was canceled");
+               builder.setPositiveButton(android.R.string.ok, null);
+               builder.show();
+               rtnval = false;
+            }
+            return rtnval;
+         }
+      };
+
+      getPreferenceScreen().findPreference(RCDevice.ParameterKeys.SIGNALING_USERNAME).setOnPreferenceChangeListener(listener);
+      getPreferenceScreen().findPreference(RCDevice.ParameterKeys.SIGNALING_DOMAIN).setOnPreferenceChangeListener(listener);
+      getPreferenceScreen().findPreference(RCDevice.ParameterKeys.SIGNALING_PASSWORD).setOnPreferenceChangeListener(listener);
+
+      /*
+      pref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
+
+         @Override
+         public boolean onPreferenceChange(Preference preference, Object newValue) {
+            Boolean rtnval = true;
+
+            // don't touch non string preferences and just return true
+            if (!(newValue instanceof String)) {
+               return true;
+            }
+
+            String value = (String)newValue;
+            if (value.startsWith(" ") || value.endsWith(" ")) {
+               //value = value.trim();
+               final AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
+               builder.setTitle("Validation Error");
+               builder.setMessage("String preference should not start or end with space. Please edit it again");
+               builder.setPositiveButton(android.R.string.ok, null);
+               builder.show();
+               rtnval = false;
+            }
+            return rtnval;
+         }
+      });
+      */
    }
 
 }
