@@ -28,9 +28,11 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.ColorMatrix;
 import android.graphics.ColorMatrixColorFilter;
 import android.graphics.Paint;
+import android.graphics.PorterDuff;
 import android.graphics.drawable.BitmapDrawable;
 import android.media.AudioManager;
 import android.media.ToneGenerator;
@@ -41,8 +43,10 @@ import android.renderscript.Allocation;
 import android.renderscript.Element;
 import android.renderscript.RenderScript;
 import android.renderscript.ScriptIntrinsicBlur;
+import android.support.v7.widget.AppCompatImageButton;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -53,7 +57,7 @@ import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCDevice;
 
 
-public class KeypadFragment extends Fragment implements View.OnClickListener {
+public class KeypadFragment extends Fragment implements View.OnTouchListener {
    // TODO: Rename parameter arguments, choose names that match
    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
    private static final String ARG_PARAM1 = "param1";
@@ -133,32 +137,32 @@ public class KeypadFragment extends Fragment implements View.OnClickListener {
       controlView = inflater.inflate(R.layout.fragment_keypad, container, false);
 
       btnOne = (ImageButton) controlView.findViewById(R.id.imageButton_1);
-      btnOne.setOnClickListener(this);
+      btnOne.setOnTouchListener(this);
       btnTwo = (ImageButton) controlView.findViewById(R.id.imageButton_2);
-      btnTwo.setOnClickListener(this);
+      btnTwo.setOnTouchListener(this);
       btnThree = (ImageButton) controlView.findViewById(R.id.imageButton_3);
-      btnThree.setOnClickListener(this);
+      btnThree.setOnTouchListener(this);
       btnFour = (ImageButton) controlView.findViewById(R.id.imageButton_4);
-      btnFour.setOnClickListener(this);
+      btnFour.setOnTouchListener(this);
       btnFive = (ImageButton) controlView.findViewById(R.id.imageButton_5);
-      btnFive.setOnClickListener(this);
+      btnFive.setOnTouchListener(this);
       btnSix = (ImageButton) controlView.findViewById(R.id.imageButton_6);
-      btnSix.setOnClickListener(this);
+      btnSix.setOnTouchListener(this);
       btnSeven = (ImageButton) controlView.findViewById(R.id.imageButton_7);
-      btnSeven.setOnClickListener(this);
+      btnSeven.setOnTouchListener(this);
       btnEight = (ImageButton) controlView.findViewById(R.id.imageButton_8);
-      btnEight.setOnClickListener(this);
+      btnEight.setOnTouchListener(this);
       btnNine = (ImageButton) controlView.findViewById(R.id.imageButton_9);
-      btnNine.setOnClickListener(this);
+      btnNine.setOnTouchListener(this);
       btnZero = (ImageButton) controlView.findViewById(R.id.imageButton_0);
-      btnZero.setOnClickListener(this);
+      btnZero.setOnTouchListener(this);
       btnStar = (ImageButton) controlView.findViewById(R.id.imageButton_star);
-      btnStar.setOnClickListener(this);
+      btnStar.setOnTouchListener(this);
       btnHash = (ImageButton) controlView.findViewById(R.id.imageButton_hash);
-      btnHash.setOnClickListener(this);
+      btnHash.setOnTouchListener(this);
 
       btnCancel = (ImageButton) controlView.findViewById(R.id.button_cancel);
-      btnCancel.setOnClickListener(this);
+      btnCancel.setOnTouchListener(this);
 
       backgroundView = (ImageView)controlView.findViewById(R.id.backgroundView);
 
@@ -274,12 +278,127 @@ public class KeypadFragment extends Fragment implements View.OnClickListener {
       mListener = null;
    }
 
+   public boolean onTouch(View v, MotionEvent e)
+   {
+      switch (e.getAction()) {
+         case MotionEvent.ACTION_DOWN: {
+            if (v.getId() == R.id.imageButton_1) {
+               toneGenerator.startTone(ToneGenerator.TONE_DTMF_1, 300);
+               connection.sendDigits("1");
+            }
+            else if (v.getId() == R.id.imageButton_2) {
+               toneGenerator.startTone(ToneGenerator.TONE_DTMF_2, 300);
+               connection.sendDigits("2");
+            }
+            else if (v.getId() == R.id.imageButton_3) {
+               toneGenerator.startTone(ToneGenerator.TONE_DTMF_3, 300);
+               connection.sendDigits("3");
+            }
+            else if (v.getId() == R.id.imageButton_4) {
+               toneGenerator.startTone(ToneGenerator.TONE_DTMF_4, 300);
+               connection.sendDigits("4");
+            }
+            else if (v.getId() == R.id.imageButton_5) {
+               toneGenerator.startTone(ToneGenerator.TONE_DTMF_5, 300);
+               connection.sendDigits("5");
+            }
+            else if (v.getId() == R.id.imageButton_6) {
+               toneGenerator.startTone(ToneGenerator.TONE_DTMF_6, 300);
+               connection.sendDigits("6");
+            }
+            else if (v.getId() == R.id.imageButton_7) {
+               toneGenerator.startTone(ToneGenerator.TONE_DTMF_7, 300);
+               connection.sendDigits("7");
+            }
+            else if (v.getId() == R.id.imageButton_8) {
+               toneGenerator.startTone(ToneGenerator.TONE_DTMF_8, 300);
+               connection.sendDigits("8");
+            }
+            else if (v.getId() == R.id.imageButton_9) {
+               toneGenerator.startTone(ToneGenerator.TONE_DTMF_9, 300);
+               connection.sendDigits("9");
+            }
+            else if (v.getId() == R.id.imageButton_0) {
+               toneGenerator.startTone(ToneGenerator.TONE_DTMF_0, 300);
+               connection.sendDigits("0");
+            }
+            else if (v.getId() == R.id.imageButton_star) {
+               toneGenerator.startTone(ToneGenerator.TONE_DTMF_S, 300);
+               connection.sendDigits("*");
+            }
+            else if (v.getId() == R.id.imageButton_hash) {
+               toneGenerator.startTone(ToneGenerator.TONE_DTMF_P, 300);
+               connection.sendDigits("#");
+            }
+            else if (v.getId() == R.id.button_cancel) {
+               mListener.onFragmentInteraction("cancel");
+            }
+
+            // Add also visual feedback as long as the user keeps the button pressed
+            v.setBackgroundResource(R.drawable.pressed_digit);
+            v.invalidate();
+
+            break;
+         }
+         case MotionEvent.ACTION_UP:
+            // Your action here on button click
+         case MotionEvent.ACTION_CANCEL: {
+            final View view = v;
+
+            // add small delay to make sure it is perceivable even for very fast touches
+            new Handler().postDelayed(new Runnable() {
+               @Override
+               public void run()
+               {
+                  view.setBackgroundResource(0);
+                  view.invalidate();
+               }
+            }, 100);
+            break;
+         }
+      }
+
+
+
+
+      return true;
+   }
+
+   /*
+   btnOne.setOnTouchListener(new View.OnTouchListener() {
+      @Override
+      public boolean onTouch(View view, MotionEvent event)
+      {
+         switch (event.getAction()) {
+            case MotionEvent.ACTION_DOWN: {
+               //btnOne.getBackground().setColorFilter(Color.GREEN, PorterDuff.Mode.SRC_ATOP);
+               view.setBackgroundResource(R.drawable.pressed_digit);
+               //btnOne.setBac
+               view.invalidate();
+               break;
+            }
+            case MotionEvent.ACTION_UP:
+               // Your action here on button click
+            case MotionEvent.ACTION_CANCEL: {
+               //view.getBackground().clearColorFilter();
+               view.setBackgroundResource(0);
+               view.invalidate();
+               break;
+            }
+         }
+         return true;
+      }
+   });
+   */
+
+   /*
    @Override
    public void onClick(View v)
    {
       if (v.getId() == R.id.imageButton_1) {
-         toneGenerator.startTone(ToneGenerator.TONE_DTMF_1, 300);
-         connection.sendDigits("1");
+         //toneGenerator.startTone(ToneGenerator.TONE_DTMF_1, 300);
+         //connection.sendDigits("1");
+
       }
       else if (v.getId() == R.id.imageButton_2) {
          toneGenerator.startTone(ToneGenerator.TONE_DTMF_2, 300);
@@ -329,6 +448,7 @@ public class KeypadFragment extends Fragment implements View.OnClickListener {
          mListener.onFragmentInteraction("cancel");
       }
    }
+   */
 
    /**
     * This interface must be implemented by activities that contain this
