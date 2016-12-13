@@ -12,8 +12,8 @@
 <!-- About, should appear as button, if possible -->
 <item android:id="@+id/action_submit_logs"
       android:icon="@drawable/ic_bug_report_black_24dp"
-      android:title="@string/action_submit_logs"
-      app:showAsAction="never"/>
+      android:title="@string/action_submit_bug_report"
+      app:showAsAction="always"/>
 
     <!-- About, should appear as button, if possible -->
 <item android:id="@+id/action_about"

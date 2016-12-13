@@ -7,4 +7,6 @@
     <dimen name="about_header_font_size">18sp</dimen>
     <dimen name="about_value_font_size">16sp</dimen>
     <dimen name="dimen_call_controls">52dp</dimen>
+    <dimen name="app_bar_height">180dp</dimen>
+    <dimen name="text_margin">16dp</dimen>
 </resources>

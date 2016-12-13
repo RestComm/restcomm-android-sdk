@@ -322,6 +322,11 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
             //sipHeaders.put("X-SIP-Header1", "Value1");
             //connectParams.put(RCConnection.ParameterKeys.CONNECTION_CUSTOM_SIP_HEADERS, sipHeaders);
 
+            // save peer to preferences, we might need it for potential bug report (check BugReportActivity)
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putString(BugReportActivity.MOST_RECENT_CALL_PEER, intent.getStringExtra(RCDevice.EXTRA_DID));
+            editor.apply();
+
             handlePermissions(isVideo);
         }
         if (intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL) ||
@@ -347,6 +352,12 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
             if (customHeaders != null) {
                 Log.i(TAG, "Got custom headers in incoming call: " + customHeaders.toString());
             }
+
+            // save peer to preferences, we might need it for potential bug report (check BugReportActivity)
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putString(BugReportActivity.MOST_RECENT_CALL_PEER, incomingCallDid);
+            editor.apply();
+
 
             if (intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_ANSWER_AUDIO) || intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_ANSWER_VIDEO)) {
                 // The Intent has been sent from the Notification subsystem. It can be either of type 'decline', 'video answer and 'audio answer'

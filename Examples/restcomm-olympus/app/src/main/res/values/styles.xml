@@ -29,9 +29,11 @@
         <item name="android:windowMinWidthMinor">@android:dimen/dialog_min_width_minor</item>
         <item name="android:windowTitleStyle">@style/SimpleAlertTitleStyle</item>
     </style>
+
     <style name="SimpleAlertTitleStyle" parent="SimpleAlertStyle">
         <item name="android:textAppearance">@style/SimpleAlertTitleTextStyle</item>
     </style>
+
     <style name="SimpleAlertTitleTextStyle" parent="SimpleAlertTitleStyle">
         <item name="android:textColor">@color/colorAccent</item>
         <!-- For some strange reason if I don't provide a text size, the text ends up being tiny -->
