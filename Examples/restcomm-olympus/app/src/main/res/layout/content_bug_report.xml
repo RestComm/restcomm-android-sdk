@@ -48,6 +48,7 @@
             android:paddingBottom="20dp"
             android:id="@+id/issue_spinner"
             android:entries="@array/bug_report_issue_values"
+            style="@style/Base.Widget.AppCompat.Spinner.Underlined"
             />
 
         <!--
@@ -68,7 +69,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ems="10"
-                android:hint="@string/bug_report_additional_description"
+                android:hint="@string/bug_report_additional_note"
                 android:inputType="textAutoCorrect"
                 android:maxLines="1"/>
         </android.support.design.widget.TextInputLayout>

@@ -104,15 +104,16 @@
     </string>
     <string name="title_activity_scrolling">BugReportActivity</string>
     <string name="bug_report_explanatory_text">
-        "Please try to fill in the Additional Description stating your perception of the issue plus anything you think might be useful for the service team."
+        "Please try to fill in the Additional Note stating your perception of the issue plus anything you think might be useful for the service team."
         "For example \'I was having bad quality before the issue\', or \'I could hear all the other participants to the conference but they couldn\'t hear me\'.\n"
-        "This is especially useful if your issue doesn\'t fall in any of the categories covered in the predefined list of issues in the top of the screen."
+        "This is especially useful if your issue doesn\'t fall in any of the predefined list of issues on the top of the screen."
     </string>
-    <string name="bug_report_additional_description">Enter additional description of your issue</string>
+    <string name="bug_report_additional_note">Enter additional note of your issue</string>
     <string name="bug_report_recent_peer">Enter most recent Peer</string>
 
     <string name="bugReportIssueLabel">Issue:</string>
     <string name="bugReportNoteLabel">Additional Note:</string>
+    <string name="bug_report_description_mandatory_error">Additional note is required for this issue</string>
     <string name="title_activity_bug_report">Report a Bug</string>
 
     <!--

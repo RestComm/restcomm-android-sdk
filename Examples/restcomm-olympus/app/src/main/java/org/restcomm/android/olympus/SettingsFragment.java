@@ -65,7 +65,6 @@ public class SettingsFragment extends PreferenceFragment {
 
       getPreferenceScreen().findPreference(RCDevice.ParameterKeys.SIGNALING_USERNAME).setOnPreferenceChangeListener(listener);
       getPreferenceScreen().findPreference(RCDevice.ParameterKeys.SIGNALING_DOMAIN).setOnPreferenceChangeListener(listener);
-      getPreferenceScreen().findPreference(RCDevice.ParameterKeys.SIGNALING_PASSWORD).setOnPreferenceChangeListener(listener);
 
       /*
       pref.setOnPreferenceChangeListener(new Preference.OnPreferenceChangeListener() {
