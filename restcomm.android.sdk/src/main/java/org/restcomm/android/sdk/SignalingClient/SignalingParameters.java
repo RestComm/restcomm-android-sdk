@@ -96,10 +96,13 @@ public class SignalingParameters {
       boolean isVideo = false;
       for (IceCandidate candidate : iceCandidates) {
          //Log.e(TAG, "@@@@ candidate.sdp: " + candidate.sdp);
-         if (candidate.sdpMid.equals("audio")) {
+         // Remember that chrome distinguishes audio vs video with different names than FF.
+         // Chrome uses 'audio' while FF uses 'sdparta_0' for audio
+         // and chrome uses 'video' while FF uses 'sdparta_1' for video
+         if (candidate.sdpMid.equals("audio") || candidate.sdpMid.equals("sdparta_0")) {
             audioCandidates += "a=" + candidate.sdp + "\r\n";
          }
-         if (candidate.sdpMid.equals("video")) {
+         if (candidate.sdpMid.equals("video") || candidate.sdpMid.equals("sdparta_1")) {
             videoCandidates += "a=" + candidate.sdp + "\r\n";
             isVideo = true;
          }

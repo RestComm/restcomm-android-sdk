@@ -1445,7 +1445,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          @Override
          public void run()
          {
-            RCLogger.i(TAG, "onIceCandidate:");
+            RCLogger.i(TAG, "onIceCandidate:" + candidate);
             connection.signalingParameters.addIceCandidate(candidate);
          }
       };

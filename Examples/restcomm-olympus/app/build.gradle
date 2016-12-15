@@ -40,7 +40,7 @@ android {
         applicationId "org.restcomm.android.olympus"
         minSdkVersion 16
         targetSdkVersion 24
-        versionCode 1608
+        versionCode 1611
         versionName "1.0.0-BETA4"
         //manifestPlaceholders = [HOCKEYAPP_APP_ID: "9f94a735a6f6431ba368e6e0581067a4"]
     }
