@@ -1369,7 +1369,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
                peerConnectionClient.createPeerConnectionFactory(device,
                      peerConnectionParameters,
                      connection);
-               logAndToast("Created PeerConnectionFactory");
+               logAndToast("Created PeerConnectionFactory.");
             }
             if (signalingParameters != null) {
                RCLogger.w(TAG, "EGL context is ready after room connection.");
