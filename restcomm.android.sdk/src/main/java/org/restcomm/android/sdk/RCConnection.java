@@ -913,6 +913,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    @Override
    public void onIceServersReady(final LinkedList<PeerConnection.IceServer> iceServers)
    {
+      RCLogger.d(TAG, "onIceServersReady");
       // Important: need to fire the event in UI context to make sure no races will arise
       Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
@@ -1412,9 +1413,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          @Override
          public void run()
          {
-            RCLogger.i(TAG, "onLocalDescription");
+            RCLogger.i(TAG, "onLocalDescription" + sdp.type + ", delay=" + delta + "ms");
             if (signalingParameters != null) {  // && !signalingParameters.sipUrl.isEmpty()) {
-               logAndToast("Sending " + sdp.type + ", delay=" + delta + "ms");
+               //logAndToast("Sending " + sdp.type + ", delay=" + delta + "ms");
                if (signalingParameters.initiator) {
                   // keep it around so that we combine it with candidates before sending it over
                   connection.signalingParameters.offerSdp = sdp;
