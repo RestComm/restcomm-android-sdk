@@ -13,38 +13,15 @@ android {
     compileSdkVersion 24
     buildToolsVersion '23.0.2'
 
-    /*
-    // Retrieve build number from properties file, increment and use as versionCode. Finally, store new build number in properties file
-    def versionPropertiesFile = file('olympus-version.properties')
-    if (versionPropertiesFile.canRead()) {
-        def Properties versionProperties = new Properties()
-        versionProperties.load(new FileInputStream(versionPropertiesFile))
-
-        def version = versionProperties['VERSION_CODE'].toInteger() + 1
-        versionProperties['VERSION_CODE'] = version.toString()
-        versionProperties.store(versionPropertiesFile.newWriter(), null)
-
-        defaultConfig {
-            applicationId "org.restcomm.android.olympus"
-            minSdkVersion 16
-            targetSdkVersion 24
-            versionCode version
-            versionName "1.0.0-BETA4"
-        }
-    } else {
-        throw new GradleException("Could not read file olympus-version.properties")
-    }
-    */
-    /**/
     defaultConfig {
         applicationId "org.restcomm.android.olympus"
         minSdkVersion 16
         targetSdkVersion 24
-        versionCode 1611
+        versionCode 1616
         versionName "1.0.0-BETA4"
         //manifestPlaceholders = [HOCKEYAPP_APP_ID: "9f94a735a6f6431ba368e6e0581067a4"]
     }
-    /**/
+
     buildTypes {
         release {
             minifyEnabled false
@@ -57,48 +34,48 @@ android {
             //versionNameSuffix "-DEBUG"
         }
 
+        /*
         shrunk {
             minifyEnabled true
             shrinkResources true
         }
-    }
-
-    /*
-    productFlavors {
-        development {
-
-        }
-        // Let's us a flavor to to handle automatic increment of versionCode for release or debug builds we wish to publish
-        publish {
-            // Retrieve build number from properties file, increment and use as versionCode. Finally, store new build number in properties file
-            def versionPropertiesFile = file('olympus-version.properties')
-            if (versionPropertiesFile.canRead()) {
-                def Properties versionProperties = new Properties()
-                versionProperties.load(new FileInputStream(versionPropertiesFile))
-
-                def version = versionProperties['VERSION_CODE'].toInteger() + 1
-                versionProperties['VERSION_CODE'] = version.toString()
-                versionProperties.store(versionPropertiesFile.newWriter(), null)
-
-                versionCode version
-            } else {
-                throw new GradleException("Could not read file olympus-version.properties")
-            }
+        */
+        // TODO: currently getting some lint error from log4j library we 're using, that we need to fix and then remove this altogether:
+        lintOptions {
+            abortOnError false
         }
     }
-    */
+
 }
 
 repositories {
     jcenter()
+    //mavenCentral()
+    maven {
+        /*
+        credentials {
+            username ''
+            password ''
+        }
+        */
+        //url "https://oss.sonatype.org/content/repositories/staging"
+        url "https://oss.sonatype.org/content/repositories/snapshots/"
+    }
 }
 
 dependencies {
     testCompile 'junit:junit:4.12'
-    compile project(':restcomm.android.sdk')
+    compile files('./libs/testfairy-android-sdk-1.4.6-unlimited-events.jar')
+    //compile project(':restcomm.android.sdk')
     compile 'com.android.support:appcompat-v7:24.2.1'
     compile 'com.android.support:design:24.2.1'
     compile 'com.android.support:support-v4:24.2.1'
-    compile 'testfairy:testfairy-android-sdk:1.+@aar'
+    //compile 'testfairy:testfairy-android-sdk:1.+@aar'
+    //compile 'testfairy:testfairy-android-sdk:1.4.5'
     //compile 'net.hockeyapp.android:HockeySDK:4.1.1'
+    //compile('org.restcomm:restcomm-android-sdk:1.0.0-beta-4.1') {
+        //changing = true
+    //}
+    compile 'org.restcomm:restcomm-android-sdk:1.0.0-beta-4.1-SNAPSHOT'
+
 }

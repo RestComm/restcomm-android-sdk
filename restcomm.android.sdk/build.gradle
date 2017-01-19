@@ -1,54 +1,39 @@
 apply plugin: 'com.android.library'
+apply plugin: 'maven'
+apply plugin: 'signing'
 
 android {
     compileSdkVersion 24
     buildToolsVersion '23.0.2'
 
-    /*
-    // Retrieve build number from properties file, increment and use as versionCode. Finally, store new build number in properties file
-    def versionPropertiesFile = file('restcomm-android-sdk-version.properties')
-    if (versionPropertiesFile.canRead()) {
-        def Properties versionProperties = new Properties()
-        versionProperties.load(new FileInputStream(versionPropertiesFile))
-
-        def version = versionProperties['VERSION_CODE'].toInteger() + 1
-        versionProperties['VERSION_CODE'] = version.toString()
-        versionProperties.store(versionPropertiesFile.newWriter(), null)
-
-        defaultConfig {
-            minSdkVersion 16
-            targetSdkVersion 24
-            versionCode version
-            versionName "1.0.0-BETA4"
-        }
-    }
-    else {
-        throw new GradleException("Could not read file restcomm-android-sdk-version.properties")
-    }
-    */
-    /**/
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 24
-        versionCode 1604
+        versionCode 1616
         versionName "1.0.0-BETA4"
     }
-    /**/
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
 
+        /*
         shrunk {
             minifyEnabled true
             shrinkResources true
         }
+        */
 
     }
     sourceSets.main {
         jni.srcDirs = [] // This prevents the auto generation of Android.mk
         jniLibs.srcDir 'libs/jniLibs' // This is not necessary unless you have precompiled libraries in your project.
+    }
+
+    // TODO: currently getting some lint error from log4j library we 're using, that we need to fix and then remove this altogether:
+    lintOptions {
+        abortOnError false
     }
 }
 
@@ -64,3 +49,107 @@ dependencies {
     compile 'com.madgag.spongycastle:prov:1.54.0.0'
     compile 'com.madgag.spongycastle:pkix:1.54.0.0'
 }
+
+/**/
+// Upload to sonatype stuff
+task androidJavadocs(type: Javadoc) {
+    source = android.sourceSets.main.java.srcDirs
+    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+}
+
+// TODO: refine it so that it works correctly
+/*
+task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
+    classifier = 'javadoc'
+    from androidJavadocs.destinationDir
+}
+*/
+
+task androidSourcesJar(type: Jar) {
+    classifier = 'sources'
+    from android.sourceSets.main.java.sourceFiles
+}
+
+artifacts {
+    archives androidSourcesJar
+    //archives androidJavadocsJar
+}
+
+signing {
+    sign configurations.archives
+}
+
+def getRepositoryUsername() {
+    return hasProperty('NEXUS_USERNAME') ? NEXUS_USERNAME : ""
+}
+
+def getRepositoryPassword() {
+    return hasProperty('NEXUS_PASSWORD') ? NEXUS_PASSWORD : ""
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            beforeDeployment {
+                MavenDeployment deployment -> signing.signPom(deployment)
+            }
+
+            // Defined at gradle.properties for Olympus project -we might need to move those to be scoped for the library alone
+            pom.groupId = "org.restcomm"
+            pom.artifactId = "restcomm-android-sdk"
+            //pom.version = "1.0.0-beta-4.1"
+            pom.version = "1.0.0-beta-4.1-SNAPSHOT"
+
+            // remember that releases first go to the staging area
+            repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
+                authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
+                //logger.error("---- Username: " + getRepositoryUsername())
+            }
+
+            snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
+                authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
+            }
+
+            pom.project {
+                name 'Restcomm Android SDK'
+                packaging 'aar'
+                // optionally artifactId can be defined here
+                description 'Android Webrtc SDK to easily integrate communication/collaboration features into native Apps.'
+                url 'https://github.com/RestComm/restcomm-android-sdk'
+
+                scm {
+                    connection 'scm:git:https://github.com/RestComm/restcomm-android-sdk'
+                    developerConnection 'scm:git:https://github.com/RestComm/restcomm-android-sdk'
+                    url 'https://github.com/RestComm/restcomm-android-sdk'
+                }
+
+                licenses {
+                    license {
+                        name 'GNU Affero General Public License, Version 3.0'
+                        url 'https://www.gnu.org/licenses/agpl-3.0.en.html'
+                    }
+                }
+
+                developers {
+                    developer {
+                        id 'atsakiridis'
+                        name 'Antonis Tsakiridis'
+                        email 'antonis.tsakiridis@telestax.com'
+                        organization 'Telestax'
+                        organizationUrl 'http://www.telestax.com'
+                    }
+                }
+
+                contributors {
+                    contributor {
+                        name 'Arslan Mehboob'
+                        //email 'john@doe.com'
+                    }
+                }
+
+            }
+        }
+    }
+}
+
+/**/
