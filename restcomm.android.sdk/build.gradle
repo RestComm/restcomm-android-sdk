@@ -9,7 +9,7 @@ android {
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 24
-        versionCode 1604
+        versionCode 1616
         versionName "1.0.0-BETA4"
     }
     buildTypes {
@@ -75,6 +75,10 @@ artifacts {
     //archives androidJavadocsJar
 }
 
+signing {
+    sign configurations.archives
+}
+
 def getRepositoryUsername() {
     return hasProperty('NEXUS_USERNAME') ? NEXUS_USERNAME : ""
 }
@@ -91,12 +95,15 @@ uploadArchives {
             }
 
             // Defined at gradle.properties for Olympus project -we might need to move those to be scoped for the library alone
-            pom.groupId = LIBRARY_GROUP
-            pom.artifactId = LIBRARY_ARTIFACT_ID
-            pom.version = LIBRARY_VERSION
+            pom.groupId = "org.restcomm"
+            pom.artifactId = "restcomm-android-sdk"
+            //pom.version = "1.0.0-beta-4.1"
+            pom.version = "1.0.0-beta-4.1-SNAPSHOT"
 
+            // remember that releases first go to the staging area
             repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
                 authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
+                //logger.error("---- Username: " + getRepositoryUsername())
             }
 
             snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {
@@ -128,6 +135,8 @@ uploadArchives {
                         id 'atsakiridis'
                         name 'Antonis Tsakiridis'
                         email 'antonis.tsakiridis@telestax.com'
+                        organization 'Telestax'
+                        organizationUrl 'http://www.telestax.com'
                     }
                 }
 

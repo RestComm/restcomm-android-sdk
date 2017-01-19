@@ -17,7 +17,7 @@ android {
         applicationId "org.restcomm.android.olympus"
         minSdkVersion 16
         targetSdkVersion 24
-        versionCode 1612
+        versionCode 1616
         versionName "1.0.0-BETA4"
         //manifestPlaceholders = [HOCKEYAPP_APP_ID: "9f94a735a6f6431ba368e6e0581067a4"]
     }
@@ -50,14 +50,32 @@ android {
 
 repositories {
     jcenter()
+    //mavenCentral()
+    maven {
+        /*
+        credentials {
+            username ''
+            password ''
+        }
+        */
+        //url "https://oss.sonatype.org/content/repositories/staging"
+        url "https://oss.sonatype.org/content/repositories/snapshots/"
+    }
 }
 
 dependencies {
     testCompile 'junit:junit:4.12'
-    compile project(':restcomm.android.sdk')
+    compile files('./libs/testfairy-android-sdk-1.4.6-unlimited-events.jar')
+    //compile project(':restcomm.android.sdk')
     compile 'com.android.support:appcompat-v7:24.2.1'
     compile 'com.android.support:design:24.2.1'
     compile 'com.android.support:support-v4:24.2.1'
-    compile 'testfairy:testfairy-android-sdk:1.+@aar'
+    //compile 'testfairy:testfairy-android-sdk:1.+@aar'
+    //compile 'testfairy:testfairy-android-sdk:1.4.5'
     //compile 'net.hockeyapp.android:HockeySDK:4.1.1'
+    //compile('org.restcomm:restcomm-android-sdk:1.0.0-beta-4.1') {
+        //changing = true
+    //}
+    compile 'org.restcomm:restcomm-android-sdk:1.0.0-beta-4.1-SNAPSHOT'
+
 }
