@@ -55,6 +55,10 @@ dependencies {
 task androidJavadocs(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    destinationDir = file("../doc/")
+    include("**/RCClient.java", "**/RCConnection.java", "**/RCConnectionListener.java", "**/RCDevice.java", "**/RCDeviceListener.java")
+    //include("**/ClassFile2.java")
+    failOnError false
 }
 
 // TODO: refine it so that it works correctly
