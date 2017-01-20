@@ -2,6 +2,19 @@ apply plugin: 'com.android.library'
 apply plugin: 'maven'
 apply plugin: 'signing'
 
+// buildscript block only controls dependencies for the buildscript process itself, not for the application code
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:2.2.3'
+
+        // NOTE: Do not place your application dependencies here; they belong
+        // in the individual module build.gradle files
+    }
+}
+
 android {
     compileSdkVersion 24
     buildToolsVersion '23.0.2'
@@ -37,6 +50,10 @@ android {
     }
 }
 
+repositories {
+    jcenter()
+}
+
 dependencies {
     compile files('libs/libjingle_peerconnection_java.jar')
     compile 'com.android.support:appcompat-v7:24.2.1'
@@ -56,18 +73,17 @@ task androidJavadocs(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs
     classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
     destinationDir = file("../doc/")
+    // Include only the higher API modules, so that its clean for the user
     include("**/RCClient.java", "**/RCConnection.java", "**/RCConnectionListener.java", "**/RCDevice.java", "**/RCDeviceListener.java")
-    //include("**/ClassFile2.java")
+    // Notice that including only higher API modules results in errors for seemingly undefined symbols. Until we find a way to deal with that
+    // let's avoid failing on error
     failOnError false
 }
 
-// TODO: refine it so that it works correctly
-/*
 task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {
     classifier = 'javadoc'
     from androidJavadocs.destinationDir
 }
-*/
 
 task androidSourcesJar(type: Jar) {
     classifier = 'sources'
@@ -76,7 +92,7 @@ task androidSourcesJar(type: Jar) {
 
 artifacts {
     archives androidSourcesJar
-    //archives androidJavadocsJar
+    archives androidJavadocsJar
 }
 
 signing {
