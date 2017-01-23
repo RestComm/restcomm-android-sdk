@@ -1,0 +1,20 @@
+language: android
+jdk: oraclejdk8
+android:
+  components:
+    - tools # to get the new `repository-11.xml`
+    - platform-tools
+    - tools # see https://github.com/travis-ci/travis-ci/issues/6040#issuecomment-219367943)
+    - build-tools-25.0.1
+    - android-25
+# Without these the build fails
+    - extra-google-m2repository
+    - extra-android-m2repository
+# To automatically accept various licenses when prompted, so that we don't get stuck
+licenses:
+    - 'android-sdk-preview-license-.+'
+    - 'android-sdk-license-.+'
+    - 'google-gdk-license-.+'
+script:
+    - ./scripts/local-wrapper.bash
+#    - cd Examples/restcomm-olympus && ./gradlew build 

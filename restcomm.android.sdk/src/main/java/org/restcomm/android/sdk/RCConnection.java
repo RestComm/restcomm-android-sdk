@@ -115,7 +115,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
        * we always enter the SIGNALING_CONNECTED because 200 OK comes always before media is setup.
        */
       CONNECTED, /**
-       * A Connection enters this state when actual media starts flowing
+       * A Connection enters this state when actual media start to flow
        */
       DISCONNECTING,  /** Connection is being disconnected. When client App calls RCConnection.disconnect(), RCConnection state transitions to this until we get a response
        at which point we transition to DISCONNECTED */
@@ -127,12 +127,12 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
     */
    public enum ConnectionMediaType {
       UNDEFINED, /**
-       * We don't know the type of media yet, for example for remote video before they answer
+       * We don't know the type of media yet, for example for remote video before they answer.
        */
       AUDIO, /**
-       * Connection is audio only
+       * Connection is audio only.
        */
-      AUDIO_VIDEO, /** Connection audio & video */
+      AUDIO_VIDEO, /** Connection audio & video. */
    }
 
    String IncomingParameterFromKey = "RCConnectionIncomingParameterFromKey";
@@ -142,7 +142,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    String IncomingParameterCallSIDKey = "RCConnectionIncomingParameterCallSIDKey";
 
    /**
-    * State of the connection. For more info please check ConnectionState
+    * State of the connection. For more info please check ConnectionState.
     */
    ConnectionState state;
 

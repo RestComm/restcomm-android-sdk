@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/restcomm.android.client.sdk.iml" filepath="$PROJECT_DIR$/restcomm.android.client.sdk.iml" />
+      <module fileurl="file://$PROJECT_DIR$/restcomm.android.sdk.iml" filepath="$PROJECT_DIR$/restcomm.android.sdk.iml" />
     </modules>
   </component>
 </project>
