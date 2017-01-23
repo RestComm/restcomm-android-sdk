@@ -65,8 +65,8 @@ repositories {
 
 dependencies {
     testCompile 'junit:junit:4.12'
-    ////compile project(':restcomm.android.sdk')
-    compile 'org.restcomm:restcomm-android-sdk:1.0.0-beta-4.1-SNAPSHOT'
+    compile project(':restcomm.android.sdk')
+    ////compile 'org.restcomm:restcomm-android-sdk:1.0.0-beta-4.1-SNAPSHOT'
     ////compile('org.restcomm:restcomm-android-sdk:1.0.0-beta-4.1') {
     ////changing = true
     ////}

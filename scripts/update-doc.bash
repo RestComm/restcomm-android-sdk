@@ -119,7 +119,7 @@ git push -f origin $DOC_BRANCH
 #fi
 
 # Removing non staged changes from gh-pages, so that we can go back to original branch without issues
-echo "-- Removing non staged changes from $DOC_BRANCH"
+#echo "-- Removing non staged changes from $DOC_BRANCH"
 ##git clean -fd
 # TODO: Remove when fixed. There seems to be a bug in git where with the first clean, 'dependecies' dir is left intact, running it a second time removes that as well an we can resume
 ##git clean -fd

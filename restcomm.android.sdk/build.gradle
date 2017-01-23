@@ -60,7 +60,11 @@ dependencies {
     compile 'com.android.support:appcompat-v7:25.1.0'
     // This is a dependency for JAIN SIP library (android-jain-sip-ri). Tried to replace it with maven 'org.apache.logging.log4j:log4j:2.6.2' but didn't work so until we update JAIN SIP library
     // accordingly we 're stuck with this local dependency
-    compile files('libs/log4j-1.2.15.jar')
+    //compile files('libs/log4j-1.2.15.jar')
+    // Notice that log4j 2.7 doesn't work on account of JAIN SIP expecting log4j GroupId, not org.apache.logging.log4j. TODO: We should try to fix that at some point
+    //compile 'org.apache.logging.log4j:log4j:2.7'
+    // So we 're using 1.2.17 which uses the same Group Id, and also use 1.2.17 instead of 1.2.15 which has a dependency that causes us issues
+    compile 'log4j:log4j:1.2.17'
     compile 'javax.sip:android-jain-sip-ri:1.2.293'
     // Provide JAIN SIP with proper Bouncy Castle encryption facilities (although Android seems to support BC, it appears that it has issues)
     compile 'com.madgag.spongycastle:core:1.54.0.0'
