@@ -36,8 +36,7 @@
 
         <activity
             android:name=".SigninActivity"
-            android:label="@string/title_activity_signin"
-            android:screenOrientation="portrait">
+            android:label="@string/title_activity_signin" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 
@@ -60,32 +59,27 @@
         <activity
             android:name=".MainActivity"
             android:label="@string/contacts_activity_label"
-            android:launchMode="singleTask"
-            android:screenOrientation="portrait">
+            android:launchMode="singleTask" >
         </activity>
         <activity
             android:name=".CallActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:label="@string/title_activity_call"
-            android:parentActivityName=".MainActivity"
-            android:screenOrientation="portrait">
+            android:parentActivityName=".MainActivity" >
         </activity>
         <activity
             android:name=".MessageActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:label="@string/title_activity_message"
             android:launchMode="singleTop"
-            android:parentActivityName=".MainActivity"
-            android:screenOrientation="portrait">
+            android:parentActivityName=".MainActivity" >
         </activity>
         <activity
             android:name=".SettingsActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:label="@string/title_activity_settings"
-            android:parentActivityName=".MainActivity"
-            android:screenOrientation="portrait">
+            android:parentActivityName=".MainActivity" >
         </activity>
-        <!--  -->
         <activity
             android:name=".BugReportActivity"
             android:label="@string/title_activity_bug_report"
