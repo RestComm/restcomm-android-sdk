@@ -48,14 +48,17 @@ class JainSipNotificationManager extends BroadcastReceiver {
       NetworkStatusNone,
       NetworkStatusWiFi,
       NetworkStatusCellular,
+      NetworkStatusEthernet,
    }
 
    public enum ConnectivityChange {
       OFFLINE,
       OFFLINE_TO_WIFI,
       OFFLINE_TO_CELLULAR_DATA,
-      WIFI_TO_CELLULAR_DATA,
-      CELLULAR_DATA_TO_WIFI,
+      OFFLINE_TO_ETHERNET,
+      HANDOVER_TO_CELLULAR_DATA,
+      HANDOVER_TO_WIFI,
+      HANDOVER_TO_ETHERNET,
    }
 
    Context androidContext;
@@ -98,39 +101,46 @@ class JainSipNotificationManager extends BroadcastReceiver {
       */
 
       if (newConnectivityStatus == networksStatus) {
-         RCLogger.w(TAG, "Connectivity event, but remained the same: " + newConnectivityStatus);
+         RCLogger.w(TAG, "Connectivity change, but remained the same: " + newConnectivityStatus);
          return;
       }
 
       if (newConnectivityStatus == NetworkStatus.NetworkStatusNone) {
-         RCLogger.w(TAG, "Connectivity event; lost connectivity from: " + networksStatus);
+         //RCLogger.w(TAG, "Connectivity event; lost connectivity from: " + networksStatus);
          connectivityChange = ConnectivityChange.OFFLINE;
       }
 
-      // old state wifi and new state mobile or the reverse; need to shutdown and restart network facilities
-      if (networksStatus == NetworkStatus.NetworkStatusWiFi &&
+      RCLogger.w(TAG, "Connectivity change from: " + networksStatus + " to: " + newConnectivityStatus);
+
+      // old state wifi and new state cellular or the reverse; need to shutdown and restart network facilities
+      if (networksStatus != NetworkStatus.NetworkStatusNone &&
             newConnectivityStatus == NetworkStatus.NetworkStatusCellular) {
-         RCLogger.w(TAG, "Connectivity event: switch from wifi to cellular data");
-         connectivityChange = ConnectivityChange.WIFI_TO_CELLULAR_DATA;
+         connectivityChange = ConnectivityChange.HANDOVER_TO_CELLULAR_DATA;
       }
 
-
-      if (networksStatus == NetworkStatus.NetworkStatusCellular &&
+      if (networksStatus != NetworkStatus.NetworkStatusNone &&
             newConnectivityStatus == NetworkStatus.NetworkStatusWiFi) {
-         RCLogger.w(TAG, "Connectivity event: switch from cellular data to wifi");
-         connectivityChange = ConnectivityChange.CELLULAR_DATA_TO_WIFI;
+         connectivityChange = ConnectivityChange.HANDOVER_TO_WIFI;
+      }
+
+      if (networksStatus != NetworkStatus.NetworkStatusNone &&
+            newConnectivityStatus == NetworkStatus.NetworkStatusEthernet) {
+         connectivityChange = ConnectivityChange.HANDOVER_TO_ETHERNET;
       }
 
       if (networksStatus == NetworkStatus.NetworkStatusNone &&
             newConnectivityStatus == NetworkStatus.NetworkStatusWiFi) {
-         RCLogger.w(TAG, "Connectivity event: wifi available");
          connectivityChange = ConnectivityChange.OFFLINE_TO_WIFI;
       }
 
       if (networksStatus == NetworkStatus.NetworkStatusNone &&
             newConnectivityStatus == NetworkStatus.NetworkStatusCellular) {
-         RCLogger.w(TAG, "Connectivity event: cellular data available");
          connectivityChange = ConnectivityChange.OFFLINE_TO_CELLULAR_DATA;
+      }
+
+      if (networksStatus == NetworkStatus.NetworkStatusNone &&
+            newConnectivityStatus == NetworkStatus.NetworkStatusEthernet) {
+         connectivityChange = ConnectivityChange.OFFLINE_TO_ETHERNET;
       }
 
       // update current connectivity status
@@ -155,6 +165,11 @@ class JainSipNotificationManager extends BroadcastReceiver {
             Log.w(TAG, "Connectivity event: CELLULAR DATA");
             return NetworkStatus.NetworkStatusCellular;
          }
+
+         if (activeNetwork.getType() == ConnectivityManager.TYPE_ETHERNET && activeNetwork.isConnected()) {
+            Log.w(TAG, "Connectivity event: ETHERNET");
+            return NetworkStatus.NetworkStatusCellular;
+         }
       }
       RCLogger.w(TAG, "Connectivity event: NONE");
       return NetworkStatus.NetworkStatusNone;
@@ -169,8 +184,11 @@ class JainSipNotificationManager extends BroadcastReceiver {
       else if (networkStatus == NetworkStatus.NetworkStatusWiFi) {
          return RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi;
       }
-      else {
+      else if (networkStatus == NetworkStatus.NetworkStatusCellular) {
          return RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular;
+      }
+      else {
+         return RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusEthernet;
       }
    }
 

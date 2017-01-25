@@ -27,9 +27,10 @@ package org.restcomm.android.sdk;
  */
 public interface RCDeviceListener {
    enum RCConnectivityStatus {
-      RCConnectivityStatusNone,  // no restcomm connectivity either we have no internet connectivity or couldn't register to restcomm (or both)
-      RCConnectivityStatusWiFi,  // restcomm reachable and online via Wifi (or if in registrarless mode we don't register with restcomm; we just know that we have internet connectivity)
-      RCConnectivityStatusCellular,  // restcomm reachable and online via cellular (same as above for registraless)
+      RCConnectivityStatusNone,  /** no restcomm connectivity either we have no internet connectivity or couldn't register to restcomm (or both) */
+      RCConnectivityStatusWiFi,  /** restcomm reachable and online via Wifi (or if in registrarless mode we don't register with restcomm; we just know that we have internet connectivity) */
+      RCConnectivityStatusCellular,  /** restcomm reachable and online via cellular (same as above for registraless) */
+      RCConnectivityStatusEthernet,  /** restcomm reachable and online via ethernet (same as above for registraless) */
    }
 
    /**

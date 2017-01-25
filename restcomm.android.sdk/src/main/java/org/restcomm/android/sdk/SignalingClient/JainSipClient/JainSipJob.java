@@ -653,6 +653,15 @@ class JainSipJob {
                   }
                }
                else if (type == Type.TYPE_START_NETWORKING) {
+                  // no matter what state we are in if we get a timeout we need to remove job and forget about it
+                  if (event.equals(FsmEvents.TIMEOUT)) {
+                     jainSipClient.listener.onClientOpenedReply(jobId, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone,
+                           RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_TIMEOUT,
+                           RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_TIMEOUT));
+                     jainSipJobManager.remove(jobId);
+                     return;
+                  }
+
                   RCLogger.i(TAG, "Job, TYPE_START_NETWORKING: " + this.toString());
                   if (states[index].equals(FsmStates.BIND_REGISTER)) {
                      // no need for connectivity check here, we know there is connectivity

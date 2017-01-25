@@ -402,6 +402,10 @@ public class MessageActivity extends AppCompatActivity
          if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusCellular) {
             text = "RCDevice connectivity change: Reestablished connectivity (Cellular)";
          }
+         if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusEthernet) {
+            text = "RCDevice connectivity change: Reestablished connectivity (Ethernet)";
+         }
+
       }
 
       if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusNone) {

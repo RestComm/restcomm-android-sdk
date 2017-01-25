@@ -897,27 +897,80 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
          }
       }
       else if (connectivityChange == JainSipNotificationManager.ConnectivityChange.OFFLINE_TO_WIFI ||
-            connectivityChange == JainSipNotificationManager.ConnectivityChange.OFFLINE_TO_CELLULAR_DATA) {
+            connectivityChange == JainSipNotificationManager.ConnectivityChange.OFFLINE_TO_CELLULAR_DATA ||
+            connectivityChange == JainSipNotificationManager.ConnectivityChange.OFFLINE_TO_ETHERNET) {
          HashMap<String, Object> parameters = new HashMap<>(this.configuration);
          if (connectivityChange == JainSipNotificationManager.ConnectivityChange.OFFLINE_TO_WIFI) {
             parameters.put("connectivity-status", RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi);
          }
+         else if (connectivityChange == JainSipNotificationManager.ConnectivityChange.OFFLINE_TO_CELLULAR_DATA) {
+            parameters.put("connectivity-status", RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular);
+         }
          else {
-            parameters.put("connectivity-status", RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi);
+            parameters.put("connectivity-status", RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusEthernet);
          }
          jainSipJobManager.add(Long.toString(System.currentTimeMillis()), JainSipJob.Type.TYPE_START_NETWORKING, parameters);
       }
-      else if (connectivityChange == JainSipNotificationManager.ConnectivityChange.CELLULAR_DATA_TO_WIFI ||
-            connectivityChange == JainSipNotificationManager.ConnectivityChange.WIFI_TO_CELLULAR_DATA) {
+      else if (connectivityChange == JainSipNotificationManager.ConnectivityChange.HANDOVER_TO_WIFI ||
+            connectivityChange == JainSipNotificationManager.ConnectivityChange.HANDOVER_TO_CELLULAR_DATA ||
+            connectivityChange == JainSipNotificationManager.ConnectivityChange.HANDOVER_TO_ETHERNET) {
          HashMap<String, Object> parameters = new HashMap<>(this.configuration);
-         if (connectivityChange == JainSipNotificationManager.ConnectivityChange.CELLULAR_DATA_TO_WIFI) {
+         if (connectivityChange == JainSipNotificationManager.ConnectivityChange.HANDOVER_TO_WIFI) {
             parameters.put("connectivity-status", RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusWiFi);
          }
-         else {
+         else if (connectivityChange == JainSipNotificationManager.ConnectivityChange.HANDOVER_TO_CELLULAR_DATA) {
             parameters.put("connectivity-status", RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusCellular);
+         }
+         else {
+            // connectivityChange == JainSipNotificationManager.ConnectivityChange.HANDOVER_TO_ETHERNET
+            parameters.put("connectivity-status", RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusEthernet);
          }
          jainSipJobManager.add(Long.toString(System.currentTimeMillis()), JainSipJob.Type.TYPE_RELOAD_NETWORKING, parameters);
       }
+   }
+
+   // Search through the interfaces to find the one who's name is starting with 'networkInterfacePrefix' and return
+   // the ip address corresponding to it
+   private String interface2Address(boolean useIPv4, String networkInterfacePrefix) throws SocketException
+   {
+      String stringAddress = "";
+
+      List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
+      for (NetworkInterface intf : interfaces) {
+         if (intf.isUp() && intf.getName().matches(networkInterfacePrefix + ".*")) {
+            List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
+            for (InetAddress addr : addrs) {
+               if (!addr.isLoopbackAddress()) {
+                  String sAddr = addr.getHostAddress().toUpperCase();
+                  boolean isIPv4 = addr instanceof Inet4Address;  //InetAddressUtils.isIPv4Address(sAddr);
+                  if (useIPv4) {
+                     if (isIPv4) {
+                        stringAddress = sAddr;
+                        break;
+                     }
+                  }
+                  else {
+                     if (!isIPv4) {
+                        int delim = sAddr.indexOf('%'); // drop ip6 port
+                        // suffix
+                        stringAddress = delim < 0 ? sAddr : sAddr.substring(0, delim);
+                        break;
+                     }
+                  }
+               }
+            }
+         }
+      }
+
+      // One issue that isn't 100% from resources around the web is whether the interface names are standard across Android flavours. We assume that cellular data will always be
+      // rmnet* and ethernet will always be eth*. To that end let's print out all the interfaces in case we cannot find an ip address for current network type so that we can troubleshoot
+      // right away in that unlikely event.
+      RCLogger.v(TAG, "interface2Address(): stringAddress: " + stringAddress + ", for currently active network: " + networkInterfacePrefix + ", interfaces: " + interfaces.toString());
+      if (stringAddress.isEmpty()) {
+         RCLogger.e(TAG, "Couldn't retrieve IP address for currently active network");
+      }
+
+      return stringAddress;
    }
 
    // -- Helpers
@@ -933,29 +986,11 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       }
 
       if (jainSipNotificationManager.getNetworkStatus() == JainSipNotificationManager.NetworkStatus.NetworkStatusCellular) {
-         List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
-         for (NetworkInterface intf : interfaces) {
-            if (!intf.getName().matches("wlan.*")) {
-               List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
-               for (InetAddress addr : addrs) {
-                  if (!addr.isLoopbackAddress()) {
-                     String sAddr = addr.getHostAddress().toUpperCase();
-                     boolean isIPv4 = addr instanceof Inet4Address;  //InetAddressUtils.isIPv4Address(sAddr);
-                     if (useIPv4) {
-                        if (isIPv4)
-                           stringAddress = sAddr;
-                     }
-                     else {
-                        if (!isIPv4) {
-                           int delim = sAddr.indexOf('%'); // drop ip6 port
-                           // suffix
-                           stringAddress = delim < 0 ? sAddr : sAddr.substring(0, delim);
-                        }
-                     }
-                  }
-               }
-            }
-         }
+         stringAddress = interface2Address(useIPv4, "rmnet");
+      }
+
+      if (jainSipNotificationManager.getNetworkStatus() == JainSipNotificationManager.NetworkStatus.NetworkStatusEthernet) {
+         stringAddress = interface2Address(useIPv4, "eth");
       }
 
       RCLogger.v(TAG, "getIPAddress(): " + stringAddress);
