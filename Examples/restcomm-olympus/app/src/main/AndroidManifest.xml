@@ -36,6 +36,7 @@
 
         <activity
             android:name=".SigninActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             android:label="@string/title_activity_signin" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
@@ -58,6 +59,7 @@
         </activity>
         <activity
             android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             android:label="@string/contacts_activity_label"
             android:launchMode="singleTask" >
         </activity>
@@ -82,6 +84,7 @@
         </activity>
         <activity
             android:name=".BugReportActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
             android:label="@string/title_activity_bug_report"
             android:parentActivityName=".MainActivity"
             android:theme="@style/AppTheme">
