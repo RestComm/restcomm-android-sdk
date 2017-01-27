@@ -168,7 +168,7 @@ class JainSipNotificationManager extends BroadcastReceiver {
 
          if (activeNetwork.getType() == ConnectivityManager.TYPE_ETHERNET && activeNetwork.isConnected()) {
             Log.w(TAG, "Connectivity event: ETHERNET");
-            return NetworkStatus.NetworkStatusCellular;
+            return NetworkStatus.NetworkStatusEthernet;
          }
       }
       RCLogger.w(TAG, "Connectivity event: NONE");

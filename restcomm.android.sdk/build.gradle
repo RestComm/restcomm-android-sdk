@@ -23,13 +23,17 @@ android {
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 25
-        versionCode 1620
+        versionCode 1622
         versionName "1.0.0-BETA4"
     }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+
+        debug {
+            minifyEnabled false
         }
 
         /*
@@ -72,7 +76,6 @@ dependencies {
     compile 'com.madgag.spongycastle:pkix:1.54.0.0'
 }
 
-/**/
 // Upload to sonatype stuff
 task androidJavadocs(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs

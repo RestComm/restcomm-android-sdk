@@ -13,12 +13,18 @@ android {
     compileSdkVersion 25
     buildToolsVersion '25.0.1'
 
+    dexOptions {
+        jumboMode = true
+    }
+
     defaultConfig {
         applicationId "org.restcomm.android.olympus"
         minSdkVersion 16
         targetSdkVersion 25
-        versionCode 1620
+        versionCode 1622
         versionName "1.0.0-BETA4"
+
+        //multiDexEnabled true
         //manifestPlaceholders = [HOCKEYAPP_APP_ID: "9f94a735a6f6431ba368e6e0581067a4"]
     }
 
@@ -31,6 +37,7 @@ android {
         }
 
         debug {
+            minifyEnabled false
             //versionNameSuffix "-DEBUG"
         }
 
