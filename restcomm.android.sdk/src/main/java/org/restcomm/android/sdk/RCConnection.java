@@ -76,6 +76,7 @@ import org.webrtc.EglBase;
 import org.webrtc.IceCandidate;
 import org.webrtc.PeerConnection;
 import org.webrtc.SessionDescription;
+import org.webrtc.Size;
 import org.webrtc.StatsReport;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.RendererCommon.ScalingType;
@@ -171,6 +172,66 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
     */
    private RCConnectionListener listener;
 
+   /**
+    * Audio Codec for local audio
+    */
+   public enum AudioCodec {
+      AUDIO_CODEC_DEFAULT,
+      AUDIO_CODEC_OPUS,
+      AUDIO_CODEC_ISAC,
+   }
+
+   /**
+    * Video Codec for local video
+    */
+   public enum VideoCodec {
+      VIDEO_CODEC_DEFAULT,
+      VIDEO_CODEC_VP8,
+      VIDEO_CODEC_VP9,
+      VIDEO_CODEC_H264,
+   }
+
+   /**
+    * Video Resolution for local video
+    */
+   public enum VideoResolution {
+      RESOLUTION_DEFAULT,
+      RESOLUTION_QQVGA_160x120,
+      RESOLUTION_QCIF_176x144,
+      RESOLUTION_QVGA_320x240,
+      RESOLUTION_CIF_352x288,
+      RESOLUTION_nHD_640x360,  // 360p
+      RESOLUTION_VGA_640x480,
+      RESOLUTION_SVGA_800x600,
+      RESOLUTION_HD_1280x720,  // 720p
+      RESOLUTION_UXGA_1600x1200,
+      RESOLUTION_FHD_1920x1080,  // 1080p
+      RESOLUTION_UHD_3840x2160,  // 4K
+   }
+
+   /**
+    * Frame rate in FPS for local video
+    */
+   public enum VideoFrameRate {
+      FPS_DEFAULT,
+      FPS_15,
+      FPS_30,
+      //FPS_60,
+   }
+
+   // internal class to use to describe video resolution
+   /*
+   private class Resolution {
+      public int width;
+      public int height;
+
+      Resolution(int width, int height)
+      {
+         this.width = width;
+         this.height = height;
+      }
+   }
+   */
 
    /**
     * Parameter keys for RCCDevice.connect() and RCConnection.accept()
@@ -180,9 +241,14 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       public static final String CONNECTION_VIDEO_ENABLED = "video-enabled";
       public static final String CONNECTION_LOCAL_VIDEO = "local-video";
       public static final String CONNECTION_REMOTE_VIDEO = "remote-video";
+      public static final String CONNECTION_PREFERRED_AUDIO_CODEC = "preferred-audio-codec";
+      // Preferred local video codec
       public static final String CONNECTION_PREFERRED_VIDEO_CODEC = "preferred-video-codec";
+      // Preferred local video resolution (needs to be supported by local camera)
+      public static final String CONNECTION_PREFERRED_VIDEO_RESOLUTION = "preferred-video-resolution";
+      public static final String CONNECTION_PREFERRED_VIDEO_FRAME_RATE = "preferred-video-frame-rate";
       public static final String CONNECTION_CUSTOM_SIP_HEADERS = "sip-headers";
-      // incoming headers from Restcomm both for incoming and outgoing calls
+      // Incoming headers from Restcomm both for incoming and outgoing calls
       public static final String CONNECTION_CUSTOM_INCOMING_SIP_HEADERS = "sip-headers-incoming";
       public static final String CONNECTION_SIP_HEADER_KEY_CALL_SID = "X-RestComm-CallSid";
    }
@@ -451,7 +517,10 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          initializeWebrtc((Boolean) this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED),
                (PercentFrameLayout) parameters.get(ParameterKeys.CONNECTION_LOCAL_VIDEO),
                (PercentFrameLayout) parameters.get(ParameterKeys.CONNECTION_REMOTE_VIDEO),
-               (String) parameters.get(ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC));
+               (VideoCodec) parameters.get(ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC),
+               (AudioCodec) parameters.get(ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC),
+               (VideoResolution)parameters.get(ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION),
+               (VideoFrameRate)parameters.get(ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE));
 
          startTurn();
          startMediaTimer();
@@ -984,7 +1053,10 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       initializeWebrtc((Boolean) this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED),
             (PercentFrameLayout) parameters.get(ParameterKeys.CONNECTION_LOCAL_VIDEO),
             (PercentFrameLayout) parameters.get(ParameterKeys.CONNECTION_REMOTE_VIDEO),
-            (String) parameters.get(ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC));
+            (VideoCodec) parameters.get(ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC),
+            (AudioCodec) parameters.get(ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC),
+            (VideoResolution)parameters.get(ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION),
+            (VideoFrameRate)parameters.get(ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE));
 
       startTurn();
    }
@@ -1209,10 +1281,115 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       updateVideoView(VideoViewState.NONE);
    }
 
-   // initialize webrtc facilities for the call
-   private void initializeWebrtc(boolean videoEnabled, PercentFrameLayout localRenderLayout, PercentFrameLayout remoteRenderLayout, String preferredVideoCodec)
+   private Size resolutionEnum2Resolution(RCConnection.VideoResolution resolutionEnum)
    {
-      RCLogger.i(TAG, "initializeWebrtc  ");
+      if (resolutionEnum == null) {
+         return new Size(0, 0);
+      }
+      else if (resolutionEnum == VideoResolution.RESOLUTION_QQVGA_160x120) {
+         return new Size(160, 120);
+      }
+      else if (resolutionEnum == VideoResolution.RESOLUTION_QCIF_176x144) {
+         return new Size(176, 144);
+      }
+      else if (resolutionEnum == VideoResolution.RESOLUTION_QVGA_320x240) {
+         return new Size(320, 240);
+      }
+      else if (resolutionEnum == VideoResolution.RESOLUTION_CIF_352x288) {
+         return new Size(352, 288);
+      }
+      else if (resolutionEnum == VideoResolution.RESOLUTION_nHD_640x360) {
+         return new Size(640, 360);
+      }
+      else if (resolutionEnum == VideoResolution.RESOLUTION_VGA_640x480) {
+         return new Size(640, 480);
+      }
+      else if (resolutionEnum == VideoResolution.RESOLUTION_SVGA_800x600) {
+         return new Size(800, 600);
+      }
+      else if (resolutionEnum == VideoResolution.RESOLUTION_HD_1280x720) {
+         return new Size(1280, 720);
+      }
+      else if (resolutionEnum == VideoResolution.RESOLUTION_UXGA_1600x1200) {
+         return new Size(1600, 1200);
+      }
+      else if (resolutionEnum == VideoResolution.RESOLUTION_FHD_1920x1080) {
+         return new Size(1920, 1080);
+      }
+      else if (resolutionEnum == VideoResolution.RESOLUTION_UHD_3840x2160) {
+         return new Size(3840, 2160);
+      }
+      else {
+         return new Size(0, 0);
+      }
+   }
+
+   private int frameRateEnum2Int(VideoFrameRate videoFrameRate)
+   {
+      if (videoFrameRate == null) {
+         return 0;
+      }
+      else if (videoFrameRate == VideoFrameRate.FPS_15) {
+         return 15;
+      }
+      else if (videoFrameRate == VideoFrameRate.FPS_30) {
+         return 30;
+      }
+      /*
+      else if (videoFrameRate == VideoFrameRate.FPS_60) {
+         return 60;
+      }
+      */
+      else {
+         return 0;
+      }
+   }
+
+   private String audioCodecEnum2String(RCConnection.AudioCodec audioCodec)
+   {
+      if (audioCodec == null) {
+         return "OPUS";
+      }
+      else if (audioCodec == AudioCodec.AUDIO_CODEC_ISAC) {
+         return "ISAC";
+      }
+      else if (audioCodec == AudioCodec.AUDIO_CODEC_OPUS) {
+         return "OPUS";
+      }
+      else {
+         return "OPUS";
+      }
+   }
+
+   private String videoCodecEnum2String(RCConnection.VideoCodec videoCodec)
+   {
+      if (videoCodec == null) {
+         return "VP8";
+      }
+      else if (videoCodec == VideoCodec.VIDEO_CODEC_VP8) {
+         return "VP8";
+      }
+      else if (videoCodec == VideoCodec.VIDEO_CODEC_VP9) {
+         return "VP9";
+      }
+      else if (videoCodec == VideoCodec.VIDEO_CODEC_H264) {
+         return "H264";
+      }
+      else {
+         return "VP8";
+      }
+   }
+
+   // initialize webrtc facilities for the call
+   private void initializeWebrtc(boolean videoEnabled,
+                                 PercentFrameLayout localRenderLayout,
+                                 PercentFrameLayout remoteRenderLayout,
+                                 VideoCodec preferredVideoCodec,
+                                 AudioCodec preferredAudioCodec,
+                                 VideoResolution videoResolution,
+                                 VideoFrameRate videoFrameRate)
+   {
+      RCLogger.i(TAG, "initializeWebrtc()");
       //Context context = RCClient.getContext();
 
       iceConnected = false;
@@ -1220,24 +1397,28 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
       initializeVideo(videoEnabled, localRenderLayout, remoteRenderLayout);
 
-      // default to VP8 as VP9 doesn't seem to have that great android device support
-      if (preferredVideoCodec == null) {
-         preferredVideoCodec = "VP8";
-      }
+      String preferredVideoCodecString = videoCodecEnum2String(preferredVideoCodec);
+      String preferredAudioCodecString = audioCodecEnum2String(preferredAudioCodec);
+      // Local resolution
+      Size resolution = resolutionEnum2Resolution(videoResolution);
+      int frameRateInt = frameRateEnum2Int(videoFrameRate);
+
+      RCLogger.i(TAG, "Initializing PeerConnection parameters: audioCodec: " + preferredAudioCodecString + ", videoCodec: " + preferredVideoCodecString +
+            ", resolution: " + resolution + ", frameRate: " + frameRateInt);
 
       peerConnectionParameters = new PeerConnectionClient.PeerConnectionParameters(
             videoEnabled,  // video call
             false,  // loopback
             false,  // tracing
-            0,  // video width
-            0,  // video height
-            0,  // video fps
+            resolution.width,  // video width
+            resolution.height,  // video height
+            frameRateInt,  // video fps
             0,  // video start bitrate
-            preferredVideoCodec,  // video codec
-            true,  // video condec hw acceleration
+            preferredVideoCodecString,  // video codec
+            true,  // video codec hw acceleration
             false, // capture to texture
             0,  // audio start bitrate
-            "OPUS",  // audio codec
+            preferredAudioCodecString,  // audio codec
             false,  // no audio processing
             false,  // aec dump
             false);  // use opengles

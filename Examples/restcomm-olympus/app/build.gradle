@@ -21,7 +21,7 @@ android {
         applicationId "org.restcomm.android.olympus"
         minSdkVersion 16
         targetSdkVersion 25
-        versionCode 1623
+        versionCode 1625
         versionName "1.0.0-BETA4"
 
         //multiDexEnabled true

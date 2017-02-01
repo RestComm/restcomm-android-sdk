@@ -32,7 +32,6 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -57,8 +56,6 @@ import java.util.ListIterator;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCConnectionListener;
 import org.restcomm.android.sdk.RCDevice;
-import org.restcomm.android.sdk.util.PercentFrameLayout;
-import org.webrtc.SurfaceViewRenderer;
 
 
 public class CallActivity extends AppCompatActivity implements RCConnectionListener, View.OnClickListener,
@@ -314,8 +311,23 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
             connectParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
             connectParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
             // by default we use VP8 for video as it tends to be more adopted, but you can override that and specify VP9 or H264 as follows:
-            //connectParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC, "VP9");
-            //connectParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC, "H264");
+            connectParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC,
+                  audioCodecString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, ""))
+            );
+            connectParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC,
+                  videoCodecString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC, ""))
+            );
+            connectParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION,
+                  resolutionString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION, ""))
+            );
+            connectParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE,
+                  frameRateString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE, ""))
+            );
+
+            // Here's how to set manually
+            //connectParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC, RCConnection.VideoCodec.VIDEO_CODEC_VP8);
+            //connectParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION, RCConnection.VideoResolution.RESOLUTION_HD_1280x720);
+            //connectParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE, RCConnection.VideoFrameRate.FPS_DEFAULT);
 
             // *** if you want to add custom SIP headers, please uncomment this
             //HashMap<String, String> sipHeaders = new HashMap<>();
@@ -369,6 +381,22 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, answerVideo);
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
+                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC,
+                      audioCodecString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, ""))
+                );
+
+                if (intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_ANSWER_VIDEO)) {
+                    acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC,
+                          videoCodecString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC, ""))
+                    );
+                    acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION,
+                          resolutionString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION, ""))
+                    );
+                    acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE,
+                          frameRateString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE, ""))
+                    );
+                }
+
 
                 // Check permissions asynchronously and then accept the call
                 handlePermissions(true);
@@ -446,6 +474,19 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, true);
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
+                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC,
+                      audioCodecString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, ""))
+                );
+                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC,
+                      videoCodecString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC, ""))
+                );
+                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION,
+                      resolutionString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION, ""))
+                );
+                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE,
+                      frameRateString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE, ""))
+                );
+
                 // Check permissions asynchronously and then accept the call
                 handlePermissions(true);
             }
@@ -459,6 +500,10 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, false);
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
+                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC,
+                      audioCodecString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, ""))
+                );
+
                 // Check permissions asynchronously and then accept the call
                 handlePermissions(false);
             }
@@ -738,5 +783,88 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
             }
         };
         timerHandler.postDelayed(timerRunnable, 1000);
+    }
+
+    // Various conversion helpers
+    private RCConnection.VideoResolution resolutionString2Enum(String resolution)
+    {
+        if (resolution.equals("160 x 120")) {
+            return RCConnection.VideoResolution.RESOLUTION_QQVGA_160x120;
+        }
+        else if (resolution.equals("176 x 144")) {
+            return RCConnection.VideoResolution.RESOLUTION_QCIF_176x144;
+        }
+        else if (resolution.equals("320 x 240")) {
+            return RCConnection.VideoResolution.RESOLUTION_QVGA_320x240;
+        }
+        else if (resolution.equals("352 x 288")) {
+            return RCConnection.VideoResolution.RESOLUTION_CIF_352x288;
+        }
+        else if (resolution.equals("640 x 360")) {
+            return RCConnection.VideoResolution.RESOLUTION_nHD_640x360;
+        }
+        else if (resolution.equals("640 x 480")) {
+            return RCConnection.VideoResolution.RESOLUTION_VGA_640x480;
+        }
+        else if (resolution.equals("800 x 600")) {
+            return RCConnection.VideoResolution.RESOLUTION_SVGA_800x600;
+        }
+        else if (resolution.equals("1280 x 720")) {
+            return RCConnection.VideoResolution.RESOLUTION_HD_1280x720;
+        }
+        else if (resolution.equals("1600 x 1200")) {
+            return RCConnection.VideoResolution.RESOLUTION_UXGA_1600x1200;
+        }
+        else if (resolution.equals("1920 x 1080")) {
+            return RCConnection.VideoResolution.RESOLUTION_FHD_1920x1080;
+        }
+        else if (resolution.equals("3840 x 2160")) {
+            return RCConnection.VideoResolution.RESOLUTION_UHD_3840x2160;
+        }
+        else {
+            return RCConnection.VideoResolution.RESOLUTION_DEFAULT;
+        }
+    }
+
+    private RCConnection.VideoFrameRate frameRateString2Enum(String frameRate)
+    {
+        if (frameRate.equals("15 fps")) {
+            return RCConnection.VideoFrameRate.FPS_15;
+        }
+        else if (frameRate.equals("30 fps")) {
+            return RCConnection.VideoFrameRate.FPS_30;
+        }
+        else {
+            return RCConnection.VideoFrameRate.FPS_DEFAULT;
+        }
+    }
+
+    private RCConnection.AudioCodec audioCodecString2Enum(String audioCodec)
+    {
+        if (audioCodec.equals("OPUS")) {
+            return RCConnection.AudioCodec.AUDIO_CODEC_OPUS;
+        }
+        else if (audioCodec.equals("ISAC")) {
+            return RCConnection.AudioCodec.AUDIO_CODEC_ISAC;
+        }
+        else {
+            return RCConnection.AudioCodec.AUDIO_CODEC_DEFAULT;
+        }
+    }
+
+    private RCConnection.VideoCodec videoCodecString2Enum(String videoCodec)
+    {
+        if (videoCodec.equals("VP8")) {
+            return RCConnection.VideoCodec.VIDEO_CODEC_VP8;
+        }
+        else if (videoCodec.equals("VP9")) {
+            return RCConnection.VideoCodec.VIDEO_CODEC_VP9;
+        }
+        else if (videoCodec.equals("H264")) {
+            return RCConnection.VideoCodec.VIDEO_CODEC_H264;
+        }
+        else {
+            return RCConnection.VideoCodec.VIDEO_CODEC_DEFAULT;
+        }
     }
 }

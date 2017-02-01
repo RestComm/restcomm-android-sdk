@@ -11,43 +11,79 @@
         <item>Make Audio Call</item>
         <item>Send Text Message</item>
     </string-array>
-    <!--
-    <string-array name="videoResolutions">
+    <string-array name="video_resolutions">
         <item>Default</item>
-        <item>HD (1280 x 720)</item>
-        <item>VGA (640 x 480)</item>
+        <!-- Let's keep resolution that work in most devices, to avoid having issues by using not so standard ones -->
+        <!--
+        <item>QQVGA (160 x 120)</item>
+        <item>QCIF (176 x 144)</item>
+        -->
         <item>QVGA (320 x 240)</item>
+        <!--
+        <item>CIF (352 x 288)</item>
+        <item>nHD (640 x 360)</item>
+        -->
+        <item>VGA (640 x 480)</item>
+        <!--
+        <item>SVGA (800 x 600)</item>
+        -->
+        <item>HD (1280 x 720)</item>
+        <!--
+        <item>UXGA (1600 x 1200)</item>
+        <item>FHD (1920 x 1080)</item>
+        <item>UHD (3840 x 2160)</item>
+        -->
     </string-array>
-
-    <string-array name="videoResolutionsValues">
+    <string-array name="video_resolution_values">
         <item>Default</item>
-        <item>1280 x 720</item>
-        <item>640 x 480</item>
+        <!-- Let's keep resolution that work in most devices, to avoid having issues by using not so standard ones -->
+        <!--
+        <item>160 x 120</item>
+        <item>176 x 144</item>
+        -->
         <item>320 x 240</item>
+        <!--
+        <item>352 x 288</item>
+        <item>640 x 360</item>
+        -->
+        <item>640 x 480</item>
+        <!--
+        <item>800 x 600</item>
+        -->
+        <item>1280 x 720</item>
+        <!--
+        <item>1600 x 1200</item>
+        <item>1920 x 1080</item>
+        <item>3840 x 2160</item>
+        -->
     </string-array>
 
-    <string-array name="cameraFps">
+    <string-array name="camera_fps">
         <item>Default</item>
-        <item>30 fps</item>
         <item>15 fps</item>
+        <item>30 fps</item>
+        <!--
+        <item>60 fps</item>
+        -->
     </string-array>
 
+    <!--
     <string-array name="startBitrate">
         <item>Default</item>
         <item>Manual</item>
     </string-array>
+    -->
 
-    <string-array name="videoCodecs">
+    <string-array name="video_codecs">
         <item>VP8</item>
         <item>VP9</item>
         <item>H264</item>
     </string-array>
 
-    <string-array name="audioCodecs">
+    <string-array name="audio_codecs">
         <item>OPUS</item>
         <item>ISAC</item>
     </string-array>
-    -->
 
 </resources>
 

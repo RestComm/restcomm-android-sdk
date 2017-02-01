@@ -18,6 +18,7 @@ import android.os.Environment;
 import org.restcomm.android.sdk.util.RCLogger;
 import org.restcomm.android.sdk.SignalingClient.SignalingParameters;
 import org.webrtc.AudioTrack;
+import org.webrtc.Camera1Enumerator;
 import org.webrtc.CameraEnumerationAndroid;
 import org.webrtc.DataChannel;
 import org.webrtc.EglBase;
@@ -406,6 +407,13 @@ public class PeerConnectionClient {
          pcConstraints.optional.add(
                new MediaConstraints.KeyValuePair(DTLS_SRTP_KEY_AGREEMENT_CONSTRAINT, "true"));
       }
+
+      /*
+      Camera1Enumerator camera1Enumerator = new Camera1Enumerator();
+      for (String s: camera1Enumerator.getDeviceNames()) {
+         CameraEnumerationAndroid.CaptureFormat format;
+      }
+      */
 
       // Check if there is a camera on device and disable video call if not.
       numberOfCameras = CameraEnumerationAndroid.getDeviceCount();

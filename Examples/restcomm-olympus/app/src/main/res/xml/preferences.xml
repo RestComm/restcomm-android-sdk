@@ -1,32 +1,68 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" >
 
-<PreferenceCategory
-    android:key="sip_proxy_settings"
-    android:title="Sip Settings" >
-    <EditTextPreference
-        android:defaultValue=""
-        android:key="pref_sip_user"
-        android:title="User"
-        android:summary="Restcomm-Connect client username, like 'bob'"/>
-    <EditTextPreference
-        android:defaultValue=""
-        android:key="pref_sip_password"
-        android:title="Password"
-        android:inputType="textPassword"
-        android:summary="Password for Restcomm-Connect authentication"/>
-    <EditTextPreference
-        android:defaultValue="cloud.restcomm.com"
-        android:key="pref_proxy_domain"
-        android:title="Domain"
-        android:summary="Restcomm-Connect domain, like: 'cloud.restcomm.com'"/>
-    <SwitchPreference
-        android:defaultValue="true"
-        android:key="signaling-secure"
-        android:title="Secure Signaling"
-        android:summary="Encrypt signaling communications (notice that media communications are always encrypted so no need for an extra option)"/>
+    <PreferenceCategory
+        android:key="sip_proxy_settings"
+        android:title="Sip Settings" >
+        <EditTextPreference
+            android:defaultValue=""
+            android:key="pref_sip_user"
+            android:title="User"
+            android:summary="Restcomm-Connect client username, like 'bob'"/>
+        <EditTextPreference
+            android:defaultValue=""
+            android:key="pref_sip_password"
+            android:title="Password"
+            android:inputType="textPassword"
+            android:summary="Password for Restcomm-Connect authentication"/>
+        <EditTextPreference
+            android:defaultValue="cloud.restcomm.com"
+            android:key="pref_proxy_domain"
+            android:title="Domain"
+            android:summary="Restcomm-Connect domain, like: 'cloud.restcomm.com'"/>
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="signaling-secure"
+            android:title="Secure Signaling"
+            android:summary="Encrypt signaling communications (notice that media communications are always encrypted so no need for an extra option)"/>
+    </PreferenceCategory>
 
-</PreferenceCategory>
+    <PreferenceCategory
+        android:key="media_settings"
+        android:title="Media Settings" >
+        <ListPreference
+            android:key="preferred-audio-codec"
+            android:title="@string/pref_audiocodec_title"
+            android:defaultValue="@string/pref_audiocodec_default"
+            android:dialogTitle="@string/pref_audiocodec_dlg"
+            android:entries="@array/audio_codecs"
+            android:entryValues="@array/audio_codecs" />
+
+        <ListPreference
+            android:key="preferred-video-codec"
+            android:title="@string/pref_videocodec_title"
+            android:defaultValue="@string/pref_videocodec_default"
+            android:dialogTitle="@string/pref_videocodec_dlg"
+            android:entries="@array/video_codecs"
+            android:entryValues="@array/video_codecs" />
+
+        <ListPreference
+            android:key="preferred-video-resolution"
+            android:title="@string/pref_resolution_title"
+            android:defaultValue="@string/pref_resolution_default"
+            android:dialogTitle="@string/pref_resolution_dlg"
+            android:entries="@array/video_resolutions"
+            android:entryValues="@array/video_resolution_values" />
+        <ListPreference
+            android:key="preferred-video-frame-rate"
+            android:title="@string/pref_fps_title"
+            android:defaultValue="@string/pref_fps_default"
+            android:dialogTitle="@string/pref_fps_dlg"
+            android:entries="@array/camera_fps"
+            android:entryValues="@array/camera_fps" />
+
+    </PreferenceCategory>
+
     <PreferenceCategory
         android:key="webrtc_ice_settings"
         android:title="WebRTC ICE Settings" >

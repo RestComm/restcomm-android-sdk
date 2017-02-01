@@ -32,6 +32,7 @@ import android.content.SharedPreferences;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.preference.Preference;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBar;
@@ -41,6 +42,7 @@ import android.util.Log;
 import android.view.MenuItem;
 
 import org.restcomm.android.sdk.RCClient;
+import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.util.ErrorStruct;
 import org.restcomm.android.sdk.util.RCUtils;
@@ -49,6 +51,7 @@ import java.util.HashMap;
 
 public class SettingsActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener,
       ServiceConnection {
+   private SettingsFragment settingsFragment;
    SharedPreferences prefs;
    HashMap<String, Object> params;
    RCDevice device;
@@ -74,7 +77,8 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
       }
 
       // Display the fragment as the main content.
-      getFragmentManager().beginTransaction().replace(R.id.content_frame, new SettingsFragment()).commit();
+      settingsFragment = new SettingsFragment();
+      getFragmentManager().beginTransaction().replace(R.id.content_frame, settingsFragment).commit();
 
       params = new HashMap<String, Object>();
 
@@ -88,11 +92,24 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
    {
       super.onResume();
 
+      Preference updatedPref = settingsFragment.findPreference(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC);
+      updatedPref.setSummary(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, ""));
+
+      updatedPref = settingsFragment.findPreference(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC);
+      updatedPref.setSummary(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC, ""));
+
+      updatedPref = settingsFragment.findPreference(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION);
+      updatedPref.setSummary(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION, ""));
+
+      updatedPref = settingsFragment.findPreference(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE);
+      updatedPref.setSummary(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE, ""));
+
       updated = false;
    }
 
    @Override
-   protected void onStart() {
+   protected void onStart()
+   {
       super.onStart();
       Log.i(TAG, "%% onStart");
 
@@ -101,7 +118,8 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
    }
 
    @Override
-   protected void onStop() {
+   protected void onStop()
+   {
       super.onStop();
       Log.i(TAG, "%% onStop");
 
@@ -149,7 +167,7 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
       int id = item.getItemId();
       if (id == android.R.id.home) {
          if (updated) {
-            ErrorStruct errorStruct = RCUtils.validateParms((HashMap<String,Object>)prefs.getAll());
+            ErrorStruct errorStruct = RCUtils.validateParms((HashMap<String, Object>) prefs.getAll());
             if (errorStruct.statusCode != RCClient.ErrorCodes.SUCCESS) {
                showOkAlert("Error saving Settings", errorStruct.statusText);
             }
@@ -204,6 +222,30 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
       }
       else if (key.equals(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED)) {
          params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false));
+         updated = true;
+      }
+      else if (key.equals(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC)) {
+         params.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, "Default"));
+         Preference updatedPref = settingsFragment.findPreference(key);
+         updatedPref.setSummary(prefs.getString(key, ""));
+         updated = true;
+      }
+      else if (key.equals(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC)) {
+         params.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC, prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC, "Default"));
+         Preference updatedPref = settingsFragment.findPreference(key);
+         updatedPref.setSummary(prefs.getString(key, ""));
+         updated = true;
+      }
+      else if (key.equals(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION)) {
+         params.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION, prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION, "Default"));
+         Preference updatedPref = settingsFragment.findPreference(key);
+         updatedPref.setSummary(prefs.getString(key, ""));
+         updated = true;
+      }
+      else if (key.equals(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE)) {
+         params.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE, prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE, "Default"));
+         Preference updatedPref = settingsFragment.findPreference(key);
+         updatedPref.setSummary(prefs.getString(key, ""));
          updated = true;
       }
    }
