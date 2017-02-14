@@ -30,6 +30,7 @@ import android.gov.nist.javax.sip.message.SIPMessage;
 import android.javax.sip.ClientTransaction;
 import android.javax.sip.DialogTerminatedEvent;
 import android.javax.sip.IOExceptionEvent;
+import android.javax.sip.InvalidArgumentException;
 import android.javax.sip.ListeningPoint;
 import android.javax.sip.ObjectInUseException;
 import android.javax.sip.RequestEvent;
@@ -138,6 +139,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
    final int REGISTER_REFRESH_MINUS_INTERVAL = 10;
    // how long after we force close the client if it takes too long to process JainSipClient.close()
    static final int FORCE_CLOSE_INTERVAL = 3000;
+   private boolean busy = false;
 
    // JAIN SIP entities
    public SipFactory jainSipFactory;
@@ -349,6 +351,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
 
    public void disconnect(String jobId, String reason, JainSipCall.JainSipCallListener listener)
    {
+      busy = false;
       RCLogger.i(TAG, "disconnect(): jobId: " + jobId + ", reason: " + reason);
 
       if (!jainSipNotificationManager.haveConnectivity()) {
@@ -668,12 +671,31 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
             String method = request.getMethod();
 
             if (method.equals(Request.INVITE)) {
+               // Continue #512: Reject an incoming call if there is an ongoing Call
+               // If already busy in another call decline this new one
+               if (busy) {
+                  try {
+                     if (serverTransaction == null) {
+                        // no server transaction yet
+                        serverTransaction = jainSipProvider.getNewServerTransaction(request);
+                     }
+
+                     Response responseDecline = jainSipMessageBuilder.buildResponse(Response.DECLINE, request);
+                     serverTransaction.sendResponse(responseDecline);
+                  }
+                  catch (InvalidArgumentException | SipException e) {
+                     e.printStackTrace();
+                  }
+                  return;
+               }
+
                // New INVITE, need to create new job
                JainSipCall jainSipCall = new JainSipCall(JainSipClient.this, (JainSipCall.JainSipCallListener)listener);
                // Remember, this is new dialog and hence serverTransaction is null
                JainSipJob jainSipJob = jainSipJobManager.add(jobId, JainSipJob.Type.TYPE_CALL, null, null, jainSipCall);
 
                jainSipCall.processRequest(jainSipJob, requestEvent);
+               busy = true;
             }
             else if (method.equals(Request.MESSAGE)) {
                try {
