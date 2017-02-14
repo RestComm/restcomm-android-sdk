@@ -408,13 +408,6 @@ public class PeerConnectionClient {
                new MediaConstraints.KeyValuePair(DTLS_SRTP_KEY_AGREEMENT_CONSTRAINT, "true"));
       }
 
-      /*
-      Camera1Enumerator camera1Enumerator = new Camera1Enumerator();
-      for (String s: camera1Enumerator.getDeviceNames()) {
-         CameraEnumerationAndroid.CaptureFormat format;
-      }
-      */
-
       // Check if there is a camera on device and disable video call if not.
       numberOfCameras = CameraEnumerationAndroid.getDeviceCount();
       if (numberOfCameras == 0) {
@@ -531,6 +524,22 @@ public class PeerConnectionClient {
         EnumSet.of(Logging.TraceLevel.TRACE_DEFAULT),
         Logging.Severity.LS_INFO);
         */
+
+      // Let's keep those attempts commented out because we 're going to need them soon
+      /*
+      Camera1Enumerator camera1Enumerator = new Camera1Enumerator();
+      for (String s: camera1Enumerator.getDeviceNames()) {
+         CameraEnumerationAndroid.CaptureFormat format;
+      }
+      */
+      //String[] cameras = CameraEnumerationAndroid.getDeviceNames();
+      /*
+      int number = CameraEnumerationAndroid.getDeviceCount();
+      for (int i = 0; i < number; i ++) {
+         String cam = CameraEnumerationAndroid.getDeviceName(i);
+         RCLogger.d(TAG, "Cam " + i + ": " + cam);
+      }
+      */
 
       mediaStream = factory.createLocalMediaStream("ARDAMS");
       if (videoCallEnabled) {
