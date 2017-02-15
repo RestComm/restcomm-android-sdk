@@ -227,25 +227,33 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
       else if (key.equals(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC)) {
          params.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, "Default"));
          Preference updatedPref = settingsFragment.findPreference(key);
-         updatedPref.setSummary(prefs.getString(key, ""));
+         if (updatedPref != null) {
+            updatedPref.setSummary(prefs.getString(key, ""));
+         }
          updated = true;
       }
       else if (key.equals(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC)) {
          params.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC, prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC, "Default"));
          Preference updatedPref = settingsFragment.findPreference(key);
-         updatedPref.setSummary(prefs.getString(key, ""));
+         if (updatedPref != null) {
+            updatedPref.setSummary(prefs.getString(key, ""));
+         }
          updated = true;
       }
       else if (key.equals(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION)) {
          params.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION, prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION, "Default"));
          Preference updatedPref = settingsFragment.findPreference(key);
-         updatedPref.setSummary(prefs.getString(key, ""));
+         if (updatedPref != null) {
+            updatedPref.setSummary(prefs.getString(key, ""));
+         }
          updated = true;
       }
       else if (key.equals(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE)) {
          params.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE, prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE, "Default"));
          Preference updatedPref = settingsFragment.findPreference(key);
-         updatedPref.setSummary(prefs.getString(key, ""));
+         if (updatedPref != null) {
+            updatedPref.setSummary(prefs.getString(key, ""));
+         }
          updated = true;
       }
    }
