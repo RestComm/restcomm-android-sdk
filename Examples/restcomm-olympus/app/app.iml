@@ -98,7 +98,7 @@
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.android.support/support-v4/25.1.0/jars" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.android.support/support-vector-drawable/25.1.0/jars" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/com.android.support/transition/25.1.0/jars" />
-      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/testfairy/testfairy-android-sdk/1.4.7/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/exploded-aar/testfairy/testfairy-android-sdk/1.4.8/jars" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/incremental" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/incremental-safeguard" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/jniLibs" />
@@ -128,8 +128,8 @@
     <orderEntry type="library" exported="" name="support-vector-drawable-25.1.0" level="project" />
     <orderEntry type="library" exported="" name="appcompat-v7-25.1.0" level="project" />
     <orderEntry type="library" exported="" name="recyclerview-v7-25.1.0" level="project" />
+    <orderEntry type="library" exported="" name="testfairy-android-sdk-1.4.8" level="project" />
     <orderEntry type="library" exported="" name="support-core-utils-25.1.0" level="project" />
-    <orderEntry type="library" exported="" name="testfairy-android-sdk-1.4.7" level="project" />
     <orderEntry type="module" module-name="restcomm.android.sdk" exported="" />
     <orderEntry type="library" exported="" name="android-jain-sip-ri-1.2.293" level="project" />
     <orderEntry type="library" exported="" name="core-1.54.0.0" level="project" />

@@ -1,6 +1,7 @@
 apply plugin: 'com.android.library'
 apply plugin: 'maven'
 apply plugin: 'signing'
+//apply plugin: 'java'
 
 // buildscript block only controls dependencies for the buildscript process itself, not for the application code
 // We need this even though Project already has it, because we want the SDK module to work independently too
@@ -23,7 +24,7 @@ android {
     defaultConfig {
         minSdkVersion 16
         targetSdkVersion 25
-        versionCode 1625
+        versionCode 1627
         versionName "1.0.0-BETA4"
     }
     buildTypes {
@@ -61,7 +62,7 @@ repositories {
 
 dependencies {
     compile files('libs/libjingle_peerconnection_java.jar')
-    compile 'com.android.support:appcompat-v7:25.1.0'
+    compile 'com.android.support:appcompat-v7:25.1.1'
     // This is a dependency for JAIN SIP library (android-jain-sip-ri). Tried to replace it with maven 'org.apache.logging.log4j:log4j:2.6.2' but didn't work so until we update JAIN SIP library
     // accordingly we 're stuck with this local dependency
     //compile files('libs/log4j-1.2.15.jar')
@@ -78,14 +79,23 @@ dependencies {
 
 // Upload to sonatype stuff
 task androidJavadocs(type: Javadoc) {
-    source = android.sourceSets.main.java.srcDirs
-    classpath += project.files(android.getBootClasspath().join(File.pathSeparator))
+    source = android.sourceSets.main.java.srcDirs // files(android.sourceSets.main.java.sourceFiles)
+    title = "Restcomm Android SDK"
+    ext.androidJar = "${android.sdkDirectory}/platforms/${android.compileSdkVersion}/android.jar"
+    classpath += files(ext.androidJar) + files("libs/libjingle_peerconnection_java.jar") //+ files("$buildDir/intermediates/bundles/debug/classes.jar")
+    /* DEBUG
+    classpath.getFiles().each { File file ->
+        logger.error("---- file: " + file.absolutePath)
+    }
+    */
+
     destinationDir = file("../doc/")
     // Include only the higher API modules, so that its clean for the user
     include("**/RCClient.java", "**/RCConnection.java", "**/RCConnectionListener.java", "**/RCDevice.java", "**/RCDeviceListener.java")
+    //exclude '**/org/restcomm/android/sdk/MediaClient/**'
     // Notice that including only higher API modules results in errors for seemingly undefined symbols. Until we find a way to deal with that
     // let's avoid failing on error
-    failOnError false
+    failOnError true
 }
 
 task androidJavadocsJar(type: Jar, dependsOn: androidJavadocs) {

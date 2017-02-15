@@ -48,7 +48,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * <p>RCDevice represents an abstraction of a communications device able to make and receive calls, send and receive messages etc. Remember that
+ * RCDevice represents an abstraction of a communications device able to make and receive calls, send and receive messages etc. Remember that
  * in order to be notified of Restcomm Client events you need to set a listener to RCDevice and implement the applicable methods, and also 'register'
  * to the applicable intents by calling RCDevice.setPendingIntents() and provide one intent for whichever activity will be receiving calls and another
  * intent for the activity receiving messages.
@@ -60,21 +60,17 @@ import java.util.Map;
  *    <li>Whether the incoming call has video enabled via boolean extra named RCDevice.EXTRA_VIDEO_ENABLED, like:
  *       <i>intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false)</i></li>
  *    <li>Restcomm parameters via serializable extra named RCDevice.EXTRA_CUSTOM_HEADERS, like: <i>intent.getSerializableExtra(RCDevice.EXTRA_CUSTOM_HEADERS)</i>
- *    where you need to cast the result to HashMap<String, String> where each entry is a Restcomm parameter with key and value of type string
+ *    where you need to cast the result to HashMap&lt;String, String&gt; where each entry is a Restcomm parameter with key and value of type string
  *    (for example you will find the Restcomm Call-Sid under 'X-RestComm-CallSid' key).</li>
  * </ol>
  * At that point you can use RCConnection methods to accept or reject the connection.
- * </p>
- * <p>
+ * <br>
  * As far as instant messages are concerned you can send a message using RCDevice.sendMessage() and you will be notified of an incoming message
  * through an intent with action 'RCDevice.INCOMING_MESSAGE'. For an incoming message you can retrieve:
  * <ol>
  *    <li>The sending party id via string extra named RCDevice.EXTRA_DID, like: <i>intent.getStringExtra(RCDevice.EXTRA_DID)</i></li>
  *    <li>The actual message text via string extra named RCDevice.INCOMING_MESSAGE_TEXT, like: <i>intent.getStringExtra(RCDevice.INCOMING_MESSAGE_TEXT)</i></li>
  * </ol>
- * </p>
- *
- * <p>
  * <h3>Taking advantage of Android Notifications</h3>
  * The Restcomm  SDK comes integrated with Android Notifications. This means that while your App is in the
  * background all events from incoming calls/messages are conveyed via (Heads up) Notifications. Depending on the type of event the designated Intent is used
@@ -91,9 +87,7 @@ import java.util.Map;
  * </ol>
  * Keep in mind that once the call is answered then you get a foreground (i.e. sticky) notification in the Notification Drawer for the duration of the call via which you can either mute audio or hang up the call
  * while working on other Android Apps without interruption.
- * </p>
- *
- * <p>
+ * <br>
  * <h3>Android Service</h3>
  * You need to keep in mind that RCDevice is an Android Service, to facilitiate proper backgrounding functionality. Also this service is both 'bound' and 'started'. Bound
  * to be able to access it via easy-to-use API and started to make sure that it doesn't shut down when all Activities have been unbounded. Also, notice that although it
@@ -107,7 +101,6 @@ import java.util.Map;
  * -the first time an Activity ever binds to it, hence the need to check if initialized, with RCDevice.isInitialized().
  *
  * You can also check the Sample Applications on how to properly use that at the Examples directory in the GitHub repository
- * </p>
  * @see RCConnection
  */
 public class RCDevice extends Service implements SignalingClient.SignalingClientListener {
@@ -627,6 +620,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
    /**
     * Updates the capability token (<b>Not implemented yet</b>)
+    * @param token the token to use
     */
    public void updateCapabilityToken(String token)
    {
@@ -648,7 +642,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     *                   <b>RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO</b>: PercentFrameLayout containing the view where we want the remote video to be rendered. You can check res/layout/activity_main.xml
     *                   in hello-world sample to see the structure required  <br>
     *                   <b>RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC</b>: Preferred video codec to use. Default is VP8. Possible values: <i>'VP8', 'VP9'</i> <br>
-    *                   <b>RCConnection.ParameterKeys.CONNECTION_CUSTOM_SIP_HEADERS</b>: An optional HashMap<String,String> of custom SIP headers we want to add. For an example
+    *                   <b>RCConnection.ParameterKeys.CONNECTION_CUSTOM_SIP_HEADERS</b>: An optional HashMap&lt;String,String&gt; of custom SIP headers we want to add. For an example
     *                   please check HelloWorld sample or Olympus App. <br>
     * @param listener   The listener object that will receive events when the connection state changes
     * @return An RCConnection object representing the new connection or null in case of error. Error
@@ -692,6 +686,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     *
     * @param message    Message text
     * @param parameters Parameters used for the message, such as 'username' that holds the recepient for the message
+    * @return status for the send action
     */
    public boolean sendMessage(String message, Map<String, String> parameters)
    {
@@ -886,6 +881,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     *               <b>RCDevice.ParameterKeys.MEDIA_TURN_ENABLED</b>: Should TURN be enabled for webrtc media? (optional) <br>
     *               <b>RCDevice.ParameterKeys.SIGNALING_LOCAL_PORT</b>: Local port to use for signaling (optional) <br>
     * @see RCDevice
+    * @return right now this is more of a placeholder and always returns true. Is meant to potentially be used in the future to return actual status of whether the action succeeded or not
     */
    public boolean updateParams(HashMap<String, Object> params)
    {
@@ -906,6 +902,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
    /**
     * Internal method; not meant for application use.
+    * @param jobId the jobId to use for the filtering of connections
+    * @return the connection that has the given job id
     */
    public SignalingClient.SignalingClientCallListener getConnectionByJobId(String jobId)
    {
@@ -920,9 +918,13 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
    // -- SignalingClientListener events for incoming messages from signaling thread
    // Replies
-   /**
-    * Internal service callback; not meant for application use
-    */
+    /**
+     * Internal service callback; not meant for application use
+     * @param jobId the job Id that was used in the original request, so that we can correlate the two
+     * @param connectivityStatus connectivity status at the point of the reply
+     * @param status status code for this action
+     * @param text status text for this action
+     */
    public void onOpenReply(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
       RCLogger.i(TAG, "onOpenReply(): id: " + jobId + ", connectivityStatus: " + connectivityStatus + ", status: " + status + ", text: " + text);
@@ -949,9 +951,12 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
    }
 
-   /**
-    * Internal service callback; not meant for application use
-    */
+    /**
+     * Internal service callback; not meant for application use
+     * @param jobId the job Id that was used in the original request, so that we can correlate the two
+     * @param status status code for this action
+     * @param text status text for this action
+     */
    public void onCloseReply(String jobId, RCClient.ErrorCodes status, String text)
    {
       RCLogger.i(TAG, "onCloseReply(): id: " + jobId + ", status: " + status + ", text: " + text);
@@ -966,9 +971,13 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       stopSelf();
    }
 
-   /**
-    * Internal service callback; not meant for application use
-    */
+    /**
+     * Internal service callback; not meant for application use
+     * @param jobId the job Id that was used in the original request, so that we can correlate the two
+     * @param connectivityStatus connectivity status at the point of the reply
+     * @param status status code for this action
+     * @param text status text for this action
+     */
    public void onReconfigureReply(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
       RCLogger.i(TAG, "onReconfigureReply(): id: " + jobId + ", connectivityStatus: " + connectivityStatus + ", status: " + status + ", text: " + text);
@@ -996,9 +1005,12 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
    }
 
-   /**
-    * Internal service callback; not meant for application use
-    */
+    /**
+     * Internal service callback; not meant for application use
+     * @param jobId the job Id that was used in the original request, so that we can correlate the two
+     * @param status status code for this action
+     * @param text status text for this action
+     */
    public void onMessageReply(String jobId, RCClient.ErrorCodes status, String text)
    {
       RCLogger.i(TAG, "onMessageReply(): id: " + jobId + ", status: " + status + ", text: " + text);
@@ -1014,9 +1026,13 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    }
 
    // Unsolicited Events
-   /**
-    * Internal service callback; not meant for application use
-    */
+    /**
+     * Internal service callback; not meant for application use
+     * @param jobId the job Id that was used in the original request, so that we can correlate the two
+     * @param peer the peer from which the call arrived
+     * @param sdpOffer sdp offer sent by the peer
+     * @param customHeaders any custom SIP headers sent by the peer
+     */
    public void onCallArrivedEvent(String jobId, String peer, String sdpOffer, HashMap<String, String> customHeaders)
    {
       RCLogger.i(TAG, "onCallArrivedEvent(): id: " + jobId + ", peer: " + peer);
@@ -1069,9 +1085,10 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
    }
 
-   /**
-    * Internal service callback; not meant for application use
-    */
+    /**
+     * Internal service callback; not meant for application use
+     * @param jobId the job Id that was used in the original request, so that we can correlate the two
+     */
    public void onRegisteringEvent(String jobId)
    {
       RCLogger.i(TAG, "onRegisteringEvent(): id: " + jobId);
@@ -1085,9 +1102,12 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
    }
 
-   /**
-    * Internal signaling callback; not meant for application use
-    */
+    /**
+     * Internal signaling callback; not meant for application use
+     * @param jobId the job Id that was used in the original request, so that we can correlate the two
+     * @param peer the peer from which the text message arrived
+     * @param messageText actual text of the incoming text message
+     */
    public void onMessageArrivedEvent(String jobId, String peer, String messageText)
    {
       RCLogger.i(TAG, "onMessageArrivedEvent(): id: " + jobId + ", peer: " + peer + ", text: " + messageText);
@@ -1119,9 +1139,13 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
    }
 
-   /**
-    * Internal signaling callback; not meant for application use
-    */
+    /**
+     * Internal signaling callback; not meant for application use
+     * @param jobId the job Id that was used in the original request, so that we can correlate the two
+     * @param connectivityStatus connectivity status at the point of the reply
+     * @param status status code for this action
+     * @param text status text for this action
+     */
    public void onErrorEvent(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
       RCLogger.e(TAG, "onErrorEvent(): id: " + jobId + ", connectivityStatus: " + connectivityStatus + ", status: " + status + ", text: " + text);
@@ -1140,9 +1164,11 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
    }
 
-   /**
-    * Internal signaling callback; not meant for application use
-    */
+    /**
+     * Internal signaling callback; not meant for application use
+     * @param jobId the job Id that was used in the original request, so that we can correlate the two
+     * @param connectivityStatus connectivity status at the point of the reply
+     */
    public void onConnectivityEvent(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus)
    {
       RCLogger.i(TAG, "onConnectivityEvent(): id: " + jobId + ", connectivityStatus: " + connectivityStatus);

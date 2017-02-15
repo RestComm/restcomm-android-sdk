@@ -121,6 +121,7 @@ public interface RCDeviceListener {
     * Called to query whether the application wants to retrieve presence events. Return false to indicate that the application isn't interested (<b>Not implemented yet</b>)
     *
     * @param device Device of interest
+    * @return placeholder for now
     */
    boolean receivePresenceEvents(RCDevice device);
 

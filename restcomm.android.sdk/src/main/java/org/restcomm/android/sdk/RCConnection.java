@@ -88,14 +88,14 @@ import org.webrtc.VideoTrack;
  * and returns a new RCConnection. On the other hand when an incoming connection arrives the RCDevice delegate is notified with
  * RCDeviceListener.onIncomingConnection() and passes the new RCConnection object that is used by the delegate to
  * control the connection.
- * <p/>
+ * <br>
  * When an incoming connection arrives through RCDeviceListener.onIncomingConnection() it is considered RCConnectionStateConnecting until it is either
  * accepted with RCConnection.accept() or rejected with RCConnection.reject(). Once the connection is accepted the RCConnection transitions to RCConnectionStateConnected
  * state.
- * <p/>
+ * <br>
  * When an outgoing connection is created with RCDevice.connect() it starts with state RCConnectionStatePending. Once it starts ringing on the remote party it
  * transitions to RCConnectionStateConnecting. When the remote party answers it, the RCConnection state transitions to RCConnectionStateConnected.
- * <p/>
+ * <br>
  * Once an RCConnection (either incoming or outgoing) is established (i.e. RCConnectionStateConnected) media can start flowing over it. DTMF digits can be sent over to
  * the remote party using RCConnection.sendDigits(). When done with the RCConnection you can disconnect it with RCConnection.disconnect().
  */
@@ -158,7 +158,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private ConnectionMediaType remoteMediaType;
 
    /**
-    * Direction of the connection. True if connection is incoming; false otherwise
+    * Direction of the connection. True if connection is incoming, false otherwise
     */
    boolean incoming;
 
@@ -441,6 +441,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    /**
     * Retrieves the current state of the connection
+    * @return the current state of the connection
     */
    public ConnectionState getState()
    {
@@ -449,6 +450,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    /**
     * Retrieves the current local media type of the connection
+    * @return the current local media type of the connection
     */
    public ConnectionMediaType getLocalMediaType()
    {
@@ -457,6 +459,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    /**
     * Retrieves the current local media type of the connection
+    * @return the current local media type of the connection
     */
    public ConnectionMediaType getRemoteMediaType()
    {

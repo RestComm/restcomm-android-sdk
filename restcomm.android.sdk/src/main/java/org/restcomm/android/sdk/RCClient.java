@@ -90,6 +90,8 @@ public final class RCClient {
 
    /**
     * Maps the error codes above with an error description, to get more detailed information on what happened
+    * @param errorCode: The error code
+    * @return The error text corresponding to the passed errorCode
     */
    public static String errorText(ErrorCodes errorCode)
    {
