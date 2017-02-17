@@ -24,6 +24,9 @@ package org.restcomm.android.sdk.util;
 
 import android.util.Log;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class RCLogger {
     private static int ALL = 8;
     private static int globalLevel = Log.ERROR;
@@ -71,7 +74,7 @@ public class RCLogger {
     public static void v(String tag, String msg, Throwable t)
     {
         if (RCLogger.isVerboseEnabled()) {
-            Log.v(tag, escape(msg), t);
+            Log.v(tag, filter(msg), t);
         }
     }
 
@@ -83,7 +86,7 @@ public class RCLogger {
                 RCLogger.i(tag, msg);
             }
             */
-            Log.v(tag, RCLogger.escape(msg));
+            Log.v(tag, RCLogger.filter(msg));
         }
     }
 
@@ -96,75 +99,85 @@ public class RCLogger {
             }
             */
 
-            Log.d(tag, escape(msg), t);
+            Log.d(tag, filter(msg), t);
         }
     }
 
     public static void d(String tag, String msg)
     {
         if (RCLogger.isDebugEnabled()) {
-            Log.d(tag, escape(msg));
+            Log.d(tag, filter(msg));
         }
     }
 
     public static void i(String tag, String msg, Throwable t)
     {
         if (RCLogger.isInfoEnabled()) {
-            Log.i(tag, escape(msg), t);
+            Log.i(tag, filter(msg), t);
         }
     }
 
     public static void i(String tag, String msg)
     {
         if (RCLogger.isInfoEnabled()) {
-            Log.i(tag, escape(msg));
+            Log.i(tag, filter(msg));
         }
     }
 
     public static void w(String tag, String msg, Throwable t)
     {
         if (RCLogger.isWarnEnabled()) {
-            Log.w(tag, escape(msg), t);
+            Log.w(tag, filter(msg), t);
         }
     }
 
     public static void w(String tag, String msg)
     {
         if (RCLogger.isWarnEnabled()) {
-            Log.w(tag, escape(msg));
+            Log.w(tag, filter(msg));
         }
     }
 
     public static void e(String tag, String msg, Throwable t)
     {
         if (RCLogger.isErrorEnabled()) {
-            Log.e(tag, escape(msg), t);
+            Log.e(tag, filter(msg), t);
         }
     }
 
     public static void e(String tag, String msg)
     {
         if (RCLogger.isErrorEnabled()) {
-            Log.e(tag, escape(msg));
+            Log.e(tag, filter(msg));
         }
     }
 
     public static void wtf(String tag, String msg, Throwable t)
     {
         if (RCLogger.isAssertEnabled()) {
-            Log.wtf(tag, escape(msg), t);
+            Log.wtf(tag, filter(msg), t);
         }
     }
 
     public static void wtf(String tag, String msg)
     {
         if (RCLogger.isAssertEnabled()) {
-            Log.wtf(tag, escape(msg));
+            Log.wtf(tag, filter(msg));
         }
     }
 
-    private static String escape(String msg)
+   /**
+    * Filter logs for sensitive information and also some other needed stuff
+    * @param msg Input string
+    * @return Filtered string
+    */
+    private static String filter(String msg)
     {
+        // Remove sensitive information. If we want to add more sensitive data, here's where we need to filter it
+        msg = msg.replaceAll("turn-password=.*?, ", "turn-password=, ")  // turn password filtering
+              .replaceAll("pref_sip_password=.*?, ", "pref_sip_password=, ")  // SIP password
+              .replaceAll("secret=.*?&", "secret=&");  // for ICE/TURN url password
+
         //return msg.replaceAll("\"", "").replaceAll("\\r", "").replaceAll("", "");
         // Remove special carriage return characters that seem to not be allowed to be written in logcat.
         // WARNING: Also another VERY weird issue is that if we are logging full INVITE requests (together with SDP)
@@ -172,5 +185,25 @@ public class RCLogger {
         // So to work around that we replace two new lines with one
         return msg.replaceAll("\\r", "").replaceAll("\\n\\n", "\n");
     }
+
+    // This isn't going to be used as we it forces the user to use it in order to obscure anything. So a new developer that might forget will still
+    // put existing password keys in the open. Instead we 're using a filtering logic (check .filter() above)
+   /**
+    * Returns a string with all parameters logged, but where sensitive values will be obscured. The keys whose values we want to obscure are hard coded for now
+    * @param parameters parameters we want logged
+    * @return String with all sensitive fields obscured
+    */
+   /*
+    public static String obscureHashMap2String(HashMap<String, Object> parameters)
+    {
+        String output = parameters.toString();
+        for (Map.Entry<String, Object> entry : parameters.entrySet()) {
+            if (entry.getKey().equals("turn-password") || entry.getKey().equals("pref_sip_password")) {
+                output = output.replace((String)entry.getValue(), "");
+            }
+        }
+        return output;
+    }
+    */
 
 }

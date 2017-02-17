@@ -250,8 +250,8 @@ public class MainActivity extends AppCompatActivity
          //params.put(RCDevice.ParameterKeys.DEBUG_JAIN_SIP_LOGGING_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.DEBUG_JAIN_SIP_LOGGING_ENABLED, true));
          //params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, prefs.getBoolean(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true));
 
-         device.initialize(getApplicationContext(), params, this);
          device.setLogLevel(Log.VERBOSE);
+         device.initialize(getApplicationContext(), params, this);
       }
 
       if (device.getState() == RCDevice.DeviceState.OFFLINE) {

@@ -58,6 +58,7 @@ import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.restcomm.android.sdk.util.RCLogger;
 import org.webrtc.PeerConnection;
 
 import java.util.LinkedList;
@@ -92,13 +93,13 @@ public class IceServerFetcher {
     }
 
     public void makeRequest() {
-        Log.d(TAG, "Requesting ICE servers from: " + iceUrl);
+        RCLogger.d(TAG, "Requesting ICE servers from: " + iceUrl);
         httpConnection = new AsyncHttpURLConnection(
                 "GET", iceUrl,
                 new AsyncHttpURLConnection.AsyncHttpEvents() {
                     @Override
                     public void onHttpError(String errorMessage) {
-                        Log.e(TAG, "ICE servers request timeout: " + errorMessage);
+                        RCLogger.e(TAG, "ICE servers request timeout: " + errorMessage);
                         events.onIceServersError(errorMessage);
                     }
 
@@ -111,7 +112,7 @@ public class IceServerFetcher {
     }
 
     private void iceServersHttpResponseParse(String response) {
-        Log.d(TAG, "Ice Servers response: " + response);
+        RCLogger.d(TAG, "Ice Servers response: " + response);
         try {
             JSONObject iceServersJson = new JSONObject(response);
 
@@ -143,7 +144,7 @@ public class IceServerFetcher {
                 }
                 iceServers.add(new PeerConnection.IceServer(url, username, password));
 
-                Log.d(TAG, "==== URL: " + url + ", username: " + username + ", password: " + password);
+                RCLogger.d(TAG, "==== URL: " + url + ", username: " + username + ", password: " + password);
             }
 
             events.onIceServersReady(iceServers);
@@ -159,7 +160,7 @@ public class IceServerFetcher {
             throws IOException, JSONException {
         LinkedList<PeerConnection.IceServer> turnServers =
                 new LinkedList<PeerConnection.IceServer>();
-        Log.d(TAG, "Request TURN from: " + url);
+        RCLogger.d(TAG, "Request TURN from: " + url);
         HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
         connection.setConnectTimeout(TURN_HTTP_TIMEOUT_MS);
         connection.setReadTimeout(TURN_HTTP_TIMEOUT_MS);
@@ -171,7 +172,7 @@ public class IceServerFetcher {
         InputStream responseStream = connection.getInputStream();
         String response = drainStream(responseStream);
         connection.disconnect();
-        Log.d(TAG, "TURN response: " + response);
+        RCLogger.d(TAG, "TURN response: " + response);
         JSONObject responseJSON = new JSONObject(response);
         String username = responseJSON.getString("username");
         String password = responseJSON.getString("password");
