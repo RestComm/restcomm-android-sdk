@@ -129,13 +129,14 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
    // android handler token to identify registration refresh posts
    private final int REGISTER_REFRESH_HANDLER_TOKEN = 1;
    Handler signalingHandler;
-   private final int DEFAULT_REGISTER_EXPIRY_PERIOD = 60;
+   // Register expiry in seconds
+   private final int DEFAULT_REGISTER_EXPIRY_PERIOD = 3600;
    private final int DEFAULT_LOCAL_SIP_PORT = 5090;
    // the registration refresh needs to happen sooner than expiry to make sure that the client has a registration at all times. Let's
-   // set it to EXPIRY - 10 seconds. TODO: in the future we could randomize this so that for example it is between half the expiry
+   // set it to EXPIRY - 50 seconds. TODO: in the future we could randomize this so that for example it is between half the expiry
    // and full expiry (in this example, a random between [30, 60] seconds) to avoid having all android clients refreshing all at
-   // the same time and stressing Restcomm. Actually this is how Sofia SIP in restcomm-ios-sdk does it by default.
-   final int REGISTER_REFRESH_MINUS_INTERVAL = 10;
+   // the same time and stressing Restcomm. Actually this is how Sofia SIP in restcomm-ios-sdk does it by default. Value is in seconds
+   final int REGISTER_REFRESH_MINUS_INTERVAL = 50;
    // how long after we force close the client if it takes too long to process JainSipClient.close()
    static final int FORCE_CLOSE_INTERVAL = 3000;
 
