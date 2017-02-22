@@ -93,6 +93,7 @@ public class MainActivity extends AppCompatActivity
       Log.i(TAG, "Olympus Version: " + APP_VERSION);
 
       // For TestFairy troubleshooting. IMPORTANT: remove for production apps, as TestFairy sends logs, screenshots, etc to their servers
+      //TestFairy.begin(this, "#TESTFAIRY_APP_TOKEN");
       TestFairy.begin(this, "52d3ee1de1b7681d1fcbbc3295b2b86a0aa43fcc");
 
       Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);

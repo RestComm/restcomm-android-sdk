@@ -112,11 +112,11 @@ public class IceServerFetcher {
     }
 
     private void iceServersHttpResponseParse(String response) {
-        RCLogger.d(TAG, "Ice Servers response: " + response);
         try {
             JSONObject iceServersJson = new JSONObject(response);
 
             int result = iceServersJson.getInt("s");
+            RCLogger.d(TAG, "Ice Servers response status: " + result);
             if (result != 200) {
                 events.onIceServersError("Ice Servers response error: " + iceServersJson.getString("e"));
                 return;
@@ -144,7 +144,7 @@ public class IceServerFetcher {
                 }
                 iceServers.add(new PeerConnection.IceServer(url, username, password));
 
-                RCLogger.d(TAG, "==== URL: " + url + ", username: " + username + ", password: " + password);
+                RCLogger.d(TAG, "==== URL: " + url + ", username: " + username);
             }
 
             events.onIceServersReady(iceServers);
