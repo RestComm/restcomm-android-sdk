@@ -61,7 +61,8 @@ repositories {
 }
 
 dependencies {
-    compile files('libs/libjingle_peerconnection_java.jar')
+    compile project(':libwebrtc')
+    //compile files('libs/libjingle_peerconnection_java.jar')
     compile 'com.android.support:appcompat-v7:25.1.1'
     // This is a dependency for JAIN SIP library (android-jain-sip-ri). Tried to replace it with maven 'org.apache.logging.log4j:log4j:2.6.2' but didn't work so until we update JAIN SIP library
     // accordingly we 're stuck with this local dependency

@@ -57,6 +57,7 @@ import android.view.Gravity;
 import android.view.View;
 import android.widget.Toast;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -72,14 +73,20 @@ import org.restcomm.android.sdk.MediaClient.util.IceServerFetcher;
 
 import org.restcomm.android.sdk.util.PercentFrameLayout;
 import org.restcomm.android.sdk.util.RCLogger;
+import org.webrtc.Camera1Enumerator;
+import org.webrtc.Camera2Enumerator;
+import org.webrtc.CameraEnumerator;
 import org.webrtc.EglBase;
+import org.webrtc.FileVideoCapturer;
 import org.webrtc.IceCandidate;
+import org.webrtc.Logging;
 import org.webrtc.PeerConnection;
 import org.webrtc.SessionDescription;
 import org.webrtc.Size;
 import org.webrtc.StatsReport;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.RendererCommon.ScalingType;
+import org.webrtc.VideoCapturer;
 import org.webrtc.VideoTrack;
 
 /**
@@ -1418,13 +1425,17 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             frameRateInt,  // video fps
             0,  // video start bitrate
             preferredVideoCodecString,  // video codec
-            true,  // video codec hw acceleration
+            true,  // video codec hw acceleration enabled
             false, // capture to texture
             0,  // audio start bitrate
             preferredAudioCodecString,  // audio codec
             false,  // no audio processing
-            false,  // aec dump
-            false);  // use opengles
+            false,  // AEC dump
+            false,  // use OpenGLES
+            false,  // disable builtin AEC
+            false,  // disable builtin AGC
+            false,  // disable builtin NS
+            false);  // enable level control
 
       createPeerConnectionFactory();
    }
@@ -1802,7 +1813,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       mainHandler.post(myRunnable);
    }
 
-   public void onLocalVideo(VideoTrack videoTrack)
+   public void onLocalVideo()
    {
       Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
@@ -1824,7 +1835,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       mainHandler.post(myRunnable);
    }
 
-   public void onRemoteVideo(VideoTrack videoTrack)
+   public void onRemoteVideo()
    {
       Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
@@ -1868,6 +1879,87 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          sendQoSConnectionIntent("answering");
    }
 
+   private boolean useCamera2() {
+      // TODO: uncomment when we want to support Camera2 API, notice that we need API LEVEL >= 21. Also maybe consider if we should expose option in UI like AppRTCMobile then
+      // In any case need to understand what Camera2 brings.
+      //return Camera2Enumerator.isSupported(device.getApplicationContext()) && getIntent().getBooleanExtra(EXTRA_CAMERA2, true);
+      return false;
+   }
+
+   private VideoCapturer createCameraCapturer(CameraEnumerator enumerator) {
+      final String[] deviceNames = enumerator.getDeviceNames();
+
+      // First, try to find front facing camera
+      Logging.d(TAG, "Looking for front facing cameras.");
+      for (String deviceName : deviceNames) {
+         if (enumerator.isFrontFacing(deviceName)) {
+            Logging.d(TAG, "Creating front facing camera capturer.");
+            VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, null);
+
+            if (videoCapturer != null) {
+               return videoCapturer;
+            }
+         }
+      }
+
+      // Front facing camera not found, try something else
+      Logging.d(TAG, "Looking for other cameras.");
+      for (String deviceName : deviceNames) {
+         if (!enumerator.isFrontFacing(deviceName)) {
+            Logging.d(TAG, "Creating other camera capturer.");
+            VideoCapturer videoCapturer = enumerator.createCapturer(deviceName, null);
+
+            if (videoCapturer != null) {
+               return videoCapturer;
+            }
+         }
+      }
+
+      return null;
+   }
+
+   private VideoCapturer createVideoCapturer() {
+      VideoCapturer videoCapturer = null;
+      // TODO: uncomment if we want to enable streaming from file instead of camera
+      //String videoFileAsCamera = getIntent().getStringExtra(EXTRA_VIDEO_FILE_AS_CAMERA);
+      String videoFileAsCamera = null;
+      if (videoFileAsCamera != null) {
+         try {
+            videoCapturer = new FileVideoCapturer(videoFileAsCamera);
+         } catch (IOException e) {
+            // TODO: uncomment if we want to enable streaming from file instead of camera
+            //reportError("Failed to open video file for emulated camera");
+            return null;
+         }
+      }
+      /* TODO: uncomment when we want to support screen capture + sharing
+      else if (screencaptureEnabled) {
+         return createScreenCapturer();
+      }
+      else if (useCamera2()) {
+         if (!captureToTexture()) {
+            reportError(getString(R.string.camera2_texture_only_error));
+            return null;
+         }
+
+         Logging.d(TAG, "Creating capturer using camera2 API.");
+         videoCapturer = createCameraCapturer(new Camera2Enumerator(this));
+      }
+      */
+      else {
+         Logging.d(TAG, "Creating capturer using camera1 API.");
+         // TODO: uncomment if we decide to expose 'capture to texture' setting to UI
+         //videoCapturer = createCameraCapturer(new Camera1Enumerator(captureToTexture()));
+         videoCapturer = createCameraCapturer(new Camera1Enumerator(false));
+      }
+      if (videoCapturer == null) {
+         //reportError("Failed to open camera");
+         handleDisconnect(null);
+         return null;
+      }
+      return videoCapturer;
+   }
+
    private void onConnectedToRoomInternal(final SignalingParameters params)
    {
       RCLogger.i(TAG, "onConnectedToRoomInternal");
@@ -1879,9 +1971,14 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          return;
       }
 
+      VideoCapturer videoCapturer = null;
+      if (peerConnectionParameters.videoCallEnabled) {
+         videoCapturer = createVideoCapturer();
+      }
+
       logAndToast("Creating peer connection, delay=" + delta + "ms");
       peerConnectionClient.createPeerConnection(rootEglBase.getEglBaseContext(),
-            localRender, remoteRender, signalingParameters);
+            localRender, remoteRender, videoCapturer, signalingParameters);
 
       if (signalingParameters.initiator) {
          logAndToast("Creating OFFER...");
