@@ -441,6 +441,7 @@ public class PeerConnectionClient {
             case VIDEO_CODEC_VP9:
                preferredVideoCodec = VIDEO_CODEC_VP9;
                break;
+            case VIDEO_CODEC_H264:
             case VIDEO_CODEC_H264_BASELINE:
                preferredVideoCodec = VIDEO_CODEC_H264;
                break;
@@ -628,7 +629,10 @@ public class PeerConnectionClient {
       rtcConfig.tcpCandidatePolicy = PeerConnection.TcpCandidatePolicy.DISABLED;
       rtcConfig.bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE;
       rtcConfig.rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE;
-      rtcConfig.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY;
+      // TODO: Let's disable continual gathering so that we still get notified when gathering completes. Remember that with GATHER_CONTINUALLY
+      // no notification occurs and the SDK keeps waiting forever. When we transition to using trickle ice, we should be able to uncomment this
+      //rtcConfig.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY;
+      rtcConfig.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_ONCE;
       // Use ECDSA encryption.
       rtcConfig.keyType = PeerConnection.KeyType.ECDSA;
 

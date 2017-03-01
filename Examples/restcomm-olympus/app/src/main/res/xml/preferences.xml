@@ -72,12 +72,12 @@
             android:title="ICE URL"
             android:summary="Base URL to use for ICE"/>
         <EditTextPreference
-            android:defaultValue="deruelle"
+            android:defaultValue="atsakiridis"
             android:key="turn-username"
             android:title="ICE Username"
             android:summary="Username to use for authentication for ICE"/>
         <EditTextPreference
-            android:defaultValue="6df91ee4-c2d1-11e6-87bd-c1a09345f795"
+            android:defaultValue="4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7"
             android:key="turn-password"
             android:title="ICE Password"
             android:inputType="textPassword"
