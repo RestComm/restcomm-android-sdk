@@ -44,6 +44,7 @@ public final class RCClient {
       ERROR_DEVICE_MISSING_ICE_URL,
       ERROR_DEVICE_MISSING_ICE_USERNAME,
       ERROR_DEVICE_MISSING_ICE_PASSWORD,
+      ERROR_DEVICE_MISSING_ICE_DOMAIN,
       ERROR_DEVICE_NO_CONNECTIVITY,
       ERROR_DEVICE_ALREADY_OPEN,
       ERROR_DEVICE_REGISTER_AUTHENTICATION_FORBIDDEN,
@@ -112,6 +113,9 @@ public final class RCClient {
       }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_MISSING_ICE_PASSWORD) {
          return "Device parameter validation error; ICE password is mandatory";
+      }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_MISSING_ICE_DOMAIN) {
+         return "Device parameter validation error; ICE domain is mandatory";
       }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY) {
          return "Device has no connectivity";

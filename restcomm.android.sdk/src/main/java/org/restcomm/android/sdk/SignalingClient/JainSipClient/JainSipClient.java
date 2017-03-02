@@ -289,6 +289,9 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       if (modifiedParameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD)) {
          this.configuration.put(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD, modifiedParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD));
       }
+      if (modifiedParameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN)) {
+         this.configuration.put(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN, modifiedParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN));
+      }
 
       HashMap<String, Object> multipleParameters = new HashMap<String, Object>();
       multipleParameters.put("old-parameters", oldParameters);

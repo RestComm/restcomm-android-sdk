@@ -24,6 +24,22 @@ android {
         versionCode 1629
         versionName "1.0.0-BETA4"
 
+        //buildConfigField "boolean", "DISABLE_SOMETHING", "true"
+
+        // ICE_USERNAME & ICE_PASSWORD should remain secret and hence are defined in global properties (i.e. only available to project members)
+        if (project.hasProperty('ICE_USERNAME') && project.hasProperty('ICE_PASSWORD') && project.hasProperty('ICE_DOMAIN')) {
+            // Add them as resource values which are available in preferences.xml
+            resValue "string", "ICE_USERNAME", ICE_USERNAME
+            resValue "string", "ICE_PASSWORD", ICE_PASSWORD
+            resValue "string", "ICE_DOMAIN", ICE_DOMAIN
+        }
+        else {
+            // Let's use my personal free xirsys account credentials for community, so that STUN/TURN works out of the box and eases adoption
+            resValue "string", "ICE_USERNAME", "atsakiridis"
+            resValue "string", "ICE_PASSWORD", "4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7"
+            resValue "string", "ICE_DOMAIN", "cloud.restcomm.com"
+        }
+
         //multiDexEnabled true
         //manifestPlaceholders = [HOCKEYAPP_APP_ID: "9f94a735a6f6431ba368e6e0581067a4"]
     }

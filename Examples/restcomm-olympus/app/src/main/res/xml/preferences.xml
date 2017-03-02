@@ -62,8 +62,7 @@
             android:entryValues="@array/camera_fps" />
 
     </PreferenceCategory>
-    <!-- #XIRSYS_PASSWORD -->
-    <PreferenceCategory
+     <PreferenceCategory
         android:key="webrtc_ice_settings"
         android:title="WebRTC ICE Settings" >
         <EditTextPreference
@@ -72,16 +71,21 @@
             android:title="ICE URL"
             android:summary="Base URL to use for ICE"/>
         <EditTextPreference
-            android:defaultValue="atsakiridis"
+            android:defaultValue="@string/ICE_USERNAME"
             android:key="turn-username"
             android:title="ICE Username"
             android:summary="Username to use for authentication for ICE"/>
         <EditTextPreference
-            android:defaultValue="4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7"
+            android:defaultValue="@string/ICE_PASSWORD"
             android:key="turn-password"
             android:title="ICE Password"
             android:inputType="textPassword"
             android:summary="Password to use for authentication for ICE"/>
+         <EditTextPreference
+             android:defaultValue="@string/ICE_DOMAIN"
+             android:key="ice-domain"
+             android:title="ICE Domain"
+             android:summary="Domain to use in the ICE configuration URL"/>
         <SwitchPreference
             android:defaultValue="true"
             android:key="turn-enabled"

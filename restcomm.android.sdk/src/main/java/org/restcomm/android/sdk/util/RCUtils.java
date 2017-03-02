@@ -56,6 +56,10 @@ public class RCUtils {
             parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD).equals("")) {
          return new ErrorStruct(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_ICE_PASSWORD);
       }
+      if (!parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN) ||
+              parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN).equals("")) {
+         return new ErrorStruct(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_ICE_DOMAIN);
+      }
 
       return new ErrorStruct(RCClient.ErrorCodes.SUCCESS);
    }

@@ -220,6 +220,10 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
          params.put(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD, prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD, ""));
          updated = true;
       }
+      else if (key.equals(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN)) {
+         params.put(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN, prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN, ""));
+         updated = true;
+      }
       else if (key.equals(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED)) {
          params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false));
          updated = true;

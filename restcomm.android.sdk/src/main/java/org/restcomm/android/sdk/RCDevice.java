@@ -172,6 +172,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       public static final String MEDIA_ICE_URL = "turn-url";
       public static final String MEDIA_ICE_USERNAME = "turn-username";
       public static final String MEDIA_ICE_PASSWORD = "turn-password";
+      public static final String MEDIA_ICE_DOMAIN = "ice-domain";
       public static final String RESOURCE_SOUND_CALLING = "sound-calling";
       public static final String RESOURCE_SOUND_RINGING = "sound-ringing";
       public static final String RESOURCE_SOUND_DECLINED = "sound-declined";
@@ -460,6 +461,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_URL</b>: ICE url to use, like <i>'https://turn.provider.com/turn'</i> (mandatory) <br>
     *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_USERNAME</b>: ICE username for authentication (mandatory) <br>
     *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD</b>: ICE password for authentication (mandatory) <br>
+    *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN</b>: ICE Domain to be used in the ICE configuration URL (mandatory) <br>
     *                        <b>RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED</b>: Should signaling traffic be encrypted? If this is the case, then a key pair is generated when
     *                        signaling facilities are initialized and added to a custom keystore. Also, added to this custom keystore are all the trusted certificates from
     *                        the System Wide Android CA Store, so that we properly accept legit server certificates (optional) <br>
@@ -875,6 +877,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     *               <b>RCDevice.ParameterKeys.MEDIA_ICE_URL</b>: ICE url to use, like <i>'https://turn.provider.com/turn'</i> (mandatory) <br>
     *               <b>RCDevice.ParameterKeys.MEDIA_ICE_USERNAME</b>: ICE username for authentication (mandatory) <br>
     *               <b>RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD</b>: ICE password for authentication (mandatory) <br>
+    *               <b>RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN</b>: ICE Domain to be used in the ICE configuration URL (mandatory) <br>
     *               <b>RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED</b>: Should signaling traffic be encrypted? If this is the case, then a key pair is generated when
     *               signaling facilities are initialized and added to a custom keystore. Also, added to this custom keystore are all the trusted certificates from
     *               the System Wide Android CA Store, so that we properly accept legit server certificates (optional) <br>

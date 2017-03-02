@@ -1076,7 +1076,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       HashMap<String, Object> deviceParameters = device.getParameters();
       String url = deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_URL) + "?ident=" +
             deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME) + "&secret=" +
-            deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD) + "&domain=cloud.restcomm.com&application=default&room=default&secure=1";
+            deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD) + "&domain=" +
+            deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN) + "&application=default&room=default&secure=1";
 
       boolean turnEnabled = false;
       if (deviceParameters.containsKey(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED) &&
