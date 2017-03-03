@@ -1,4 +1,17 @@
 apply plugin: 'com.android.application'
+apply plugin: 'testfairy'
+
+buildscript {
+    repositories {
+        mavenCentral()
+        maven { url 'https://www.testfairy.com/maven' }
+    }
+
+    dependencies {
+        // TestFairy gradle plugin
+        classpath 'com.testfairy.plugins.gradle:testfairy:1.+'
+    }
+}
 
 android {
     signingConfigs {
@@ -21,8 +34,22 @@ android {
         applicationId "org.restcomm.android.olympus"
         minSdkVersion 16
         targetSdkVersion 25
-        versionCode 1629
-        versionName "1.0.0-BETA4"
+
+        if (project.hasProperty('VERSION_CODE')) {
+            logger.error("Using versionCode: " + VERSION_CODE)
+            versionCode VERSION_CODE.toInteger()
+        }
+        else {
+            versionCode 1
+        }
+
+        if (project.hasProperty('VERSION_NAME')) {
+            logger.error("Using versionName: " + VERSION_NAME)
+            versionName VERSION_NAME
+        }
+        else {
+            versionName "1.0.0-BETA4"
+        }
 
         //buildConfigField "boolean", "DISABLE_SOMETHING", "true"
 
@@ -46,6 +73,12 @@ android {
 
     buildTypes {
         release {
+            applicationVariants.all { variant ->
+                variant.outputs.each { output ->
+                    output.outputFile = new File(output.outputFile.parent, "restcomm-olympus-${variant.versionName}+${variant.versionCode}-RELEASE.apk")
+                }
+            }
+
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.signingConfig
@@ -53,6 +86,11 @@ android {
         }
 
         debug {
+            applicationVariants.all { variant ->
+                variant.outputs.each { output ->
+                    output.outputFile = new File(output.outputFile.parent, "restcomm-olympus-${variant.versionName}+${variant.versionCode}-DEBUG.apk")
+                }
+            }
             minifyEnabled false
             //versionNameSuffix "-DEBUG"
         }
@@ -69,6 +107,24 @@ android {
         }
     }
 
+    testfairyConfig {
+        if (project.hasProperty('TESTFAIRY_APIKEY')) {
+            apiKey TESTFAIRY_APIKEY
+        }
+
+        metrics "cpu,memory,network,network-requests,phone-signal,logcat,gps,battery,mic,wifi"
+        video "wifi"
+        videoRate "0.5"
+        videoQuality "low"
+        maxDuration "24h"
+        recordOnBackground true
+        //iconWatermark true
+        testersGroups "dev,qa,friends"
+        notify true
+        //autoUpdate true
+        //uploadProguardMapping true
+    }
+
 }
 
 repositories {
@@ -83,6 +139,9 @@ repositories {
         */
         //url "https://oss.sonatype.org/content/repositories/staging"
         url "https://oss.sonatype.org/content/repositories/snapshots/"
+    }
+    maven {
+        url 'https://www.testfairy.com/maven'
     }
 }
 
