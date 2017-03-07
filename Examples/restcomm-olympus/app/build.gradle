@@ -14,6 +14,7 @@ buildscript {
 }
 
 android {
+    /*
     signingConfigs {
         // IMPORTANT: This is just a test config where keystore & password will be readable in GitHub, not to be used with Google Play Store at any circumstances
         signingConfig {
@@ -23,6 +24,7 @@ android {
             storePassword 'changeit'
         }
     }
+    */
     compileSdkVersion 25
     buildToolsVersion '25.0.1'
 
