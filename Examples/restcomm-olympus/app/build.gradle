@@ -114,6 +114,9 @@ android {
         if (project.hasProperty('TESTFAIRY_APIKEY')) {
             apiKey TESTFAIRY_APIKEY
         }
+        if (project.hasProperty('TESTFAIRY_AUTOUPDATE')) {
+            autoUpdate TESTFAIRY_AUTOUPDATE.toBoolean()
+        }
 
         metrics "cpu,memory,network,network-requests,phone-signal,logcat,gps,battery,mic,wifi"
         video "wifi"
@@ -124,7 +127,8 @@ android {
         //iconWatermark true
         testersGroups "dev,qa,friends"
         notify true
-        //autoUpdate true
+
+        //autoUpdate TESTFAIRY_AUTOUPDATE.toBoolean()
         //uploadProguardMapping true
     }
 
