@@ -40,7 +40,8 @@ echo "-- Updating git commit hash for Olympus About screen"
 echo "-- Building Olympus and uploading to TestFairy"
 if [ -z "$SKIP_TF_UPLOAD" ] || [[ "$SKIP_TF_UPLOAD" == "false" ]]
 then
-	cd Examples/restcomm-olympus && ./gradlew -i -PtestfairyChangelog="Version: $ORG_GRADLE_PROJECT_VERSION_NAME+$ORG_GRADLE_PROJECT_VERSION_CODE, GitHub commit: $COMMIT_SHA1" testfairyDebug
+	# Skip the signArchives task until we properly setup Travis for signing + upload of archives to Sonatype. Otherwise the build breaks
+	cd Examples/restcomm-olympus && ./gradlew -x signArchives -i -PtestfairyChangelog="Version: $ORG_GRADLE_PROJECT_VERSION_NAME+$ORG_GRADLE_PROJECT_VERSION_CODE, GitHub commit: $COMMIT_SHA1" testfairyDebug
 	cd ../..
 else
 	echo "-- Skipping upload to Test Fairy."
