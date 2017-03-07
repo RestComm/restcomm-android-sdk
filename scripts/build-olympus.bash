@@ -45,7 +45,8 @@ then
 	cd ../..
 else
 	echo "-- Skipping upload to Test Fairy."
-	cd Examples/restcomm-olympus && ./gradlew assemble   # -PVERSION_CODE=$TRAVIS_BUILD_NUMBER -PVERSION_NAME=$VERSION_NAME
+	# Skip the signArchives task until we properly setup Travis for signing + upload of archives to Sonatype. Otherwise the build breaks
+	cd Examples/restcomm-olympus && ./gradlew -x signArchives assemble   # -PVERSION_CODE=$TRAVIS_BUILD_NUMBER -PVERSION_NAME=$VERSION_NAME
 	cd ../..
 fi
 
