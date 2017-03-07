@@ -36,15 +36,16 @@ android {
         targetSdkVersion 25
 
         if (project.hasProperty('VERSION_CODE')) {
-            logger.error("Using versionCode: " + VERSION_CODE)
+            logger.info("Using versionCode: " + VERSION_CODE)
             versionCode VERSION_CODE.toInteger()
         }
         else {
+            logger.info("Doesn't have VERSION_CODE, falling back to: 1")
             versionCode 1
         }
 
         if (project.hasProperty('VERSION_NAME')) {
-            logger.error("Using versionName: " + VERSION_NAME)
+            logger.info("Using versionName: " + VERSION_NAME)
             versionName VERSION_NAME
         }
         else {
