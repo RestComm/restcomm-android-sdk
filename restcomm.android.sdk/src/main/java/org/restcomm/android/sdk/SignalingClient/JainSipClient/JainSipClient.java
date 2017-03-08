@@ -50,6 +50,7 @@ import android.javax.sip.message.Request;
 import android.javax.sip.message.Response;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.SystemClock;
@@ -990,7 +991,15 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       }
 
       if (jainSipNotificationManager.getNetworkStatus() == JainSipNotificationManager.NetworkStatus.NetworkStatusCellular) {
-         stringAddress = interface2Address(useIPv4, "rmnet");
+         if (Build.FINGERPRINT.contains("generic")) {
+            // Emulator; when using emulator, network access is provided via Cellular interface (no idea why this happens instead of ConnectivityManager.TYPE_ETHERNET)
+            // but the actual interface name is usually 'eth0', so let's pass that as well in the network interface prefix argument
+            stringAddress = interface2Address(useIPv4, "rmnet|eth");
+         }
+         else {
+            // Real device
+            stringAddress = interface2Address(useIPv4, "rmnet");
+         }
       }
 
       if (jainSipNotificationManager.getNetworkStatus() == JainSipNotificationManager.NetworkStatus.NetworkStatusEthernet) {

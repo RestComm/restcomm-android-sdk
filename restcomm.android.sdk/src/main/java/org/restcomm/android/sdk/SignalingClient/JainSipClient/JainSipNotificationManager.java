@@ -87,6 +87,7 @@ class JainSipNotificationManager extends BroadcastReceiver {
    @Override
    public void onReceive(Context context, Intent intent)
    {
+      RCLogger.d(TAG, "BroadcastReceiver:onReceive()");
       ConnectivityChange connectivityChange = ConnectivityChange.OFFLINE;
 
       // retrieve new connectivity status
@@ -152,26 +153,27 @@ class JainSipNotificationManager extends BroadcastReceiver {
 
    static public NetworkStatus checkConnectivity(Context context)
    {
+      RCLogger.d(TAG, "checkConnectivity()");
       ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 
       NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
       if (activeNetwork != null) {
          if (activeNetwork.getType() == ConnectivityManager.TYPE_WIFI && activeNetwork.isConnected()) {
-            RCLogger.w(TAG, "Connectivity event: WIFI");
+            RCLogger.w(TAG, "Connectivity status: WIFI");
             return NetworkStatus.NetworkStatusWiFi;
          }
 
          if (activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE && activeNetwork.isConnected()) {
-            Log.w(TAG, "Connectivity event: CELLULAR DATA");
+            RCLogger.w(TAG, "Connectivity status: CELLULAR DATA");
             return NetworkStatus.NetworkStatusCellular;
          }
 
          if (activeNetwork.getType() == ConnectivityManager.TYPE_ETHERNET && activeNetwork.isConnected()) {
-            Log.w(TAG, "Connectivity event: ETHERNET");
+            RCLogger.w(TAG, "Connectivity status: ETHERNET");
             return NetworkStatus.NetworkStatusEthernet;
          }
       }
-      RCLogger.w(TAG, "Connectivity event: NONE");
+      RCLogger.w(TAG, "Connectivity status: NONE");
       return NetworkStatus.NetworkStatusNone;
    }
 
