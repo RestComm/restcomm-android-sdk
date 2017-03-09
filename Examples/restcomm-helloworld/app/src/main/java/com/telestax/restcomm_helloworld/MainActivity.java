@@ -50,15 +50,15 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.ListIterator;
 
-import org.restcomm.android.sdk.RCClient;
+//import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCConnectionListener;
 import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.RCDeviceListener;
 import org.restcomm.android.sdk.RCPresenceEvent;
-import org.webrtc.VideoRenderer;
-import org.webrtc.VideoRendererGui;
-import org.webrtc.VideoTrack;
+//import org.webrtc.VideoRenderer;
+//import org.webrtc.VideoRendererGui;
+//import org.webrtc.VideoTrack;
 
 public class MainActivity extends Activity implements RCDeviceListener, RCConnectionListener, OnClickListener,
         ServiceConnection {
@@ -161,6 +161,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
       params.put(RCDevice.ParameterKeys.SIGNALING_USERNAME, "android-sdk");
       params.put(RCDevice.ParameterKeys.SIGNALING_PASSWORD, "1234");
       params.put(RCDevice.ParameterKeys.MEDIA_ICE_URL, "https://service.xirsys.com/ice");
+      params.put(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN, "cloud.restcomm.com");
       params.put(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME, "atsakiridis");
       params.put(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD, "4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7");
       params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);

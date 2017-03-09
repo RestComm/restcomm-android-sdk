@@ -1,3 +1,5 @@
 include ':app'
 include ':restcomm.android.sdk'
 project(':restcomm.android.sdk').projectDir=new File('../../restcomm.android.sdk')
+include ':libwebrtc'
+project(':libwebrtc').projectDir=new File('../../restcomm.android.sdk/libwebrtc')
