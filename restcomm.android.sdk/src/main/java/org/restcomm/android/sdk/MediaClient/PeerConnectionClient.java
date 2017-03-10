@@ -627,7 +627,11 @@ public class PeerConnectionClient {
       // TCP candidates are only useful when connecting to a server that supports
       // ICE-TCP.
       rtcConfig.tcpCandidatePolicy = PeerConnection.TcpCandidatePolicy.DISABLED;
-      rtcConfig.bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE;
+      // Commenting out MAXBUNDLE because when used and receiving a call from MS that doesn't include BUNDLE
+      // the remove SDP fails to be set here and call fails. Check https://bugs.chromium.org/p/webrtc/issues/detail?id=5573
+      // Seems MAXCOMPAT fixes the issue
+      //rtcConfig.bundlePolicy = PeerConnection.BundlePolicy.MAXBUNDLE;
+      rtcConfig.bundlePolicy = PeerConnection.BundlePolicy.MAXCOMPAT;
       rtcConfig.rtcpMuxPolicy = PeerConnection.RtcpMuxPolicy.REQUIRE;
       // TODO: Let's disable continual gathering so that we still get notified when gathering completes. Remember that with GATHER_CONTINUALLY
       // no notification occurs and the SDK keeps waiting forever. When we transition to using trickle ice, we should be able to uncomment this
