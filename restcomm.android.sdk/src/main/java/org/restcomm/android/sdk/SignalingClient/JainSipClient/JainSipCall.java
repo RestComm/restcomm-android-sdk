@@ -97,7 +97,7 @@ public class JainSipCall {
       }
    }
 
-   // make a call with the given jobId, using given parameters
+   // accept a call with the given jobId, using given parameters
    public void accept(JainSipJob jainSipJob, HashMap<String, Object> parameters)
    {
       RCLogger.i(TAG, "accept(): jobId: " + jainSipJob.jobId + ", parameters: " + parameters.toString());
