@@ -100,7 +100,7 @@ public class IceServerFetcher {
                     @Override
                     public void onHttpError(String errorMessage) {
                         RCLogger.e(TAG, "ICE servers request timeout: " + errorMessage);
-                        events.onIceServersError(errorMessage);
+                        events.onIceServersError("ICE servers request timeout");
                     }
 
                     @Override
