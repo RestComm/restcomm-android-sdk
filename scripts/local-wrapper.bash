@@ -63,20 +63,20 @@ export -f is_git_repo_state_clean
 # Common to local and travis builds
 export COMMIT_AUTHOR_EMAIL="antonis.tsakiridis@telestax.com"
 export APP_NAME="restcomm-olympus"
-export DEVELOPER_NAME="iPhone Distribution: Telestax, Inc."
-export DEVELOPMENT_TEAM="H9PG74NSQT"
+#export DEVELOPER_NAME="iPhone Distribution: Telestax, Inc."
+#export DEVELOPMENT_TEAM="H9PG74NSQT"
 # Keep the first seven chars from SHA1 as typically done
 export COMMIT_SHA1=`git rev-parse HEAD | cut -c -7`
 #export DEVELOPMENT_PROVISIONING_PROFILE_NAME="development"
 
-export APPLE_CERT="AppleWWDRCA.cer"
-export DEVELOPMENT_CERT="development-cert.cer"
-export DEVELOPMENT_KEY="development-key.p12"
-export DISTRIBUTION_CERT="enterprise-distribution-cert.cer"
-export DISTRIBUTION_KEY="enterprise-distribution-key.p12"
-export DEVELOPMENT_PROVISIONING_PROFILE_OLYMPUS_NAME="profile-development-olympus"
-export DISTRIBUTION_PROVISIONING_PROFILE_OLYMPUS_NAME="profile-distribution-olympus"
-export CUSTOM_KEYCHAIN="ios-build.keychain"
+#export APPLE_CERT="AppleWWDRCA.cer"
+export DEVELOPMENT_KEYSTORE="debug.keystore"
+#export DEVELOPMENT_KEY="development-key.p12"
+#export DISTRIBUTION_CERT="enterprise-distribution-cert.cer"
+#export DISTRIBUTION_KEY="enterprise-distribution-key.p12"
+#export DEVELOPMENT_PROVISIONING_PROFILE_OLYMPUS_NAME="profile-development-olympus"
+#export DISTRIBUTION_PROVISIONING_PROFILE_OLYMPUS_NAME="profile-distribution-olympus"
+#export CUSTOM_KEYCHAIN="ios-build.keychain"
 
 if [ ! -z "$TRAVIS" ]
 then

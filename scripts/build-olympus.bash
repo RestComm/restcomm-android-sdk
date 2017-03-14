@@ -11,12 +11,22 @@
 # For starters lets only create keychains in travis, since locally everything is setup already. But ultimately, we should create a separate new keychain locally to so that we can test that better
 echo "-- TRAVIS: $TRAVIS"
 
-# Decrypting certs and profiles (not sure if profiles actually need to be encrypted, but this is how others did it so I'm following the same route just to be on the safe side)
-echo "-- Setting up signing"
-echo "-- Decrypting keys, etc"
-echo "-- Setting up keychain"
 
-echo "-- Installing provisioning profiles, so that XCode can find them"
+if [ ! -z "$TRAVIS" ]
+then
+	# Decrypting certs and profiles (not sure if profiles actually need to be encrypted, but this is how others did it so I'm following the same route just to be on the safe side)
+	echo "-- Setting up signing"
+	echo "-- Decrypting keystore"
+	openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/keystore/${DEVELOPMENT_KEYSTORE}.enc -d -a -out scripts/certs/${DEVELOPMENT_KEYSTORE}
+
+	echo "-- Installing keystore"
+	ll ~/.android/
+
+	# Overwrite default keystore file only in travis, let's keep local builds separate for now
+	cp scripts/certs/${DEVELOPMENT_KEYSTORE} ~/.android/debug.keystore
+fi
+
+#echo "-- Installing provisioning profiles, so that XCode can find them"
 
 
 if [ ! -z "$TRAVIS" ]
