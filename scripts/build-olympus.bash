@@ -24,9 +24,6 @@ then
 	cp scripts/certs/${DEVELOPMENT_KEYSTORE} ~/.android/debug.keystore
 fi
 
-#echo "-- Installing provisioning profiles, so that XCode can find them"
-
-
 if [ ! -z "$TRAVIS" ]
 then
 	export ORG_GRADLE_PROJECT_VERSION_CODE=$TRAVIS_BUILD_NUMBER
