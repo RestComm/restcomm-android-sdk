@@ -11,7 +11,7 @@
 # For starters lets only create keychains in travis, since locally everything is setup already. But ultimately, we should create a separate new keychain locally to so that we can test that better
 echo "-- TRAVIS: $TRAVIS"
 
-
+# Let's keep debug.keystore decryption and installation only for Travis. Locally we have a working keystore that might be confusing to update
 if [ ! -z "$TRAVIS" ]
 then
 	# Decrypting certs and profiles (not sure if profiles actually need to be encrypted, but this is how others did it so I'm following the same route just to be on the safe side)
@@ -20,9 +20,7 @@ then
 	openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/keystore/${DEVELOPMENT_KEYSTORE}.enc -d -a -out scripts/certs/${DEVELOPMENT_KEYSTORE}
 
 	echo "-- Installing keystore"
-	ll ~/.android/
-
-	# Overwrite default keystore file only in travis, let's keep local builds separate for now
+	# Overwrite default keystore file only in travis
 	cp scripts/certs/${DEVELOPMENT_KEYSTORE} ~/.android/debug.keystore
 fi
 
