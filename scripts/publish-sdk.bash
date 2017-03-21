@@ -15,6 +15,6 @@ fi
 echo "-- Building SDK and uploading to maven repository"
 if [ -z "$SKIP_SDK_PUBLISH_TO_MAVEN_REPO" ] || [[ "$SKIP_SDK_PUBLISH_TO_MAVEN_REPO" == "false" ]]
 then
-	cd restcomm.android.sdk && ./gradlew -x signArchives -i -PtestfairyChangelog="Version: $ORG_GRADLE_PROJECT_VERSION_NAME+$ORG_GRADLE_PROJECT_VERSION_CODE, GitHub commit: $COMMIT_SHA1" testfairyDebug
+	cd restcomm.android.sdk && ./gradlew uploadArchives
 	cd ..
 fi
