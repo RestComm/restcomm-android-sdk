@@ -62,6 +62,7 @@ android {
 }
 
 repositories {
+    jcenter()
     maven {
         url "http://telestax.jfrog.io/telestax/community-releases"
     }
