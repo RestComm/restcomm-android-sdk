@@ -21,7 +21,7 @@ then
 
 	# We need global properties so that we get access to secret credentials
 	echo "-- Decrypting and installing global gradle.properties"
-	ll scripts/configuration
+	ls scripts/configuration
 	echo "scripts/configuration/${GLOBAL_GRADLE_PROPERTIES}.enc"
 	openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/configuration/${GLOBAL_GRADLE_PROPERTIES}.enc -d -a -out scripts/configuration/${GLOBAL_GRADLE_PROPERTIES}
   	cp scripts/configuration/${GLOBAL_GRADLE_PROPERTIES} ~/.gradle/${GLOBAL_GRADLE_PROPERTIES} 
