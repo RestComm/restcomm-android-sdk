@@ -65,8 +65,15 @@ else
 	echo "-- Skipping Documentation Generation."
 fi
 
+# Build SDK and publish to maven repo
+if [ -z "$SKIP_SDK_PUBLISH_TO_MAVEN_REPO" ] || [[ "$SKIP_SDK_PUBLISH_TO_MAVEN_REPO" == "false" ]]
+then
+	./scripts/publish-sdk.bash
+else
+	echo "-- Skipping SDK publishing."
+fi
+
 # Build and deploy Olympus
-# Update reference documentation
 if [ -z "$SKIP_OLYMPUS_BUILD" ]  || [[ "$SKIP_OLYMPUS_BUILD" == "false" ]]
 then
 	./scripts/build-olympus.bash

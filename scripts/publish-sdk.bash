@@ -11,10 +11,6 @@ then
   	cp scripts/configuration/${GLOBAL_GRADLE_PROPERTIES} ~/.gradle/${GLOBAL_GRADLE_PROPERTIES} 
 fi
 
-# Build SDK and publish to maven repo
 echo "-- Building SDK and uploading to maven repository"
-if [ -z "$SKIP_SDK_PUBLISH_TO_MAVEN_REPO" ] || [[ "$SKIP_SDK_PUBLISH_TO_MAVEN_REPO" == "false" ]]
-then
-	cd restcomm.android.sdk && ./gradlew uploadArchives
-	cd ..
-fi
+cd restcomm.android.sdk && ./gradlew uploadArchives
+cd ..

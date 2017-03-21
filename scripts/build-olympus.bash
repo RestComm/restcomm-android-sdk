@@ -14,12 +14,15 @@ echo "-- TRAVIS: $TRAVIS"
 # Let's keep debug.keystore decryption and installation only for Travis. Locally we have a working keystore that might be confusing to update.
 if [ ! -z "$TRAVIS" ]
 then
-	# Decrypting certs and profiles (not sure if profiles actually need to be encrypted, but this is how others did it so I'm following the same route just to be on the safe side)
 	echo "-- Setting up signing"
+	# We need the debug.keystore in order to be able to build a debug .apk
 	echo "-- Decrypting keystore"
 	openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/keystore/${DEVELOPMENT_KEYSTORE}.enc -d -a -out scripts/certs/${DEVELOPMENT_KEYSTORE}
 
+	# We need global properties so that we get access to secret credentials
 	echo "-- Decrypting and installing global gradle.properties"
+	ll scripts/configuration
+	echo "scripts/configuration/${GLOBAL_GRADLE_PROPERTIES}.enc"
 	openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/configuration/${GLOBAL_GRADLE_PROPERTIES}.enc -d -a -out scripts/configuration/${GLOBAL_GRADLE_PROPERTIES}
   	cp scripts/configuration/${GLOBAL_GRADLE_PROPERTIES} ~/.gradle/${GLOBAL_GRADLE_PROPERTIES} 
 
