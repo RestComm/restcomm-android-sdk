@@ -11,13 +11,17 @@
 # For starters lets only create keychains in travis, since locally everything is setup already. But ultimately, we should create a separate new keychain locally to so that we can test that better
 echo "-- TRAVIS: $TRAVIS"
 
-# Let's keep debug.keystore decryption and installation only for Travis. Locally we have a working keystore that might be confusing to update
+# Let's keep debug.keystore decryption and installation only for Travis. Locally we have a working keystore that might be confusing to update.
 if [ ! -z "$TRAVIS" ]
 then
 	# Decrypting certs and profiles (not sure if profiles actually need to be encrypted, but this is how others did it so I'm following the same route just to be on the safe side)
 	echo "-- Setting up signing"
 	echo "-- Decrypting keystore"
 	openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/keystore/${DEVELOPMENT_KEYSTORE}.enc -d -a -out scripts/certs/${DEVELOPMENT_KEYSTORE}
+
+	echo "-- Decrypting and installing global gradle.properties"
+	openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/configuration/${GLOBAL_GRADLE_PROPERTIES}.enc -d -a -out scripts/configuration/${GLOBAL_GRADLE_PROPERTIES}
+  	cp scripts/configuration/${GLOBAL_GRADLE_PROPERTIES} ~/.gradle/${GLOBAL_GRADLE_PROPERTIES} 
 
 	echo "-- Installing keystore"
 	# Overwrite default keystore file only in travis

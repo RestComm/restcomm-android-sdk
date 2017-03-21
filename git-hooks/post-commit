@@ -1,5 +1,7 @@
 #! /bin/bash
 
+# *** This is no longer used as CI/CD facilities rendered this obsolete ***
+# Let's keep it around in case we need similar logic at some point in the future
 # Checks if Olympus & SDK versions have changed from last commit and if so tag the new commit accordingly. Separate tags are added for each of them.
 # Thanks to https://coderwall.com/p/mk18zq/automatic-git-version-tagging-for-npm-modules
 

@@ -1,0 +1,20 @@
+#!/bin/bash
+#
+# Publish SDK to maven repository
+
+
+# Let's keep global gradle.properties decryption and installation only for Travis. Locally we have a working gradle.properties 
+if [ ! -z "$TRAVIS" ]
+then
+	echo "-- Decrypting and installing global gradle.properties"
+	openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/configuration/${GLOBAL_GRADLE_PROPERTIES}.enc -d -a -out scripts/configuration/${GLOBAL_GRADLE_PROPERTIES}
+  	cp scripts/configuration/${GLOBAL_GRADLE_PROPERTIES} ~/.gradle/${GLOBAL_GRADLE_PROPERTIES} 
+fi
+
+# Build SDK and publish to maven repo
+echo "-- Building SDK and uploading to maven repository"
+if [ -z "$SKIP_SDK_PUBLISH_TO_MAVEN_REPO" ] || [[ "$SKIP_SDK_PUBLISH_TO_MAVEN_REPO" == "false" ]]
+then
+	cd restcomm.android.sdk && ./gradlew -x signArchives -i -PtestfairyChangelog="Version: $ORG_GRADLE_PROJECT_VERSION_NAME+$ORG_GRADLE_PROJECT_VERSION_CODE, GitHub commit: $COMMIT_SHA1" testfairyDebug
+	cd ..
+fi

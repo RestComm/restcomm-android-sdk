@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/../../restcomm.android.sdk/libwebrtc/libwebrtc.iml" filepath="$PROJECT_DIR$/../../restcomm.android.sdk/libwebrtc/libwebrtc.iml" />
       <module fileurl="file://$PROJECT_DIR$/restcomm-olympus.iml" filepath="$PROJECT_DIR$/restcomm-olympus.iml" />
       <module fileurl="file://$PROJECT_DIR$/../../restcomm.android.sdk/restcomm.android.sdk.iml" filepath="$PROJECT_DIR$/../../restcomm.android.sdk/restcomm.android.sdk.iml" />
     </modules>

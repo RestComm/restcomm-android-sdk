@@ -71,6 +71,7 @@ export COMMIT_SHA1=`git rev-parse HEAD | cut -c -7`
 
 #export APPLE_CERT="AppleWWDRCA.cer"
 export DEVELOPMENT_KEYSTORE="debug.keystore"
+export GLOBAL_GRADLE_PROPERTIES="gradle.properties"
 #export DEVELOPMENT_KEY="development-key.p12"
 #export DISTRIBUTION_CERT="enterprise-distribution-cert.cer"
 #export DISTRIBUTION_KEY="enterprise-distribution-key.p12"

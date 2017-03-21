@@ -3,8 +3,10 @@ apply plugin: 'testfairy'
 
 buildscript {
     repositories {
+        // Only add repositories here that are used in *buildscript dependencies* NOT application dependencies. These go to the separate repositories block further down
         mavenCentral()
         maven { url 'https://www.testfairy.com/maven' }
+
     }
 
     dependencies {
@@ -14,17 +16,6 @@ buildscript {
 }
 
 android {
-    /*
-    signingConfigs {
-        // IMPORTANT: This is just a test config where keystore & password will be readable in GitHub, not to be used with Google Play Store at any circumstances
-        signingConfig {
-            keyAlias 'key-alias'
-            keyPassword 'changeit'
-            storeFile file('/Users/antonis/Documents/telestax/code/restcomm-android-sdk/Examples/restcomm-olympus/test-keystore.jks')
-            storePassword 'changeit'
-        }
-    }
-    */
     compileSdkVersion 25
     buildToolsVersion '25.0.1'
 
@@ -51,6 +42,7 @@ android {
             versionName VERSION_NAME
         }
 
+        // Keep for reference:
         //buildConfigField "boolean", "DISABLE_SOMETHING", "true"
 
         // ICE_USERNAME & ICE_PASSWORD are defined in project gradle.properties, but also overriden in global gradle.properties
@@ -63,17 +55,6 @@ android {
             resValue "string", "ICE_PASSWORD", ICE_PASSWORD
             resValue "string", "ICE_DOMAIN", ICE_DOMAIN
         }
-        /*
-        else {
-            // Let's use my personal free xirsys account credentials for community, so that STUN/TURN works out of the box and eases adoption
-            resValue "string", "ICE_USERNAME", "atsakiridis"
-            resValue "string", "ICE_PASSWORD", "4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7"
-            resValue "string", "ICE_DOMAIN", "cloud.restcomm.com"
-        }
-        */
-
-        //multiDexEnabled true
-        //manifestPlaceholders = [HOCKEYAPP_APP_ID: "9f94a735a6f6431ba368e6e0581067a4"]
     }
 
     buildTypes {
@@ -86,8 +67,6 @@ android {
 
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
-            //signingConfig signingConfigs.signingConfig
-            //versionNameSuffix "-BETA4"
         }
 
         debug {
@@ -97,15 +76,8 @@ android {
                 }
             }
             minifyEnabled false
-            //versionNameSuffix "-DEBUG"
         }
 
-        /*
-        shrunk {
-            minifyEnabled true
-            shrinkResources true
-        }
-        */
         // TODO: currently getting some lint error from log4j library we 're using, that we need to fix and then remove this altogether:
         lintOptions {
             abortOnError false
@@ -139,16 +111,18 @@ android {
 repositories {
     jcenter()
     //mavenCentral()
+
+    // for some weird reason this repo needs to be declared here even though dependency that actually uses it is in restcomm.android.sdk module
+    // If we don't the dependency is not found :(
     maven {
-        /*
-        credentials {
-            username ''
-            password ''
-        }
-        */
-        //url "https://oss.sonatype.org/content/repositories/staging"
+        url "http://telestax.jfrog.io/telestax/community-releases"
+    }
+
+    /**/
+    maven {
         url "https://oss.sonatype.org/content/repositories/snapshots/"
     }
+    /**/
     maven {
         url 'https://www.testfairy.com/maven'
     }
@@ -156,8 +130,8 @@ repositories {
 
 dependencies {
     testCompile 'junit:junit:4.12'
-    compile project(':restcomm.android.sdk')
-    //compile 'org.restcomm:restcomm-android-sdk:1.0.0-beta-5-SNAPSHOT'
+    //compile project(':restcomm.android.sdk')
+    compile 'org.restcomm:restcomm-android-sdk:1.0.0-beta6-SNAPSHOT'
     compile 'com.android.support:appcompat-v7:25.1.0'
     compile 'com.android.support:design:25.1.0'
     compile 'com.android.support:support-v4:25.1.0'
