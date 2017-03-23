@@ -60,6 +60,7 @@ git config user.email "$COMMIT_AUTHOR_EMAIL"
 # Update reference documentation
 if [ -z "$SKIP_DOC_GENERATION" ] || [[ "$SKIP_DOC_GENERATION" == "false" ]]
 then
+	echo "-- Handling Documentation."
 	./scripts/update-doc.bash
 else
 	echo "-- Skipping Documentation Generation."
@@ -68,6 +69,7 @@ fi
 # Build SDK and publish to maven repo
 if [ -z "$SKIP_SDK_PUBLISH_TO_MAVEN_REPO" ] || [[ "$SKIP_SDK_PUBLISH_TO_MAVEN_REPO" == "false" ]]
 then
+	echo "-- Handling SDK publishing."
 	./scripts/publish-sdk.bash
 else
 	echo "-- Skipping SDK publishing."
@@ -76,6 +78,7 @@ fi
 # Build and deploy Olympus
 if [ -z "$SKIP_OLYMPUS_BUILD" ]  || [[ "$SKIP_OLYMPUS_BUILD" == "false" ]]
 then
+	echo "-- Handling Olympus build."
 	./scripts/build-olympus.bash
 else
 	echo "-- Skipping Olympus build."

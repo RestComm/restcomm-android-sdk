@@ -45,7 +45,7 @@ fi
 #echo "-- Before removing unneeded files from staging area"
 #git status
 echo "-- Removing unneeded files from staging area"
-git rm --cached -r . 
+git rm --cached -r . > /dev/null
 
 #echo "-- After removing unneeded files from staging area"
 #git status
@@ -125,7 +125,7 @@ git push -f origin $DOC_BRANCH
 ##git clean -fd
 
 # Debug command to verify everything is in order
-git status
+#git status
 
 echo "-- Done updating docs, checking out $ORIGINAL_BRANCH"
 git checkout $ORIGINAL_BRANCH
