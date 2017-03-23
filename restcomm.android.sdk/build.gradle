@@ -61,6 +61,21 @@ android {
     }
 }
 
+gradle.taskGraph.whenReady { taskGraph ->
+    if (taskGraph.allTasks.any { it instanceof Sign }) {
+        allprojects {
+            // The rest of the signing properties are set in the global gradle.properties. Reason we keep this path here
+            // is that the path needs to be absolute, but yet we want it to be functional both on local and Travis builds.
+            // Since there doesn't seem to be a way to add conditional logic in properties files let's do it here
+            if (project.hasProperty('SIGNING_SECRET_KEYRING_FULLPATH')) {
+                ext."signing.secretKeyRingFile" = SIGNING_SECRET_KEYRING_FULLPATH
+            }
+            else {
+                ext."signing.secretKeyRingFile" = System.properties['user.home'] + "/.gnupg/secring.gpg"
+            }
+        }
+    }
+}
 repositories {
     jcenter()
     maven {
@@ -139,7 +154,18 @@ uploadArchives {
             // Defined at gradle.properties for Olympus project -we might need to move those to be scoped for the library alone
             pom.groupId = LIBRARY_GROUP
             pom.artifactId = LIBRARY_ARTIFACT_ID
-            pom.version = LIBRARY_VERSION
+
+            if (project.hasProperty('TRAVIS_BUILD')) {
+                // In Travis builds add the build number in the version string
+                // for example '1.0.0-BETA6-45-SNAPSHOT'
+                pom.version = VERSION_NAME + "-" + TRAVIS_BUILD + "-SNAPSHOT"
+            }
+            else {
+                // For non Travis builds, just us a zero for the build number
+                pom.version = VERSION_NAME + "-0-SNAPSHOT"
+            }
+
+            logger.error("---- pom version: " + pom.version)
 
             // remember that releases first go to the staging area
             repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
