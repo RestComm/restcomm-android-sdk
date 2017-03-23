@@ -14,6 +14,9 @@ then
 	ls ~/.gnupg
 	openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/configuration/${GPG_SECRING}.enc -d -a -out scripts/configuration/${GPG_SECRING}
   	cp scripts/configuration/${GPG_SECRING} ~/.gnupg/
+
+	openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/configuration/${GPG_TRUSTDB}.enc -d -a -out scripts/configuration/${GPG_TRUSTDB}
+  	cp scripts/configuration/${GPG_TRUSTDB} ~/.gnupg/
 fi
 
 echo "-- Building SDK and uploading to maven repository"
