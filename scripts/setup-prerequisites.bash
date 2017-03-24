@@ -5,6 +5,8 @@
 # Let's keep global gradle.properties decryption and installation only for Travis. Locally we have a working gradle.properties 
 if [ ! -z "$TRAVIS" ]
 then
+	mkdir -p ~/.gradle
+
 	echo "-- Decrypting and installing global gradle.properties"
 	openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/configuration/${GLOBAL_GRADLE_PROPERTIES}.enc -d -a -out scripts/configuration/${GLOBAL_GRADLE_PROPERTIES}
   	cp scripts/configuration/${GLOBAL_GRADLE_PROPERTIES} ~/.gradle/${GLOBAL_GRADLE_PROPERTIES} 
