@@ -1,16 +1,20 @@
 apply plugin: 'com.android.library'
 apply plugin: 'maven'
 apply plugin: 'signing'
+apply plugin: 'io.codearte.nexus-staging'
 
 // buildscript block only controls dependencies for the buildscript process itself, not for the application code
 // We need this even though Project already has it, because we want the SDK module to work independently too
 buildscript {
     repositories {
-        // Only add repositories here that are used in *buildscript dependencies* NOT application dependencies. These go to the separate repositories block further down
+        // Only add repositories here that are used in *buildscript dependencies* NOT application dependencies.
+        // These go to the separate repositories block further down
         jcenter()
+        mavenCentral()
     }
     dependencies {
         classpath 'com.android.tools.build:gradle:2.2.3'
+        classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.6.1"
 
         // NOTE: Do not place your application dependencies here; they belong
         // in the individual module build.gradle files
@@ -102,6 +106,14 @@ dependencies {
 }
 
 // Upload to sonatype stuff
+nexusStaging {
+    //serverUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
+    username = NEXUS_USERNAME
+    password = NEXUS_PASSWORD
+    packageGroup = LIBRARY_GROUP  // optional if packageGroup == project.getGroup()
+    //stagingProfileId = "stagingProfile"  // when not defined will be got from server using "packageGroup"
+}
+
 task androidJavadocs(type: Javadoc) {
     source = android.sourceSets.main.java.srcDirs // files(android.sourceSets.main.java.sourceFiles)
     title = "Restcomm Android SDK"
@@ -170,7 +182,6 @@ uploadArchives {
             // remember that releases first go to the staging area
             repository(url: "https://oss.sonatype.org/service/local/staging/deploy/maven2/") {
                 authentication(userName: getRepositoryUsername(), password: getRepositoryPassword())
-                logger.error("---- GROUP: " + LIBRARY_GROUP)
             }
 
             snapshotRepository(url: "https://oss.sonatype.org/content/repositories/snapshots/") {

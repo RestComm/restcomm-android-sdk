@@ -20,5 +20,5 @@ then
 fi
 
 echo "-- Building SDK and uploading to maven repository"
-cd restcomm.android.sdk && ./gradlew -PTRAVIS_BUILD=$TRAVIS_BUILD_NUMBER uploadArchives
+cd restcomm.android.sdk && ./gradlew -PTRAVIS_BUILD=$TRAVIS_BUILD_NUMBER uploadArchives && ./gradlew closeAndPromoteRepository
 cd ..

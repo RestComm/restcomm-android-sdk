@@ -118,11 +118,11 @@ repositories {
         url "http://telestax.jfrog.io/telestax/community-releases"
     }
 
-    /**/
+    /*
     maven {
         url "https://oss.sonatype.org/content/repositories/snapshots/"
     }
-    /**/
+    */
     maven {
         url 'https://www.testfairy.com/maven'
     }
@@ -131,7 +131,7 @@ repositories {
 dependencies {
     testCompile 'junit:junit:4.12'
     //compile project(':restcomm.android.sdk')
-    compile 'org.restcomm:restcomm-android-sdk:1.0.0-beta6-SNAPSHOT'
+    compile 'org.restcomm:restcomm-android-sdk:1.0.0-BETA6-55'
     compile 'com.android.support:appcompat-v7:25.1.0'
     compile 'com.android.support:design:25.1.0'
     compile 'com.android.support:support-v4:25.1.0'
