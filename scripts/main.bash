@@ -57,6 +57,9 @@ git config user.email "$COMMIT_AUTHOR_EMAIL"
 #git remote -v
 
 
+echo "-- Handling prerequisites."
+./scripts/setup-prerequisites.bash
+
 # Update reference documentation
 if [ -z "$SKIP_DOC_GENERATION" ] || [[ "$SKIP_DOC_GENERATION" == "false" ]]
 then
