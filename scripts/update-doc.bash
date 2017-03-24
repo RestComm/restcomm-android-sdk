@@ -125,7 +125,7 @@ git push -f origin $DOC_BRANCH
 ##git clean -fd
 
 # Debug command to verify everything is in order
-#git status
+git status
 
 echo "-- Done updating docs, checking out $ORIGINAL_BRANCH"
 git checkout $ORIGINAL_BRANCH
