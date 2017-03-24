@@ -158,11 +158,11 @@ uploadArchives {
             if (project.hasProperty('TRAVIS_BUILD')) {
                 // In Travis builds add the build number in the version string
                 // for example '1.0.0-BETA6-45-SNAPSHOT'
-                pom.version = VERSION_NAME + "-" + TRAVIS_BUILD + "-SNAPSHOT"
+                pom.version = VERSION_NAME + "-" + TRAVIS_BUILD //+ "-SNAPSHOT"
             }
             else {
                 // For non Travis builds, just us a zero for the build number
-                pom.version = VERSION_NAME + "-0-SNAPSHOT"
+                pom.version = VERSION_NAME + "-0" //+ "-SNAPSHOT"
             }
 
             logger.error("---- pom version: " + pom.version)
