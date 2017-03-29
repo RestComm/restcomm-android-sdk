@@ -10,11 +10,21 @@ android:
 # Without these the build fails
     - extra-google-m2repository
     - extra-android-m2repository
+    - sys-img-armeabi-v7a-android-25
+
 # To automatically accept various licenses when prompted, so that we don't get stuck
 licenses:
     - 'android-sdk-preview-license-.+'
     - 'android-sdk-license-.+'
     - 'google-gdk-license-.+'
+
+# Emulator Management: Create, Start and Wait
+before_script:
+  - echo no | android create avd --force -n test -t android-25 --abi armeabi-v7a
+  - emulator -avd test -no-audio -no-window &
+  - android-wait-for-emulator
+  - adb shell input keyevent 82 &
+
 script:
     - ./scripts/local-wrapper.bash
 #    - cd Examples/restcomm-olympus && ./gradlew build 

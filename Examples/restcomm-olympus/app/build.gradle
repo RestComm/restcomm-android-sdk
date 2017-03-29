@@ -25,7 +25,9 @@ android {
 
     defaultConfig {
         applicationId "org.restcomm.android.olympus"
-        minSdkVersion 16
+        // Using 18 instead of initial 16 due to introduction of uiautomator for tests (and more specifically being able to handle system permission dialogs)
+        // TODO: lets see if we can workaround this
+        minSdkVersion 18
         targetSdkVersion 25
 
         if (project.hasProperty('VERSION_CODE')) {
@@ -55,6 +57,7 @@ android {
             resValue "string", "ICE_PASSWORD", ICE_PASSWORD
             resValue "string", "ICE_DOMAIN", ICE_DOMAIN
         }
+        testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
     }
 
     buildTypes {
@@ -132,11 +135,16 @@ dependencies {
     testCompile 'junit:junit:4.12'
     //compile project(':restcomm.android.sdk')
     compile 'org.restcomm:restcomm-android-sdk:1.0.0-BETA6-55'
-    compile 'com.android.support:appcompat-v7:25.1.0'
-    compile 'com.android.support:design:25.1.0'
-    compile 'com.android.support:support-v4:25.1.0'
+    compile 'com.android.support:appcompat-v7:25.1.1'
+    compile 'com.android.support:design:25.1.1'
+    compile 'com.android.support:support-v4:25.1.1'
     compile 'testfairy:testfairy-android-sdk:1.+@aar'
     //compile 'testfairy:testfairy-android-sdk:1.4.5'
     //compile 'net.hockeyapp.android:HockeySDK:4.1.1'
     ////compile files('./libs/testfairy-android-sdk-1.4.6-unlimited-events.jar')
+    androidTestCompile 'com.android.support.test.espresso:espresso-core:2.2.2', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    }
+    androidTestCompile 'com.android.support.test.uiautomator:uiautomator-v18:2.1.2'
+
 }

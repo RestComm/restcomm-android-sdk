@@ -48,6 +48,17 @@ echo -e "-- Using versionCode: $ORG_GRADLE_PROJECT_VERSION_CODE"
 echo "-- Updating git commit hash for Olympus About screen"
 #sed -i '' "s/#GIT-HASH/$COMMIT_SHA1/" $OLYMPUS_UTILS 
 
+# Execute instrumented UI Tests
+echo "-- Executing Olympus UI Tests"
+if [ -z "$SKIP_OLYMPUS_UI_TESTS" ] || [[ "$SKIP_OLYMPUS_UI_TESTS" == "false" ]]
+then
+	# Remember to specify the project (i.e. app)
+	cd Examples/restcomm-olympus && ./gradlew app:connectedAndroidTest 
+	cd ../..
+else
+	echo "-- Skipping UI Tests."
+fi
+
 # Build and upload to TF
 echo "-- Building Olympus and uploading to TestFairy"
 if [ -z "$SKIP_TF_UPLOAD" ] || [[ "$SKIP_TF_UPLOAD" == "false" ]]
