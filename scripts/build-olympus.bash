@@ -8,6 +8,9 @@
 #OLYMPUS_PLIST=Examples/restcomm-olympus/restcomm-olympus/restcomm-olympus-Info.plist
 #OLYMPUS_MAIN_ACTIVITY=Examples/restcomm-olympus/restcomm-olympus/AppDelegate.m
 
+# source wait_with_output.sh so that we can access travis ci scripts to avoid stopping the build when no output is generated
+. scripts/wait_with_output.sh
+
 # For starters lets only create keychains in travis, since locally everything is setup already. But ultimately, we should create a separate new keychain locally to so that we can test that better
 echo "-- TRAVIS: $TRAVIS"
 
@@ -53,7 +56,7 @@ echo "-- Executing Olympus UI Tests"
 if [ -z "$SKIP_OLYMPUS_UI_TESTS" ] || [[ "$SKIP_OLYMPUS_UI_TESTS" == "false" ]]
 then
 	# Remember to specify the project (i.e. app)
-	cd Examples/restcomm-olympus && ./gradlew app:connectedAndroidTest 
+	cd Examples/restcomm-olympus && wait_with_output ./gradlew app:connectedAndroidTest 
 	cd ../..
 else
 	echo "-- Skipping UI Tests."
