@@ -44,8 +44,9 @@ android {
             versionName VERSION_NAME
         }
 
-        // Keep for reference:
-        //buildConfigField "boolean", "DISABLE_SOMETHING", "true"
+        // Pass the credentials to the build config so that they can be accessed by the application
+        buildConfigField "String", "TEST_RESTCOMM_LOGIN", TEST_RESTCOMM_LOGIN
+        buildConfigField "String", "TEST_RESTCOMM_PASSWORD", TEST_RESTCOMM_PASSWORD
 
         // ICE_USERNAME & ICE_PASSWORD are defined in project gradle.properties, but also overriden in global gradle.properties
         // which exists *only* in Telestax builds. Reason for this is that Telestax builds use different settings

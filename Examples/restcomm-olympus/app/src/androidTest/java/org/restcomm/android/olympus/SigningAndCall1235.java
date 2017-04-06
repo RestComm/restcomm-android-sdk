@@ -56,10 +56,10 @@ public class SigningAndCall1235 {
         // we generally try to avoid conditional logic in test cases to avoid getting overly complex, but this is an exception, at least for now
         // sign-in screen screen is in the hierarchy only when running App for the first time so we need to check and keep sign-in logic out if not showing
         if (signinEditText != null) {
-            signinEditText.perform(scrollTo(), replaceText("bob"), closeSoftKeyboard());
+            signinEditText.perform(scrollTo(), replaceText(BuildConfig.TEST_RESTCOMM_LOGIN), closeSoftKeyboard());
 
             ViewInteraction appCompatEditText2 = onView(withId(R.id.signin_password));
-            appCompatEditText2.perform(scrollTo(), replaceText("1234"), closeSoftKeyboard());
+            appCompatEditText2.perform(scrollTo(), replaceText(BuildConfig.TEST_RESTCOMM_PASSWORD), closeSoftKeyboard());
 
             onView(withId(R.id.signin_domain)).perform(scrollTo(), replaceText("cloud.restcomm.com"), closeSoftKeyboard());
 
