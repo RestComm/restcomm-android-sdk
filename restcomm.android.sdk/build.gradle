@@ -108,8 +108,9 @@ dependencies {
 // Upload to sonatype stuff
 nexusStaging {
     //serverUrl = "https://oss.sonatype.org/service/local/staging/deploy/maven2/"
-    username = NEXUS_USERNAME
-    password = NEXUS_PASSWORD
+    username = getRepositoryUsername();
+    password = getRepositoryPassword();
+
     packageGroup = LIBRARY_GROUP  // optional if packageGroup == project.getGroup()
     //stagingProfileId = "stagingProfile"  // when not defined will be got from server using "packageGroup"
 }
