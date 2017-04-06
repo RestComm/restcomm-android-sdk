@@ -942,6 +942,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
 
       List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
       for (NetworkInterface intf : interfaces) {
+         RCLogger.i(TAG, "interface2Address(): Current interface: " + intf.toString());
          if (intf.isUp() && intf.getName().matches(networkInterfacePrefix + ".*")) {
             List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
             for (InetAddress addr : addrs) {
@@ -966,7 +967,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
             }
          }
          else {
-            RCLogger.i(TAG, "+++ Interface not matching or down: " + intf.toString() + " isUp: " + intf.isUp());
+            RCLogger.i(TAG, "interface2Address(): Interface not matching or down: " + intf.toString() + " isUp: " + intf.isUp());
          }
       }
 

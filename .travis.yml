@@ -1,5 +1,10 @@
 language: android
 jdk: oraclejdk8
+addons:
+  apt:
+    packages:
+      - xsltproc
+      - xmlstarlet
 android:
   components:
     - tools # to get the new `repository-11.xml`
