@@ -965,6 +965,9 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
                }
             }
          }
+         else {
+            RCLogger.i(TAG, "+++ Interface not matching or down: " + intf.toString() + " isUp: " + intf.isUp());
+         }
       }
 
       // One issue that isn't 100% from resources around the web is whether the interface names are standard across Android flavours. We assume that cellular data will always be
@@ -994,7 +997,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
          if (Build.FINGERPRINT.contains("generic")) {
             // Emulator; when using emulator, network access is provided via Cellular interface (no idea why this happens instead of ConnectivityManager.TYPE_ETHERNET)
             // but the actual interface name is usually 'eth0', so let's pass that as well in the network interface prefix argument
-            stringAddress = interface2Address(useIPv4, "rmnet|eth");
+            stringAddress = interface2Address(useIPv4, "(rmnet|eth)");
          }
          else {
             // Real device
