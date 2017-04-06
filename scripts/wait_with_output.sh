@@ -34,7 +34,7 @@ wait_with_output() {
 }
 
 travis_jigger() {
-  local timeout=30 # in minutes
+  local timeout=60 # in minutes
   local count=0
 
   local cmd_pid=$1

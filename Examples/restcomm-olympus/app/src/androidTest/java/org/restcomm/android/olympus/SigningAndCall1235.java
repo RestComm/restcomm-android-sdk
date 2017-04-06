@@ -59,7 +59,7 @@ public class SigningAndCall1235 {
             signinEditText.perform(scrollTo(), replaceText("bob"), closeSoftKeyboard());
 
             ViewInteraction appCompatEditText2 = onView(withId(R.id.signin_password));
-            appCompatEditText2.perform(scrollTo(), replaceText("invalid"), closeSoftKeyboard());
+            appCompatEditText2.perform(scrollTo(), replaceText("1234"), closeSoftKeyboard());
 
             onView(withId(R.id.signin_domain)).perform(scrollTo(), replaceText("cloud.restcomm.com"), closeSoftKeyboard());
 
@@ -82,7 +82,7 @@ public class SigningAndCall1235 {
         // check https://medium.com/azimolabs/wait-for-it-idlingresource-and-conditionwatcher-602055f32356). We could probably use IdlingPolicies
         // but still seems a bit messy.
         try {
-            Thread.sleep(7000);
+            Thread.sleep(17000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

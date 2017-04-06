@@ -72,6 +72,7 @@ export COMMIT_SHA1=`git rev-parse HEAD | cut -c -7`
 #export APPLE_CERT="AppleWWDRCA.cer"
 export DEVELOPMENT_KEYSTORE="debug.keystore"
 export GLOBAL_GRADLE_PROPERTIES="gradle.properties"
+export FIREBASE_ACCOUNT_KEY="firebase-service-account-key.json"
 export GPG_SECRING="secring.gpg"
 export GPG_TRUSTDB="trustdb.gpg"
 #export DEVELOPMENT_KEY="development-key.p12"
