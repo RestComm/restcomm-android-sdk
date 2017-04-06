@@ -17,7 +17,7 @@ android:
     - extra-google-m2repository
     - extra-android-m2repository
 #    - sys-img-armeabi-v7a-android-25
-    - sys-img-armeabi-v7a-google_apis-22
+#    - sys-img-armeabi-v7a-google_apis-22
 # fails with: emulator: ERROR: x86 emulation currently requires hardware acceleration! CPU acceleration status: KVM requires a CPU that supports vmx or svm
 #    - sys-img-x86-google_apis-22
 
@@ -29,15 +29,11 @@ licenses:
 
 # Emulator Management: Create, Start and Wait
 before_script:
-# - echo no | android create avd --force -n test -t android-22 --abi armeabi-v7a
-  - echo "------------------------"
-  - android list targets
-  - echo "------------------------"
-  - echo no | android create avd --force -n test -t android-22 --abi armeabi-v7a --tag google_apis
-#  - echo no | android create avd --force -n test -t android-22 --abi google_apis/x86 --tag google_apis
-  - emulator -avd test -no-audio -no-window &
-  - android-wait-for-emulator
-  - adb shell input keyevent 82 &
+#  - android list targets
+#  - echo no | android create avd --force -n test -t android-22 --abi armeabi-v7a --tag google_apis
+#  - emulator -avd test -no-audio -no-window &
+#  - android-wait-for-emulator
+#  - adb shell input keyevent 82 &
 
 script:
     - ./scripts/local-wrapper.bash
