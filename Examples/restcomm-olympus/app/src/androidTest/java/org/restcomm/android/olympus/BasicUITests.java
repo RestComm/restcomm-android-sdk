@@ -21,10 +21,14 @@ import android.view.ViewParent;
 
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
 import org.hamcrest.TypeSafeMatcher;
 
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.core.AllOf.allOf;
 
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -37,14 +41,16 @@ import static android.support.test.espresso.matcher.ViewMatchers.*;
 
 @LargeTest
 @RunWith(AndroidJUnit4.class)
-public class SigningAndCall1235 {
-    private static final String TAG = "SigningAndCall1235";
+public class BasicUITests {
+    private static final String TAG = "BasicUITests";
 
     @Rule
     public ActivityTestRule<SigninActivity> mActivityTestRule = new ActivityTestRule<>(SigninActivity.class);
 
-    @Test
-    public void signingAndCall1235() {
+    @Before
+    public void signinIfNeeded()
+    {
+        // Signin if not already signed in
         ViewInteraction signinEditText = onView(withId(R.id.signin_username));
 
         try {
@@ -75,14 +81,26 @@ public class SigningAndCall1235 {
                     )
             ).perform(scrollTo(), click());
         }
+    }
 
+    /*
+    @After
+    public void afterAction() {
+    }
+    */
+
+
+    @Test
+    // Test on calling a Restcomm number, using 1235
+    public void callRCNumber()
+    {
         // Wait until we are REGISTERED. Notice that we could use IdlingResource to wait for specific event and avoid sleeping but I'd like to also
         // use specific timer of 5 seconds and break otherwise as it would signify a huge delay from the server side that we want to catch
         // Also, IdlingResources don't seem to allow to specify timeout for specific check() instance that would help here (for more info on that
         // check https://medium.com/azimolabs/wait-for-it-idlingresource-and-conditionwatcher-602055f32356). We could probably use IdlingPolicies
         // but still seems a bit messy.
         try {
-            Thread.sleep(17000);
+            Thread.sleep(10000);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -134,6 +152,79 @@ public class SigningAndCall1235 {
         pressBack();
     }
 
+    @Test
+    // Create contact +30213001 that belongs to SMS App, send text message and retrieve answer
+    public void textRCNumber()
+    {
+        // Wait until we are REGISTERED. Notice that we could use IdlingResource to wait for specific event and avoid sleeping but I'd like to also
+        // use specific timer of 5 seconds and break otherwise as it would signify a huge delay from the server side that we want to catch
+        // Also, IdlingResources don't seem to allow to specify timeout for specific check() instance that would help here (for more info on that
+        // check https://medium.com/azimolabs/wait-for-it-idlingresource-and-conditionwatcher-602055f32356). We could probably use IdlingPolicies
+        // but still seems a bit messy.
+        try {
+            Thread.sleep(10000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        ViewInteraction floatingActionButton = onView(
+                Matchers.allOf(withId(R.id.imageButton_add),
+                        withParent(Matchers.allOf(withId(R.id.coordinatorLayout),
+                                withParent(withId(android.R.id.content)))),
+                        isDisplayed()));
+        floatingActionButton.perform(click());
+
+        ViewInteraction appCompatEditText3 = onView(
+                Matchers.allOf(withId(R.id.editText_username), isDisplayed()));
+        appCompatEditText3.perform(replaceText("Sms Echo"), closeSoftKeyboard());
+
+        ViewInteraction appCompatEditText4 = onView(
+                Matchers.allOf(withId(R.id.editText_sipuri), isDisplayed()));
+        appCompatEditText4.perform(replaceText("+30213001"), closeSoftKeyboard());
+
+        ViewInteraction appCompatButton2 = onView(
+                Matchers.allOf(withId(android.R.id.button1), withText("Add"),
+                        withParent(Matchers.allOf(withClassName(is("com.android.internal.widget.ButtonBarLayout")),
+                                withParent(withClassName(is("android.widget.LinearLayout"))))),
+                        isDisplayed()));
+        appCompatButton2.perform(click());
+
+        ViewInteraction relativeLayout = onView(
+                Matchers.allOf(childAtPosition(
+                        withId(android.R.id.list),
+                        3),
+                        isDisplayed()));
+        relativeLayout.perform(click());
+
+        ViewInteraction appCompatEditText5 = onView(
+                Matchers.allOf(withId(R.id.text_message), isDisplayed()));
+        appCompatEditText5.perform(replaceText("Hello there!"), closeSoftKeyboard());
+
+        ViewInteraction appCompatImageButton = onView(
+                Matchers.allOf(withId(R.id.button_send), isDisplayed()));
+        appCompatImageButton.perform(click());
+
+        try {
+            Thread.sleep(3000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // TODO: Verify that the echo message was received properly
+
+        pressBack();
+
+        // TODO: needs more code to remove contact. Seems that the tap and hold event doesn't get recorded
+        ViewInteraction appCompatTextView = onView(
+                Matchers.allOf(withId(android.R.id.title), withText("Remove Contact"), isDisplayed()));
+        appCompatTextView.perform(click());
+    }
+
+
+
+    //
+    // Helper methods
+    //
     private static Matcher<View> childAtPosition(
             final Matcher<View> parentMatcher, final int position) {
 
