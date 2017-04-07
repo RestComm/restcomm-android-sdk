@@ -25,24 +25,17 @@ android {
 
     defaultConfig {
         applicationId "org.restcomm.android.olympus"
-        // Using 18 instead of initial 16 due to introduction of uiautomator for tests (and more specifically being able to handle system permission dialogs)
-        // TODO: lets see if we can workaround this
+        // Using 18 instead of initial 16 due to introduction of UIAutomator for tests (and more specifically being able to handle system permission dialogs)
+        // TODO: lets see if we can workaround this so that App can still use 16 which is good for backward compatibility, yet use 18 for tests
+        // (most probably by using gradle product flavors). Notice though that this doesn't affect SDK so not critical
         minSdkVersion 18
         targetSdkVersion 25
 
-        if (project.hasProperty('VERSION_CODE')) {
-            logger.info("Using versionCode: " + VERSION_CODE)
-            versionCode VERSION_CODE.toInteger()
-        }
-        else {
-            logger.info("Doesn't have VERSION_CODE, falling back to: 1")
-            versionCode 1
-        }
+        logger.info("-- Using versionCode: " + VERSION_CODE)
+        versionCode VERSION_CODE.toInteger()
 
-        if (project.hasProperty('VERSION_NAME')) {
-            logger.info("Using versionName: " + VERSION_NAME)
-            versionName VERSION_NAME
-        }
+        logger.info("-- Using versionName: " + VERSION_NAME)
+        versionName VERSION_NAME
 
         // Pass the credentials to the build config so that they can be accessed by the application.
         // Notice that those are declared both in global gradle.properties (secret) and project gradle.properties
