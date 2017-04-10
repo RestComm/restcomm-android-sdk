@@ -2121,7 +2121,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
       try {
          // Restrict the Intent to MMC Handler running within the same application
-         Class aclass = Class.forName("com.cortxt.app.corelib.Services.Intents.IntentHandler");
+         Class aclass = Class.forName("org.restcomm.app.qoslib.Services.Intents.IntentHandler");
          intent.setClass(device.getApplicationContext(), aclass);
          device.sendBroadcast(intent);
       }
@@ -2143,7 +2143,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
       try {
          // Restrict the Intent to MMC Handler running within the same application
-         Class aclass = Class.forName("com.cortxt.app.corelib.Services.Intents.IntentHandler");
+         Class aclass = Class.forName("org.restcomm.app.qoslib.Services.Intents.IntentHandler");
          intent.setClass(device.getApplicationContext(), aclass);
          device.sendBroadcast(intent);
       }

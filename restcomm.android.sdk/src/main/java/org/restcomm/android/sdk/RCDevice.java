@@ -1570,7 +1570,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       intent.putExtra("FROM", user);
       try {
          // Restrict the Intent to MMC Handler running within the same application
-         Class aclass = Class.forName("com.cortxt.app.corelib.Services.Intents.IntentHandler");
+         Class aclass = Class.forName("org.restcomm.app.qoslib.Services.Intents.IntentHandler");
          intent.setClass(getApplicationContext(), aclass);
          getApplicationContext().sendBroadcast(intent);
       }
@@ -1589,7 +1589,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       intent.putExtra("USER", user);
       try {
          // Restrict the Intent to MMC Handler running within the same application
-         Class aclass = Class.forName("com.cortxt.app.corelib.Services.Intents.IntentHandler");
+         Class aclass = Class.forName("org.restcomm.app.qoslib.Services.Intents.IntentHandler");
          intent.setClass(getApplicationContext(), aclass);
          getApplicationContext().sendBroadcast(intent);
       }
