@@ -404,6 +404,31 @@ class DatabaseManager {
       db.insertOrThrow(DatabaseContract.MessageEntry.TABLE_NAME, null, values);
    }
 
+   public void updateMessageStatus(String jobId, boolean isDelivered) throws SQLException
+   {
+      if (databaseHelper == null) {
+         throw new RuntimeException("Database hasn't been opened.");
+      }
+
+      // Gets the data repository in write mode
+      SQLiteDatabase db = databaseHelper.getWritableDatabase();
+
+      // Create a new map of values, where column names are the keys
+      ContentValues values = new ContentValues();
+
+      values.put(DatabaseContract.MessageEntry.COLUMN_NAME_DELIVERY_STATUS, isDelivered);
+
+      // Add the WHERE clause
+      String selection = DatabaseContract.MessageEntry.COLUMN_NAME_JOB_ID + " LIKE ?";
+      String[] selectionArgs = { jobId };
+
+      int count = db.update(
+              DatabaseContract.MessageEntry.TABLE_NAME,
+              values,
+              selection,
+              selectionArgs);
+   }
+
    // Helpers for adapters
    private HashMap<String, String> createContactEntry(String name, String uri)
    {

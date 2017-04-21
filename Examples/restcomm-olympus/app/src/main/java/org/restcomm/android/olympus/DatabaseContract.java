@@ -44,12 +44,17 @@ public final class DatabaseContract {
    public static abstract class MessageEntry implements BaseColumns {
       public static final String TABLE_NAME = "message";
       public static final String COLUMN_NAME_CONTACT_ID = "contact_id";
+      // job id created when a message was sent, so that we can associate a response to the message with original message. We need this
+      // to be able to correlate a message delivery status with the message to which it is related with
+      public static final String COLUMN_NAME_JOB_ID = "job_id";
       // message actual text
       public static final String COLUMN_NAME_TEXT = "text";
       // message type: 'local' or 'remote'
       public static final String COLUMN_NAME_TYPE = "type";
       // time sent or received
       public static final String COLUMN_NAME_TIMESTAMP = "timestamp";
+      // Was the message properly delivered?
+      public static final String COLUMN_NAME_DELIVERY_STATUS = "delivery_status";
    }
 
 }
