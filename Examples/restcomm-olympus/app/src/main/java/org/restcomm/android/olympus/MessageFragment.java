@@ -202,7 +202,7 @@ public class MessageFragment extends ListFragment {
    }
 
    // Called by Activity when when new message is sent
-   public void addLocalMessage(String message, String username)
+   public int addLocalMessage(String message, String username)
    {
       HashMap<String, String> item = new HashMap<String, String>();
       item.put(MESSAGE_CONTACT_KEY, "Me");
@@ -211,6 +211,8 @@ public class MessageFragment extends ListFragment {
       DatabaseManager.getInstance().addMessage(username, message, true);
       this.listViewAdapter.notifyDataSetChanged();
       getListView().setSelection(listViewAdapter.getCount() - 1);
+
+      return listViewAdapter.getCount();
    }
 
    // Called by Activity when when new message is sent
@@ -223,6 +225,11 @@ public class MessageFragment extends ListFragment {
       DatabaseManager.getInstance().addMessage(username, message, false);
       this.listViewAdapter.notifyDataSetChanged();
       getListView().setSelection(listViewAdapter.getCount() - 1);
+   }
+
+   public ListView getFragmentListView()
+   {
+      return getListView();
    }
 
    // Helper methods

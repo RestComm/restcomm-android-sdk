@@ -28,7 +28,7 @@ echo "-- Activating google cloud account"
 /tmp/google-cloud-sdk/bin/gcloud auth activate-service-account --key-file ../../scripts/configuration/${FIREBASE_ACCOUNT_KEY}
 
 # Run a test on Firebase test lab, and save the directory (i.e. google cloud bucket) where results will be stored in variable GCLOUD_RAW_RESULT_FULL_URL, so that we can copy them and check if everything went well after test is done
-echo "-- Uploading .apks on Firebase Test Lab and starting test on Firebase Test Lab, this might take some time depending on your connection"
+echo "-- Uploading .apks on Firebase Test Lab and starting test, this might take some time depending on your connection"
 
 APP_APK_PATH="app/build/outputs/apk/restcomm-olympus-${ORG_GRADLE_PROJECT_VERSION_NAME}+${ORG_GRADLE_PROJECT_VERSION_CODE}-DEBUG.apk"
 TEST_APK_PATH="app/build/outputs/apk/app-debug-androidTest.apk"

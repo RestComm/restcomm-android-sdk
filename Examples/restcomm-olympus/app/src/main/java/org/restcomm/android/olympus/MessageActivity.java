@@ -33,6 +33,7 @@ import android.content.ServiceConnection;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.IBinder;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -42,6 +43,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.restcomm.android.sdk.RCClient;
@@ -59,6 +62,8 @@ public class MessageActivity extends AppCompatActivity
    private RCDevice device;
    boolean serviceBound = false;
    HashMap<String, Object> params = new HashMap<String, Object>();
+   // keep around for each jobId that creates a message the index it gets inside the ListView
+   HashMap<String, Integer> indexes = new HashMap<String, Integer>();
    private static final String TAG = "MessageActivity";
    private AlertDialog alertDialog;
    private String currentPeer;
@@ -233,7 +238,8 @@ public class MessageActivity extends AppCompatActivity
             if (DatabaseManager.getInstance().addContactIfNeded(username)) {
                Toast.makeText(getApplicationContext(), "Adding '" + shortname + "\' to contacts as it doesn't exist", Toast.LENGTH_LONG).show();
             }
-            DatabaseManager.getInstance().addMessage(shortname, message, false);
+            //DatabaseManager.getInstance().addMessage(shortname, message, false);
+            listFragment.addRemoteMessage(message, shortname);
             return;
          }
 
@@ -256,13 +262,14 @@ public class MessageActivity extends AppCompatActivity
          HashMap<String, String> sendParams = new HashMap<String, String>();
          String connectionPeer = (String) params.get(RCConnection.ParameterKeys.CONNECTION_PEER);
          sendParams.put(RCConnection.ParameterKeys.CONNECTION_PEER, connectionPeer);
-         if (device.sendMessage(txtMessage.getText().toString(), sendParams)) {
+         RCDevice.MessageStatus messageStatus = device.sendMessage(txtMessage.getText().toString(), sendParams);
+         if (messageStatus.status) {
             // also output the message in the wall
-            listFragment.addLocalMessage(txtMessage.getText().toString(), connectionPeer.replaceAll("^sip:", "").replaceAll("@.*$", ""));
+            int index = listFragment.addLocalMessage(txtMessage.getText().toString(), connectionPeer.replaceAll("^sip:", "").replaceAll("@.*$", ""));
+            indexes.put(messageStatus.jobId, index);
             txtMessage.setText("");
             //txtWall.append("Me: " + txtMessage.getText().toString() + "\n\n");
-         }
-         else {
+         } else {
             showOkAlert("RCDevice Error", "No Wifi connectivity");
          }
       }
@@ -308,12 +315,28 @@ public class MessageActivity extends AppCompatActivity
       handleConnectivityUpdate(connectivityStatus, null);
    }
 
-   public void onMessageSent(RCDevice device, int statusCode, String statusText)
+   public void onMessageSent(RCDevice device, int statusCode, String statusText, String jobId)
    {
       Log.i(TAG, "onMessageSent(): statusCode: " + statusCode + ", statusText: " + statusText);
+
+      Integer index = indexes.get(jobId);
+
+      /*
+      ListView listView = listFragment.getFragmentListView();
+      View parent = listView.getChildAt(index - 1);
+      TextView messageTextView = (TextView)parent.findViewById(R.id.message_text);
+      */
+
+
       if (statusCode != RCClient.ErrorCodes.SUCCESS.ordinal()) {
-         showOkAlert("RCDevice Error", statusText);
+         //listView.getAdapter().getItem(index);
+         //messageTextView.setTextColor(ContextCompat.getColor(this, R.color.colorError));
       }
+      else {
+         //messageTextView.setTextColor(ContextCompat.getColor(this, R.color.colorTextSecondary));
+      }
+
+      indexes.remove(jobId);
    }
 
    public void onReleased(RCDevice device, int statusCode, String statusText)

@@ -81,8 +81,9 @@ public interface RCDeviceListener {
     * @param device Device of interest
     * @param statusCode Status code
     * @param statusText Status text
+    * @param jobId In order to correlate this event to the RCDevice.sendMessage() it corresponds to we use the jobId
     */
-   void onMessageSent(RCDevice device, int statusCode, String statusText);
+   void onMessageSent(RCDevice device, int statusCode, String statusText, String jobId);
 
    /**
     * RCDevice stopped listening for incoming connections due to error

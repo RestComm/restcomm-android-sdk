@@ -155,6 +155,15 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       CLIENT_NAME,
    }
 
+   public class MessageStatus {
+      public String jobId;
+      public boolean status;
+
+      MessageStatus(String jobId, boolean status) {
+         this.jobId = jobId;
+         this.status = status;
+      }
+   }
    /**
     * Parameter keys for RCClient.createDevice() and RCDevice.updateParams()
     */
@@ -683,6 +692,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
    }
 
+
    /**
     * Send an instant message to an endpoint
     *
@@ -690,20 +700,20 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     * @param parameters Parameters used for the message, such as 'username' that holds the recepient for the message
     * @return status for the send action
     */
-   public boolean sendMessage(String message, Map<String, String> parameters)
+   public MessageStatus sendMessage(String message, Map<String, String> parameters)
    {
       RCLogger.i(TAG, "sendMessage(): message:" + message + "\nparameters: " + parameters.toString());
+
 
       if (state == DeviceState.READY) {
          HashMap<String, Object> messageParameters = new HashMap<>();
          messageParameters.put(RCConnection.ParameterKeys.CONNECTION_PEER, parameters.get(RCConnection.ParameterKeys.CONNECTION_PEER));
          messageParameters.put("text-message", message);
-         //RCMessage message = RCMessage.newInstanceOutgoing(messageParameters, listener);
-         signalingClient.sendMessage(messageParameters);
-         return true;
+         String jobId = signalingClient.sendMessage(messageParameters);
+         return new MessageStatus(jobId, true);
       }
       else {
-         return false;
+         return new MessageStatus(null, false);
       }
    }
 
@@ -1019,7 +1029,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       RCLogger.i(TAG, "onMessageReply(): id: " + jobId + ", status: " + status + ", text: " + text);
 
       if (isServiceAttached) {
-         listener.onMessageSent(this, status.ordinal(), text);
+         listener.onMessageSent(this, status.ordinal(), text, jobId);
       }
       else {
          RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onMessageSent(): " +
