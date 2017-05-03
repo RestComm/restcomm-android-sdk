@@ -33,7 +33,6 @@ import android.content.ServiceConnection;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.v4.app.NotificationCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -321,19 +320,21 @@ public class MessageActivity extends AppCompatActivity
    {
       Log.i(TAG, "onMessageSent(): statusCode: " + statusCode + ", statusText: " + statusText);
 
-      int index = indexes.get(jobId);
+      Integer index = indexes.get(jobId);
+
+      /*
       ListView listView = listFragment.getFragmentListView();
       View parent = listView.getChildAt(index - 1);
-      TextView statusTextView = (TextView)parent.findViewById(R.id.message_status);
+      TextView messageTextView = (TextView)parent.findViewById(R.id.message_text);
+      */
+
 
       if (statusCode != RCClient.ErrorCodes.SUCCESS.ordinal()) {
          //listView.getAdapter().getItem(index);
-         statusTextView.setText("Failed");
-         statusTextView.setTextColor(ContextCompat.getColor(this, R.color.colorError));
+         //messageTextView.setTextColor(ContextCompat.getColor(this, R.color.colorError));
       }
       else {
-         statusTextView.setText("Delivered");
-         statusTextView.setTextColor(ContextCompat.getColor(this, R.color.colorTextSecondary));
+         //messageTextView.setTextColor(ContextCompat.getColor(this, R.color.colorTextSecondary));
       }
 
       indexes.remove(jobId);

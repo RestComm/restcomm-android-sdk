@@ -10,6 +10,7 @@
     <color name="colorAccent">#DF3D00</color>
 
     <color name="colorSwitchThumbNormal">#DF3D00</color>
+    <color name="colorError">#FF0000</color>
 
     <!--
     <color name="colorPrimary">#EB5B29</color>
