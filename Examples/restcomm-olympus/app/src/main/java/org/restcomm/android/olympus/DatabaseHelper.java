@@ -30,7 +30,7 @@ import android.util.Log;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
    // If you change the database schema, you must increment the database version.
-   public static final int DATABASE_VERSION = 15;
+   public static final int DATABASE_VERSION = 16;
    public static final String DATABASE_NAME = "Olympus.db";
 
    private static final String TAG = "DatabaseHelper";
@@ -52,7 +52,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                DatabaseContract.MessageEntry.COLUMN_NAME_TEXT + " TEXT NOT NULL, " +
                DatabaseContract.MessageEntry.COLUMN_NAME_TYPE + " TEXT NOT NULL, " +
                DatabaseContract.MessageEntry.COLUMN_NAME_TIMESTAMP + " DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-               DatabaseContract.MessageEntry.COLUMN_NAME_DELIVERY_STATUS + " INTEGER, " +
+               DatabaseContract.MessageEntry.COLUMN_NAME_DELIVERY_STATUS + " INTEGER DEFAULT 0, " +
                "FOREIGN KEY (" + DatabaseContract.MessageEntry.COLUMN_NAME_CONTACT_ID + ") REFERENCES " + DatabaseContract.ContactEntry.TABLE_NAME +
                   "(" + DatabaseContract.ContactEntry._ID + ") " +
                " );";

@@ -340,7 +340,8 @@ class DatabaseManager {
 
    // ---- Message table
    // Retrieve all messages for a contact ordered by timestamp
-   ArrayList<Map<String, String>> retrieveMessages(String contactName)
+   //ArrayList<Map<String, String>> retrieveMessages(String contactName)
+   Cursor retrieveMessages(String contactName)
    {
       if (databaseHelper == null) {
          throw new RuntimeException("Database hasn't been opened yet, please call open()");
@@ -361,6 +362,7 @@ class DatabaseManager {
       Log.i(TAG, "Query String: " + sqlQuery);
       Cursor cursor = db.rawQuery(sqlQuery, selectionArgs);
 
+      /*
       ArrayList<Map<String, String>> messageList = new ArrayList<Map<String, String>>();
 
       // moveToFirst() fails if cursor is empty
@@ -373,9 +375,12 @@ class DatabaseManager {
                   cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.MessageEntry.COLUMN_NAME_TEXT))));
          } while (cursor.moveToNext());
       }
-      cursor.close();
+      */
 
-      return messageList;
+      return cursor;
+
+      //cursor.close();
+      //return messageList;
    }
 
    public void addMessage(String contactName, String messageText, boolean isLocal) throws SQLException
