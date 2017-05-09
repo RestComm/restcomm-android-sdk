@@ -383,7 +383,7 @@ class DatabaseManager {
       //return messageList;
    }
 
-   public void addMessage(String contactName, String messageText, boolean isLocal) throws SQLException
+   public void addMessage(String contactName, String messageText, boolean isLocal, String jobId, DatabaseContract.MessageDeliveryStatus deliveryStatus) throws SQLException
    {
       if (databaseHelper == null) {
          throw new RuntimeException("Database hasn't been opened.");
@@ -405,11 +405,13 @@ class DatabaseManager {
       values.put(DatabaseContract.MessageEntry.COLUMN_NAME_CONTACT_ID, contactId);
       values.put(DatabaseContract.MessageEntry.COLUMN_NAME_TEXT, messageText);
       values.put(DatabaseContract.MessageEntry.COLUMN_NAME_TYPE, type);
+      values.put(DatabaseContract.MessageEntry.COLUMN_NAME_JOB_ID, jobId);
+      values.put(DatabaseContract.MessageEntry.COLUMN_NAME_DELIVERY_STATUS, deliveryStatus.ordinal());
 
       db.insertOrThrow(DatabaseContract.MessageEntry.TABLE_NAME, null, values);
    }
 
-   public void updateMessageStatus(String jobId, boolean isDelivered) throws SQLException
+   public void updateMessageStatus(String jobId, DatabaseContract.MessageDeliveryStatus deliveryStatus) throws SQLException
    {
       if (databaseHelper == null) {
          throw new RuntimeException("Database hasn't been opened.");
@@ -421,7 +423,7 @@ class DatabaseManager {
       // Create a new map of values, where column names are the keys
       ContentValues values = new ContentValues();
 
-      values.put(DatabaseContract.MessageEntry.COLUMN_NAME_DELIVERY_STATUS, isDelivered);
+      values.put(DatabaseContract.MessageEntry.COLUMN_NAME_DELIVERY_STATUS, deliveryStatus.ordinal());
 
       // Add the WHERE clause
       String selection = DatabaseContract.MessageEntry.COLUMN_NAME_JOB_ID + " LIKE ?";

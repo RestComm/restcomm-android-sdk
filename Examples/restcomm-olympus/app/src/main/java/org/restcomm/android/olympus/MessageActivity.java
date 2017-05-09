@@ -64,7 +64,7 @@ public class MessageActivity extends AppCompatActivity
    boolean serviceBound = false;
    HashMap<String, Object> params = new HashMap<String, Object>();
    // keep around for each jobId that creates a message the index it gets inside the ListView
-   HashMap<String, Integer> indexes = new HashMap<String, Integer>();
+   //HashMap<String, Integer> indexes = new HashMap<String, Integer>();
    private static final String TAG = "MessageActivity";
    private AlertDialog alertDialog;
    private String currentPeer;
@@ -266,8 +266,9 @@ public class MessageActivity extends AppCompatActivity
          RCDevice.MessageStatus messageStatus = device.sendMessage(txtMessage.getText().toString(), sendParams);
          if (messageStatus.status) {
             // also output the message in the wall
-            int index = listFragment.addLocalMessage(txtMessage.getText().toString(), connectionPeer.replaceAll("^sip:", "").replaceAll("@.*$", ""));
-            indexes.put(messageStatus.jobId, index);
+            int index = listFragment.addLocalMessage(txtMessage.getText().toString(), connectionPeer.replaceAll("^sip:", "").replaceAll("@.*$", ""),
+                    messageStatus.jobId);
+            //indexes.put(messageStatus.jobId, index);
             txtMessage.setText("");
             //txtWall.append("Me: " + txtMessage.getText().toString() + "\n\n");
          } else {
@@ -320,15 +321,10 @@ public class MessageActivity extends AppCompatActivity
    {
       Log.i(TAG, "onMessageSent(): statusCode: " + statusCode + ", statusText: " + statusText);
 
-      Integer index = indexes.get(jobId);
+      //Integer index = indexes.get(jobId);
 
+      listFragment.updateMessageDeliveryStatus(jobId, statusCode, currentPeer);
       /*
-      ListView listView = listFragment.getFragmentListView();
-      View parent = listView.getChildAt(index - 1);
-      TextView messageTextView = (TextView)parent.findViewById(R.id.message_text);
-      */
-
-
       if (statusCode != RCClient.ErrorCodes.SUCCESS.ordinal()) {
          //listView.getAdapter().getItem(index);
          //messageTextView.setTextColor(ContextCompat.getColor(this, R.color.colorError));
@@ -336,8 +332,9 @@ public class MessageActivity extends AppCompatActivity
       else {
          //messageTextView.setTextColor(ContextCompat.getColor(this, R.color.colorTextSecondary));
       }
+      */
 
-      indexes.remove(jobId);
+      //indexes.remove(jobId);
    }
 
    public void onReleased(RCDevice device, int statusCode, String statusText)
@@ -346,7 +343,6 @@ public class MessageActivity extends AppCompatActivity
          showOkAlert("RCDevice Error", statusText);
       }
    }
-
 
    public boolean receivePresenceEvents(RCDevice device)
    {

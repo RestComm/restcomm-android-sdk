@@ -52,7 +52,7 @@ public class DatabaseHelper extends SQLiteOpenHelper {
                DatabaseContract.MessageEntry.COLUMN_NAME_TEXT + " TEXT NOT NULL, " +
                DatabaseContract.MessageEntry.COLUMN_NAME_TYPE + " TEXT NOT NULL, " +
                DatabaseContract.MessageEntry.COLUMN_NAME_TIMESTAMP + " DATETIME DEFAULT CURRENT_TIMESTAMP, " +
-               DatabaseContract.MessageEntry.COLUMN_NAME_DELIVERY_STATUS + " INTEGER DEFAULT 0, " +
+               DatabaseContract.MessageEntry.COLUMN_NAME_DELIVERY_STATUS + " INTEGER, " +
                "FOREIGN KEY (" + DatabaseContract.MessageEntry.COLUMN_NAME_CONTACT_ID + ") REFERENCES " + DatabaseContract.ContactEntry.TABLE_NAME +
                   "(" + DatabaseContract.ContactEntry._ID + ") " +
                " );";

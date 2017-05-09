@@ -31,6 +31,12 @@ public final class DatabaseContract {
    public DatabaseContract() {
    }
 
+   public static enum MessageDeliveryStatus {
+      TEXT_MESSAGE_PENDING,  // 0
+      TEXT_MESSAGE_DELIVERED,  // 1
+      TEXT_MESSAGE_FAILED,  // 2
+   }
+
    // Inner class that defines the table contents
    public static abstract class ContactEntry implements BaseColumns {
       public static final String TABLE_NAME = "contact";
@@ -43,6 +49,11 @@ public final class DatabaseContract {
    // Inner class that defines the table contents
    public static abstract class MessageEntry implements BaseColumns {
       public static final String TABLE_NAME = "message";
+      // Source contact for the message (i.e. remote peer that sent the message)
+      // TODO: Notice that right now if the message's source is us, then we still use the remote peer's name as the contact_id to make sure that there's
+      // an entry in the contact table in the db (we don't store 'us' in the db as a contact right now. Although strictly speaking this is wrong, we work around it
+      // by using the 'type' field, and if type is local, then we don't depend on the contact_id. We haven't spent too much time on it because
+      // the future plan is about Restcomm providing us with APIs for contacts so we need to consider how the db will be used then.
       public static final String COLUMN_NAME_CONTACT_ID = "contact_id";
       // job id created when a message was sent, so that we can associate a response to the message with original message. We need this
       // to be able to correlate a message delivery status with the message to which it is related with
