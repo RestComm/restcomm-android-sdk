@@ -29,9 +29,20 @@ public final class DatabaseContract {
    // To prevent someone from accidentally instantiating the contract class,
    // give it an empty constructor
    public DatabaseContract() {
+
    }
 
-   public static enum MessageDeliveryStatus {
+   // Let's keep track of consecutive SQLite versions, so that we can handle upgrades properly, without data loss.
+   // Each time the DB schema changes we need to come up with a new version (i.e. previous + 1), with a descriptive name and add it below.
+   // Then we need to update DatabaseHelper.DATABASE_VERSION to be assigned to that.
+   public class DatabaseVersions {
+      // First DB version that we want to support
+      public static final int DB_VERSION_GROUND_ZERO = 14;
+      // Introducing delivery status field and SimpleCursorAdapter (issue #568)
+      public static final int DB_VERSION_DELIVERY_STATUS = 15;
+   };
+
+   public enum MessageDeliveryStatus {
       TEXT_MESSAGE_PENDING,  // 0
       TEXT_MESSAGE_DELIVERED,  // 1
       TEXT_MESSAGE_FAILED,  // 2
