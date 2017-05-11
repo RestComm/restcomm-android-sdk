@@ -24,7 +24,6 @@
 package org.restcomm.android.olympus;
 
 import android.app.AlertDialog;
-import android.app.DialogFragment;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -33,7 +32,6 @@ import android.content.ServiceConnection;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.v4.content.ContextCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -42,10 +40,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
-import android.widget.FrameLayout;
 import android.widget.ImageButton;
-import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import org.restcomm.android.sdk.RCClient;
@@ -53,6 +48,7 @@ import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.RCDeviceListener;
 import org.restcomm.android.sdk.RCPresenceEvent;
+import org.restcomm.android.sdk.util.RCException;
 
 import java.util.HashMap;
 
@@ -263,15 +259,15 @@ public class MessageActivity extends AppCompatActivity
          HashMap<String, String> sendParams = new HashMap<String, String>();
          String connectionPeer = (String) params.get(RCConnection.ParameterKeys.CONNECTION_PEER);
          sendParams.put(RCConnection.ParameterKeys.CONNECTION_PEER, connectionPeer);
-         RCDevice.MessageStatus messageStatus = device.sendMessage(txtMessage.getText().toString(), sendParams);
-         if (messageStatus.status) {
+         try {
+            String jobId = device.sendMessage(txtMessage.getText().toString(), sendParams);
             // also output the message in the wall
-            int index = listFragment.addLocalMessage(txtMessage.getText().toString(), connectionPeer.replaceAll("^sip:", "").replaceAll("@.*$", ""),
-                    messageStatus.jobId);
+            listFragment.addLocalMessage(txtMessage.getText().toString(), connectionPeer.replaceAll("^sip:", "").replaceAll("@.*$", ""),
+                    jobId);
             //indexes.put(messageStatus.jobId, index);
             txtMessage.setText("");
             //txtWall.append("Me: " + txtMessage.getText().toString() + "\n\n");
-         } else {
+         } catch (RCException e) {
             showOkAlert("RCDevice Error", "No Wifi connectivity");
          }
       }

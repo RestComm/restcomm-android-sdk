@@ -87,6 +87,7 @@ public final class RCClient {
       ERROR_MESSAGE_PEER_NOT_FOUND,
       ERROR_MESSAGE_SERVICE_UNAVAILABLE,
       ERROR_MESSAGE_UNTRUSTED_SERVER,
+      ERROR_MESSAGE_SEND_FAILED_DEVICE_OFFLINE,
    }
 
    /**
@@ -237,6 +238,9 @@ public final class RCClient {
       }
       else if (errorCode == ErrorCodes.ERROR_MESSAGE_SERVICE_UNAVAILABLE) {
          return "Failed to send message; service is unavailable";
+      }
+      else if (errorCode == ErrorCodes.ERROR_MESSAGE_SEND_FAILED_DEVICE_OFFLINE) {
+         return "Failed to send message; RCDevice is offline";
       }
 
       return "Unmapped Restcomm Client error";

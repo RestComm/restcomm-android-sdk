@@ -40,6 +40,7 @@ import org.restcomm.android.sdk.MediaClient.AppRTCAudioManager;
 import org.restcomm.android.sdk.SignalingClient.JainSipClient.JainSipConfiguration;
 import org.restcomm.android.sdk.SignalingClient.SignalingClient;
 import org.restcomm.android.sdk.util.ErrorStruct;
+import org.restcomm.android.sdk.util.RCException;
 import org.restcomm.android.sdk.util.RCLogger;
 import org.restcomm.android.sdk.util.RCUtils;
 
@@ -155,15 +156,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       CLIENT_NAME,
    }
 
-   public class MessageStatus {
-      public String jobId;
-      public boolean status;
-
-      MessageStatus(String jobId, boolean status) {
-         this.jobId = jobId;
-         this.status = status;
-      }
-   }
    /**
     * Parameter keys for RCClient.createDevice() and RCDevice.updateParams()
     */
@@ -700,20 +692,21 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     * @param parameters Parameters used for the message, such as 'username' that holds the recepient for the message
     * @return status for the send action
     */
-   public MessageStatus sendMessage(String message, Map<String, String> parameters)
+   public String sendMessage(String message, Map<String, String> parameters) throws RCException
    {
       RCLogger.i(TAG, "sendMessage(): message:" + message + "\nparameters: " + parameters.toString());
 
 
-      if (state == DeviceState.READY) {
+      if (state != DeviceState.OFFLINE) {
          HashMap<String, Object> messageParameters = new HashMap<>();
          messageParameters.put(RCConnection.ParameterKeys.CONNECTION_PEER, parameters.get(RCConnection.ParameterKeys.CONNECTION_PEER));
          messageParameters.put("text-message", message);
-         String jobId = signalingClient.sendMessage(messageParameters);
-         return new MessageStatus(jobId, true);
+         return signalingClient.sendMessage(messageParameters);
       }
       else {
-         return new MessageStatus(null, false);
+         //return new MessageStatus(null, false);
+         throw new RCException(RCClient.ErrorCodes.ERROR_MESSAGE_SEND_FAILED_DEVICE_OFFLINE,
+                 RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_SEND_FAILED_DEVICE_OFFLINE));
       }
    }
 
