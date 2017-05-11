@@ -40,6 +40,7 @@ import org.restcomm.android.sdk.MediaClient.AppRTCAudioManager;
 import org.restcomm.android.sdk.SignalingClient.JainSipClient.JainSipConfiguration;
 import org.restcomm.android.sdk.SignalingClient.SignalingClient;
 import org.restcomm.android.sdk.util.ErrorStruct;
+import org.restcomm.android.sdk.util.RCException;
 import org.restcomm.android.sdk.util.RCLogger;
 import org.restcomm.android.sdk.util.RCUtils;
 
@@ -457,7 +458,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     *                        using strings like 'signaling-secure', etc. Possible keys: <br>
     *                        <b>RCDevice.ParameterKeys.SIGNALING_USERNAME</b>: Identity for the client, like <i>'bob'</i> (mandatory) <br>
     *                        <b>RCDevice.ParameterKeys.SIGNALING_PASSWORD</b>: Password for the client (mandatory) <br>
-    *                        <b>RCDevice.ParameterKeys.SIGNALING_DOMAIN</b>: Restcomm instance to use, like <i>'cloud.restcomm.com'</i>. Leave empty for registrar-less mode<br>
+    *                        <b>RCDevice.ParameterKeys.SIGNALING_DOMAIN</b>: Restcomm endpoint to use, like <i>'cloud.restcomm.com'</i>. By default port 5060 will be used for cleartext signaling and 5061 for encrypted signaling. You can override the port by suffixing the domain; for example to use port 5080 instead, use the following: <i>'cloud.restcomm.com:5080'</i>. Leave empty for registrar-less mode<br>
     *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_URL</b>: ICE url to use, like <i>'https://turn.provider.com/turn'</i> (mandatory) <br>
     *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_USERNAME</b>: ICE username for authentication (mandatory) <br>
     *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD</b>: ICE password for authentication (mandatory) <br>
@@ -683,6 +684,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
    }
 
+
    /**
     * Send an instant message to an endpoint
     *
@@ -690,20 +692,21 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     * @param parameters Parameters used for the message, such as 'username' that holds the recepient for the message
     * @return status for the send action
     */
-   public boolean sendMessage(String message, Map<String, String> parameters)
+   public String sendMessage(String message, Map<String, String> parameters) throws RCException
    {
       RCLogger.i(TAG, "sendMessage(): message:" + message + "\nparameters: " + parameters.toString());
 
-      if (state == DeviceState.READY) {
+
+      if (state != DeviceState.OFFLINE) {
          HashMap<String, Object> messageParameters = new HashMap<>();
          messageParameters.put(RCConnection.ParameterKeys.CONNECTION_PEER, parameters.get(RCConnection.ParameterKeys.CONNECTION_PEER));
          messageParameters.put("text-message", message);
-         //RCMessage message = RCMessage.newInstanceOutgoing(messageParameters, listener);
-         signalingClient.sendMessage(messageParameters);
-         return true;
+         return signalingClient.sendMessage(messageParameters);
       }
       else {
-         return false;
+         //return new MessageStatus(null, false);
+         throw new RCException(RCClient.ErrorCodes.ERROR_MESSAGE_SEND_FAILED_DEVICE_OFFLINE,
+                 RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_SEND_FAILED_DEVICE_OFFLINE));
       }
    }
 
@@ -1019,7 +1022,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       RCLogger.i(TAG, "onMessageReply(): id: " + jobId + ", status: " + status + ", text: " + text);
 
       if (isServiceAttached) {
-         listener.onMessageSent(this, status.ordinal(), text);
+         listener.onMessageSent(this, status.ordinal(), text, jobId);
       }
       else {
          RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onMessageSent(): " +

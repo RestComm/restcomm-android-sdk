@@ -24,7 +24,6 @@
 package org.restcomm.android.olympus;
 
 import android.app.AlertDialog;
-import android.app.DialogFragment;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -49,6 +48,7 @@ import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.RCDeviceListener;
 import org.restcomm.android.sdk.RCPresenceEvent;
+import org.restcomm.android.sdk.util.RCException;
 
 import java.util.HashMap;
 
@@ -59,6 +59,8 @@ public class MessageActivity extends AppCompatActivity
    private RCDevice device;
    boolean serviceBound = false;
    HashMap<String, Object> params = new HashMap<String, Object>();
+   // keep around for each jobId that creates a message the index it gets inside the ListView
+   //HashMap<String, Integer> indexes = new HashMap<String, Integer>();
    private static final String TAG = "MessageActivity";
    private AlertDialog alertDialog;
    private String currentPeer;
@@ -233,7 +235,8 @@ public class MessageActivity extends AppCompatActivity
             if (DatabaseManager.getInstance().addContactIfNeded(username)) {
                Toast.makeText(getApplicationContext(), "Adding '" + shortname + "\' to contacts as it doesn't exist", Toast.LENGTH_LONG).show();
             }
-            DatabaseManager.getInstance().addMessage(shortname, message, false);
+            //DatabaseManager.getInstance().addMessage(shortname, message, false);
+            listFragment.addRemoteMessage(message, shortname);
             return;
          }
 
@@ -256,13 +259,15 @@ public class MessageActivity extends AppCompatActivity
          HashMap<String, String> sendParams = new HashMap<String, String>();
          String connectionPeer = (String) params.get(RCConnection.ParameterKeys.CONNECTION_PEER);
          sendParams.put(RCConnection.ParameterKeys.CONNECTION_PEER, connectionPeer);
-         if (device.sendMessage(txtMessage.getText().toString(), sendParams)) {
+         try {
+            String jobId = device.sendMessage(txtMessage.getText().toString(), sendParams);
             // also output the message in the wall
-            listFragment.addLocalMessage(txtMessage.getText().toString(), connectionPeer.replaceAll("^sip:", "").replaceAll("@.*$", ""));
+            listFragment.addLocalMessage(txtMessage.getText().toString(), connectionPeer.replaceAll("^sip:", "").replaceAll("@.*$", ""),
+                    jobId);
+            //indexes.put(messageStatus.jobId, index);
             txtMessage.setText("");
             //txtWall.append("Me: " + txtMessage.getText().toString() + "\n\n");
-         }
-         else {
+         } catch (RCException e) {
             showOkAlert("RCDevice Error", "No Wifi connectivity");
          }
       }
@@ -308,12 +313,24 @@ public class MessageActivity extends AppCompatActivity
       handleConnectivityUpdate(connectivityStatus, null);
    }
 
-   public void onMessageSent(RCDevice device, int statusCode, String statusText)
+   public void onMessageSent(RCDevice device, int statusCode, String statusText, String jobId)
    {
       Log.i(TAG, "onMessageSent(): statusCode: " + statusCode + ", statusText: " + statusText);
+
+      //Integer index = indexes.get(jobId);
+
+      listFragment.updateMessageDeliveryStatus(jobId, statusCode, currentPeer);
+      /*
       if (statusCode != RCClient.ErrorCodes.SUCCESS.ordinal()) {
-         showOkAlert("RCDevice Error", statusText);
+         //listView.getAdapter().getItem(index);
+         //messageTextView.setTextColor(ContextCompat.getColor(this, R.color.colorError));
       }
+      else {
+         //messageTextView.setTextColor(ContextCompat.getColor(this, R.color.colorTextSecondary));
+      }
+      */
+
+      //indexes.remove(jobId);
    }
 
    public void onReleased(RCDevice device, int statusCode, String statusText)
@@ -322,7 +339,6 @@ public class MessageActivity extends AppCompatActivity
          showOkAlert("RCDevice Error", statusText);
       }
    }
-
 
    public boolean receivePresenceEvents(RCDevice device)
    {

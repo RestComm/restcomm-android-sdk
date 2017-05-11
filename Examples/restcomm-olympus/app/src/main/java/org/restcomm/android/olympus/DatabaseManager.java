@@ -340,7 +340,8 @@ class DatabaseManager {
 
    // ---- Message table
    // Retrieve all messages for a contact ordered by timestamp
-   ArrayList<Map<String, String>> retrieveMessages(String contactName)
+   //ArrayList<Map<String, String>> retrieveMessages(String contactName)
+   Cursor retrieveMessages(String contactName)
    {
       if (databaseHelper == null) {
          throw new RuntimeException("Database hasn't been opened yet, please call open()");
@@ -361,6 +362,7 @@ class DatabaseManager {
       Log.i(TAG, "Query String: " + sqlQuery);
       Cursor cursor = db.rawQuery(sqlQuery, selectionArgs);
 
+      /*
       ArrayList<Map<String, String>> messageList = new ArrayList<Map<String, String>>();
 
       // moveToFirst() fails if cursor is empty
@@ -373,12 +375,15 @@ class DatabaseManager {
                   cursor.getString(cursor.getColumnIndexOrThrow(DatabaseContract.MessageEntry.COLUMN_NAME_TEXT))));
          } while (cursor.moveToNext());
       }
-      cursor.close();
+      */
 
-      return messageList;
+      return cursor;
+
+      //cursor.close();
+      //return messageList;
    }
 
-   public void addMessage(String contactName, String messageText, boolean isLocal) throws SQLException
+   public void addMessage(String contactName, String messageText, boolean isLocal, String jobId, DatabaseContract.MessageDeliveryStatus deliveryStatus) throws SQLException
    {
       if (databaseHelper == null) {
          throw new RuntimeException("Database hasn't been opened.");
@@ -400,8 +405,35 @@ class DatabaseManager {
       values.put(DatabaseContract.MessageEntry.COLUMN_NAME_CONTACT_ID, contactId);
       values.put(DatabaseContract.MessageEntry.COLUMN_NAME_TEXT, messageText);
       values.put(DatabaseContract.MessageEntry.COLUMN_NAME_TYPE, type);
+      values.put(DatabaseContract.MessageEntry.COLUMN_NAME_JOB_ID, jobId);
+      values.put(DatabaseContract.MessageEntry.COLUMN_NAME_DELIVERY_STATUS, deliveryStatus.ordinal());
 
       db.insertOrThrow(DatabaseContract.MessageEntry.TABLE_NAME, null, values);
+   }
+
+   public void updateMessageStatus(String jobId, DatabaseContract.MessageDeliveryStatus deliveryStatus) throws SQLException
+   {
+      if (databaseHelper == null) {
+         throw new RuntimeException("Database hasn't been opened.");
+      }
+
+      // Gets the data repository in write mode
+      SQLiteDatabase db = databaseHelper.getWritableDatabase();
+
+      // Create a new map of values, where column names are the keys
+      ContentValues values = new ContentValues();
+
+      values.put(DatabaseContract.MessageEntry.COLUMN_NAME_DELIVERY_STATUS, deliveryStatus.ordinal());
+
+      // Add the WHERE clause
+      String selection = DatabaseContract.MessageEntry.COLUMN_NAME_JOB_ID + " LIKE ?";
+      String[] selectionArgs = { jobId };
+
+      int count = db.update(
+              DatabaseContract.MessageEntry.TABLE_NAME,
+              values,
+              selection,
+              selectionArgs);
    }
 
    // Helpers for adapters

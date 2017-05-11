@@ -26,12 +26,21 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.database.Cursor;
 import android.os.Bundle;
+import android.provider.ContactsContract;
 import android.support.v4.app.ListFragment;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.ContextCompat;
+import android.support.v4.content.CursorLoader;
+import android.support.v4.content.Loader;
+import android.support.v4.widget.SimpleCursorAdapter;
 import android.view.View;
 import android.widget.ListView;
 import android.widget.SimpleAdapter;
+import android.widget.TextView;
 
+import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.RCDevice;
 
 import java.util.ArrayList;
@@ -40,7 +49,7 @@ import java.util.Map;
 
 
 public class MessageFragment extends ListFragment {
-   private SimpleAdapter listViewAdapter;
+   private SimpleCursorAdapter listViewAdapter;
    private ArrayList<Map<String, String>> messageList;
    public static final String MESSAGE_CONTACT_KEY = "username";
    public static final String MESSAGE_TEXT_KEY = "message-text";
@@ -101,15 +110,57 @@ public class MessageFragment extends ListFragment {
       String contactName = args.getString("contact-name");
       */
       DatabaseManager.getInstance().open(getActivity().getApplicationContext());
-      messageList = DatabaseManager.getInstance().retrieveMessages(contactName);
 
-      //messageList = new ArrayList<Map<String, String>>();
+      // TODO: this must be done in the background
+      Cursor cursor = DatabaseManager.getInstance().retrieveMessages(contactName);
 
-      String[] from = {MESSAGE_CONTACT_KEY, MESSAGE_TEXT_KEY};
-      int[] to = {R.id.message_username, R.id.message_text};
+      String[] fromColumns = { DatabaseContract.ContactEntry.COLUMN_NAME_NAME, DatabaseContract.MessageEntry.COLUMN_NAME_TEXT,
+              DatabaseContract.MessageEntry.COLUMN_NAME_DELIVERY_STATUS };
+      int[] toViews = { R.id.message_username, R.id.message_text,
+              R.id.message_status };
 
-      listViewAdapter = new SimpleAdapter(getActivity().getApplicationContext(), messageList,
-            R.layout.message_row_layout, from, to);
+      listViewAdapter = new SimpleCursorAdapter(getActivity().getApplicationContext(), R.layout.message_row_layout, cursor,
+              fromColumns, toViews, 0);
+
+      // Use a binder for the delivery status column which doesn't map 1-on-1 with the view: status in the db is an integer, while in the view it's a string
+      listViewAdapter.setViewBinder(new SimpleCursorAdapter.ViewBinder() {
+         @Override
+         public boolean setViewValue(View view, Cursor cursor, int columnIndex)
+         {
+            if (cursor.getColumnName(columnIndex).equals(DatabaseContract.MessageEntry.COLUMN_NAME_DELIVERY_STATUS)) {
+               TextView deliveryStatusView = (TextView) view;
+               if (cursor.getString(cursor.getColumnIndex(DatabaseContract.MessageEntry.COLUMN_NAME_TYPE)).equals("local")) {
+                  int deliveryStatus = cursor.getInt(columnIndex);
+                  if (deliveryStatus == DatabaseContract.MessageDeliveryStatus.TEXT_MESSAGE_PENDING.ordinal()) {
+                     deliveryStatusView.setText("...");
+                     deliveryStatusView.setTextColor(ContextCompat.getColor(getActivity(), R.color.colorTextSecondary));
+                  } else if (deliveryStatus == DatabaseContract.MessageDeliveryStatus.TEXT_MESSAGE_FAILED.ordinal()) {
+                     deliveryStatusView.setText("Failed");
+                     deliveryStatusView.setTextColor(ContextCompat.getColor(getActivity(), R.color.colorError));
+                  } else {
+                     deliveryStatusView.setText("Success");
+                     deliveryStatusView.setTextColor(ContextCompat.getColor(getActivity(), R.color.colorTextSecondary));
+                  }
+               }
+               else {
+                  // remote message
+                  deliveryStatusView.setText("");
+               }
+               return true;
+            }
+
+            if (cursor.getColumnName(columnIndex).equals(DatabaseContract.ContactEntry.COLUMN_NAME_NAME)) {
+               TextView usernameView = (TextView) view;
+               if (cursor.getString(cursor.getColumnIndex(DatabaseContract.MessageEntry.COLUMN_NAME_TYPE)).equals("local")) {
+                  usernameView.setText("Me");
+                  return true;
+               }
+            }
+
+            return false;
+         }
+      });
+
       setListAdapter(listViewAdapter);
    }
 
@@ -202,28 +253,54 @@ public class MessageFragment extends ListFragment {
    }
 
    // Called by Activity when when new message is sent
-   public void addLocalMessage(String message, String username)
+   public int addLocalMessage(String message, String username, String jobId)
    {
-      HashMap<String, String> item = new HashMap<String, String>();
-      item.put(MESSAGE_CONTACT_KEY, "Me");
-      item.put(MESSAGE_TEXT_KEY, message);
-      messageList.add(item);
-      DatabaseManager.getInstance().addMessage(username, message, true);
+      int countBeforeAddition = listViewAdapter.getCount();
+      DatabaseManager.getInstance().addMessage(username, message, true, jobId, DatabaseContract.MessageDeliveryStatus.TEXT_MESSAGE_PENDING);
+
+      // TODO: this must be done in the background
+      Cursor cursor = DatabaseManager.getInstance().retrieveMessages(username);
+      // update adapter cursor to use the new one with updated rows
+      this.listViewAdapter.changeCursor(cursor);
       this.listViewAdapter.notifyDataSetChanged();
       getListView().setSelection(listViewAdapter.getCount() - 1);
+      return countBeforeAddition;
    }
 
    // Called by Activity when when new message is sent
    public void addRemoteMessage(String message, String username)
    {
-      HashMap<String, String> item = new HashMap<String, String>();
-      item.put(MESSAGE_CONTACT_KEY, username);
-      item.put(MESSAGE_TEXT_KEY, message);
-      messageList.add(item);
-      DatabaseManager.getInstance().addMessage(username, message, false);
+      DatabaseManager.getInstance().addMessage(username, message, false, null, DatabaseContract.MessageDeliveryStatus.TEXT_MESSAGE_DELIVERED);
+
+      // TODO: this must be done in the background
+      Cursor cursor = DatabaseManager.getInstance().retrieveMessages(username);
+      // update adapter cursor to use the new one with updated rows
+      this.listViewAdapter.changeCursor(cursor);
       this.listViewAdapter.notifyDataSetChanged();
       getListView().setSelection(listViewAdapter.getCount() - 1);
    }
+
+   public void updateMessageDeliveryStatus(String jobId, int statusCode, String username)
+   {
+      DatabaseContract.MessageDeliveryStatus deliveryStatus = DatabaseContract.MessageDeliveryStatus.TEXT_MESSAGE_DELIVERED;
+      if (statusCode != RCClient.ErrorCodes.SUCCESS.ordinal()) {
+         deliveryStatus = DatabaseContract.MessageDeliveryStatus.TEXT_MESSAGE_FAILED;
+      }
+
+      DatabaseManager.getInstance().updateMessageStatus(jobId, deliveryStatus);
+      // TODO: this must be done in the background
+      Cursor cursor = DatabaseManager.getInstance().retrieveMessages(username);
+      // update adapter cursor to use the new one with updated rows
+      this.listViewAdapter.changeCursor(cursor);
+      this.listViewAdapter.notifyDataSetChanged();
+   }
+
+   /*
+   public ListView getFragmentListView()
+   {
+      return getListView();
+   }
+   */
 
    // Helper methods
    private void showOkAlert(final String title, final String detail)

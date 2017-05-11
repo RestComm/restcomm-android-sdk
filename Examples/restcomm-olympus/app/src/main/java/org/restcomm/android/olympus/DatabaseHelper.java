@@ -27,10 +27,11 @@ import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
+import org.restcomm.android.olympus.DatabaseContract.DatabaseVersions;
 
 public class DatabaseHelper extends SQLiteOpenHelper {
    // If you change the database schema, you must increment the database version.
-   public static final int DATABASE_VERSION = 14;
+   public static final int DATABASE_VERSION = DatabaseContract.DatabaseVersions.DB_VERSION_DELIVERY_STATUS;
    public static final String DATABASE_NAME = "Olympus.db";
 
    private static final String TAG = "DatabaseHelper";
@@ -48,12 +49,23 @@ public class DatabaseHelper extends SQLiteOpenHelper {
          "CREATE TABLE " + DatabaseContract.MessageEntry.TABLE_NAME + " (" +
                DatabaseContract.MessageEntry._ID + " INTEGER PRIMARY KEY," +
                DatabaseContract.MessageEntry.COLUMN_NAME_CONTACT_ID + " INTEGER, " +
+               DatabaseContract.MessageEntry.COLUMN_NAME_JOB_ID + " TEXT, " +
                DatabaseContract.MessageEntry.COLUMN_NAME_TEXT + " TEXT NOT NULL, " +
                DatabaseContract.MessageEntry.COLUMN_NAME_TYPE + " TEXT NOT NULL, " +
                DatabaseContract.MessageEntry.COLUMN_NAME_TIMESTAMP + " DATETIME DEFAULT CURRENT_TIMESTAMP, " +
+               DatabaseContract.MessageEntry.COLUMN_NAME_DELIVERY_STATUS + " INTEGER DEFAULT 1, " +   // using default of 'success', so that DB upgrades work smoothly
                "FOREIGN KEY (" + DatabaseContract.MessageEntry.COLUMN_NAME_CONTACT_ID + ") REFERENCES " + DatabaseContract.ContactEntry.TABLE_NAME +
                   "(" + DatabaseContract.ContactEntry._ID + ") " +
                " );";
+
+   // Upgrades statements
+   private static final String SQL_UPGRADE_GROUND_ZERO_2_DELIVERY_STATUS_MESSAGES_1 =
+           "ALTER TABLE " + DatabaseContract.MessageEntry.TABLE_NAME + " ADD COLUMN " +
+                   DatabaseContract.MessageEntry.COLUMN_NAME_JOB_ID + " TEXT;";
+   private static final String SQL_UPGRADE_GROUND_ZERO_2_DELIVERY_STATUS_MESSAGES_2 =
+           "ALTER TABLE " + DatabaseContract.MessageEntry.TABLE_NAME + " ADD COLUMN " +
+                   DatabaseContract.MessageEntry.COLUMN_NAME_DELIVERY_STATUS + " INTEGER DEFAULT 1;";
+
 
    private static final String SQL_DELETE_CONTACT_ENTRIES =
          "DROP TABLE IF EXISTS " + DatabaseContract.ContactEntry.TABLE_NAME;
@@ -79,13 +91,28 @@ public class DatabaseHelper extends SQLiteOpenHelper {
       populateSampleEntries(db);
    }
 
+   // Perform any updates if necessary. Remember that as more upgrade points get added we need to make sure that depending
+   // on the oldVersion all intermediate upgrades need to be applied
    public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion)
    {
-      // This database is only a cache for online data, so its upgrade policy is
-      // to simply to discard the data and start over
-      db.execSQL(SQL_DELETE_CONTACT_ENTRIES);
-      db.execSQL(SQL_DELETE_MESSAGE_ENTRIES);
-      onCreate(db);
+      Log.i(TAG, "onUpgrade from: "+ oldVersion + ", to: " + newVersion);
+      switch(oldVersion) {
+         case DatabaseVersions.DB_VERSION_GROUND_ZERO:
+            if (newVersion== DatabaseVersions.DB_VERSION_DELIVERY_STATUS) {
+               // we need to alter message table to add job_id and delivery status columns
+               Log.i(TAG, "Upgrading table messages: " + DatabaseContract.MessageEntry.TABLE_NAME);
+               Log.d(TAG, "Applying SQL command: " + SQL_UPGRADE_GROUND_ZERO_2_DELIVERY_STATUS_MESSAGES_1);
+               db.execSQL(SQL_UPGRADE_GROUND_ZERO_2_DELIVERY_STATUS_MESSAGES_1);
+               Log.d(TAG, "Applying SQL command: " + SQL_UPGRADE_GROUND_ZERO_2_DELIVERY_STATUS_MESSAGES_2);
+               db.execSQL(SQL_UPGRADE_GROUND_ZERO_2_DELIVERY_STATUS_MESSAGES_2);
+            }
+         //case DatabaseVersions.DB_VERSION_DELIVERY_STATUS:
+         //   ;
+      }
+
+      //db.execSQL(SQL_DELETE_CONTACT_ENTRIES);
+      //db.execSQL(SQL_DELETE_MESSAGE_ENTRIES);
+      //onCreate(db);
    }
 
    public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion)

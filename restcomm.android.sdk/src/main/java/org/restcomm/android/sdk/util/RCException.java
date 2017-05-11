@@ -20,27 +20,27 @@
  *
  */
 
-package org.restcomm.android.sdk.SignalingClient.JainSipClient;
+package org.restcomm.android.sdk.util;
 
 import org.restcomm.android.sdk.RCClient;
 
-class JainSipException extends Exception {
-   public RCClient.ErrorCodes errorCode;
-   public String errorText;
+public class RCException extends Exception {
+    public RCClient.ErrorCodes errorCode;
+    public String errorText;
 
-   JainSipException(RCClient.ErrorCodes errorCode, String errorText)
-   {
-      this.errorCode = errorCode;
-      this.errorText = errorText;
-   }
+    public RCException(RCClient.ErrorCodes errorCode, String errorText)
+    {
+        this.errorCode = errorCode;
+        this.errorText = errorText;
+    }
 
-   // initialize an exception, but also chain another exception to it
-   JainSipException(RCClient.ErrorCodes errorCode, String errorText, Throwable throwable)
-   {
-      this.errorCode = errorCode;
-      this.errorText = errorText;
+    // initialize an exception, but also chain another exception to it
+    public RCException(RCClient.ErrorCodes errorCode, String errorText, Throwable throwable)
+    {
+        this.errorCode = errorCode;
+        this.errorText = errorText;
 
-      this.initCause(throwable);
-   }
+        this.initCause(throwable);
+    }
 
 }
