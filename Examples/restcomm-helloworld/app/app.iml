@@ -95,6 +95,7 @@
     <orderEntry type="jdk" jdkName="Android API 25 Platform" jdkType="Android SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" exported="" name="android-jain-sip-ri-1.2.293" level="project" />
+    <orderEntry type="library" exported="" name="restcomm-android-sdk-1.0.1-BETA6-83" level="project" />
     <orderEntry type="library" exported="" name="core-1.54.0.0" level="project" />
     <orderEntry type="library" exported="" name="prov-1.54.0.0" level="project" />
     <orderEntry type="library" exported="" name="log4j-1.2.17" level="project" />
@@ -103,7 +104,6 @@
     <orderEntry type="library" exported="" name="support-compat-25.1.1" level="project" />
     <orderEntry type="library" exported="" name="support-media-compat-25.1.1" level="project" />
     <orderEntry type="library" exported="" name="support-core-ui-25.1.1" level="project" />
-    <orderEntry type="library" exported="" name="restcomm-android-sdk-1.0.0-BETA6-55" level="project" />
     <orderEntry type="library" exported="" name="appcompat-v7-25.1.1" level="project" />
     <orderEntry type="library" exported="" name="support-annotations-25.1.1" level="project" />
     <orderEntry type="library" exported="" name="libwebrtc-1.0.0-beta5-16765" level="project" />
