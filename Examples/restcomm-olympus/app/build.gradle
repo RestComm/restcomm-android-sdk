@@ -1,5 +1,6 @@
 apply plugin: 'com.android.application'
 apply plugin: 'testfairy'
+apply plugin: 'license'
 
 buildscript {
     repositories {
@@ -12,6 +13,9 @@ buildscript {
     dependencies {
         // TestFairy gradle plugin
         classpath 'com.testfairy.plugins.gradle:testfairy:1.+'
+
+        // Show licenses from all dependencies
+        classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.10.0'
     }
 }
 
@@ -152,3 +156,11 @@ dependencies {
     androidTestCompile 'com.loopj.android:android-async-http:1.4.9'
 
 }
+
+//
+/* Uncomment and build with gradle downloadLicenses and a report with all licenses will be generated in build/reports/license
+downloadLicenses {
+    includeProjectDependencies = true
+    dependencyConfiguration = 'compile'
+}
+*/
