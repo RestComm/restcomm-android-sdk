@@ -639,7 +639,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     *
     * @param parameters Parameters such as the endpoint we want to connect to, etc. Possible keys: <br>
     *                   <b>RCConnection.ParameterKeys.CONNECTION_PEER</b>: Who is the called number, like <i>'+1235'</i> or <i>'sip:+1235@cloud.restcomm.com'</i> <br>
-    *                   <b>RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED</b>: Whether we want WebRTC video enabled or not <br>
+    *                   <b>RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED</b>: Whether we want WebRTC video enabled or not. If this is true, then we must provide proper views for CONNECTION_LOCAL_VIDEO and CONNECTION_REMOTE_VIDEO respectively (please check below). If this is false, then CONNECTION_LOCAL_VIDEO and CONNECTION_REMOTE_VIDEO must either not be provided or be null <br>
     *                   <b>RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO</b>: PercentFrameLayout containing the view where we want the local video to be rendered in. You can check res/layout/activity_main.xml
     *                   in hello-world sample to see the structure required <br>
     *                   <b>RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO</b>: PercentFrameLayout containing the view where we want the remote video to be rendered. You can check res/layout/activity_main.xml

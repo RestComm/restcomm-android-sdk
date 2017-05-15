@@ -1990,7 +1990,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
 
       logAndToast("Creating peer connection, delay=" + delta + "ms");
-      peerConnectionClient.createPeerConnection(rootEglBase.getEglBaseContext(),
+      peerConnectionClient.createPeerConnection(rootEglBase != null ? rootEglBase.getEglBaseContext(): null,
             localRender, remoteRender, videoCapturer, signalingParameters);
 
       if (signalingParameters.initiator) {
