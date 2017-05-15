@@ -1270,6 +1270,17 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    private void initializeVideo(boolean videoEnabled, PercentFrameLayout localRenderLayout, PercentFrameLayout remoteRenderLayout)
    {
+      if (videoEnabled) {
+         localMediaType = ConnectionMediaType.AUDIO_VIDEO;
+      }
+      else {
+         localMediaType = ConnectionMediaType.AUDIO;
+      }
+
+      if (localRenderLayout == null ||remoteRenderLayout == null) {
+         return;
+      }
+
       scalingType = ScalingType.SCALE_ASPECT_FILL;
 
       this.localRenderLayout = localRenderLayout;
@@ -1278,13 +1289,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       rootEglBase = EglBase.create();
       localRender = (SurfaceViewRenderer)localRenderLayout.getChildAt(0);
       remoteRender = (SurfaceViewRenderer)remoteRenderLayout.getChildAt(0);
-
-      if (videoEnabled) {
-         localMediaType = ConnectionMediaType.AUDIO_VIDEO;
-      }
-      else {
-         localMediaType = ConnectionMediaType.AUDIO;
-      }
 
       localRender.init(rootEglBase.getEglBaseContext(), null);
       localRender.setZOrderMediaOverlay(true);
@@ -1406,7 +1410,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       iceConnected = false;
       signalingParameters = null;
 
-      initializeVideo(videoEnabled, localRenderLayout, remoteRenderLayout);
+      if (localRenderLayout != null && remoteRenderLayout != null) {
+         initializeVideo(videoEnabled, localRenderLayout, remoteRenderLayout);
+      }
 
       String preferredVideoCodecString = videoCodecEnum2String(preferredVideoCodec);
       String preferredAudioCodecString = audioCodecEnum2String(preferredAudioCodec);
@@ -1443,6 +1449,12 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    private void updateVideoView(VideoViewState state)
    {
+      // only if both local and remote views for video have been provided do we want to go ahead
+      // and update the video views
+      if (this.localRenderLayout == null && this.remoteRenderLayout == null) {
+         return;
+      }
+
       if (state == VideoViewState.NONE) {
          // when call starts both local and remote video views should be hidden
          localRender.setVisibility(View.INVISIBLE);
