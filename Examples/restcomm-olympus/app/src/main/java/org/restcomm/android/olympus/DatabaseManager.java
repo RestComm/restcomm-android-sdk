@@ -135,7 +135,7 @@ class DatabaseManager {
          throw new RuntimeException("Database hasn't been opened.");
       }
 
-      String contactName = uri.replaceAll("^sip:", "").replaceAll("@.*$", "");
+      String contactName = uri.replaceAll("^sip.?:", "").replaceAll("@.*$", "");
 
       Cursor cursor = getContactFromName(contactName);
       if (!cursor.moveToFirst()) {

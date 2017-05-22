@@ -166,6 +166,9 @@ public class SignalingParameters {
       // remove candidates from SDP
       params.offerSdp = new SessionDescription(sdp.type, sdp.description.replaceAll("a=candidate.*?\\r\\n", ""));
 
+      // remove candidates from SDP together with any 'end-of-candidates' a-line.
+      //params.offerSdp = new SessionDescription(sdp.type, sdp.description.replaceAll("a=candidate.*?\\r\\n", "").replaceAll("a=end-of-candidates.*?\\r\\n", ""));
+
       return params;
    }
 

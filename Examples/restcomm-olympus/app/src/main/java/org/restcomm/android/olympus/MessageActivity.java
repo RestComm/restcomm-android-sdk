@@ -106,7 +106,7 @@ public class MessageActivity extends AppCompatActivity
 
       fullPeer = getIntent().getStringExtra(RCDevice.EXTRA_DID);
       // keep on note of the current peer we are texting with
-      currentPeer = getIntent().getStringExtra(RCDevice.EXTRA_DID).replaceAll("^sip:", "").replaceAll("@.*$", "");
+      currentPeer = getIntent().getStringExtra(RCDevice.EXTRA_DID).replaceAll("^sip.?:", "").replaceAll("@.*$", "");
       setTitle(currentPeer);
    }
 
@@ -219,7 +219,7 @@ public class MessageActivity extends AppCompatActivity
       // Get Intent parameters.
       if (intent.getAction().equals(ACTION_OPEN_MESSAGE_SCREEN)) {
          params.put(RCConnection.ParameterKeys.CONNECTION_PEER, intent.getStringExtra(RCDevice.EXTRA_DID));
-         String shortname = intent.getStringExtra(RCDevice.EXTRA_DID).replaceAll("^sip:", "").replaceAll("@.*$", "");
+         String shortname = intent.getStringExtra(RCDevice.EXTRA_DID).replaceAll("^sip.?:", "").replaceAll("@.*$", "");
          setTitle(shortname);
       }
       if (intent.getAction().equals(RCDevice.ACTION_INCOMING_MESSAGE)) {
@@ -227,7 +227,7 @@ public class MessageActivity extends AppCompatActivity
          //HashMap<String, String> intentParams = (HashMap<String, String>) finalIntent.getSerializableExtra(RCDevice.INCOMING_MESSAGE_PARAMS);
          //String username = intentParams.get(RCConnection.ParameterKeys.CONNECTION_PEER);
          String username = intent.getStringExtra(RCDevice.EXTRA_DID);
-         String shortname = username.replaceAll("^sip:", "").replaceAll("@.*$", "");
+         String shortname = username.replaceAll("^sip.?:", "").replaceAll("@.*$", "");
 
          if (!shortname.equals(currentPeer)) {
             // message originating from another peer, not the one we are currently texting with, just update DB and show a Toast
@@ -262,7 +262,7 @@ public class MessageActivity extends AppCompatActivity
          try {
             String jobId = device.sendMessage(txtMessage.getText().toString(), sendParams);
             // also output the message in the wall
-            listFragment.addLocalMessage(txtMessage.getText().toString(), connectionPeer.replaceAll("^sip:", "").replaceAll("@.*$", ""),
+            listFragment.addLocalMessage(txtMessage.getText().toString(), connectionPeer.replaceAll("^sip.?:", "").replaceAll("@.*$", ""),
                     jobId);
             //indexes.put(messageStatus.jobId, index);
             txtMessage.setText("");
