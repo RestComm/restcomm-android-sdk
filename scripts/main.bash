@@ -45,7 +45,8 @@ else
 	fi
 fi
 
-git config credential.helper "store --file=.git/credentials"; echo "https://${GITHUB_OAUTH_TOKEN}:@github.com" > .git/credentials 2>/dev/null
+git config credential.helper "store --file=.git/credentials"
+echo "https://${GITHUB_OAUTH_TOKEN}:@github.com" > .git/credentials 2>/dev/null
 git config user.name $COMMIT_USERNAME
 git config user.email "$COMMIT_AUTHOR_EMAIL"
 
