@@ -3,16 +3,25 @@
 # Main script to be used for local builds (i.e. not Travis CI), that sets up the environment so that scripts designed for Travis CI can work locally,
 # and we can do fast builds/testing/deployment even if Travis CI is not available (something that happens often, sadly)
 #
-# For local builds we need to have exported in your shell the following variables (for Travis they are setup via web/settings): 
+# For local builds we need to have exported in our shell the following variables (for Travis they are setup via web/settings). Notice that variables prefixed with 'ORG_GRADLE_PROJECT' are automatically converted by gradle to 'gradle properties' and are meant to be used by gradle scripts. The rest are for the most part used by our own shell scripts
+# - ORG_GRADLE_PROJECT_VERSION_NAME: base name, i.e. 1.0.0-BETA6
+# - ORG_GRADLE_PROJECT_VERSION_CODE: version code, where we use Travis build number, i.e. 1
+# - ORG_GRADLE_PROJECT_TESTFAIRY_APIKEY: Secret key for using TestFairy API
+# - ORG_GRADLE_PROJECT_TESTFAIRY_AUTOUPDATE: Should we request from TestFairy to enable auto update for newly uploaded Olympus, true/false
+# - SKIP_TF_UPLOAD: skip Olympus upload to TestFairy for distribution, true/false
+# - SKIP_INTEGRATION_TESTS: skip Integration Tests, true/false
+# - SKIP_DOC_GENERATION: skip Reference Documentation generation, true/false
+# - SKIP_OLYMPUS_BUILD: skip Olympus build, true/false
+# - CD_BRANCH: branch on which to run CD on. Generally should be master, but we might change it to test a feature branch, etc
+# - SKIP_SDK_PUBLISH_TO_MAVEN_REPO: Should SDK library artifact be signed and uploaded to Maven Central, true/false
 # - GITHUB_OAUTH_TOKEN: token to be able to commit in GitHub repo from our scripts with no user intervention, for updating reference doc for example. I believe that this is different per repo (secret)
-# - FILE_ENCRYPTION_PASSWORD: key used to symmetrically encrypt various sensitive files (like key files for signing in iOS) that need to be available inside the repo, and hence readable by public (secret) (deprecates ENTERPRISE_DISTRIBUTION_KEY_PASSWORD)
+# - FILE_ENCRYPTION_PASSWORD: key used to symmetrically encrypt various sensitive files (like key files for signing) that need to be available inside the repo, and hence readable by public (secret)
 # - PRIVATE_KEY_PASSWORD: password to protect private keys (secret)
 # - DEPLOY: i.e. true/false
-# - BASE_VERSION: i.e. 1.0.0
-# - VERSION_SUFFIX: i.e. beta.4.1
-# - CUSTOM_KEYCHAIN_PASSWORD: password used for custom keychain we generate
 # - TESTFAIRY_APP_TOKEN: Test Fairy App token, so that only CI builds send stats to TF
-# - TESTFAIRY_API_KEY: Secret key for using TF API
+
+# Only valid for Local builds, because the SDK subproject doesn't have a local.properties file telling it where the SDK is, in contrast to Olympus project that has it
+# - ANDROID_SDK=/Users/antonis/Library/Android/sdk
 
 
 
