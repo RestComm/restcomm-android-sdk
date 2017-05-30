@@ -127,7 +127,7 @@ echo "-- Removing non staged changes from $DOC_BRANCH"
 git clean -fd
 # TODO: Remove when fixed. There seems to be a bug in git where with the first clean, 'dependecies' dir is left intact, running it a second time removes that as well an we can resume
 echo "-- Removing non staged changes from $DOC_BRANCH, again!"
-sleep 1s
+sleep 5s
 git clean -fd
 
 # Debug command to verify everything is in order
