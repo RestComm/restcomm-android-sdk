@@ -97,9 +97,9 @@ then
 	export COMMIT_USERNAME="Travis CI"
 else
 	# Local build
-	export CD_BRANCH="develop"
+	#export CD_BRANCH="develop"
 	export COMMIT_USERNAME="Antonis Tsakiridis"
-	export DEPLOY="true"
+	#export DEPLOY="true"
 fi
 
 # Local build
