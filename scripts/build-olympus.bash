@@ -11,6 +11,12 @@
 # source wait_with_output.sh so that we can access travis ci scripts to avoid stopping the build when no output is generated
 . scripts/wait_with_output.sh
 
+echo
+echo "== "
+echo "== Olympus related handling"
+echo "== "
+echo
+
 # For starters lets only create keychains in travis, since locally everything is setup already. But ultimately, we should create a separate new keychain locally to so that we can test that better
 echo "-- TRAVIS variable value: $TRAVIS"
 
