@@ -1,0 +1,2 @@
+# ignore non encrypted files ending with .enc
+!*.enc
