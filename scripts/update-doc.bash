@@ -83,10 +83,10 @@ then
 	echo "-- Commiting to $DOC_BRANCH"
 	if [ ! -z "$TRAVIS" ]
 	then
-		git commit --quiet -m "Update $DOC_BRANCH with Restcomm SDK Reference Documentation for ${ORIGINAL_BRANCH}/${COMMIT_SHA1}, Travis CI build: $TRAVIS_BUILD_NUMBER"
+		git commit --quiet -m "Update $DOC_BRANCH with Restcomm SDK Reference Documentation for ${ORIGINAL_BRANCH}/${COMMIT_SHA1}, Travis CI build: $TRAVIS_BUILD_NUMBER" || exit 1
 	else 
 		# If doc generation happens locally, let's use the original branch's commit to be able to tell for which commit documentation was generated
-		git commit --quiet -m "Update $DOC_BRANCH with Restcomm SDK Reference Documentation for ${ORIGINAL_BRANCH}/${COMMIT_SHA1}"
+		git commit --quiet -m "Update $DOC_BRANCH with Restcomm SDK Reference Documentation for ${ORIGINAL_BRANCH}/${COMMIT_SHA1}" || exit 1
 	fi
 
 	if [ $? -ne 0 ]
@@ -111,7 +111,7 @@ then
 
 
 	echo "-- Force pushing $DOC_BRANCH to origin"
-	git push -f origin $DOC_BRANCH
+	git push -f origin $DOC_BRANCH 
 
 	# Old functionality, let's keep it around in case we need to use GitHub Deploy Keys in the future. 
 	# SSH_REPO must be set
@@ -132,10 +132,10 @@ git clean -fd
 # TODO: Remove when fixed. There seems to be a bug in git where with the first clean, 'dependecies' dir is left intact, running it a second time removes that as well an we can resume
 #echo "-- Removing non staged changes from $DOC_BRANCH, again!"
 #sleep 5s
-git clean -fd
+#git clean -fd
 
 # Debug command to verify everything is in order
 #git status
 
 echo "-- Done updating docs, checking out $ORIGINAL_BRANCH"
-git checkout $ORIGINAL_BRANCH
+git checkout $ORIGINAL_BRANCH || exit 1

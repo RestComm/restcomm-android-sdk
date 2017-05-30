@@ -6,26 +6,31 @@
 export WAIT_INTERVAL=60
 
 # Remember to specify the project (i.e. app)
-cd Examples/restcomm-olympus # && wait_with_output ./gradlew app:connectedAndroidTest 
+cd Examples/restcomm-olympus || exit 1 # && wait_with_output ./gradlew app:connectedAndroidTest 
 
 # Build App and Test .apk files (remember that for instrumented tests we need 2 apks one of the actual App under test and another for the testing logic)
 echo "-- Build App and Test .apk files"
 ./gradlew --quiet -x signArchives assembleDebug assembleDebugAndroidTest
+if [ $? -ne 0 ]
+then
+	echo "-- Failed to build Olympus for UI tests."
+	exit 1
+fi 
 
 echo "-- Downloading google cloud sdk"
 # use --no-verbose to avoid excessive output
-wget --no-verbose -O /tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-149.0.0-linux-x86.tar.gz
-tar xf /tmp/google-cloud-sdk.tar.gz -C /tmp/
+wget --no-verbose -O /tmp/google-cloud-sdk.tar.gz https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-149.0.0-linux-x86.tar.gz || exit 1
+tar xf /tmp/google-cloud-sdk.tar.gz -C /tmp/ || exit 1
 
 # I think this is no longer needed
 #echo "y" | /tmp/google-cloud-sdk/bin/gcloud components install beta
 
 # Decrypt firebase account key json
-openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in ../../scripts/configuration/${FIREBASE_ACCOUNT_KEY}.enc -d -a -out ../../scripts/configuration/${FIREBASE_ACCOUNT_KEY}
+openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in ../../scripts/configuration/${FIREBASE_ACCOUNT_KEY}.enc -d -a -out ../../scripts/configuration/${FIREBASE_ACCOUNT_KEY} || exit 1
 
 # Activate google cloud account so that gcloud/gsutil commands that come later are already authenticated
 echo "-- Activating google cloud account"
-/tmp/google-cloud-sdk/bin/gcloud auth activate-service-account --key-file ../../scripts/configuration/${FIREBASE_ACCOUNT_KEY}
+/tmp/google-cloud-sdk/bin/gcloud auth activate-service-account --key-file ../../scripts/configuration/${FIREBASE_ACCOUNT_KEY} || exit 1
 
 # Run a test on Firebase test lab, and save the directory (i.e. google cloud bucket) where results will be stored in variable GCLOUD_RAW_RESULT_FULL_URL, so that we can copy them and check if everything went well after test is done
 echo "-- Uploading .apks on Firebase Test Lab and starting test, this might take some time depending on your connection"
@@ -86,7 +91,7 @@ fi
 
 # Copy results from google cloud bucket locally so that we can observe them
 echo "-- Copying results from google cloud locally"
-/tmp/google-cloud-sdk/bin/gsutil cp $GCLOUD_REPORT_PATH /tmp/
+/tmp/google-cloud-sdk/bin/gsutil cp $GCLOUD_REPORT_PATH /tmp/ || exit 1
 
 resultsFilename=`basename $GCLOUD_REPORT_PATH`
 echo "-- Printing test report from $resultsFilename:"
@@ -112,5 +117,5 @@ echo "-- Cleaning up"
 
 rm -fr /tmp/google-cloud-sdk* ../../scripts/configuration/${FIREBASE_ACCOUNT_KEY}
 
-cd ../..
+cd ../.. || exit 1 
 

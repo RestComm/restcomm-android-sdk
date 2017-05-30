@@ -45,10 +45,10 @@ else
 	fi
 fi
 
-git config credential.helper "store --file=.git/credentials"
-echo "https://${GITHUB_OAUTH_TOKEN}:@github.com" > .git/credentials 2>/dev/null
-git config user.name $COMMIT_USERNAME
-git config user.email "$COMMIT_AUTHOR_EMAIL"
+git config credential.helper "store --file=.git/credentials" || exit 1
+echo "https://${GITHUB_OAUTH_TOKEN}:@github.com" > .git/credentials 2>/dev/null || exit 1
+git config user.name $COMMIT_USERNAME || exit 1
+git config user.email "$COMMIT_AUTHOR_EMAIL" || exit 1
 
 # SSH endpoint not needed any longer, since we 're using OAuth tokens with https, but let's leave it around in case we need it in the future
 #export REPO=`git config remote.origin.url`

@@ -12,7 +12,7 @@
 . scripts/wait_with_output.sh
 
 # For starters lets only create keychains in travis, since locally everything is setup already. But ultimately, we should create a separate new keychain locally to so that we can test that better
-echo "-- TRAVIS: $TRAVIS"
+echo "-- TRAVIS variable value: $TRAVIS"
 
 # Let's keep debug.keystore decryption and installation only for Travis. Locally we have a working keystore that might be confusing to update.
 if [ ! -z "$TRAVIS" ]
@@ -20,18 +20,19 @@ then
 	echo "-- Setting up signing"
 	# We need the debug.keystore in order to be able to build a debug .apk
 	echo "-- Decrypting keystore"
-	openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/keystore/${DEVELOPMENT_KEYSTORE}.enc -d -a -out scripts/certs/${DEVELOPMENT_KEYSTORE}
+	openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/keystore/${DEVELOPMENT_KEYSTORE}.enc -d -a -out scripts/certs/${DEVELOPMENT_KEYSTORE} || exit 1
 
 	# We need global properties so that we get access to secret credentials
 	echo "-- Decrypting and installing global gradle.properties"
-	ls scripts/configuration
-	echo "scripts/configuration/${GLOBAL_GRADLE_PROPERTIES}.enc"
-	openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/configuration/${GLOBAL_GRADLE_PROPERTIES}.enc -d -a -out scripts/configuration/${GLOBAL_GRADLE_PROPERTIES}
-  	cp scripts/configuration/${GLOBAL_GRADLE_PROPERTIES} ~/.gradle/${GLOBAL_GRADLE_PROPERTIES} 
+	# DEBUG
+	#ls scripts/configuration
+	#echo "scripts/configuration/${GLOBAL_GRADLE_PROPERTIES}.enc"
+	openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/configuration/${GLOBAL_GRADLE_PROPERTIES}.enc -d -a -out scripts/configuration/${GLOBAL_GRADLE_PROPERTIES} || exit 1
+  	cp scripts/configuration/${GLOBAL_GRADLE_PROPERTIES} ~/.gradle/${GLOBAL_GRADLE_PROPERTIES} || exit 1
 
 	echo "-- Installing keystore"
 	# Overwrite default keystore file only in travis
-	cp scripts/certs/${DEVELOPMENT_KEYSTORE} ~/.android/debug.keystore
+	cp scripts/certs/${DEVELOPMENT_KEYSTORE} ~/.android/debug.keystore || exit 1
 fi
 
 if [ ! -z "$TRAVIS" ]
@@ -65,7 +66,7 @@ echo "-- Building Olympus and uploading to TestFairy"
 if [ -z "$SKIP_TF_UPLOAD" ] || [[ "$SKIP_TF_UPLOAD" == "false" ]]
 then
 	# Skip the signArchives task until we properly setup Travis for signing + upload of archives to Sonatype. Otherwise the build breaks
-	cd Examples/restcomm-olympus && ./gradlew --quiet -x signArchives -x androidJavadocs -PtestfairyChangelog="Version: $ORG_GRADLE_PROJECT_VERSION_NAME+$ORG_GRADLE_PROJECT_VERSION_CODE, GitHub commit: $COMMIT_SHA1" testfairyDebug
+	cd Examples/restcomm-olympus && ./gradlew --quiet -x signArchives -x androidJavadocs -PtestfairyChangelog="Version: $ORG_GRADLE_PROJECT_VERSION_NAME+$ORG_GRADLE_PROJECT_VERSION_CODE, GitHub commit: $COMMIT_SHA1" testfairyDebug || exit 1
 	if [ $? -ne 0 ]
 	then
 		echo "-- Failed to build Olympus for uploading to TestFairy."
@@ -74,7 +75,7 @@ then
 else
 	echo "-- Skipping upload to Test Fairy."
 	# Skip the signArchives task until we properly setup Travis for signing + upload of archives to Sonatype. Otherwise the build breaks
-	cd Examples/restcomm-olympus && ./gradlew --quiet -x signArchives -x androidJavadocs assemble   # -PVERSION_CODE=$TRAVIS_BUILD_NUMBER -PVERSION_NAME=$VERSION_NAME
+	cd Examples/restcomm-olympus && ./gradlew --quiet -x signArchives -x androidJavadocs assemble || exit 1   # -PVERSION_CODE=$TRAVIS_BUILD_NUMBER -PVERSION_NAME=$VERSION_NAME
 	if [ $? -ne 0 ]
 	then
 		echo "-- Failed to build Olympus for uploading to TestFairy."
@@ -82,7 +83,7 @@ else
 	fi 
 fi
 
-cd ../..
+cd ../.. || exit 1
 
 # Clean up
 #echo "-- Cleaning up"
