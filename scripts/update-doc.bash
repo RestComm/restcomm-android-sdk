@@ -17,8 +17,9 @@ then
 	exit 1	
 fi
 
-echo "-- Showing local branches:"
-git branch
+# Debug
+#echo "-- Showing local branches:"
+#git branch
 
 echo "-- Original branch is: $ORIGINAL_BRANCH"
 if [ "$ORIGINAL_BRANCH" == "$DOC_BRANCH" ] 
@@ -70,8 +71,9 @@ if [ $? -eq 0 ]
 then
 	cd ..
 
-	echo "-- Checking output doc dir"
-	find doc
+	# Debug
+	#echo "-- Checking output doc dir"
+	#find doc
 
 	# Add generated doc to staging area
 	echo "-- Adding newly generated doc to staging area"
@@ -81,10 +83,10 @@ then
 	echo "-- Commiting to $DOC_BRANCH"
 	if [ ! -z "$TRAVIS" ]
 	then
-		git commit -m "Update $DOC_BRANCH with Restcomm SDK Reference Documentation for ${ORIGINAL_BRANCH}/${COMMIT_SHA1}, Travis CI build: $TRAVIS_BUILD_NUMBER"
+		git commit --quiet -m "Update $DOC_BRANCH with Restcomm SDK Reference Documentation for ${ORIGINAL_BRANCH}/${COMMIT_SHA1}, Travis CI build: $TRAVIS_BUILD_NUMBER"
 	else 
 		# If doc generation happens locally, let's use the original branch's commit to be able to tell for which commit documentation was generated
-		git commit -m "Update $DOC_BRANCH with Restcomm SDK Reference Documentation for ${ORIGINAL_BRANCH}/${COMMIT_SHA1}"
+		git commit --quiet -m "Update $DOC_BRANCH with Restcomm SDK Reference Documentation for ${ORIGINAL_BRANCH}/${COMMIT_SHA1}"
 	fi
 
 	if [ $? -ne 0 ]
