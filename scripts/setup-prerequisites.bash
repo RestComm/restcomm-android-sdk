@@ -5,6 +5,12 @@
 # Let's keep global gradle.properties decryption and installation only for Travis. Locally we have a working gradle.properties 
 if [ ! -z "$TRAVIS" ]
 then
+	echo
+	echo "== "
+	echo "== Setting up Prerequisites"
+	echo "== "
+	echo
+
 	mkdir -p ~/.gradle || exit 1
 
 	echo "-- Decrypting and installing global gradle.properties"

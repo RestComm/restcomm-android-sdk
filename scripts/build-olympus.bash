@@ -49,11 +49,10 @@ fi
 echo -e "-- Using versionName: $ORG_GRADLE_PROJECT_VERSION_NAME"
 echo -e "-- Using versionCode: $ORG_GRADLE_PROJECT_VERSION_CODE"
 
-echo "-- Updating git commit hash for Olympus About screen"
+#echo "-- Updating git commit hash for Olympus About screen"
 #sed -i '' "s/#GIT-HASH/$COMMIT_SHA1/" $OLYMPUS_UTILS 
 
 # Execute instrumented UI Tests
-echo "-- Executing Olympus UI Tests"
 if [ -z "$SKIP_OLYMPUS_UI_TESTS" ] || [[ "$SKIP_OLYMPUS_UI_TESTS" == "false" ]]
 then
 	./scripts/handle-ui-tests.bash
@@ -62,7 +61,12 @@ else
 fi
 
 # Build and upload to TF
-echo "-- Building Olympus and uploading to TestFairy"
+echo
+echo "== "
+echo "== Building Olympus and (potentially) uploading to TestFairy"
+echo "== "
+echo
+
 if [ -z "$SKIP_TF_UPLOAD" ] || [[ "$SKIP_TF_UPLOAD" == "false" ]]
 then
 	# Skip the signArchives task until we properly setup Travis for signing + upload of archives to Sonatype. Otherwise the build breaks

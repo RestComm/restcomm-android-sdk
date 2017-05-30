@@ -2,10 +2,14 @@
 #
 # Main script that will drive CI/CD actions, depending on type of commit.
 
-echo "-- Processing main script."
+echo
+echo "== "
+echo "== Processing main script."
+echo "== "
+echo
 
 # Run integration tests in simulator - TODO: take this out to a separate script
-echo "-- Running Integration Tests on simulator."
+#echo "-- Running Integration Tests on simulator."
 if [ -z "$SKIP_INTEGRATION_TESTS" ] || [[ "$SKIP_INTEGRATION_TESTS" == "false" ]]
 then
 	# TODO: this should become a single line both for local and travis builds
@@ -58,13 +62,11 @@ git config user.email "$COMMIT_AUTHOR_EMAIL" || exit 1
 #git remote -v
 
 
-echo "-- Handling prerequisites."
 ./scripts/setup-prerequisites.bash
 
 # Update reference documentation
 if [ -z "$SKIP_DOC_GENERATION" ] || [[ "$SKIP_DOC_GENERATION" == "false" ]]
 then
-	echo "-- Handling Documentation."
 	./scripts/update-doc.bash
 else
 	echo "-- Skipping Documentation Generation."
@@ -73,7 +75,6 @@ fi
 # Build SDK and publish to maven repo
 if [ -z "$SKIP_SDK_PUBLISH_TO_MAVEN_REPO" ] || [[ "$SKIP_SDK_PUBLISH_TO_MAVEN_REPO" == "false" ]]
 then
-	echo "-- Handling SDK publishing."
 	./scripts/publish-sdk.bash
 else
 	echo "-- Skipping SDK publishing."
@@ -82,7 +83,6 @@ fi
 # Build and deploy Olympus
 if [ -z "$SKIP_OLYMPUS_BUILD" ]  || [[ "$SKIP_OLYMPUS_BUILD" == "false" ]]
 then
-	echo "-- Handling Olympus build."
 	./scripts/build-olympus.bash
 else
 	echo "-- Skipping Olympus build."

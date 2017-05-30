@@ -5,6 +5,12 @@
 # Wait interval for when waiting for test to complete
 export WAIT_INTERVAL=60
 
+echo
+echo "== "
+echo "== Executing UI Tests"
+echo "== "
+echo
+
 # Remember to specify the project (i.e. app)
 cd Examples/restcomm-olympus || exit 1 # && wait_with_output ./gradlew app:connectedAndroidTest 
 
