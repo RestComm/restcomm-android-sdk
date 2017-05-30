@@ -66,7 +66,7 @@ rm -fr doc/*
 # Do the generation
 echo "-- Generating javadoc documentation"
 #appledoc -h --no-create-docset --project-name "Restcomm iOS SDK" --project-company Telestax --company-id com.telestax --output "./doc" --index-desc "RestCommClient/doc/index.markdown" RestCommClient/Classes/RC* RestCommClient/Classes/RestCommClient.h
-cd restcomm.android.sdk && ./gradlew androidJavadocs
+cd restcomm.android.sdk && ./gradlew --quiet androidJavadocs
 if [ $? -eq 0 ]
 then
 	cd ..

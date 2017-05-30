@@ -65,7 +65,7 @@ echo "-- Building Olympus and uploading to TestFairy"
 if [ -z "$SKIP_TF_UPLOAD" ] || [[ "$SKIP_TF_UPLOAD" == "false" ]]
 then
 	# Skip the signArchives task until we properly setup Travis for signing + upload of archives to Sonatype. Otherwise the build breaks
-	cd Examples/restcomm-olympus && ./gradlew -x signArchives -PtestfairyChangelog="Version: $ORG_GRADLE_PROJECT_VERSION_NAME+$ORG_GRADLE_PROJECT_VERSION_CODE, GitHub commit: $COMMIT_SHA1" testfairyDebug
+	cd Examples/restcomm-olympus && ./gradlew --quiet -x signArchives -x androidJavadocs -PtestfairyChangelog="Version: $ORG_GRADLE_PROJECT_VERSION_NAME+$ORG_GRADLE_PROJECT_VERSION_CODE, GitHub commit: $COMMIT_SHA1" testfairyDebug
 	if [ $? -ne 0 ]
 	then
 		echo "-- Failed to build Olympus for uploading to TestFairy."
@@ -74,7 +74,7 @@ then
 else
 	echo "-- Skipping upload to Test Fairy."
 	# Skip the signArchives task until we properly setup Travis for signing + upload of archives to Sonatype. Otherwise the build breaks
-	cd Examples/restcomm-olympus && ./gradlew -x signArchives assemble   # -PVERSION_CODE=$TRAVIS_BUILD_NUMBER -PVERSION_NAME=$VERSION_NAME
+	cd Examples/restcomm-olympus && ./gradlew --quiet -x signArchives -x androidJavadocs assemble   # -PVERSION_CODE=$TRAVIS_BUILD_NUMBER -PVERSION_NAME=$VERSION_NAME
 	if [ $? -ne 0 ]
 	then
 		echo "-- Failed to build Olympus for uploading to TestFairy."

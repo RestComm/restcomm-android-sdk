@@ -10,7 +10,7 @@ cd Examples/restcomm-olympus # && wait_with_output ./gradlew app:connectedAndroi
 
 # Build App and Test .apk files (remember that for instrumented tests we need 2 apks one of the actual App under test and another for the testing logic)
 echo "-- Build App and Test .apk files"
-./gradlew -x signArchives assembleDebug assembleDebugAndroidTest
+./gradlew --quiet -x signArchives assembleDebug assembleDebugAndroidTest
 
 echo "-- Downloading google cloud sdk"
 # use --no-verbose to avoid excessive output
