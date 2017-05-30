@@ -66,61 +66,61 @@ rm -fr doc/*
 echo "-- Generating javadoc documentation"
 #appledoc -h --no-create-docset --project-name "Restcomm iOS SDK" --project-company Telestax --company-id com.telestax --output "./doc" --index-desc "RestCommClient/doc/index.markdown" RestCommClient/Classes/RC* RestCommClient/Classes/RestCommClient.h
 cd restcomm.android.sdk && ./gradlew androidJavadocs
-if [ $? -ne 0 ]
+if [ $? -eq 0 ]
 then
-	echo "-- Failed to build reference documentation, bailing"
-	exit 1
+	cd ..
+
+	echo "-- Checking output doc dir"
+	find doc
+
+	# Add generated doc to staging area
+	echo "-- Adding newly generated doc to staging area"
+	git add doc/
+
+	# Commit
+	echo "-- Commiting to $DOC_BRANCH"
+	if [ ! -z "$TRAVIS" ]
+	then
+		git commit -m "Update $DOC_BRANCH with Restcomm SDK Reference Documentation for ${ORIGINAL_BRANCH}/${COMMIT_SHA1}, Travis CI build: $TRAVIS_BUILD_NUMBER"
+	else 
+		# If doc generation happens locally, let's use the original branch's commit to be able to tell for which commit documentation was generated
+		git commit -m "Update $DOC_BRANCH with Restcomm SDK Reference Documentation for ${ORIGINAL_BRANCH}/${COMMIT_SHA1}"
+	fi
+
+	if [ $? -ne 0 ]
+	then
+		echo "-- Failed to commit, bailing"
+		exit 1
+	fi
+
+	# Add all untracked changes to index/staging area so that we can return to original branch without issues
+	git add .
+
+	# Need to make absolutely sure that we are in gh-pages before pushing. Originally, I tried to make this check right after 'git checkout --orphan' above, but it seems than in the orphan state the current 
+	# branch isn't retrieved correctly with 'git branch' because we 're in detached state
+	CURRENT_BRANCH=`git branch | grep \* | cut -d ' ' -f2`
+	echo "-- Current branch is: $CURRENT_BRANCH"
+	if [ "$CURRENT_BRANCH" != "$DOC_BRANCH" ] 
+	then
+		echo "-- Error: Currently in wrong branch: $CURRENT_BRANCH instead of $DOC_BRANCH. Returning to $ORIGINAL_BRANCH and bailing"
+		git checkout $ORIGINAL_BRANCH
+		exit 1	
+	fi
+
+
+	echo "-- Force pushing $DOC_BRANCH to origin"
+	git push -f origin $DOC_BRANCH
+
+	# Old functionality, let's keep it around in case we need to use GitHub Deploy Keys in the future. 
+	# SSH_REPO must be set
+	#if [ ! -z "$SSH_REPO" ]
+	#then
+	#	echo "-- Force pushing $DOC_BRANCH to $SSH_REPO"
+	#	git push -f $SSH_REPO $DOC_BRANCH
+	#fi
+else
+	echo "-- Failed to build reference documentation, cleaning up"
 fi
-cd ..
-
-echo "-- Checking output doc dir"
-find doc
-
-# Add generated doc to staging area
-echo "-- Adding newly generated doc to staging area"
-git add doc/
-
-# Commit
-echo "-- Commiting to $DOC_BRANCH"
-if [ ! -z "$TRAVIS" ]
-then
-	git commit -m "Update $DOC_BRANCH with Restcomm SDK Reference Documentation for ${ORIGINAL_BRANCH}/${COMMIT_SHA1}, Travis CI build: $TRAVIS_BUILD_NUMBER"
-else 
-	# If doc generation happens locally, let's use the original branch's commit to be able to tell for which commit documentation was generated
-	git commit -m "Update $DOC_BRANCH with Restcomm SDK Reference Documentation for ${ORIGINAL_BRANCH}/${COMMIT_SHA1}"
-fi
-
-if [ $? -ne 0 ]
-then
-	echo "-- Failed to commit, bailing"
-	exit 1
-fi
-
-# Add all untracked changes to index/staging area so that we can return to original branch without issues
-git add .
-
-# Need to make absolutely sure that we are in gh-pages before pushing. Originally, I tried to make this check right after 'git checkout --orphan' above, but it seems than in the orphan state the current 
-# branch isn't retrieved correctly with 'git branch' because we 're in detached state
-CURRENT_BRANCH=`git branch | grep \* | cut -d ' ' -f2`
-echo "-- Current branch is: $CURRENT_BRANCH"
-if [ "$CURRENT_BRANCH" != "$DOC_BRANCH" ] 
-then
-	echo "-- Error: Currently in wrong branch: $CURRENT_BRANCH instead of $DOC_BRANCH. Returning to $ORIGINAL_BRANCH and bailing"
-	git checkout $ORIGINAL_BRANCH
-	exit 1	
-fi
-
-
-echo "-- Force pushing $DOC_BRANCH to origin"
-git push -f origin $DOC_BRANCH
-
-# Old functionality, let's keep it around in case we need to use GitHub Deploy Keys in the future. 
-# SSH_REPO must be set
-#if [ ! -z "$SSH_REPO" ]
-#then
-#	echo "-- Force pushing $DOC_BRANCH to $SSH_REPO"
-#	git push -f $SSH_REPO $DOC_BRANCH
-#fi
 
 # Removing non staged changes from gh-pages, so that we can go back to original branch without issues
 #echo "-- Removing non staged changes from $DOC_BRANCH"
