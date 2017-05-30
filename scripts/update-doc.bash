@@ -66,8 +66,12 @@ rm -fr doc/*
 echo "-- Generating javadoc documentation"
 #appledoc -h --no-create-docset --project-name "Restcomm iOS SDK" --project-company Telestax --company-id com.telestax --output "./doc" --index-desc "RestCommClient/doc/index.markdown" RestCommClient/Classes/RC* RestCommClient/Classes/RestCommClient.h
 cd restcomm.android.sdk && ./gradlew androidJavadocs
+if [ $? -ne 0 ]
+then
+	echo "-- Failed to build reference documentation, bailing"
+	exit 1
+fi
 cd ..
-# TODO: TORESUME
 
 echo "-- Checking output doc dir"
 find doc
