@@ -72,7 +72,7 @@ public class MainActivity extends AppCompatActivity
    //ArrayList<String []> list = new ArrayList<>();
 
    private static final String TAG = "MainActivity";
-   SharedPreferences prefs; sds
+   SharedPreferences prefs;
    private HashMap<String, Object> params;
    private MainFragment listFragment;
    private AlertDialog alertDialog;
