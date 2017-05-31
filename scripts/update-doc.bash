@@ -75,6 +75,10 @@ rm -fr doc/*
 # Do the generation
 echo "-- Generating javadoc documentation"
 #appledoc -h --no-create-docset --project-name "Restcomm iOS SDK" --project-company Telestax --company-id com.telestax --output "./doc" --index-desc "RestCommClient/doc/index.markdown" RestCommClient/Classes/RC* RestCommClient/Classes/RestCommClient.h
+
+echo "BEFORE"
+ls /adfadfa || exit 1
+
 cd restcomm.android.sdk && ./gradlew --quiet androidJavadocs -x uploadArchives -x signArchives 
 if [ $? -eq 0 ]
 then
@@ -95,7 +99,7 @@ then
 		git commit --quiet -m "Update $DOC_BRANCH with Restcomm SDK Reference Documentation for ${ORIGINAL_BRANCH}/${COMMIT_SHA1}, Travis CI build: $ORG_GRADLE_PROJECT_BUILD_NUMBER" || exit 1
 	else 
 		# If doc generation happens locally, let's use the original branch's commit to be able to tell for which commit documentation was generated
-		ddgit commit --quiet -m "Update $DOC_BRANCH with Restcomm SDK Reference Documentation for ${ORIGINAL_BRANCH}/${COMMIT_SHA1}, Local CI build: $ORG_GRADLE_PROJECT_BUILD_NUMBER" || exit 1
+		git commit --quiet -m "Update $DOC_BRANCH with Restcomm SDK Reference Documentation for ${ORIGINAL_BRANCH}/${COMMIT_SHA1}, Local CI build: $ORG_GRADLE_PROJECT_BUILD_NUMBER" || exit 1
 	fi
 
 	if [ $? -ne 0 ]
