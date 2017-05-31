@@ -95,7 +95,7 @@ then
 		git commit --quiet -m "Update $DOC_BRANCH with Restcomm SDK Reference Documentation for ${ORIGINAL_BRANCH}/${COMMIT_SHA1}, Travis CI build: $ORG_GRADLE_PROJECT_BUILD_NUMBER" || exit 1
 	else 
 		# If doc generation happens locally, let's use the original branch's commit to be able to tell for which commit documentation was generated
-		git commit --quiet -m "Update $DOC_BRANCH with Restcomm SDK Reference Documentation for ${ORIGINAL_BRANCH}/${COMMIT_SHA1}, Local CI build: $ORG_GRADLE_PROJECT_BUILD_NUMBER"" || exit 1
+		ddgit commit --quiet -m "Update $DOC_BRANCH with Restcomm SDK Reference Documentation for ${ORIGINAL_BRANCH}/${COMMIT_SHA1}, Local CI build: $ORG_GRADLE_PROJECT_BUILD_NUMBER" || exit 1
 	fi
 
 	if [ $? -ne 0 ]
