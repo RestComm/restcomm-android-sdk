@@ -154,4 +154,7 @@ echo "-- Current commit: $COMMIT_SHA1"
 #then
 #fi
 
-./scripts/main.bash
+if ! ./scripts/main.bash
+then
+	exit 1
+fi

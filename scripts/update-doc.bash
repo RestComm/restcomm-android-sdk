@@ -76,9 +76,6 @@ rm -fr doc/*
 echo "-- Generating javadoc documentation"
 #appledoc -h --no-create-docset --project-name "Restcomm iOS SDK" --project-company Telestax --company-id com.telestax --output "./doc" --index-desc "RestCommClient/doc/index.markdown" RestCommClient/Classes/RC* RestCommClient/Classes/RestCommClient.h
 
-echo "BEFORE"
-ls /adfadfa || exit 1
-
 cd restcomm.android.sdk && ./gradlew --quiet androidJavadocs -x uploadArchives -x signArchives 
 if [ $? -eq 0 ]
 then

@@ -61,7 +61,10 @@ echo -e "-- Using versionCode: $ORG_GRADLE_PROJECT_VERSION_CODE"
 # Execute instrumented UI Tests
 if [ -z "$SKIP_OLYMPUS_UI_TESTS" ] || [[ "$SKIP_OLYMPUS_UI_TESTS" == "false" ]]
 then
-	./scripts/handle-ui-tests.bash
+	if ! ./scripts/handle-ui-tests.bash
+	then
+		exit 1
+	fi
 else
 	echo "-- Skipping UI Tests."
 fi

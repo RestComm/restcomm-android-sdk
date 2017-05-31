@@ -61,12 +61,18 @@ git config user.email "$COMMIT_AUTHOR_EMAIL" || exit 1
 #echo "-- Will use ssh repo: $SSH_REPO"
 #git remote -v
 
-./scripts/setup-prerequisites.bash
+if ! ./scripts/setup-prerequisites.bash
+then
+	exit 1
+fi
 
 # Update reference documentation
 if [ -z "$SKIP_DOC_GENERATION" ] || [[ "$SKIP_DOC_GENERATION" == "false" ]]
 then
-	./scripts/update-doc.bash
+	if ! ./scripts/update-doc.bash
+	then
+		exit 1
+	fi
 else
 	echo "-- Skipping Documentation Generation."
 fi
@@ -74,7 +80,10 @@ fi
 # Build SDK and publish to maven repo
 if [ -z "$SKIP_SDK_PUBLISH_TO_MAVEN_REPO" ] || [[ "$SKIP_SDK_PUBLISH_TO_MAVEN_REPO" == "false" ]]
 then
-	./scripts/publish-sdk.bash
+	if ! ./scripts/publish-sdk.bash
+	then
+		exit 1
+	fi
 else
 	echo "-- Skipping SDK publishing."
 fi
@@ -82,7 +91,10 @@ fi
 # Build and deploy Olympus
 if [ -z "$SKIP_OLYMPUS_BUILD" ]  || [[ "$SKIP_OLYMPUS_BUILD" == "false" ]]
 then
-	./scripts/build-olympus.bash
+	if ! ./scripts/build-olympus.bash
+	then
+		exit 1
+	fi
 else
 	echo "-- Skipping Olympus build."
 fi
