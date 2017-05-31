@@ -1,6 +1,9 @@
 #!/bin/bash
 #
 # Generate apple doc reference documentation, update & commit gh-pages branch and push gh-pages branch to GitHub
+#
+# Notice that because generating doc entails changing the history of gh-pages branch to keep things simple, we require that before starting
+# processing doc generation that the repo is clean (no working/staged changes, etc)
 
 # keep the branch we start out at. Notice that I tried to retrieve it dynamically, but it seems that Travis CI checks out latest commit with git, not the current branch, so it doesn't work that well
 ORIGINAL_BRANCH=$CD_BRANCH
@@ -72,7 +75,7 @@ rm -fr doc/*
 # Do the generation
 echo "-- Generating javadoc documentation"
 #appledoc -h --no-create-docset --project-name "Restcomm iOS SDK" --project-company Telestax --company-id com.telestax --output "./doc" --index-desc "RestCommClient/doc/index.markdown" RestCommClient/Classes/RC* RestCommClient/Classes/RestCommClient.h
-cd restcomm.android.sdk && ./gradlew --quiet androidJavadocs
+cd restcomm.android.sdk && ./gradlew --quiet androidJavadocs -x uploadArchives -x signArchives 
 if [ $? -eq 0 ]
 then
 	cd ..
@@ -89,10 +92,10 @@ then
 	echo "-- Commiting to $DOC_BRANCH"
 	if [ ! -z "$TRAVIS" ]
 	then
-		git commit --quiet -m "Update $DOC_BRANCH with Restcomm SDK Reference Documentation for ${ORIGINAL_BRANCH}/${COMMIT_SHA1}, Travis CI build: $TRAVIS_BUILD_NUMBER" || exit 1
+		git commit --quiet -m "Update $DOC_BRANCH with Restcomm SDK Reference Documentation for ${ORIGINAL_BRANCH}/${COMMIT_SHA1}, Travis CI build: $ORG_GRADLE_PROJECT_BUILD_NUMBER" || exit 1
 	else 
 		# If doc generation happens locally, let's use the original branch's commit to be able to tell for which commit documentation was generated
-		git commit --quiet -m "Update $DOC_BRANCH with Restcomm SDK Reference Documentation for ${ORIGINAL_BRANCH}/${COMMIT_SHA1}" || exit 1
+		git commit --quiet -m "Update $DOC_BRANCH with Restcomm SDK Reference Documentation for ${ORIGINAL_BRANCH}/${COMMIT_SHA1}, Local CI build: $ORG_GRADLE_PROJECT_BUILD_NUMBER"" || exit 1
 	fi
 
 	if [ $? -ne 0 ]

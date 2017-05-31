@@ -16,7 +16,7 @@ cd Examples/restcomm-olympus || exit 1 # && wait_with_output ./gradlew app:conne
 
 # Build App and Test .apk files (remember that for instrumented tests we need 2 apks one of the actual App under test and another for the testing logic)
 echo "-- Build App and Test .apk files"
-./gradlew --quiet -x signArchives assembleDebug assembleDebugAndroidTest
+./gradlew --quiet -x androidJavadocs -x signArchives -x uploadArchives assembleDebug assembleDebugAndroidTest
 if [ $? -ne 0 ]
 then
 	echo "-- Failed to build Olympus for UI tests."

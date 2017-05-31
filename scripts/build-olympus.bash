@@ -17,9 +17,6 @@ echo "== Olympus related handling"
 echo "== "
 echo
 
-# For starters lets only create keychains in travis, since locally everything is setup already. But ultimately, we should create a separate new keychain locally to so that we can test that better
-echo "-- TRAVIS variable value: $TRAVIS"
-
 # Let's keep debug.keystore decryption and installation only for Travis. Locally we have a working keystore that might be confusing to update.
 if [ ! -z "$TRAVIS" ]
 then
@@ -41,10 +38,13 @@ then
 	cp scripts/certs/${DEVELOPMENT_KEYSTORE} ~/.android/debug.keystore || exit 1
 fi
 
-if [ ! -z "$TRAVIS" ]
-then
-	export ORG_GRADLE_PROJECT_VERSION_CODE=$TRAVIS_BUILD_NUMBER
-fi
+#if [ ! -z "$TRAVIS" ]
+#then
+#	export ORG_GRADLE_PROJECT_VERSION_CODE=$BUILD_NUMBER
+#fi
+
+# Build number corresponds to Android version code
+export ORG_GRADLE_PROJECT_VERSION_CODE=$ORG_GRADLE_PROJECT_BUILD_NUMBER
 
 if [ -z "$ORG_GRADLE_PROJECT_VERSION_CODE" ] || [ -z "$ORG_GRADLE_PROJECT_VERSION_NAME" ]
 then
@@ -77,7 +77,7 @@ if [ -z "$SKIP_TF_UPLOAD" ] || [[ "$SKIP_TF_UPLOAD" == "false" ]]
 then
 	echo "-- Building Olympus & uploading to TF -this might take some time..."
 	# Skip the signArchives task until we properly setup Travis for signing + upload of archives to Sonatype. Otherwise the build breaks
-	cd Examples/restcomm-olympus && ./gradlew --quiet -x signArchives -x androidJavadocs -PtestfairyChangelog="Version: $ORG_GRADLE_PROJECT_VERSION_NAME+$ORG_GRADLE_PROJECT_VERSION_CODE, GitHub commit: $COMMIT_SHA1" testfairyDebug || exit 1
+	cd Examples/restcomm-olympus && ./gradlew --quiet -x signArchives -x uploadArchives -x androidJavadocs -PtestfairyChangelog="Version: $ORG_GRADLE_PROJECT_VERSION_NAME+$ORG_GRADLE_PROJECT_VERSION_CODE, GitHub commit: $COMMIT_SHA1" testfairyDebug || exit 1
 	if [ $? -ne 0 ]
 	then
 		echo "-- Failed to build Olympus for uploading to TestFairy."
@@ -85,8 +85,8 @@ then
 	fi 
 else
 	echo "-- Building Olympus (no TF upload)."
-	# Skip the signArchives task until we properly setup Travis for signing + upload of archives to Sonatype. Otherwise the build breaks
-	cd Examples/restcomm-olympus && ./gradlew --quiet -x signArchives -x androidJavadocs assemble || exit 1   # -PVERSION_CODE=$TRAVIS_BUILD_NUMBER -PVERSION_NAME=$VERSION_NAME
+	# Skip the signArchives & Javadoc generation tasks since we don't want them here
+	cd Examples/restcomm-olympus && ./gradlew --quiet -x signArchives -x uploadArchives -x androidJavadocs assemble || exit 1   # -PVERSION_CODE=$TRAVIS_BUILD_NUMBER -PVERSION_NAME=$VERSION_NAME
 	if [ $? -ne 0 ]
 	then
 		echo "-- Failed to build Olympus."

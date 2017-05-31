@@ -1,7 +1,6 @@
 #!/bin/bash
 #
-# Main script to be used for local builds (i.e. not Travis CI), that sets up the environment so that scripts designed for Travis CI can work locally,
-# and we can do fast builds/testing/deployment even if Travis CI is not available (something that happens often, sadly)
+# Entry script to be used for setting up local + Travis builds
 #
 # For local builds we need to have exported in our shell the following variables (for Travis they are setup via web/settings). Notice that variables prefixed with 'ORG_GRADLE_PROJECT' are automatically converted by gradle to 'gradle properties' and are meant to be used by gradle scripts. The rest are for the most part used by our own shell scripts
 # - ORG_GRADLE_PROJECT_VERSION_NAME: base name, i.e. 1.0.0-BETA6
@@ -16,13 +15,12 @@
 # - SKIP_SDK_PUBLISH_TO_MAVEN_REPO: Should SDK library artifact be signed and uploaded to Maven Central, true/false
 # - GITHUB_OAUTH_TOKEN: token to be able to commit in GitHub repo from our scripts with no user intervention, for updating reference doc for example. I believe that this is different per repo (secret)
 # - FILE_ENCRYPTION_PASSWORD: key used to symmetrically encrypt various sensitive files (like key files for signing) that need to be available inside the repo, and hence readable by public (secret)
-# - PRIVATE_KEY_PASSWORD: password to protect private keys (secret)
 # - DEPLOY: i.e. true/false
 # - TESTFAIRY_APP_TOKEN: Test Fairy App token, so that only CI builds send stats to TF
 
 # Only valid for Local builds, because the SDK subproject doesn't have a local.properties file telling it where the SDK is, in contrast to Olympus project that has it
-# - ANDROID_SDK=/Users/antonis/Library/Android/sdk
-
+# - ANDROID_SDK, Android SDK location: i.e. /Users/antonis/Library/Android/sdk
+# - LOCAL_BUILD_NUMBER: build number if we are running locally -if running on Travis it's on TRAVIS_BUILD_NUMBER
 
 
 # Global facilities for use by all other scripts
@@ -61,6 +59,47 @@ function is_git_repo_state_clean() {
 # Export this function for use in other scripts as its pretty common
 export -f is_git_repo_state_clean
 
+echo "-- Validating environment"
+if [ -z $ORG_GRADLE_PROJECT_VERSION_CODE ]
+then
+	echo "-- Error: ORG_GRADLE_PROJECT_VERSION_CODE environment variable missing"
+	exit 1
+fi
+if [ -z $ORG_GRADLE_PROJECT_VERSION_NAME ]
+then
+	echo "-- Error: ORG_GRADLE_PROJECT_VERSION_NAME environment variable missing"
+	exit 1
+fi
+if [ -z $ORG_GRADLE_PROJECT_TESTFAIRY_APIKEY ]
+then
+	echo "-- Error: ORG_GRADLE_PROJECT_TESTFAIRY_APIKEY environment variable missing"
+	exit 1
+fi
+if [ -z $GITHUB_OAUTH_TOKEN ]
+then
+	echo "-- Error: GITHUB_OAUTH_TOKEN environment variable missing"
+	exit 1
+fi
+if [ -z $FILE_ENCRYPTION_PASSWORD ]
+then
+	echo "-- Error: FILE_ENCRYPTION_PASSWORD environment variable missing"
+	exit 1
+fi
+if [ -z $TESTFAIRY_APP_TOKEN ]
+then
+	echo "-- Error: TESTFAIRY_APP_TOKEN environment variable missing"
+	exit 1
+fi
+if [ -z $CD_BRANCH ]
+then
+	echo "-- Error: CD_BRANCH environment variable missing"
+	exit 1
+fi
+if [ -z $ORG_GRADLE_PROJECT_TESTFAIRY_AUTOUPDATE ]
+then
+	echo "-- Error: ORG_GRADLE_PROJECT_TESTFAIRY_AUTOUPDATE environment variable missing"
+	exit 1
+fi
 
 #if [ ! -z "$TRAVIS" ]
 #then
@@ -95,12 +134,19 @@ if [ ! -z "$TRAVIS" ]
 then
 	# Travis build
 	export COMMIT_USERNAME="Travis CI"
+	export ORG_GRADLE_PROJECT_BUILD_NUMBER=$TRAVIS_BUILD_NUMBER
 else
 	# Local build
 	#export CD_BRANCH="develop"
 	export COMMIT_USERNAME="Antonis Tsakiridis"
 	#export DEPLOY="true"
+	export ORG_GRADLE_PROJECT_BUILD_NUMBER=$LOCAL_BUILD_NUMBER
 fi
+
+# Print out interesting setup
+echo "-- Executing in Travis: $TRAVIS"
+echo "-- Build number: $ORG_GRADLE_PROJECT_BUILD_NUMBER"
+echo "-- Current commit: $COMMIT_SHA1"
 
 # Local build
 #DEPLOY=true

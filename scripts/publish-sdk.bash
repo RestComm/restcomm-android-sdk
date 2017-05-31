@@ -9,6 +9,7 @@ echo "== "
 echo
 
 echo "-- Building SDK and uploading to maven repository"
-# remember that when putting more than 1 task in the command line, gladle makes sure that the are not ran more than one time
-cd restcomm.android.sdk && ./gradlew --quiet -PTRAVIS_BUILD=$TRAVIS_BUILD_NUMBER uploadArchives closeAndPromoteRepository || exit 1
+# remember that when putting more than 1 task in the command line, gradle makes sure that the are not ran more than one time. Also,
+# notice that ORG_GRADLE_PROJECT_BUILD_NUMBER is automatically passed as a property in gragle to provide the Build Number
+cd restcomm.android.sdk && ./gradlew --quiet -x androidJavadocs uploadArchives closeAndPromoteRepository || exit 1
 cd .. || exit 1

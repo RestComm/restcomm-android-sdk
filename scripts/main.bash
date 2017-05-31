@@ -8,24 +8,24 @@ echo "== Processing main script."
 echo "== "
 echo
 
-# Run integration tests in simulator - TODO: take this out to a separate script
+# TODO: Run integration tests in simulator - TODO: take this out to a separate script
 #echo "-- Running Integration Tests on simulator."
-if [ -z "$SKIP_INTEGRATION_TESTS" ] || [[ "$SKIP_INTEGRATION_TESTS" == "false" ]]
-then
-	# TODO: this should become a single line both for local and travis builds
-	if [ ! -z "$TRAVIS" ]
-	then
-		#set -o pipefail && travis_retry xcodebuild test -workspace Test-App/Sample.xcworkspace -scheme Sample -destination 'platform=iOS Simulator,name=iPhone SE,OS=10.0' | xcpretty
-		#xcodebuild test -workspace Test-App/Sample.xcworkspace -scheme Sample -destination 'platform=iOS Simulator,name=iPhone SE'
-		echo "TODO: add travis IT"
-	else
-		# For local builds don't specify iOS version, to make it more flexible
-		#xcodebuild test -workspace Test-App/Sample.xcworkspace -scheme Sample -destination 'platform=iOS Simulator,name=iPhone SE' | xcpretty
-		echo "TODO: add local IT"
-	fi
-else
-	echo "-- Skipping Integration Tests."
-fi
+#if [ -z "$SKIP_INTEGRATION_TESTS" ] || [[ "$SKIP_INTEGRATION_TESTS" == "false" ]]
+#then
+#	# TODO: this should become a single line both for local and travis builds
+#	if [ ! -z "$TRAVIS" ]
+#	then
+#		#set -o pipefail && travis_retry xcodebuild test -workspace Test-App/Sample.xcworkspace -scheme Sample -destination 'platform=iOS Simulator,name=iPhone SE,OS=10.0' | xcpretty
+#		#xcodebuild test -workspace Test-App/Sample.xcworkspace -scheme Sample -destination 'platform=iOS Simulator,name=iPhone SE'
+#		# TODO: add travis IT
+#	else
+#		# For local builds don't specify iOS version, to make it more flexible
+#		#xcodebuild test -workspace Test-App/Sample.xcworkspace -scheme Sample -destination 'platform=iOS Simulator,name=iPhone SE' | xcpretty
+#		# TODO: add local IT
+#	fi
+#else
+#	echo "-- Skipping Integration Tests."
+#fi
 
 if [ ! -z "$TRAVIS" ]
 then
@@ -60,7 +60,6 @@ git config user.email "$COMMIT_AUTHOR_EMAIL" || exit 1
 
 #echo "-- Will use ssh repo: $SSH_REPO"
 #git remote -v
-
 
 ./scripts/setup-prerequisites.bash
 
