@@ -60,7 +60,7 @@ function is_git_repo_state_clean() {
 export -f is_git_repo_state_clean
 
 echo "-- Validating environment"
-if [ -z $ORG_GRADLE_PROJECT_VERSION_CODE ]
+if [ -z $ORG_GRADLE_PROJECT_VERSION_CODE && -z $TRAVIS ]
 then
 	echo "-- Error: ORG_GRADLE_PROJECT_VERSION_CODE environment variable missing"
 	exit 1
