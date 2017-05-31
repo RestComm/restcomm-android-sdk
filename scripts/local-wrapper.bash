@@ -156,5 +156,11 @@ echo "-- Current commit: $COMMIT_SHA1"
 
 if ! ./scripts/main.bash
 then
+	echo
+	echo "== "
+	echo "== Build failed!"
+	echo "== "
+	echo
+
 	exit 1
 fi
