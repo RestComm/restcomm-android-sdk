@@ -793,7 +793,7 @@ public class PeerConnectionClient {
       }
    }
 
-   public void setAudioEnabled(final boolean enable)
+   public void setLocalAudioEnabled(final boolean enable)
    {
       executor.execute(new Runnable() {
          @Override
@@ -807,6 +807,18 @@ public class PeerConnectionClient {
       });
    }
 
+   public boolean getLocalAudioEnabled()
+   {
+      if (localAudioTrack != null) {
+         return localAudioTrack.enabled();
+      }
+
+      return false;
+   }
+
+   // We generally don't need to enable both local & remote video at once, but lets leave it around in case
+   // we need that in the future
+   /*
    public void setVideoEnabled(final boolean enable)
    {
       executor.execute(new Runnable() {
@@ -823,6 +835,7 @@ public class PeerConnectionClient {
          }
       });
    }
+   */
 
    public void setLocalVideoEnabled(final boolean enable)
    {

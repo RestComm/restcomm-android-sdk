@@ -655,8 +655,17 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       RCLogger.i(TAG, "setAudioMuted(): " + muted);
 
+      /*
       if (audioManager != null) {
          audioManager.setMute(muted);
+      }
+      */
+
+      if (this.peerConnectionClient != null) {
+         this.peerConnectionClient.setLocalAudioEnabled(!muted);
+      }
+      else {
+         RCLogger.e(TAG, "setAudioMuted called when peerConnectionClient in NULL");
       }
 
       device.onNotificationMuteChanged(this);
@@ -669,12 +678,22 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
     */
    public boolean isAudioMuted()
    {
+      /*
       if (audioManager != null) {
          return audioManager.getMute();
       }
       else {
          RCLogger.e(TAG, "isMuted called on null audioManager -check memory management");
       }
+      */
+
+      if (this.peerConnectionClient != null) {
+         return !this.peerConnectionClient.getLocalAudioEnabled();
+      }
+      else {
+         RCLogger.e(TAG, "isAudioMuted called when peerConnectionClient in NULL");
+      }
+
       return false;
    }
 
