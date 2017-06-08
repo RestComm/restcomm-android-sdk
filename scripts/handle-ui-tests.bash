@@ -107,10 +107,11 @@ echo
 echo ">>>>>>>>>>"
 
 # match 'testsuite' anywhere and return value of attribute errors
-failedTestCount=`xmlstarlet sel -t -m //testsuite -v @errors /tmp/${resultsFilename}`
-if [ $failedTestCount -ne 0 ]
+errorTestCount=`xmlstarlet sel -t -m //testsuite -v @errors /tmp/${resultsFilename}`
+failedTestCount=`xmlstarlet sel -t -m //testsuite -v @failures /tmp/${resultsFilename}`
+if [[ $errorTestCount -ne 0 || $failedTestCount -ne 0 ]]
 then
-	echo "-- Error: At least one test case failed -bailing"
+	echo "-- Error: At least one test case encountered an error or failure -bailing"
 	exit 1
 fi
 
