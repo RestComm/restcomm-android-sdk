@@ -34,7 +34,8 @@ public interface RCDeviceListener {
    }
 
    /**
-    * RCDevice initialized successfully
+    * RCDevice initialized successfully. For regular scenarios (i.e. non-registrarless) this means that registration is successful.
+    * For registrarless scenarios this means that RCDevice is initialized properly (with no registration)
     *
     * @param device Device of interest
     * @param connectivityStatus Connectivity status
@@ -44,15 +45,7 @@ public interface RCDeviceListener {
    void onInitialized(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus, int statusCode, String statusText);
 
    /**
-    *  RCDevice failed to initialize
-    *
-    *  @param errorCode Error code for the error
-    *  @param errorText Error text for the error
-    */
-   void onInitializationError(int errorCode, String errorText);
-
-   /**
-    * RCDevice started listening for incoming connections
+    * RCDevice started listening for incoming connections. This occurs when we asynchronously receive the result from RCDevice.updateParams() and it was successful, which means that we registered successfully
     *
     * @param device Device of interest
     * @param connectivityStatus Connectivity status when started listening
@@ -60,14 +53,7 @@ public interface RCDeviceListener {
    void onStartListening(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus);
 
    /**
-    * RCDevice stopped listening for incoming connections
-    *
-    * @param device Device of interest
-    */
-   void onStopListening(RCDevice device);
-
-   /**
-    * RCDevice was released
+    * RCDevice was released as a result of calling RCDevice.release()
     *
     * @param device Device of interest
     * @param statusCode Error code for the error
@@ -86,21 +72,39 @@ public interface RCDeviceListener {
    void onMessageSent(RCDevice device, int statusCode, String statusText, String jobId);
 
    /**
-    * RCDevice stopped listening for incoming connections due to error
+    * RCDevice stopped listening for incoming connections (either as a result of correct processing, or error). This occurs when:
+    * a. RCDevice.updateParams() just sent out the registration request (we need that to convey to the UI that we are offline for a bit, until we get a response to the registrations),
+    * b. RCDevice.updateParams() registration failed or
+    * c. A periodic registration refresh failed in which case we need to notify the UI that we are offline
     *
     * @param device    Device of interest
-    * @param errorCode Error code
-    * @param errorText Error text
+    * @param statusCode Status code
+    * @param statusText Status text
     */
-   void onStopListening(RCDevice device, int errorCode, String errorText);
+   void onStopListening(RCDevice device, int statusCode, String statusText);
 
    /**
-    * RCDevice connectivity status has been updated
+    * RCDevice connectivity status has been updated, like losing internet connectivity, or regaining internet connectivity
     *
     * @param device             Device of interest
     * @param connectivityStatus Connectivity status of Device
     */
    void onConnectivityUpdate(RCDevice device, RCConnectivityStatus connectivityStatus);
+
+   /**
+    *  RCDevice failed to initialize
+    *
+    *  @param errorCode Error code for the error
+    *  @param errorText Error text for the error
+    */
+   //void onInitializationError(int errorCode, String errorText);
+
+   /**
+    * RCDevice stopped listening for incoming connections.
+    *
+    * @param device Device of interest
+    */
+   //void onStopListening(RCDevice device);
 
    /**
     *  RCDevice received incoming connection
@@ -120,17 +124,17 @@ public interface RCDeviceListener {
 
    /**
     * Called to query whether the application wants to retrieve presence events. Return false to indicate that the application isn't interested (<b>Not implemented yet</b>)
-    *
+    * Commenting these out to avoid uneeded boilerplate code for developers, until we implement this that is
     * @param device Device of interest
     * @return placeholder for now
     */
-   boolean receivePresenceEvents(RCDevice device);
+   //boolean receivePresenceEvents(RCDevice device);
 
    /**
     * Called when the presence status has changed (<b>Not implemented yet</b>)
-    *
+    * Commenting these out to avoid uneeded boilerplate code for developers, until we implement this that is
     * @param device        Device of interest
     * @param presenceEvent Presence Event
     */
-   void onPresenceChanged(RCDevice device, RCPresenceEvent presenceEvent);
+   //void onPresenceChanged(RCDevice device, RCPresenceEvent presenceEvent);
 }

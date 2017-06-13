@@ -439,12 +439,8 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
          }
          */
          catch (Exception e) {
-            // not much the user can do, probably programming error
-            throw new RuntimeException("Failed to set up networking facilities", e);
-            /*
-            throw new JainSipException(RCClient.ErrorCodes.ERROR_SIGNALING_NETWORK_BINDING,
-                  RCClient.errorText(RCClient.ErrorCodes.ERROR_SIGNALING_NETWORK_BINDING), e);
-                  */
+            // 99% this occurs is because the server signaling port is already taken
+            throw new JainSipException(RCClient.ErrorCodes.ERROR_DEVICE_FAILED_TO_START_NETWORKING, e);
          }
       }
       else {

@@ -281,19 +281,9 @@ public class MessageActivity extends AppCompatActivity
       Log.i(TAG, "%% onInitialized");
    }
 
-   public void onInitializationError(int errorCode, String errorText)
-   {
-      Log.i(TAG, "%% onInitializationError");
-   }
-
    public void onStartListening(RCDevice device, RCConnectivityStatus connectivityStatus)
    {
       Log.i(TAG, "%% onStartListening");
-   }
-
-   public void onStopListening(RCDevice device)
-   {
-      Log.i(TAG, "%% onStopListening");
    }
 
    public void onStopListening(RCDevice device, int errorCode, String errorText)
@@ -338,16 +328,9 @@ public class MessageActivity extends AppCompatActivity
       if (statusCode != RCClient.ErrorCodes.SUCCESS.ordinal()) {
          showOkAlert("RCDevice Error", statusText);
       }
-   }
 
-   public boolean receivePresenceEvents(RCDevice device)
-   {
-      return false;
-   }
-
-   public void onPresenceChanged(RCDevice device, RCPresenceEvent presenceEvent)
-   {
-
+      unbindService(this);
+      serviceBound = false;
    }
 
    /**

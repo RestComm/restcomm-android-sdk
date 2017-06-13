@@ -126,5 +126,10 @@
     <orderEntry type="library" exported="" name="support-vector-drawable-25.1.1" level="project" />
     <orderEntry type="library" exported="" name="animated-vector-drawable-25.1.1" level="project" />
     <orderEntry type="module" module-name="restcomm.android.sdk" exported="" />
+    <orderEntry type="library" exported="" name="android-jain-sip-ri-1.2.293" level="project" />
+    <orderEntry type="library" exported="" name="core-1.54.0.0" level="project" />
+    <orderEntry type="library" exported="" name="prov-1.54.0.0" level="project" />
+    <orderEntry type="library" exported="" name="log4j-1.2.17" level="project" />
+    <orderEntry type="library" exported="" name="pkix-1.54.0.0" level="project" />
   </component>
 </module>

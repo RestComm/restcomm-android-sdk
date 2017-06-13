@@ -28,6 +28,7 @@ import android.content.ComponentCallbacks;
 import android.content.ComponentCallbacks2;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
@@ -53,6 +54,7 @@ import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.RCDeviceListener;
 import org.restcomm.android.sdk.RCPresenceEvent;
+import org.restcomm.android.sdk.util.RCException;
 
 import java.util.HashMap;
 
@@ -241,6 +243,7 @@ public class MainActivity extends AppCompatActivity
          params.put(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN, prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN, ""));
          params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
          params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, true));
+
          // The SDK provides the user with default sounds for calling, ringing, busy (declined) and message, but the user can override them
          // by providing their own resource files (i.e. .wav, .mp3, etc) at res/raw passing them with Resource IDs like R.raw.user_provided_calling_sound
          //params.put(RCDevice.ParameterKeys.RESOURCE_SOUND_CALLING, R.raw.user_provided_calling_sound);
@@ -253,7 +256,12 @@ public class MainActivity extends AppCompatActivity
          //params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, prefs.getBoolean(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true));
 
          device.setLogLevel(Log.VERBOSE);
-         device.initialize(getApplicationContext(), params, this);
+         try {
+            device.initialize(getApplicationContext(), params, this);
+         }
+         catch (RCException e) {
+            showOkAlert("RCDevice Initialization Error", e.errorText);
+         }
       }
 
       if (device.getState() == RCDevice.DeviceState.OFFLINE) {
@@ -382,13 +390,9 @@ public class MainActivity extends AppCompatActivity
       handleConnectivityUpdate(connectivityStatus, null);
    }
 
-   public void onStopListening(RCDevice device)
-   {
-
-   }
-
    public void onStopListening(RCDevice device, int errorCode, String errorText)
    {
+      Log.i(TAG, "%% onStopListening");
       if (errorCode == RCClient.ErrorCodes.SUCCESS.ordinal()) {
          handleConnectivityUpdate(RCConnectivityStatus.RCConnectivityStatusNone, "RCDevice: " + errorText);
       }
@@ -399,6 +403,7 @@ public class MainActivity extends AppCompatActivity
 
    public void onInitialized(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus, int statusCode, String statusText)
    {
+      Log.i(TAG, "%% onInitialized");
       if (statusCode == RCClient.ErrorCodes.SUCCESS.ordinal()) {
          handleConnectivityUpdate(connectivityStatus, "RCDevice successfully initialized, using: " + connectivityStatus);
       }
@@ -410,25 +415,23 @@ public class MainActivity extends AppCompatActivity
          //Toast.makeText(getApplicationContext(), "RCDevice Initialization Error: " + statusText, Toast.LENGTH_LONG).show();
          //showOkAlert("RCDevice Initialization Error", statusText);
          //handleConnectivityUpdate(connectivityStatus, "RCDevice Initialization Error: " + statusText);
-         Toast.makeText(getApplicationContext(), "RCDevice Initialization Error: " + statusText, Toast.LENGTH_LONG).show();
+         //Toast.makeText(getApplicationContext(), "RCDevice Initialization Error: " + statusText, Toast.LENGTH_LONG).show();
+         showOkAlert("RCDevice Initialization Error", statusText);
       }
-
-   }
-
-   public void onInitializationError(int errorCode, String errorText)
-   {
-      Toast.makeText(getApplicationContext(), "RCDevice Initialization Error: " + errorText, Toast.LENGTH_LONG).show();
    }
 
    public void onReleased(RCDevice device, int statusCode, String statusText)
    {
+      Log.i(TAG, "%% onReleased");
       if (statusCode != RCClient.ErrorCodes.SUCCESS.ordinal()) {
-         //showOkAlert("RCDevice Release Error", statusText);
          Toast.makeText(getApplicationContext(), "RCDevice Release Error: " + statusText, Toast.LENGTH_LONG).show();
       }
       else {
          handleConnectivityUpdate(RCConnectivityStatus.RCConnectivityStatusNone, "RCDevice Released: " + statusText);
       }
+
+      unbindService(this);
+      serviceBound = false;
    }
 
    public void onConnectivityUpdate(RCDevice device, RCConnectivityStatus connectivityStatus)
@@ -503,16 +506,6 @@ public class MainActivity extends AppCompatActivity
 
    }
 
-   public boolean receivePresenceEvents(RCDevice device)
-   {
-      return false;
-   }
-
-   public void onPresenceChanged(RCDevice device, RCPresenceEvent presenceEvent)
-   {
-
-   }
-
    /**
     * Settings Menu callbacks
     */
@@ -566,9 +559,7 @@ public class MainActivity extends AppCompatActivity
    /**
     * Helpers
     */
-   /*
-   private void showOkAlert(final String title, final String detail)
-   {
+   private void showOkAlert(final String title, final String detail) {
       if (alertDialog.isShowing()) {
          Log.w(TAG, "Alert already showing, hiding to show new alert");
          alertDialog.hide();
@@ -577,14 +568,12 @@ public class MainActivity extends AppCompatActivity
       alertDialog.setTitle(title);
       alertDialog.setMessage(detail);
       alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
-         public void onClick(DialogInterface dialog, int which)
-         {
+         public void onClick(DialogInterface dialog, int which) {
             dialog.dismiss();
          }
       });
       alertDialog.show();
    }
-   */
 
 }
 

@@ -56,6 +56,7 @@ import java.util.ListIterator;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCConnectionListener;
 import org.restcomm.android.sdk.RCDevice;
+import org.restcomm.android.sdk.util.RCException;
 
 
 public class CallActivity extends AppCompatActivity implements RCConnectionListener, View.OnClickListener,
@@ -725,11 +726,19 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
     {
         if (connectParams != null) {
             // outgoing call
-            connection = device.connect(connectParams, this);
+            try {
+                connection = device.connect(connectParams, this);
+            }
+            catch (RCException e) {
+                Log.e(TAG, "Error connecting: " + e.errorText);
+                showOkAlert("RCDevice Error Connecting", e.errorText);
+            }
+            /*
             if (connection == null) {
                 Log.e(TAG, "Error: error connecting");
                 showOkAlert("RCDevice Error", "Device is Offline");
             }
+            */
         }
         else if (acceptParams != null) {
             // incoming call

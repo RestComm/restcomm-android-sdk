@@ -44,7 +44,8 @@ import android.view.MenuItem;
 import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCDevice;
-import org.restcomm.android.sdk.util.ErrorStruct;
+//import org.restcomm.android.sdk.util.ErrorStruct;
+import org.restcomm.android.sdk.util.RCException;
 import org.restcomm.android.sdk.util.RCUtils;
 
 import java.util.HashMap;
@@ -167,7 +168,20 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
       int id = item.getItemId();
       if (id == android.R.id.home) {
          if (updated) {
-            ErrorStruct errorStruct = RCUtils.validateParms((HashMap<String, Object>) prefs.getAll());
+            try {
+               RCUtils.validateDeviceParms((HashMap<String, Object>) prefs.getAll());
+               if (!device.updateParams(params)) {
+                  // TODO:
+                  //showOkAlert("RCDevice Error", "No Wifi connectivity");
+               }
+               NavUtils.navigateUpFromSameTask(this);
+
+            }
+            catch (RCException e) {
+               showOkAlert("Error saving Settings", e.errorText);
+            }
+
+            /*
             if (errorStruct.statusCode != RCClient.ErrorCodes.SUCCESS) {
                showOkAlert("Error saving Settings", errorStruct.statusText);
             }
@@ -178,6 +192,7 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
                }
                NavUtils.navigateUpFromSameTask(this);
             }
+            */
          }
          else {
             NavUtils.navigateUpFromSameTask(this);

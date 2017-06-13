@@ -28,10 +28,22 @@ public class RCException extends Exception {
     public RCClient.ErrorCodes errorCode;
     public String errorText;
 
+    // Only provide errorCode, text is automatically generated with RCClient.errorText()
+    public RCException(RCClient.ErrorCodes errorCode)
+    {
+        this(errorCode, RCClient.errorText(errorCode));
+    }
+
     public RCException(RCClient.ErrorCodes errorCode, String errorText)
     {
         this.errorCode = errorCode;
         this.errorText = errorText;
+    }
+
+    // initialize an exception, but also chain another exception to it
+    public RCException(RCClient.ErrorCodes errorCode, Throwable throwable)
+    {
+        this(errorCode, RCClient.errorText(errorCode), throwable);
     }
 
     // initialize an exception, but also chain another exception to it

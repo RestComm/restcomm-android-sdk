@@ -493,7 +493,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       return this.incoming;
    }
 
-   // Make a call using the passed parameters
+   // Make a call using the passed parameters; not meant for application use
    public void open(Map<String, Object> parameters)
    {
       setupWebrtcAndCall(parameters);
@@ -507,16 +507,24 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
     * are missing, the call will fail with a ERROR_CONNECTION_PERMISSION_DENIED error.
     *
     * @param parameters Parameters such as whether we want video enabled, etc. Possible keys: <br>
-    *   <b>RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED</b>: Whether we want WebRTC video enabled or not <br>
-    *   <b>RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO</b>: View where we want the local video to be rendered <br>
-    *   <b>RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO</b>: View where we want the remote video to be rendered  <br>
-    *   <b>RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC</b>: Preferred video codec to use. Default is VP8. Possible values: <i>'VP8', 'VP9'</i> <br>
+    *   <b>RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED</b>: Whether we want WebRTC video enabled or not. If this is true, then we must provide proper views for CONNECTION_LOCAL_VIDEO and CONNECTION_REMOTE_VIDEO respectively (please check below). If this is false, then even if CONNECTION_LOCAL_VIDEO and CONNECTION_REMOTE_VIDEO are provided they will be ignored <br>
+    *   <b>RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO</b>: PercentFrameLayout containing the view where we want the local video to be rendered in. You can check res/layout/activity_main.xml
+    *                   in hello-world sample to see the structure required <br>
+    *   <b>RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO</b>: PercentFrameLayout containing the view where we want the remote video to be rendered. You can check res/layout/activity_main.xml
+    *                   in hello-world sample to see the structure required  <br>
+    *   <b>RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC</b>: Preferred audio codec to use. Default is OPUS. Possible values are enumerated at <i>RCConnection.AudioCodec</i> <br>
+    *   <b>RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC</b>: Preferred video codec to use. Default is VP8. Possible values are enumerated at <i>RCConnection.VideoCodec</i> <br>
+    *   <b>RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION</b>: Preferred video resolution to use. Default is HD (1280x720). Possible values are enumerated at <i>RCConnection.VideoResolution</i> <br>
+    *   <b>RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE</b>: Preferred frame rate to use. Default is 30fps. Possible values are enumerated at <i>RCConnection.VideoFrameRate</i> <br>
+    *   <b>RCConnection.ParameterKeys.CONNECTION_CUSTOM_SIP_HEADERS</b>: An optional HashMap&lt;String,String&gt; of custom SIP headers we want to add. For an example
+
+
     * means that RCDevice.state not ready to make a call (this usually means no WiFi available)
     */
    public void accept(Map<String, Object> parameters)
    {
       RCLogger.i(TAG, "accept(): " + parameters.toString());
-      if (!checkPermissions((Boolean)parameters.get(ParameterKeys.CONNECTION_VIDEO_ENABLED))) {
+      if (!checkPermissions(parameters.containsKey(ParameterKeys.CONNECTION_VIDEO_ENABLED) && (Boolean)parameters.get(ParameterKeys.CONNECTION_VIDEO_ENABLED))) {
          return;
       }
 
@@ -524,7 +532,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          this.callParams.putAll(parameters);
          // Especially, for incoming connections the peer DID is provided when the connection arrives in RCDevice and at that point RCConnection.peer is populated
          //this.callParams.put(ParameterKeys.CONNECTION_PEER, this.peer);
-         initializeWebrtc((Boolean) this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED),
+         initializeWebrtc(this.callParams.containsKey(ParameterKeys.CONNECTION_VIDEO_ENABLED) && (Boolean)this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED),
                (PercentFrameLayout) parameters.get(ParameterKeys.CONNECTION_LOCAL_VIDEO),
                (PercentFrameLayout) parameters.get(ParameterKeys.CONNECTION_REMOTE_VIDEO),
                (VideoCodec) parameters.get(ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC),
@@ -1028,12 +1036,12 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
                }
 
                RCConnection.this.signalingParameters = new SignalingParameters(iceServers, true, "", peer,
-                     "", null, null, sipHeaders, (Boolean) RCConnection.this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED));
+                     "", null, null, sipHeaders, RCConnection.this.callParams.containsKey(ParameterKeys.CONNECTION_VIDEO_ENABLED) && (boolean) RCConnection.this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED));
             }
             else {
                // we are not the initiator
                RCConnection.this.signalingParameters = new SignalingParameters(iceServers, false, "", "", "", null, null, null,
-                     (Boolean) RCConnection.this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED));
+                       RCConnection.this.callParams.containsKey(ParameterKeys.CONNECTION_VIDEO_ENABLED) && (boolean) RCConnection.this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED));
                SignalingParameters params = SignalingParameters.extractCandidates(new SessionDescription(SessionDescription.Type.OFFER, incomingCallSdp));
                RCConnection.this.signalingParameters.offerSdp = params.offerSdp;
                RCConnection.this.signalingParameters.iceCandidates = params.iceCandidates;
@@ -1074,12 +1082,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    // Outgoing call
    private void setupWebrtcAndCall(Map<String, Object> parameters)
    {
-      if (!checkPermissions((Boolean)parameters.get(ParameterKeys.CONNECTION_VIDEO_ENABLED))) {
+      boolean videoEnabled = parameters.containsKey(ParameterKeys.CONNECTION_VIDEO_ENABLED) && (Boolean)parameters.get(ParameterKeys.CONNECTION_VIDEO_ENABLED);
+      if (!checkPermissions(videoEnabled)) {
          return;
       }
 
       this.callParams.putAll(parameters);
-      initializeWebrtc((Boolean) this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED),
+      initializeWebrtc(this.callParams.containsKey(ParameterKeys.CONNECTION_VIDEO_ENABLED) && (Boolean) this.callParams.get(ParameterKeys.CONNECTION_VIDEO_ENABLED),
             (PercentFrameLayout) parameters.get(ParameterKeys.CONNECTION_LOCAL_VIDEO),
             (PercentFrameLayout) parameters.get(ParameterKeys.CONNECTION_REMOTE_VIDEO),
             (VideoCodec) parameters.get(ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC),
@@ -1375,6 +1384,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
       */
       else {
+         // default is 0 which is conveyed by PeerConnection facilities as default
          return 0;
       }
    }
@@ -1391,6 +1401,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          return "OPUS";
       }
       else {
+         // default is OPUS
          return "OPUS";
       }
    }
@@ -1410,6 +1421,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          return "H264";
       }
       else {
+         // default is VP8
          return "VP8";
       }
    }

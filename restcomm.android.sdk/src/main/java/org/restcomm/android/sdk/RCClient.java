@@ -35,17 +35,18 @@ public final class RCClient {
 
    /**
     * Error codes for the SDK. They can be broken into three categories: 1. RCDevice related, starting with ERROR_DEVICE_*,
-    * 2. RCConnection related, starting with ERROR_CONNECTION_*, and 4. Text message related, starting with ERROR_MESSAGE_*,
+    * 2. RCConnection related, starting with ERROR_CONNECTION_*, and 3. Text message related, starting with ERROR_MESSAGE_*,
     */
    public enum ErrorCodes {
       SUCCESS,
-      ERROR_DEVICE_MISSING_INTENTS,
+      ERROR_DEVICE_MISSING_CALL_INTENT,
       ERROR_DEVICE_MISSING_USERNAME,
       ERROR_DEVICE_MISSING_ICE_URL,
       ERROR_DEVICE_MISSING_ICE_USERNAME,
       ERROR_DEVICE_MISSING_ICE_PASSWORD,
       ERROR_DEVICE_MISSING_ICE_DOMAIN,
       ERROR_DEVICE_NO_CONNECTIVITY,
+      ERROR_DEVICE_ALREADY_INITIALIZED,
       ERROR_DEVICE_ALREADY_OPEN,
       ERROR_DEVICE_REGISTER_AUTHENTICATION_FORBIDDEN,
       ERROR_DEVICE_REGISTER_TIMEOUT,
@@ -53,8 +54,10 @@ public final class RCClient {
       ERROR_DEVICE_REGISTER_URI_INVALID,
       ERROR_DEVICE_REGISTER_SERVICE_UNAVAILABLE,
       ERROR_DEVICE_REGISTER_UNTRUSTED_SERVER,
+      ERROR_DEVICE_FAILED_TO_START_NETWORKING,
 
       ERROR_CONNECTION_AUTHENTICATION_FORBIDDEN,
+      ERROR_CONNECTION_DEVICE_NOT_READY,
       ERROR_CONNECTION_URI_INVALID,
       ERROR_CONNECTION_PEER_UNAVAILABLE,
       ERROR_CONNECTION_SIGNALING_TIMEOUT,
@@ -78,6 +81,11 @@ public final class RCClient {
       ERROR_CONNECTION_WEBRTC_TURN_ERROR,
       ERROR_CONNECTION_PERMISSION_DENIED,
       ERROR_CONNECTION_UNTRUSTED_SERVER,
+      ERROR_CONNECTION_MISSING_PEER,
+      ERROR_CONNECTION_VIDEO_CALL_VIEWS_MANDATORY,
+      ERROR_CONNECTION_AUDIO_CALL_VIDEO_CODEC_FORBIDDEN,
+      ERROR_CONNECTION_AUDIO_CALL_VIDEO_RESOLUTION_FORBIDDEN,
+      ERROR_CONNECTION_AUDIO_CALL_VIDEO_FRAME_RATE_FORBIDDEN,
 
       ERROR_MESSAGE_AUTHENTICATION_FORBIDDEN,
       ERROR_MESSAGE_URI_INVALID,
@@ -100,8 +108,8 @@ public final class RCClient {
       if (errorCode == ErrorCodes.SUCCESS) {
          return "Success";
       }
-      else if (errorCode == ErrorCodes.ERROR_DEVICE_MISSING_INTENTS) {
-         return "Device parameter validation error; Call and/or Message intents are missing";
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_MISSING_CALL_INTENT) {
+         return "Device parameter validation error; call intent is missing";
       }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_MISSING_USERNAME) {
          return "Device parameter validation error; username is mandatory";
@@ -121,8 +129,11 @@ public final class RCClient {
       else if (errorCode == ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY) {
          return "Device has no connectivity";
       }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_ALREADY_INITIALIZED) {
+         return "Device initialization failed; device is already initialized";
+      }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_ALREADY_OPEN) {
-         return "Device initialization failed; device is already open";
+         return "Device initialization failed; device's signaling facilities already open";
       }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_REGISTER_TIMEOUT) {
          return "Device registration with Restcomm timed out";
@@ -144,8 +155,15 @@ public final class RCClient {
       else if (errorCode == ErrorCodes.ERROR_DEVICE_REGISTER_UNTRUSTED_SERVER) {
          return "Device failed to register; server is not trusted";
       }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_FAILED_TO_START_NETWORKING) {
+         return "Device networking facilities failed to start; please check if signaling port is already in use";
+      }
+
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_AUTHENTICATION_FORBIDDEN) {
          return "Connection failed to authenticate with Service";
+      }
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_DEVICE_NOT_READY) {
+         return "Failed to initiate connection; Device is not in READY state";
       }
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_URI_INVALID) {
          return "Connection URI is invalid";
@@ -215,6 +233,24 @@ public final class RCClient {
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_PERMISSION_DENIED) {
          return "Failed to initiate connection; missing Android permissions";
       }
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_UNTRUSTED_SERVER) {
+          return "Failed to initiate connection; server not trusted";
+      }
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_MISSING_PEER) {
+          return "Failed to initiate connection due to parameter validation error; missing peer";
+      }
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_VIDEO_CALL_VIEWS_MANDATORY) {
+         return "Failed to initiate connection due to parameter validation error; video call made without passing local and/or remote views";
+      }
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_AUDIO_CALL_VIDEO_CODEC_FORBIDDEN) {
+         return "Failed to initiate connection due to parameter validation error; video codec not allowed to be specified in an audio call";
+      }
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_AUDIO_CALL_VIDEO_RESOLUTION_FORBIDDEN) {
+         return "Failed to initiate connection due to parameter validation error; video resolution not allowed to be specified in an audio call";
+      }
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_AUDIO_CALL_VIDEO_FRAME_RATE_FORBIDDEN) {
+         return "Failed to initiate connection due to parameter validation error; video frame rate not allowed to be specified in an audio call";
+      }
 
       else if (errorCode == ErrorCodes.ERROR_MESSAGE_AUTHENTICATION_FORBIDDEN) {
          return "Message failed to authenticate with Service";
@@ -243,7 +279,7 @@ public final class RCClient {
          return "Failed to send message; RCDevice is offline";
       }
 
-      return "Unmapped Restcomm Client error";
+      return "Unmapped Restcomm Client error: " + errorCode;
    }
 
    protected RCClient()
@@ -325,7 +361,7 @@ public final class RCClient {
 
       if (list.size() == 0) {
          // check if RCDevice parameters are ok
-         ErrorStruct errorStruct = RCUtils.validateParms(parameters);
+         ErrorStruct errorStruct = RCUtils.validateDeviceParms(parameters);
          if (errorStruct.statusCode != RCClient.ErrorCodes.SUCCESS) {
             throw new RuntimeException(errorStruct.statusText);
          }
