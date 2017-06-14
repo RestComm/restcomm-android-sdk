@@ -35,34 +35,7 @@ public class RCUtils {
    private static final String TAG = "RCUtils";
    public static void validateDeviceParms(HashMap<String, Object> parameters) throws RCException
    {
-      /*
-      if (parameters.containsKey(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED) &&
-            ((Boolean)parameters.get(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED))) {
-            */
-
-      if (!parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_USERNAME) ||
-            parameters.get(RCDevice.ParameterKeys.SIGNALING_USERNAME).equals("")) {
-         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_USERNAME);
-         //return new ErrorStruct(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_USERNAME);
-      }
-
-      // all those fields are mandatory irrespective if we use TURN or not. Even to only get the STUN url, we need all of them
-      if (!parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_URL) ||
-            parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_URL).equals("")) {
-         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_ICE_URL);
-      }
-      if (!parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME) ||
-            parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME).equals("")) {
-         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_ICE_USERNAME);
-      }
-      if (!parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD) ||
-            parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD).equals("")) {
-         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_ICE_PASSWORD);
-      }
-      if (!parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN) ||
-              parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN).equals("")) {
-         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_ICE_DOMAIN);
-      }
+      validatePreferenceParms(parameters);
 
       if (!parameters.containsKey(RCDevice.ParameterKeys.INTENT_INCOMING_CALL)) {
          throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_CALL_INTENT);
@@ -73,6 +46,38 @@ public class RCUtils {
 
 
       //return new ErrorStruct(RCClient.ErrorCodes.SUCCESS);
+   }
+
+   public static void validatePreferenceParms(HashMap<String, Object> parameters) throws RCException
+   {
+      /*
+      if (parameters.containsKey(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED) &&
+            ((Boolean)parameters.get(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED))) {
+       */
+
+      if (!parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_USERNAME) ||
+              parameters.get(RCDevice.ParameterKeys.SIGNALING_USERNAME).equals("")) {
+         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_USERNAME);
+         //return new ErrorStruct(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_USERNAME);
+      }
+
+      // all those fields are mandatory irrespective if we use TURN or not. Even to only get the STUN url, we need all of them
+      if (!parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_URL) ||
+              parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_URL).equals("")) {
+         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_ICE_URL);
+      }
+      if (!parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME) ||
+              parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME).equals("")) {
+         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_ICE_USERNAME);
+      }
+      if (!parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD) ||
+              parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD).equals("")) {
+         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_ICE_PASSWORD);
+      }
+      if (!parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN) ||
+              parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN).equals("")) {
+         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_ICE_DOMAIN);
+      }
    }
 
    public static void validateConnectionParms(HashMap<String, Object> parameters) throws RCException

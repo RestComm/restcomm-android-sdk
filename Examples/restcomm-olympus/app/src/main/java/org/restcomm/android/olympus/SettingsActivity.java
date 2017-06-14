@@ -169,7 +169,7 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
       if (id == android.R.id.home) {
          if (updated) {
             try {
-               RCUtils.validateDeviceParms((HashMap<String, Object>) prefs.getAll());
+               RCUtils.validatePreferenceParms((HashMap<String, Object>) prefs.getAll());
                if (!device.updateParams(params)) {
                   // TODO:
                   //showOkAlert("RCDevice Error", "No Wifi connectivity");
