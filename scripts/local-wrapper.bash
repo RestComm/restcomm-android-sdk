@@ -15,7 +15,6 @@
 # - SKIP_SDK_PUBLISH_TO_MAVEN_REPO: Should SDK library artifact be signed and uploaded to Maven Central, true/false
 # - GITHUB_OAUTH_TOKEN: token to be able to commit in GitHub repo from our scripts with no user intervention, for updating reference doc for example. I believe that this is different per repo (secret)
 # - FILE_ENCRYPTION_PASSWORD: key used to symmetrically encrypt various sensitive files (like key files for signing) that need to be available inside the repo, and hence readable by public (secret)
-# - DEPLOY: i.e. true/false
 # - TESTFAIRY_APP_TOKEN: Test Fairy App token, so that only CI builds send stats to TF
 
 # Only valid for Local builds, because the SDK subproject doesn't have a local.properties file telling it where the SDK is, in contrast to Olympus project that has it
@@ -58,6 +57,15 @@ function is_git_repo_state_clean() {
 
 # Export this function for use in other scripts as its pretty common
 export -f is_git_repo_state_clean
+
+# We need to differentiate between trusted and untrusted builds
+if [[ ! -z $TRAVIS_SECURE_ENV_VARS ]]
+then
+	export TRUSTED_BUILD="true"
+	echo "-- Trusted build"
+else
+	echo "-- Untrusted build"
+fi
 
 echo "-- Validating environment"
 if [[ -z $ORG_GRADLE_PROJECT_VERSION_CODE && -z $TRAVIS ]]
@@ -139,7 +147,6 @@ else
 	# Local build
 	#export CD_BRANCH="develop"
 	export COMMIT_USERNAME="Antonis Tsakiridis"
-	#export DEPLOY="true"
 	export ORG_GRADLE_PROJECT_BUILD_NUMBER=$LOCAL_BUILD_NUMBER
 fi
 
@@ -147,12 +154,6 @@ fi
 echo "-- Executing in Travis: $TRAVIS"
 echo "-- Build number: $ORG_GRADLE_PROJECT_BUILD_NUMBER"
 echo "-- Current commit: $COMMIT_SHA1"
-
-# Local build
-#DEPLOY=true
-#if [[ "$DEPLOY" == "true" ]]
-#then
-#fi
 
 if ! ./scripts/main.bash
 then

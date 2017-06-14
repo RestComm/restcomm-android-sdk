@@ -17,31 +17,18 @@ echo "== Olympus related handling"
 echo "== "
 echo
 
-# Let's keep debug.keystore decryption and installation only for Travis. Locally we have a working keystore that might be confusing to update.
+# Need keystore file to be able to sign the .apk. Let's keep debug.keystore decryption and installation only for Travis. Locally we have a working keystore that might be confusing to update.
 if [ ! -z "$TRAVIS" ]
 then
 	echo "-- Setting up signing"
 	# We need the debug.keystore in order to be able to build a debug .apk
-	echo "-- Decrypting keystore"
+	echo "-- Decrypting signing keystore"
 	openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/keystore/${DEVELOPMENT_KEYSTORE}.enc -d -a -out scripts/certs/${DEVELOPMENT_KEYSTORE} || exit 1
-
-	# We need global properties so that we get access to secret credentials
-	echo "-- Decrypting and installing global gradle.properties"
-	# DEBUG
-	#ls scripts/configuration
-	#echo "scripts/configuration/${GLOBAL_GRADLE_PROPERTIES}.enc"
-	openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/configuration/${GLOBAL_GRADLE_PROPERTIES}.enc -d -a -out scripts/configuration/${GLOBAL_GRADLE_PROPERTIES} || exit 1
-  	cp scripts/configuration/${GLOBAL_GRADLE_PROPERTIES} ~/.gradle/${GLOBAL_GRADLE_PROPERTIES} || exit 1
 
 	echo "-- Installing keystore"
 	# Overwrite default keystore file only in travis
-	cp scripts/certs/${DEVELOPMENT_KEYSTORE} ~/.android/debug.keystore || exit 1
+	cp scripts/certs/${DEVELOPMENT_KEYSTORE} ~/.android/${DEVELOPMENT_KEYSTORE} || exit 1
 fi
-
-#if [ ! -z "$TRAVIS" ]
-#then
-#	export ORG_GRADLE_PROJECT_VERSION_CODE=$BUILD_NUMBER
-#fi
 
 # Build number corresponds to Android version code
 export ORG_GRADLE_PROJECT_VERSION_CODE=$ORG_GRADLE_PROJECT_BUILD_NUMBER
@@ -54,9 +41,6 @@ fi
 
 echo -e "-- Using versionName: $ORG_GRADLE_PROJECT_VERSION_NAME"
 echo -e "-- Using versionCode: $ORG_GRADLE_PROJECT_VERSION_CODE"
-
-#echo "-- Updating git commit hash for Olympus About screen"
-#sed -i '' "s/#GIT-HASH/$COMMIT_SHA1/" $OLYMPUS_UTILS 
 
 # Execute instrumented UI Tests
 if [ -z "$SKIP_OLYMPUS_UI_TESTS" ] || [[ "$SKIP_OLYMPUS_UI_TESTS" == "false" ]]

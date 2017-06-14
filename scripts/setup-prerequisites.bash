@@ -17,7 +17,7 @@ then
 	openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/configuration/${GLOBAL_GRADLE_PROPERTIES}.enc -d -a -out scripts/configuration/${GLOBAL_GRADLE_PROPERTIES} || exit 1
   	mv scripts/configuration/${GLOBAL_GRADLE_PROPERTIES} ~/.gradle/${GLOBAL_GRADLE_PROPERTIES} || exit 1
 
-	echo "-- Decrypting and installing gnupg resources"
+	echo "-- Decrypting and installing gnupg resources for maven artifact signing + upload"
 	# DEBUG
 	#ls ~/.gnupg
 	openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/configuration/${GPG_SECRING}.enc -d -a -out scripts/configuration/${GPG_SECRING} || exit 1
