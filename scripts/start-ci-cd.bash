@@ -24,6 +24,7 @@
 # A. Trusted builds; initiated either from a commit of a team member, or direct PR created in upstream repo
 #
 # For local builds we need to have exported in our shell the following variables (for Travis they are setup via web/settings). Notice that variables prefixed with 'ORG_GRADLE_PROJECT' are automatically converted by gradle to 'gradle properties' and are meant to be used by gradle scripts. The rest are for the most part used by our own shell scripts
+# - RELEASE_BRANCH: By default release branch is 'master', which means that by default builds in master get deployed in TF as well as Maven Central, but we can change that with this variable (optional) 
 # - ORG_GRADLE_PROJECT_VERSION_NAME: base name, i.e. 1.0.0-BETA6
 # - ORG_GRADLE_PROJECT_VERSION_CODE: version code, where we use Travis build number, i.e. 1
 # - SKIP_TF_UPLOAD: skip Olympus upload to TestFairy for distribution, true/false (only needed if uploading to TF)
@@ -120,12 +121,18 @@ else
 	echo "-- Untrusted build"
 fi
 
+# By default release branch is 'master', which means that by default builds in master get deployed in TF as well as Maven Central
+if [[ -z $RELEASE_BRANCH ]]
+then
+	export RELEASE_BRANCH="master"
+fi
+
 if [ ! -z "$TRAVIS" ]
 then
 	# Travis build
 	export COMMIT_USERNAME="Travis CI"
 	export ORG_GRADLE_PROJECT_BUILD_NUMBER=$TRAVIS_BUILD_NUMBER
-	export CD_BRANCH=$TRAVIS_BRANCH
+	export CURRENT_BRANCH=$TRAVIS_BRANCH
 else
 	if [ -z "$LOCAL_BUILD_NUMBER" ]
 	then
@@ -137,7 +144,7 @@ else
 	export COMMIT_USERNAME="Antonis Tsakiridis"
 	export ORG_GRADLE_PROJECT_BUILD_NUMBER=$LOCAL_BUILD_NUMBER
 	# Retrieve current branch name
-	export CD_BRANCH=`git rev-parse --abbrev-ref HEAD`
+	export CURRENT_BRANCH=`git rev-parse --abbrev-ref HEAD`
 fi
 
 # Build number corresponds to Android version code
@@ -164,9 +171,9 @@ then
 	echo "-- Error: FILE_ENCRYPTION_PASSWORD environment variable missing"
 	exit 1
 fi
-if [ -z $CD_BRANCH ]
+if [ -z $CURRENT_BRANCH ]
 then
-	echo "-- Error: CD_BRANCH environment variable missing"
+	echo "-- Error: CURRENT_BRANCH environment variable missing"
 	exit 1
 fi
 

@@ -35,9 +35,9 @@ echo
 #		exit 0
 #	fi
 
-	# CD_BRANCH is the brach we are passing from the travis CI settings and shows which branch CI should deploy from
-	#if [[ "$TRAVIS_BRANCH" != "$CD_BRANCH" ]]; then
-	#	echo "-- Testing on a branch other than $CD_BRANCH, bailing out."
+	# CURRENT_BRANCH is the brach we are passing from the travis CI settings and shows which branch CI should deploy from
+	#if [[ "$TRAVIS_BRANCH" != "$CURRENT_BRANCH" ]]; then
+	#	echo "-- Testing on a branch other than $CURRENT_BRANCH, bailing out."
 	#	exit 0
 	#fi
 #fi
@@ -59,7 +59,7 @@ else
 fi
 
 # Update reference documentation (trusted build only due to need to have write privileges to GitHub upstream repo)
-if [ -z "$SKIP_DOC_GENERATION" ] || [[ "$SKIP_DOC_GENERATION" == "false" ]]
+if [ "$CURRENT_BRANCH" == $RELEASE_BRANCH ] && [[ -z "$SKIP_DOC_GENERATION" || "$SKIP_DOC_GENERATION" == "false" ]]
 then
 	if [ -z $TRUSTED_BUILD ]
 	then
@@ -76,7 +76,7 @@ else
 fi
 
 # Build SDK and publish to maven repo (trusted build)
-if [ -z "$SKIP_SDK_PUBLISH_TO_MAVEN_REPO" ] || [[ "$SKIP_SDK_PUBLISH_TO_MAVEN_REPO" == "false" ]]
+if [ "$CURRENT_BRANCH" == $RELEASE_BRANCH ] && [[ -z "$SKIP_SDK_PUBLISH_TO_MAVEN_REPO" ||  "$SKIP_SDK_PUBLISH_TO_MAVEN_REPO" == "false" ]]
 then
 	if [ -z $TRUSTED_BUILD ]
 	then
@@ -92,7 +92,7 @@ else
 fi
 
 # Build and upload Olympus to Test Fairy
-if [ -z "$SKIP_TF_UPLOAD" ] || [[ "$SKIP_TF_UPLOAD" == "false" ]]
+if [ "$CURRENT_BRANCH" == $RELEASE_BRANCH ] && [[ -z "$SKIP_TF_UPLOAD" || "$SKIP_TF_UPLOAD" == "false" ]]
 then
 	if [ -z $TRUSTED_BUILD ]
 	then

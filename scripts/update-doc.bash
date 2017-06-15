@@ -6,7 +6,7 @@
 # processing doc generation that the repo is clean (no working/staged changes, etc)
 
 # keep the branch we start out at. Notice that I tried to retrieve it dynamically, but it seems that Travis CI checks out latest commit with git, not the current branch, so it doesn't work that well
-ORIGINAL_BRANCH=$CD_BRANCH
+ORIGINAL_BRANCH=$CURRENT_BRANCH
 DOC_BRANCH="gh-pages"
 
 echo
