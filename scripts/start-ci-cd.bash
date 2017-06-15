@@ -26,15 +26,15 @@
 # For local builds we need to have exported in our shell the following variables (for Travis they are setup via web/settings). Notice that variables prefixed with 'ORG_GRADLE_PROJECT' are automatically converted by gradle to 'gradle properties' and are meant to be used by gradle scripts. The rest are for the most part used by our own shell scripts
 # - ORG_GRADLE_PROJECT_VERSION_NAME: base name, i.e. 1.0.0-BETA6
 # - ORG_GRADLE_PROJECT_VERSION_CODE: version code, where we use Travis build number, i.e. 1
-# - ORG_GRADLE_PROJECT_TESTFAIRY_APIKEY: Secret key for using TestFairy API
-# - ORG_GRADLE_PROJECT_TESTFAIRY_AUTOUPDATE: Should we request from TestFairy to enable auto update for newly uploaded Olympus, true/false
-# - SKIP_TF_UPLOAD: skip Olympus upload to TestFairy for distribution, true/false
-# - SKIP_INTEGRATION_TESTS: skip Integration Tests, true/false
+# - SKIP_TF_UPLOAD: skip Olympus upload to TestFairy for distribution, true/false (only needed if uploading to TF)
+# - ORG_GRADLE_PROJECT_TESTFAIRY_APIKEY: Secret key for using TestFairy API (only needed if uploading to TF)
+# - ORG_GRADLE_PROJECT_TESTFAIRY_AUTOUPDATE: Should we request from TestFairy to enable auto update for newly uploaded Olympus, true/false (only needed if uploading to TF)
+# - TESTFAIRY_APP_TOKEN: Test Fairy App token, so that only CI builds send stats to TF
+# - SKIP_INTEGRATION_TESTS: skip Integration Tests, true/false (not implemented yet)
 # - SKIP_DOC_GENERATION: skip Reference Documentation generation, true/false
 # - SKIP_SDK_PUBLISH_TO_MAVEN_REPO: Should SDK library artifact be signed and uploaded to Maven Central, true/false
-# - GITHUB_OAUTH_TOKEN: token to be able to commit in GitHub repo from our scripts with no user intervention, for updating reference doc for example. I believe that this is different per repo (secret)
+# - GITHUB_OAUTH_TOKEN: token to be able to commit in GitHub repo from our scripts with no user intervention, for updating reference doc for example. I believe that this is different per repo (secret)  (only needed if generating doc)
 # - FILE_ENCRYPTION_PASSWORD: key used to symmetrically encrypt various sensitive files (like key files for signing) that need to be available inside the repo, and hence readable by public (secret)
-# - TESTFAIRY_APP_TOKEN: Test Fairy App token, so that only CI builds send stats to TF
 #
 # Needed enrironment variables only valid for Local builds (i.e. not Travis), 
 # - LOCAL_BUILD_NUMBER: build number if we are running locally -if running on Travis it's on TRAVIS_BUILD_NUMBER
@@ -136,6 +136,7 @@ else
 	# Local build
 	export COMMIT_USERNAME="Antonis Tsakiridis"
 	export ORG_GRADLE_PROJECT_BUILD_NUMBER=$LOCAL_BUILD_NUMBER
+	# Retrieve current branch name
 	export CD_BRANCH=`git rev-parse --abbrev-ref HEAD`
 fi
 

@@ -63,7 +63,7 @@ if [ -z "$SKIP_DOC_GENERATION" ] || [[ "$SKIP_DOC_GENERATION" == "false" ]]
 then
 	if [ -z $TRUSTED_BUILD ]
 	then
-		echo "Cannot generate doc in an untrusted build, skipping"
+		echo "-- Cannot generate doc in an untrusted build, skipping"
 	else
 		if ! ./scripts/update-doc.bash
 		then

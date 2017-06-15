@@ -1,2 +1,4 @@
-# ignore non encrypted files ending with .enc
+# ignore not encrypted files NOT ending with .enc
+*
+# ignore non encrypted files -don't want to commit encrypted files by mistake! For some weird reason adding only this doesn't work, we need the previous line too
 !*.enc
