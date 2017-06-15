@@ -112,7 +112,10 @@ function is_git_repo_state_clean() {
 # Export this function for use in other scripts as its pretty common
 export -f is_git_repo_state_clean
 
-# We need to differentiate between trusted and untrusted builds, so if TRUSTED_BUILD exists means the build is trusted (remember that is just for convenience, there are no guarantees -the real guarantee is the fact that encrypted variables aren't exposed in untrusted builds by Travis)
+# We need to differentiate between trusted and untrusted builds, so if TRUSTED_BUILD exists means the build is trusted (remember that is just for
+# convenience, there are no guarantees -the real guarantee is the fact that encrypted variables aren't exposed in untrusted builds by Travis).
+# Travis exports TRAVIS_SECURE_ENV_VARS when the build is trusted. For local builds lets export TRUSTED_BUILD ourselves for now and set to true
+# and see how it goes 
 if [[ ! -z $TRAVIS_SECURE_ENV_VARS ]]
 then
 	export TRUSTED_BUILD="true"
@@ -187,6 +190,7 @@ fi
 # Print out interesting setup
 echo "-- Executing in Travis: $TRAVIS"
 echo "-- Build number: $ORG_GRADLE_PROJECT_BUILD_NUMBER"
+echo "-- Current branch: $CURRENT_BRANCH"
 echo "-- Current commit: $COMMIT_SHA1"
 
 if ! ./scripts/main.bash
