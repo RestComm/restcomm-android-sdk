@@ -8,8 +8,8 @@ echo "== Processing main script."
 echo "== "
 echo
 
-# TODO: Run integration tests in simulator - TODO: take this out to a separate script
-#echo "-- Running Integration Tests on simulator."
+# TODO: Run integration tests - TODO: take this out to a separate script
+#echo "-- Running Integration Tests ."
 #if [ -z "$SKIP_INTEGRATION_TESTS" ] || [[ "$SKIP_INTEGRATION_TESTS" == "false" ]]
 #then
 #	# TODO: this should become a single line both for local and travis builds
@@ -27,70 +27,83 @@ echo
 #	echo "-- Skipping Integration Tests."
 #fi
 
-if [ ! -z "$TRAVIS" ]
-then
+#if [ ! -z "$TRAVIS" ]
+#then
 	# This is a travis build
-	if [[ "$TRAVIS_PULL_REQUEST" == "true" ]]; then
-		echo "-- This is a pull request, bailing out."
-		exit 0
-	fi
+#	if [[ "$TRAVIS_PULL_REQUEST" == "true" ]]; then
+#		echo "-- This is a pull request, bailing out."
+#		exit 0
+#	fi
 
 	# CD_BRANCH is the brach we are passing from the travis CI settings and shows which branch CI should deploy from
 	#if [[ "$TRAVIS_BRANCH" != "$CD_BRANCH" ]]; then
 	#	echo "-- Testing on a branch other than $CD_BRANCH, bailing out."
 	#	exit 0
 	#fi
-fi
-
-git config credential.helper "store --file=.git/credentials" || exit 1
-echo "https://${GITHUB_OAUTH_TOKEN}:@github.com" > .git/credentials 2>/dev/null || exit 1
-git config user.name $COMMIT_USERNAME || exit 1
-git config user.email "$COMMIT_AUTHOR_EMAIL" || exit 1
-
-# SSH endpoint not needed any longer, since we 're using OAuth tokens with https, but let's leave it around in case we need it in the future
-#export REPO=`git config remote.origin.url`
-#export SSH_REPO=${REPO/https:\/\/github.com\//git@github.com:}
-
-#echo "-- Will use ssh repo: $SSH_REPO"
-#git remote -v
+#fi
 
 if ! ./scripts/setup-prerequisites.bash
 then
 	exit 1
 fi
 
-# Update reference documentation
-if [ -z "$SKIP_DOC_GENERATION" ] || [[ "$SKIP_DOC_GENERATION" == "false" ]]
+# Execute instrumented UI Tests
+if [ -z "$SKIP_OLYMPUS_UI_TESTS" ] || [[ "$SKIP_OLYMPUS_UI_TESTS" == "false" ]]
 then
-	if ! ./scripts/update-doc.bash
+	if ! ./scripts/handle-ui-tests.bash
 	then
 		exit 1
 	fi
 else
+	echo "-- Skipping UI Tests."
+fi
+
+# Update reference documentation (trusted build only due to need to have write privileges to GitHub upstream repo)
+if [ -z "$SKIP_DOC_GENERATION" ] || [[ "$SKIP_DOC_GENERATION" == "false" ]]
+then
+	if [ -z $TRUSTED_BUILD ]
+	then
+		echo "Cannot generate doc in an untrusted build, skipping"
+	else
+		if ! ./scripts/update-doc.bash
+		then
+			exit 1
+		fi
+	fi
+
+else
 	echo "-- Skipping Documentation Generation."
 fi
 
-# Build SDK and publish to maven repo
+# Build SDK and publish to maven repo (trusted build)
 if [ -z "$SKIP_SDK_PUBLISH_TO_MAVEN_REPO" ] || [[ "$SKIP_SDK_PUBLISH_TO_MAVEN_REPO" == "false" ]]
 then
-	if ! ./scripts/publish-sdk.bash
+	if [ -z $TRUSTED_BUILD ]
 	then
-		exit 1
+		echo "Cannot generate doc in an untrusted build, skipping"
+	else
+		if ! ./scripts/publish-sdk.bash
+		then
+			exit 1
+		fi
 	fi
 else
 	echo "-- Skipping SDK publishing."
 fi
 
-# Build and deploy Olympus
-if [ -z "$SKIP_OLYMPUS_BUILD" ]  || [[ "$SKIP_OLYMPUS_BUILD" == "false" ]]
+# Build and upload Olympus to Test Fairy
+if [ -z "$SKIP_TF_UPLOAD" ] || [[ "$SKIP_TF_UPLOAD" == "false" ]]
 then
-	if ! ./scripts/build-olympus.bash
+	if [ -z $TRUSTED_BUILD ]
 	then
-		exit 1
+		echo "Cannot generate doc in an untrusted build, skipping"
+	else
+		if ! ./scripts/upload-olympus-to-testfairy.bash
+		then
+			exit 1
+		fi
 	fi
 else
-	echo "-- Skipping Olympus build."
+	echo "-- Skipping Test Fairy upload."
 fi
 
-# Update the pod
-#- pod lib lint

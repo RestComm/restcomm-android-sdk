@@ -15,6 +15,12 @@ echo "== Updating Reference Documentation"
 echo "== "
 echo
 
+if [ -z $GITHUB_OAUTH_TOKEN ]
+then
+	echo "-- Error: GITHUB_OAUTH_TOKEN environment variable missing"
+	exit 1
+fi
+
 # Install appledoc as its not pre-installed in Travis for some reason
 #curl -sL https://gist.githubusercontent.com/atsakiridis/2f8f755bd23a3e0be8dcd4aa5923d5a2/raw/1637e50d6c478add443c7cc721403a98fd72dbd5/install_appledoc.sh | sh
 

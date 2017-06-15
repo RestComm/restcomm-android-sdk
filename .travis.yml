@@ -36,7 +36,6 @@ before_script:
 #  - adb shell input keyevent 82 &
 
 script:
-    - ./scripts/local-wrapper.bash
+    - ./scripts/start-ci-cd.bash
 #    - if ! ./scripts/local-wrapper.bash; then echo "Build failed"; travis_terminate 1; fi
 #    - cd Examples/restcomm-olympus && ./gradlew build 
-# Testing PRs

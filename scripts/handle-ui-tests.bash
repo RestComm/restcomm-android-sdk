@@ -11,7 +11,10 @@ echo "== Executing UI Tests"
 echo "== "
 echo
 
-# Remember to specify the project (i.e. app)
+# source wait_with_output.sh so that we can access travis ci scripts to avoid stopping the build when no output is generated
+#. scripts/wait_with_output.sh
+
+# Remember to specify the project (i.e. app). We no longer run connectedAndroidTest due to emulator performance in Travis, but let's keep the command commented out as it might come in handy
 cd Examples/restcomm-olympus || exit 1 # && wait_with_output ./gradlew app:connectedAndroidTest 
 
 # Build App and Test .apk files (remember that for instrumented tests we need 2 apks one of the actual App under test and another for the testing logic)
