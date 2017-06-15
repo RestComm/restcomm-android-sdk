@@ -11,6 +11,12 @@ echo "== Executing UI Tests"
 echo "== "
 echo
 
+if [ -z $FILE_ENCRYPTION_PASSWORD ]
+then
+	echo "-- Error: FILE_ENCRYPTION_PASSWORD environment variable missing that is needed for UI Tests"
+	exit 1
+fi
+
 # source wait_with_output.sh so that we can access travis ci scripts to avoid stopping the build when no output is generated
 #. scripts/wait_with_output.sh
 

@@ -26,26 +26,35 @@ then
 
 	mkdir -p ~/.gradle || exit 1
 
-	echo "-- Decrypting and installing global gradle.properties"
-	openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/configuration/${GLOBAL_GRADLE_PROPERTIES}.enc -d -a -out scripts/configuration/${GLOBAL_GRADLE_PROPERTIES} || exit 1
-  	mv scripts/configuration/${GLOBAL_GRADLE_PROPERTIES} ~/.gradle/${GLOBAL_GRADLE_PROPERTIES} || exit 1
+	if [ ! -z $TRUSTED_BUILD ]
+	then
+		if [ -z $FILE_ENCRYPTION_PASSWORD ]
+		then
+			echo "-- Error: FILE_ENCRYPTION_PASSWORD environment variable missing"
+			exit 1
+		fi
 
-	echo "-- Decrypting and installing gnupg resources for maven artifact signing + upload"
-	# DEBUG
-	#ls ~/.gnupg
-	openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/configuration/${GPG_SECRING}.enc -d -a -out scripts/configuration/${GPG_SECRING} || exit 1
-  	mv scripts/configuration/${GPG_SECRING} ~/.gnupg/ || exit 1
+		echo "-- Decrypting and installing global gradle.properties"
+		openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/configuration/${GLOBAL_GRADLE_PROPERTIES}.enc -d -a -out scripts/configuration/${GLOBAL_GRADLE_PROPERTIES} || exit 1
+		mv scripts/configuration/${GLOBAL_GRADLE_PROPERTIES} ~/.gradle/${GLOBAL_GRADLE_PROPERTIES} || exit 1
 
-	openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/configuration/${GPG_TRUSTDB}.enc -d -a -out scripts/configuration/${GPG_TRUSTDB} || exit 1
-  	mv scripts/configuration/${GPG_TRUSTDB} ~/.gnupg/ || exit 1
+		echo "-- Decrypting and installing gnupg resources for maven artifact signing + upload"
+		# DEBUG
+		#ls ~/.gnupg
+		openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/configuration/${GPG_SECRING}.enc -d -a -out scripts/configuration/${GPG_SECRING} || exit 1
+		mv scripts/configuration/${GPG_SECRING} ~/.gnupg/ || exit 1
 
-	# Need keystore file to be able to sign the .apk. Let's keep debug.keystore decryption and installation only for Travis. Locally we have a working keystore that might be confusing to update.
-	echo "-- Setting up signing for .apk"
-	# We need the debug.keystore in order to be able to build a debug .apk
-	echo "-- Decrypting signing keystore"
-	openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/keystore/${DEVELOPMENT_KEYSTORE}.enc -d -a -out scripts/certs/${DEVELOPMENT_KEYSTORE} || exit 1
+		openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/configuration/${GPG_TRUSTDB}.enc -d -a -out scripts/configuration/${GPG_TRUSTDB} || exit 1
+		mv scripts/configuration/${GPG_TRUSTDB} ~/.gnupg/ || exit 1
 
-	echo "-- Installing keystore"
-	# Overwrite default keystore file only in travis
-	cp scripts/certs/${DEVELOPMENT_KEYSTORE} ~/.android/${DEVELOPMENT_KEYSTORE} || exit 1
+		# Need keystore file to be able to sign the .apk. Let's keep debug.keystore decryption and installation only for Travis. Locally we have a working keystore that might be confusing to update.
+		echo "-- Setting up signing for .apk"
+		# We need the debug.keystore in order to be able to build a debug .apk
+		echo "-- Decrypting signing keystore"
+		openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/keystore/${DEVELOPMENT_KEYSTORE}.enc -d -a -out scripts/certs/${DEVELOPMENT_KEYSTORE} || exit 1
+
+		echo "-- Installing keystore"
+		# Overwrite default keystore file only in travis
+		cp scripts/certs/${DEVELOPMENT_KEYSTORE} ~/.android/${DEVELOPMENT_KEYSTORE} || exit 1
+	fi
 fi

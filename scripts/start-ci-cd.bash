@@ -116,7 +116,7 @@ export -f is_git_repo_state_clean
 # convenience, there are no guarantees -the real guarantee is the fact that encrypted variables aren't exposed in untrusted builds by Travis).
 # Travis exports TRAVIS_SECURE_ENV_VARS when the build is trusted. For local builds lets export TRUSTED_BUILD ourselves for now and set to true
 # and see how it goes 
-if [[ ! -z $TRAVIS_SECURE_ENV_VARS ]]
+if [[ "$TRAVIS_SECURE_ENV_VARS" == "true" ]]
 then
 	export TRUSTED_BUILD="true"
 	echo "-- Trusted build"
@@ -167,11 +167,6 @@ fi
 if [ -z $ORG_GRADLE_PROJECT_VERSION_NAME ]
 then
 	echo "-- Error: ORG_GRADLE_PROJECT_VERSION_NAME environment variable missing"
-	exit 1
-fi
-if [ -z $FILE_ENCRYPTION_PASSWORD ]
-then
-	echo "-- Error: FILE_ENCRYPTION_PASSWORD environment variable missing"
 	exit 1
 fi
 if [ -z $CURRENT_BRANCH ]
