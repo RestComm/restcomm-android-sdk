@@ -31,6 +31,7 @@
 # - ORG_GRADLE_PROJECT_TESTFAIRY_APIKEY: Secret key for using TestFairy API (only needed if uploading to TF)
 # - ORG_GRADLE_PROJECT_TESTFAIRY_AUTOUPDATE: Should we request from TestFairy to enable auto update for newly uploaded Olympus, true/false (only needed if uploading to TF)
 # - TESTFAIRY_APP_TOKEN: Test Fairy App token, so that only CI builds send stats to TF
+# - SKIP_OLYMPUS_UI_TESTS: skip espresso UI tests using Olympus, true/false
 # - SKIP_INTEGRATION_TESTS: skip Integration Tests, true/false (not implemented yet)
 # - SKIP_DOC_GENERATION: skip Reference Documentation generation, true/false
 # - SKIP_SDK_PUBLISH_TO_MAVEN_REPO: Should SDK library artifact be signed and uploaded to Maven Central, true/false
