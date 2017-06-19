@@ -15,6 +15,8 @@ echo "== Updating Reference Documentation"
 echo "== "
 echo
 
+git status
+
 if [ -z $GITHUB_OAUTH_TOKEN ]
 then
 	echo "-- Error: GITHUB_OAUTH_TOKEN environment variable missing"

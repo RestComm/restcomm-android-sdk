@@ -151,7 +151,8 @@ else
 	export CURRENT_BRANCH=`git rev-parse --abbrev-ref HEAD`
 fi
 
-# Build number corresponds to Android version code
+# Notice that even though ORG_GRADLE_PROJECT_VERSION_CODE and ORG_GRADLE_PROJECT_BUILD_NUMBER refer to the same thing (i.e. build number) for now we use the first 
+# to denote the Android-specific versionCode, and the second to denote POM version when building SDK library artifact for upload to maven
 export ORG_GRADLE_PROJECT_VERSION_CODE=$ORG_GRADLE_PROJECT_BUILD_NUMBER
 
 echo "-- Validating environment"
