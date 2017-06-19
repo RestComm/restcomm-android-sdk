@@ -56,6 +56,7 @@ import org.restcomm.android.sdk.RCConnectionListener;
 import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.RCDeviceListener;
 import org.restcomm.android.sdk.RCPresenceEvent;
+import org.restcomm.android.sdk.util.RCException;
 //import org.webrtc.VideoRenderer;
 //import org.webrtc.VideoRendererGui;
 //import org.webrtc.VideoTrack;
@@ -178,8 +179,13 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
       //params.put(RCDevice.ParameterKeys.SIGNALING_JAIN_SIP_LOGGING_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_JAIN_SIP_LOGGING_ENABLED, true));
 
       if (!device.isInitialized()) {
-         device.initialize(getApplicationContext(), params, this);
-         device.setLogLevel(Log.VERBOSE);
+         try {
+            device.initialize(getApplicationContext(), params, this);
+            device.setLogLevel(Log.VERBOSE);
+         }
+         catch (RCException e) {
+            Log.e(TAG, "RCDevice Initialization Error: " + e.errorText);
+         }
       }
 
       serviceBound = true;
@@ -258,45 +264,9 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
 
    }
 
-   public void onStopListening(RCDevice device)
-   {
-
-   }
-
    public void onStopListening(RCDevice device, int errorCode, String errorText)
    {
       Log.i(TAG, errorText);
-   }
-
-   public boolean receivePresenceEvents(RCDevice device)
-   {
-      return false;
-   }
-
-   public void onPresenceChanged(RCDevice device, RCPresenceEvent presenceEvent)
-   {
-
-   }
-
-   public void onIncomingConnection(RCDevice device, RCConnection connection)
-   {
-      Log.i(TAG, "Connection arrived");
-      this.pendingConnection = connection;
-   }
-
-   public void onIncomingMessage(RCDevice device, String message, HashMap<String, String> parameters)
-   {
-      final HashMap<String, String> finalParameters = parameters;
-      final String finalMessage = message;
-
-      runOnUiThread(new Runnable() {
-         @Override
-         public void run()
-         {
-            String newText = finalParameters.get("username") + ": " + finalMessage + "\n";
-            Log.i(TAG, "Message arrived: " + newText);
-         }
-      });
    }
 
    public void onConnectivityUpdate(RCDevice device, RCConnectivityStatus connectivityStatus)
@@ -360,7 +330,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
    {
    }
 
-   public void onMessageSent(RCDevice device, int statusCode, String statusText)
+   public void onMessageSent(RCDevice device, int statusCode, String statusText, String jobId)
    {
    }
 
@@ -372,18 +342,19 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
    {
    }
 
-   public void onInitializationError(int errorCode, String errorText)
-   {
-   }
-
    // Resume call after permissions are checked
    private void resumeCall()
    {
       if (connectParams != null) {
-         connection = device.connect(connectParams, this);
-         if (connection == null) {
-            Log.e(TAG, "Error: error connecting");
-            return;
+         try {
+            connection = device.connect(connectParams, this);
+            if (connection == null) {
+               Log.e(TAG, "Error: error connecting");
+               return;
+            }
+         }
+         catch (RCException e) {
+            Log.e(TAG, "Error: not connected" + e.errorText);
          }
       }
    }

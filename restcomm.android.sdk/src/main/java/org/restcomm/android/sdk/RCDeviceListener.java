@@ -34,8 +34,8 @@ public interface RCDeviceListener {
    }
 
    /**
-    * RCDevice initialized successfully. For regular scenarios (i.e. non-registrarless) this means that registration is successful.
-    * For registrarless scenarios this means that RCDevice is initialized properly (with no registration)
+    * RCDevice initialized either successfully or with error (check statusCode and statusText). For regular scenarios (i.e. non-registrarless) success
+    * means that this means that registration is successful. For registrar-less scenarios success means that RCDevice is initialized properly (with no registration)
     *
     * @param device Device of interest
     * @param connectivityStatus Connectivity status

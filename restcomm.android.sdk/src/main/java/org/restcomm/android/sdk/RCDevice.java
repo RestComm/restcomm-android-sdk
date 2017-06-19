@@ -683,7 +683,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     *
     * @param message    Message text
     * @param parameters Parameters used for the message, such as 'username' that holds the recepient for the message
-    * @return status for the send action
+    * @return  Job Id (string) of the the job created to asynchronously handle the transmission of the message, so that we can correlate the status when it arrives later
     */
    public String sendMessage(String message, Map<String, String> parameters) throws RCException
    {

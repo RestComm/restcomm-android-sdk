@@ -75,6 +75,23 @@ else
 	echo "-- Skipping Documentation Generation."
 fi
 
+
+# Build and upload Olympus to Test Fairy (strusted build only)
+if [ "$CURRENT_BRANCH" == $RELEASE_BRANCH ] && [[ -z "$SKIP_TF_UPLOAD" || "$SKIP_TF_UPLOAD" == "false" ]]
+then
+	if [ -z $TRUSTED_BUILD ]
+	then
+		echo "Cannot generate doc in an untrusted build, skipping"
+	else
+		if ! ./scripts/upload-olympus-to-testfairy.bash
+		then
+			exit 1
+		fi
+	fi
+else
+	echo "-- Skipping Test Fairy upload."
+fi
+
 # Build SDK and publish to maven repo (trusted build)
 if [ "$CURRENT_BRANCH" == $RELEASE_BRANCH ] && [[ -z "$SKIP_SDK_PUBLISH_TO_MAVEN_REPO" ||  "$SKIP_SDK_PUBLISH_TO_MAVEN_REPO" == "false" ]]
 then
@@ -89,21 +106,5 @@ then
 	fi
 else
 	echo "-- Skipping SDK publishing."
-fi
-
-# Build and upload Olympus to Test Fairy
-if [ "$CURRENT_BRANCH" == $RELEASE_BRANCH ] && [[ -z "$SKIP_TF_UPLOAD" || "$SKIP_TF_UPLOAD" == "false" ]]
-then
-	if [ -z $TRUSTED_BUILD ]
-	then
-		echo "Cannot generate doc in an untrusted build, skipping"
-	else
-		if ! ./scripts/upload-olympus-to-testfairy.bash
-		then
-			exit 1
-		fi
-	fi
-else
-	echo "-- Skipping Test Fairy upload."
 fi
 
