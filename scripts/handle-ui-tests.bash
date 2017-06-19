@@ -24,8 +24,9 @@ fi
 cd Examples/restcomm-olympus || exit 1 # && wait_with_output ./gradlew app:connectedAndroidTest 
 
 # Build App and Test .apk files (remember that for instrumented tests we need 2 apks one of the actual App under test and another for the testing logic)
+# Important: we don't want TestFairy to be enabled in runtime for Olympus UI tests: a. Because we don't care since we can get logs from Firebase, b. TF messes up our tests because it presents some UI elements (like auto update dialog)
 echo "-- Build App and Test .apk files"
-./gradlew --quiet -x androidJavadocs -x signArchives -x uploadArchives assembleDebug assembleDebugAndroidTest
+./gradlew --quiet -x androidJavadocs -x signArchives -x uploadArchives assembleDebug assembleDebugAndroidTest -PENABLE_TEST_FAIRY_RUNTIME=false
 if [ $? -ne 0 ]
 then
 	echo "-- Failed to build Olympus for UI tests."
