@@ -56,5 +56,6 @@ then
 		echo "-- Installing keystore"
 		# Overwrite default keystore file only in travis
 		cp scripts/certs/${DEVELOPMENT_KEYSTORE} ~/.android/${DEVELOPMENT_KEYSTORE} || exit 1
+		rm scripts/certs/${DEVELOPMENT_KEYSTORE} || exit 1
 	fi
 fi
