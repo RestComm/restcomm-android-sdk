@@ -2,7 +2,7 @@ RestComm Mobile - Android SDK
 ================
 
 
-[![CI Status](http://img.shields.io/travis/RestComm/restcomm-android-sdk.svg?style=flat)](https://travis-ci.org/RestComm/restcomm-android-sdk)
+[![CI Status](http://img.shields.io/travis/RestComm/restcomm-android-sdk/master.svg?style=flat)](https://travis-ci.org/RestComm/restcomm-android-sdk)
 
 Android Mobile SDK to easily integrate communication features (messaging, presence, voice, video, screensharing) based on [RestComm](http://restcomm.com/) into native Mobile Applications.
 
