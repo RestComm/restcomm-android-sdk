@@ -627,6 +627,7 @@ public class PeerConnectionClient {
       // TCP candidates are only useful when connecting to a server that supports
       // ICE-TCP.
       rtcConfig.tcpCandidatePolicy = PeerConnection.TcpCandidatePolicy.DISABLED;
+      //rtcConfig.iceTransportsType = PeerConnection.IceTransportsType.RELAY;
       // Commenting out MAXBUNDLE because when used and receiving a call from MS that doesn't include BUNDLE
       // the remove SDP fails to be set here and call fails. Check https://bugs.chromium.org/p/webrtc/issues/detail?id=5573
       // Seems MAXCOMPAT fixes the issue

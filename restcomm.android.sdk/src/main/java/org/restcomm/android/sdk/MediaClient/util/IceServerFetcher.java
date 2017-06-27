@@ -95,7 +95,8 @@ public class IceServerFetcher {
     public void makeRequest() {
         RCLogger.d(TAG, "Requesting ICE servers from: " + iceUrl);
         httpConnection = new AsyncHttpURLConnection(
-                "GET", iceUrl,
+                "PUT", iceUrl,
+                //#"GET", iceUrl,
                 new AsyncHttpURLConnection.AsyncHttpEvents() {
                     @Override
                     public void onHttpError(String errorMessage) {
@@ -113,17 +114,30 @@ public class IceServerFetcher {
 
     private void iceServersHttpResponseParse(String response) {
         try {
+            RCLogger.d(TAG, "--- Ice Servers full response: " + response);
             JSONObject iceServersJson = new JSONObject(response);
 
+            /*
             int result = iceServersJson.getInt("s");
             RCLogger.d(TAG, "Ice Servers response status: " + result);
             if (result != 200) {
                 events.onIceServersError("Ice Servers response error: " + iceServersJson.getString("e"));
                 return;
             }
+            */
+
+            String result = iceServersJson.getString("s");
+            RCLogger.d(TAG, "Ice Servers response status: " + result);
+            if (!result.equals("ok")) {
+                //events.onIceServersError("Ice Servers response error: " + iceServersJson.getString("e"));
+                events.onIceServersError("Ice Servers response error: " + iceServersJson.getString("s"));
+                return;
+            }
+
 
             LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<PeerConnection.IceServer>();
-            JSONArray iceServersArray = iceServersJson.getJSONObject("d").getJSONArray("iceServers");
+            //#JSONArray iceServersArray = iceServersJson.getJSONObject("d").getJSONArray("iceServers");
+            JSONArray iceServersArray = iceServersJson.getJSONObject("v").getJSONArray("iceServers");
             for (int i = 0; i < iceServersArray.length(); ++i) {
 
                 String iceServerString = iceServersArray.getString(i);

@@ -27,10 +27,14 @@
 
 package org.restcomm.android.sdk.MediaClient.util;
 
+import android.util.Base64;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.Authenticator;
 import java.net.HttpURLConnection;
+import java.net.PasswordAuthentication;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.util.Scanner;
@@ -76,6 +80,14 @@ public class AsyncHttpURLConnection {
 
   private void sendHttpMessage() {
     try {
+      /*
+      Authenticator.setDefault(new Authenticator() {
+        protected PasswordAuthentication getPasswordAuthentication() {
+          return new PasswordAuthentication("username", "password".toCharArray());
+        }
+      });
+      */
+
       HttpURLConnection connection =
         (HttpURLConnection) new URL(url).openConnection();
       byte[] postData = new byte[0];
@@ -92,6 +104,9 @@ public class AsyncHttpURLConnection {
         connection.setDoOutput(true);
         connection.setFixedLengthStreamingMode(postData.length);
       }
+
+      final String basicAuth = "Basic " + Base64.encodeToString("username_TOCHANGE:password_TOCHANGE".getBytes(), Base64.NO_WRAP);
+      connection.setRequestProperty("Authorization", basicAuth);
       if (contentType == null) {
         connection.setRequestProperty("Content-Type", "text/plain; charset=utf-8");
       } else {

@@ -1114,6 +1114,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
 
       //String url = "https://service.xirsys.com/ice?ident=atsakiridis&secret=SECRET_HERE&domain=cloud.restcomm.com&application=default&room=default&secure=1";
+      url = "https://ice.restcomm.io/_turn/restcomm";
       new IceServerFetcher(url, turnEnabled, this).makeRequest();
    }
 
