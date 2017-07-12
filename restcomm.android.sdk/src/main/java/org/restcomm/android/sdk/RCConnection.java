@@ -924,6 +924,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    // don't need to disconnect media
    private void handleDisconnected(String jobId, boolean haveDisconnectedLocally)
    {
+      timeoutHandler.removeCallbacksAndMessages(null);
+
       // Device was already busy with another Connection, skip all handling here
       if (deviceAlreadyBusy) {
          return;
@@ -970,6 +972,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private void handleDisconnect(String reason)
    {
       RCLogger.i(TAG, "handleDisconnect(): reason: " + reason);
+      timeoutHandler.removeCallbacksAndMessages(null);
 
       audioManager.stop();
 
