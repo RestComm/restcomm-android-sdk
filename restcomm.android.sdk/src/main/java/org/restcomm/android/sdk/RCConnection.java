@@ -165,6 +165,11 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private ConnectionMediaType remoteMediaType;
 
    /**
+    * Has an error occurred? This is for internal use only
+    */
+   private boolean errorOccurred = false;
+
+   /**
     * Direction of the connection. True if connection is incoming, false otherwise
     */
    boolean incoming;
@@ -871,15 +876,19 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    }
 
+   // When a call error occurs, we can assume that the call has been killed and the App doesn't have to do anything like hanging it up. The signaling facilities take care of proper call
+   // termination
    public void onCallErrorEvent(String jobId, RCClient.ErrorCodes errorCode, String errorText)
    {
       RCLogger.e(TAG, "onCallErrorEvent(): jobId: " + jobId + ", error code: " + errorCode + ", error text: " + errorText);
+
+      errorOccurred = true;
 
       // TODO: we need to see if there's a chance a call that causes an error to remain up,
       // if not we need to avoid disconnecting below
       if (state != ConnectionState.DISCONNECTING) {
          // only disconnect signaling facilities if we are not already disconnecting
-         signalingClient.disconnect(jobId, null);
+         //signalingClient.disconnect(jobId, null);
       }
       /*
       else {
@@ -983,24 +992,28 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          RCLogger.w(TAG, "disconnect(): Attempting to disconnect while we are in state disconnecting, skipping.");
       }
       else {
-         // let's delay a millisecond to avoid calling code in the App getting intertwined with App listener code
-         new Handler(device.getMainLooper()).postDelayed(
-               new Runnable() {
-                  @Override
-                  public void run()
-                  {
-                     if (device.isAttached()) {
-                        listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_WRONG_STATE.ordinal(),
-                              RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_WRONG_STATE));
-                     }
-                     else {
-                        RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onError(): " +
-                              RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_WRONG_STATE));
-                     }
+         // state == ConnectionState.DISCONNECTED
 
-                  }
-               }
-               , 1);
+         // If an error has occurred it's normal to be already disconnected; signaling facilities have already terminated the call.
+         // If not then we need to notify App of the error: that they are calling disconnect for a second time
+         if (!errorOccurred) {
+            // let's delay a millisecond to avoid calling code in the App getting intertwined with App listener code
+            new Handler(device.getMainLooper()).postDelayed(
+                    new Runnable() {
+                       @Override
+                       public void run() {
+                          if (device.isAttached()) {
+                             listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_WRONG_STATE.ordinal(),
+                                     RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_WRONG_STATE));
+                          } else {
+                             RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onError(): " +
+                                     RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_DISCONNECT_WRONG_STATE));
+                          }
+
+                       }
+                    }
+                    , 1);
+         }
       }
    }
 
@@ -1109,7 +1122,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
       boolean turnEnabled = false;
       if (deviceParameters.containsKey(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED) &&
-            !deviceParameters.get(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED).equals("")) {
+              (Boolean)deviceParameters.get(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED)) {
          turnEnabled = true;
       }
 

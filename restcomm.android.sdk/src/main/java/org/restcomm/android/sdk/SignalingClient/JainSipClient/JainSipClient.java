@@ -712,7 +712,8 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
                JainSipJob jainSipJob = jainSipJobManager.getByCallId(callId);
                if (jainSipJob == null) {
                   // no need to notify UI thread
-                  RCLogger.e(TAG, "processRequest(): error, got request for unknown transaction job. Method: " + method);
+                  // This has happened once when we were calling somebody and the ACK to the 200 OK to the INVITE failed to be sent. Then, the callee hangs up the call and by the time the BYE arrives the call has been removed (due to the failed ACK)
+                  RCLogger.w(TAG, "processRequest(): warning, got request for unknown job; ignoring. Method: " + method + ", CallId: " + callId);
                   return;
                }
 

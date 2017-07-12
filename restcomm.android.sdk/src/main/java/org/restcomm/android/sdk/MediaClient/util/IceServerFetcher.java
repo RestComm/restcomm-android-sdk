@@ -130,7 +130,8 @@ public class IceServerFetcher {
                 JSONObject iceServerJson = new JSONObject(iceServerString);
 
                 String url = iceServerJson.getString("url");
-                if (!this.turnEnabled && url.startsWith("turn:")) {
+                // Turn urls can start with 'turn' or 'turns'
+                if (!this.turnEnabled && url.startsWith("turn")) {
                     // if turn is not enabled and the server we got back is a turn (as opposed to stun), skip it
                     continue;
                 }

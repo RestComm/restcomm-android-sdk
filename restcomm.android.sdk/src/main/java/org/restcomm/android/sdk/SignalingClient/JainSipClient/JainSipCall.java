@@ -93,7 +93,8 @@ public class JainSipCall {
       catch (JainSipException e) {
          e.printStackTrace();
          listener.onCallErrorEvent(jobId, e.errorCode, e.errorText);
-         jainSipClient.jainSipJobManager.remove(jobId);
+         // if we get exception here then the job didn't get a chance to be added, so no reason to remove
+         //jainSipClient.jainSipJobManager.remove(jobId);
       }
    }
 
@@ -106,8 +107,10 @@ public class JainSipCall {
       }
       catch (JainSipException e) {
          e.printStackTrace();
-         listener.onCallErrorEvent(jainSipJob.jobId, e.errorCode, e.errorText);
+         // we have a dialog in early state since we have already received the call and sent back 180 Ringing
+         jainSipJob.transaction.getDialog().delete();
          jainSipClient.jainSipJobManager.remove(jainSipJob.jobId);
+         listener.onCallErrorEvent(jainSipJob.jobId, e.errorCode, e.errorText);
       }
    }
 
@@ -159,8 +162,9 @@ public class JainSipCall {
       }
       catch (JainSipException e) {
          e.printStackTrace();
-         listener.onCallErrorEvent(jainSipJob.jobId, e.errorCode, e.errorText);
+         jainSipJob.transaction.getDialog().delete();
          jainSipClient.jainSipJobManager.remove(jainSipJob.jobId);
+         listener.onCallErrorEvent(jainSipJob.jobId, e.errorCode, e.errorText);
       }
    }
 
@@ -398,8 +402,11 @@ public class JainSipCall {
                listener.onCallOutgoingConnectedEvent(jainSipJob.jobId, sdpAnswer, JainSipMessageBuilder.parseCustomHeaders(response));
             }
             catch (SipException e) {
+               // We weren't able to send the ACK; notify Application of error and kill the Dialog
+               jainSipJob.transaction.getDialog().delete();
+               jainSipClient.jainSipJobManager.remove(jainSipJob.jobId);
                listener.onCallErrorEvent(jainSipJob.jobId, RCClient.ErrorCodes.ERROR_CONNECTION_COULD_NOT_CONNECT,
-                     RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_COULD_NOT_CONNECT));
+                       RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_COULD_NOT_CONNECT));
             }
             catch (Exception e) {
                // TODO: let's emit a RuntimeException for now so that we get a loud and clear indication of issues involved in the field and then
@@ -419,8 +426,9 @@ public class JainSipCall {
                   jainSipCallHangup(jainSipJob, jainSipClient.configuration, null);
                }
                catch (JainSipException e) {
-                  listener.onCallErrorEvent(jainSipJob.jobId, e.errorCode, e.errorText);
+                  jainSipJob.transaction.getDialog().delete();
                   jainSipClient.jainSipJobManager.remove(jainSipJob.jobId);
+                  listener.onCallErrorEvent(jainSipJob.jobId, e.errorCode, e.errorText);
                }
             }
          }
@@ -431,16 +439,20 @@ public class JainSipCall {
       else if (response.getStatusCode() == Response.RINGING) {
          listener.onCallOutgoingPeerRingingEvent(jainSipJob.jobId);
       }
-      if (response.getStatusCode() == Response.PROXY_AUTHENTICATION_REQUIRED || response.getStatusCode() == Response.UNAUTHORIZED) {
+      else if (response.getStatusCode() == Response.PROXY_AUTHENTICATION_REQUIRED || response.getStatusCode() == Response.UNAUTHORIZED) {
          try {
             // important we pass the jainSipClient params in jainSipAuthenticate (instead of jainSipJob.parameters that has the call parameters), because this is where usename/pass reside
             jainSipClient.jainSipAuthenticate(jainSipJob, jainSipClient.configuration, responseEventExt);
          }
          catch (JainSipException e) {
+            jainSipJob.transaction.getDialog().delete();
+            jainSipClient.jainSipJobManager.remove(jainSipJob.jobId);
             listener.onCallErrorEvent(jainSipJob.jobId, e.errorCode, e.errorText);
          }
       }
       else if (response.getStatusCode() == Response.FORBIDDEN) {
+         jainSipJob.transaction.getDialog().delete();
+         jainSipClient.jainSipJobManager.remove(jainSipJob.jobId);
          listener.onCallErrorEvent(jainSipJob.jobId, RCClient.ErrorCodes.ERROR_CONNECTION_AUTHENTICATION_FORBIDDEN,
                RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_AUTHENTICATION_FORBIDDEN));
       }
@@ -463,6 +475,8 @@ public class JainSipCall {
          if (method.equals(Request.INVITE)) {
             // INVITE was terminated by Cancel
             listener.onCallLocalDisconnectedEvent(jainSipJob.jobId);
+
+            // TODO: I think we should send an ACK here as the CANCEL flow should be 1. > CANCEL, 2. < 200 OK, 3. < 487 Request Terminated, 4. > ACK
             // we are done with this call, let's remove job
             jainSipClient.jainSipJobManager.remove(jainSipJob.jobId);
          }
@@ -474,6 +488,9 @@ public class JainSipCall {
             // we are done with this call, let's remove job
             jainSipClient.jainSipJobManager.remove(jainSipJob.jobId);
          }
+      }
+      else if (response.getStatusCode() == Response.TRYING) {
+         // Currently we do nothing about it, but let's keep it in separate leg, so that the 'unhandled SIP response' is indicative of lack of code to handle response
       }
       else {
          RCLogger.e(TAG, "processResponse(): unhandled SIP response: " + response.getStatusCode());

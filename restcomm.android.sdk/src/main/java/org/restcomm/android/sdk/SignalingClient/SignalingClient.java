@@ -35,10 +35,10 @@ import java.util.HashMap;
 
 /**
  * SignalingClient is a singleton that provides asynchronous access to lower level signaling facilities. Requests are sent via methods
- * like open(), close(), etc towards signaling thread. Responses are received via Handler.handleMessage() from signaling thread
- * and sent for further processing to SignalingClientListener listener for register/configuration specific functionality and to
- * SignalingClientCallListener listener for call related functionality. Hence, users of this API should implement those
- * and properly handle responses and events.
+ * like open(), close(), etc towards signaling thread. Responses are received via Handler.handleMessage() (since this class is also a Handler)
+ * from signaling thread and sent for further processing to SignalingClientListener listener for register/configuration specific
+ * functionality and to SignalingClientCallListener listener for call related functionality. Hence, users of this API should implement
+ * those and properly handle responses and events.
  *
  * Each request towards the signaling thread is sent together with a unique jobId that identifies this 'job' until it is either complete
  * or an error occurs. Each reply/event associated with this request carries the same jobId, so that the App can correlate them. The lifetime
@@ -109,6 +109,8 @@ public class SignalingClient extends Handler {
       // call was disconnected due to local disconnect() call
       void onCallLocalDisconnectedEvent(String jobId);
 
+      // when a call error occurs, we can assume that the call has been killed and the App doesn't have to do anything like hanging it up. The signaling facilities take care of proper call
+      // termination
       void onCallErrorEvent(String jobId, RCClient.ErrorCodes status, String text);
 
       // cancel was was answered for incoming call
