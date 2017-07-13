@@ -132,6 +132,14 @@ repositories {
         url "https://oss.sonatype.org/content/repositories/snapshots/"
     }
     */
+
+    /*
+    // uncomment this to test when staging the release
+    maven {
+        url "https://oss.sonatype.org/content/repositories/staging/"
+    }
+    */
+
     maven {
         url 'https://www.testfairy.com/maven'
     }
@@ -142,7 +150,7 @@ dependencies {
     // Use local library code
     compile project(':restcomm.android.sdk')
     // If you want to use latest released restcomm-android-sdk library, please uncomment this and comment previous line
-    //compile 'org.restcomm:restcomm-android-sdk:1.0.1-BETA6-83'
+    //compile 'org.restcomm:restcomm-android-sdk:1.0.3-BETA6-134'
     compile 'com.android.support:appcompat-v7:25.1.1'
     compile 'com.android.support:design:25.1.1'
     compile 'com.android.support:support-v4:25.1.1'
