@@ -510,6 +510,7 @@ public class PeerConnectionClient {
 
          @Override
          public void onWebRtcAudioRecordStartError(String errorMessage)
+         //public void onWebRtcAudioRecordStartError(WebRtcAudioRecord.AudioRecordStartErrorCode errorCode, String errorMessage)
          {
             Log.e(TAG, "onWebRtcAudioRecordStartError: " + errorMessage);
             reportError(errorMessage);
@@ -1331,12 +1332,18 @@ public class PeerConnectionClient {
       }
 
       @Override
-      public void onIceGatheringChange(PeerConnection.IceGatheringState newState)
+      public void onIceGatheringChange(final PeerConnection.IceGatheringState newState)
       {
-         Log.d(TAG, "IceGatheringState: " + newState);
-         if (newState == PeerConnection.IceGatheringState.COMPLETE) {
-            events.onIceGatheringComplete();
-         }
+         executor.execute(new Runnable() {
+            @Override
+            public void run()
+            {
+               Log.d(TAG, "IceGatheringState: " + newState);
+               if (newState == PeerConnection.IceGatheringState.COMPLETE) {
+                  events.onIceGatheringComplete();
+               }
+            }
+         });
       }
 
       @Override
