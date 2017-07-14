@@ -357,50 +357,57 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
 
             //callOutgoing = false;
             pendingConnection = device.getPendingConnection();
-            pendingConnection.setConnectionListener(this);
+            // There is chance that pendingConnection is null if call activity is reopened after call has failed
+            // but used hasn't pressed ok to the dialog so that the call activity is destroyed. Let's guard for this
+            if (pendingConnection != null) {
+                pendingConnection.setConnectionListener(this);
 
-            // the number from which we got the call
-            String incomingCallDid = intent.getStringExtra(RCDevice.EXTRA_DID);
-            HashMap<String, String> customHeaders = (HashMap<String, String>) intent.getSerializableExtra(RCDevice.EXTRA_CUSTOM_HEADERS);
-            if (customHeaders != null) {
-                Log.i(TAG, "Got custom headers in incoming call: " + customHeaders.toString());
-            }
-
-            // save peer to preferences, we might need it for potential bug report (check BugReportActivity)
-            SharedPreferences.Editor editor = prefs.edit();
-            editor.putString(BugReportActivity.MOST_RECENT_CALL_PEER, incomingCallDid);
-            editor.apply();
-
-
-            if (intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_ANSWER_AUDIO) || intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_ANSWER_VIDEO)) {
-                // The Intent has been sent from the Notification subsystem. It can be either of type 'decline', 'video answer and 'audio answer'
-                boolean answerVideo = intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_ANSWER_VIDEO);
-                btnAnswer.setVisibility(View.INVISIBLE);
-                btnAnswerAudio.setVisibility(View.INVISIBLE);
-
-                acceptParams = new HashMap<String, Object>();
-                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, answerVideo);
-                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
-                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
-                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC,
-                      audioCodecString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, ""))
-                );
-
-                if (intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_ANSWER_VIDEO)) {
-                    acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC,
-                          videoCodecString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC, ""))
-                    );
-                    acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION,
-                          resolutionString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION, ""))
-                    );
-                    acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE,
-                          frameRateString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE, ""))
-                    );
+                // the number from which we got the call
+                String incomingCallDid = intent.getStringExtra(RCDevice.EXTRA_DID);
+                HashMap<String, String> customHeaders = (HashMap<String, String>) intent.getSerializableExtra(RCDevice.EXTRA_CUSTOM_HEADERS);
+                if (customHeaders != null) {
+                    Log.i(TAG, "Got custom headers in incoming call: " + customHeaders.toString());
                 }
 
+                // save peer to preferences, we might need it for potential bug report (check BugReportActivity)
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.putString(BugReportActivity.MOST_RECENT_CALL_PEER, incomingCallDid);
+                editor.apply();
 
-                // Check permissions asynchronously and then accept the call
-                handlePermissions(true);
+
+                if (intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_ANSWER_AUDIO) || intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_ANSWER_VIDEO)) {
+                    // The Intent has been sent from the Notification subsystem. It can be either of type 'decline', 'video answer and 'audio answer'
+                    boolean answerVideo = intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_ANSWER_VIDEO);
+                    btnAnswer.setVisibility(View.INVISIBLE);
+                    btnAnswerAudio.setVisibility(View.INVISIBLE);
+
+                    acceptParams = new HashMap<String, Object>();
+                    acceptParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, answerVideo);
+                    acceptParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
+                    acceptParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
+                    acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC,
+                            audioCodecString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, ""))
+                    );
+
+                    if (intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_ANSWER_VIDEO)) {
+                        acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC,
+                                videoCodecString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC, ""))
+                        );
+                        acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION,
+                                resolutionString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION, ""))
+                        );
+                        acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE,
+                                frameRateString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE, ""))
+                        );
+                    }
+
+
+                    // Check permissions asynchronously and then accept the call
+                    handlePermissions(true);
+                }
+            }
+            else {
+                Log.w(TAG, "Warning: pendingConnection is null, probably reusing past intent");
             }
         }
         /* TODO: Issue #380: once we figure out the issue with the backgrounding we need to uncomment this
