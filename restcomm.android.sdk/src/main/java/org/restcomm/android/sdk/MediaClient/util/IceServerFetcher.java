@@ -135,6 +135,13 @@ public class IceServerFetcher {
                     // if turn is not enabled and the server we got back is a turn (as opposed to stun), skip it
                     continue;
                 }
+                /* When TURN is enabled, don't add turns urls
+                if (this.turnEnabled && url.startsWith("turns")) {
+                    // if turn is not enabled and the server we got back is a turn (as opposed to stun), skip it
+                    continue;
+                }
+                */
+
                 // username and credentials is optional, for example in the STUN server setting
                 String username = "", password = "";
                 if (iceServerJson.has("username")) {

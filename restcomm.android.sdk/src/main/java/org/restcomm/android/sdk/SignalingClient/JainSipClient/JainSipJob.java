@@ -757,7 +757,8 @@ class JainSipJob {
    public HashMap<String, Object> parameters;
    public JainSipCall jainSipCall;
    public int authenticationAttempts;
-   public static int MAX_AUTH_ATTEMPTS = 3;
+   // How many times to try to send REGISTER with creds. Default is one, so that we re-send REGISTER with creds
+   public static int MAX_AUTH_ATTEMPTS = 1;
    JainSipClient jainSipClient;
    JainSipJobManager jainSipJobManager;
    JainSipFsm jainSipFsm;
@@ -809,15 +810,20 @@ class JainSipJob {
       this.transaction = transaction;
    }
 
-   // Should we retry authentication if previous failed? We retry a max of MAX_AUTH_ATTEMPTS
+   // Should we try to authentication if original REGISTER (without creds) failed with 401 or 407
    boolean shouldRetry()
    {
-      if (authenticationAttempts < JainSipJob.MAX_AUTH_ATTEMPTS - 1) {
+      if (authenticationAttempts < JainSipJob.MAX_AUTH_ATTEMPTS) {
          return true;
       }
       else {
          return false;
       }
+   }
+
+   void resetAuthAttempts()
+   {
+      authenticationAttempts = 0;
    }
 
    void increaseAuthAttempts()

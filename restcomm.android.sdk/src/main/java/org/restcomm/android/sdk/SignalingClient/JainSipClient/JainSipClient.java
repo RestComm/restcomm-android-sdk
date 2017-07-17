@@ -500,6 +500,11 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
    public ClientTransaction jainSipClientRegister(JainSipJob jainSipJob, final HashMap<String, Object> parameters) throws JainSipException
    {
       RCLogger.v(TAG, "jainSipRegister()");
+
+      // Remember that in the same job we might have multiple REGISTER steps, so we need to reset the auth attempts each time we start a new registration, to make
+      // sure the counter isn't messed up
+      jainSipJob.resetAuthAttempts();
+
       // Debug purposes to track the JainSipJob objects
       RCLogger.v(TAG, "jainSipRegister(), jobs status: " + jainSipJobManager.getPrintableJobs());
 
@@ -609,6 +614,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
    // Notice that this is used both for registrations and calls
    public void jainSipAuthenticate(JainSipJob jainSipJob, HashMap<String, Object> parameters, ResponseEventExt responseEventExt) throws JainSipException
    {
+      // Notice '401 Unauthorized' response is issued by UASs and registrars, while '407 Proxy Authentication Required' is used by proxy servers
       try {
          String password = (String) parameters.get(RCDevice.ParameterKeys.SIGNALING_PASSWORD);
          if (password == null) {
@@ -619,8 +625,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
                new JainSipAccountManagerImpl((String) parameters.get(RCDevice.ParameterKeys.SIGNALING_USERNAME),
                      responseEventExt.getRemoteIpAddress(), password), jainSipMessageBuilder.getHeaderFactory());
 
-         // we 're subtracting one since the first attempt has already taken place
-         // (that way we are enforcing MAX_AUTH_ATTEMPTS at most)
+         // should we retry to REGISTER, this time with creds
          if (jainSipJob.shouldRetry()) {
             ClientTransaction authenticationTransaction = authenticationHelper.handleChallenge(responseEventExt.getResponse(),
                   (ClientTransaction) jainSipJob.transaction, jainSipProvider, 5, true);
@@ -632,8 +637,12 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
             jainSipJob.increaseAuthAttempts();
          }
          else {
+            // our attempt to REGISTER with credentials failed, hence creds are wrong
             // actually this should not happen. Restcomm should return forbidden if the credentials are wrong and not challenge again
-            throw new RuntimeException("Failed to authenticate after max attempts");
+            //throw new RuntimeException("Failed to authenticate after max attempts");
+            jainSipJob.processFsm(jainSipJob.jobId, JainSipJob.FsmEvents.REGISTER_FAILURE, null, RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_AUTHENTICATION_FORBIDDEN,
+                    RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_AUTHENTICATION_FORBIDDEN));
+
          }
       }
       catch (SipException e) {

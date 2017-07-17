@@ -876,7 +876,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    }
 
-   // When a call error occurs, we can assume that the call has been killed and the App doesn't have to do anything like hanging it up. The signaling facilities take care of proper call
+   // When a call signaling error occurs, we can assume that the call has been killed and the App doesn't have to do anything like hanging it up. The signaling facilities take care of proper call
    // termination
    public void onCallErrorEvent(String jobId, RCClient.ErrorCodes errorCode, String errorText)
    {
