@@ -50,7 +50,7 @@ android {
         buildConfigField "String", "TEST_RESTCOMM_ACCOUNT_SID", TEST_RESTCOMM_ACCOUNT_SID
         buildConfigField "String", "TEST_RESTCOMM_AUTH_TOKEN", TEST_RESTCOMM_AUTH_TOKEN
         buildConfigField "boolean", "ENABLE_TEST_FAIRY_RUNTIME", ENABLE_TEST_FAIRY_RUNTIME
-
+        buildConfigField "String", "TESTFAIRY_APP_TOKEN", TESTFAIRY_APP_TOKEN
 
 
         // ICE_USERNAME & ICE_PASSWORD are defined in project gradle.properties, but also overriden in global gradle.properties

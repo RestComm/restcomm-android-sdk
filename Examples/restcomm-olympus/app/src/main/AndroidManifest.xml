@@ -15,7 +15,7 @@
     -->
 
 
-    <!-- This is needed for debug purposes only, to be able to store Jain SIP logs in external storage -->
+    <!-- WARNING: Disable for production builds. This is needed for debug purposes only, to be able to store Jain SIP logs in external storage -->
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
     <!-- Needed for TestFairy. IMPORTANT: remove in a production App -->

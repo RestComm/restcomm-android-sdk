@@ -97,7 +97,7 @@ public class MainActivity extends AppCompatActivity
       // For TestFairy troubleshooting. IMPORTANT: remove for production apps, as TestFairy sends logs, screenshots, etc to their servers
       //TestFairy.begin(this, "#TESTFAIRY_APP_TOKEN");
       if (BuildConfig.ENABLE_TEST_FAIRY_RUNTIME) {
-         TestFairy.begin(this, "52d3ee1de1b7681d1fcbbc3295b2b86a0aa43fcc");
+         TestFairy.begin(this, BuildConfig.TESTFAIRY_APP_TOKEN);
       }
 
       Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
