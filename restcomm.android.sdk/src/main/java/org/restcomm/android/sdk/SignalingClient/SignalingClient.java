@@ -24,6 +24,7 @@ package org.restcomm.android.sdk.SignalingClient;
 
 import android.content.Context;
 import android.os.Handler;
+import android.os.Looper;
 import android.os.Message;
 
 import org.restcomm.android.sdk.RCClient;
@@ -34,7 +35,7 @@ import org.restcomm.android.sdk.util.RCLogger;
 import java.util.HashMap;
 
 /**
- * SignalingClient is a singleton that provides asynchronous access to lower level signaling facilities. Requests are sent via methods
+ * SignalingClient is a singleton that provides asynchronous access to lower level signaling facilities. Requests are sent typically from UI thread via methods
  * like open(), close(), etc towards signaling thread. Responses are received via Handler.handleMessage() (since this class is also a Handler)
  * from signaling thread and sent for further processing to SignalingClientListener listener for register/configuration specific
  * functionality and to SignalingClientCallListener listener for call related functionality. Hence, users of this API should implement
