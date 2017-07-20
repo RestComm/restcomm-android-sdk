@@ -163,6 +163,7 @@ dependencies {
     }
     androidTestCompile 'com.android.support.test.uiautomator:uiautomator-v18:2.1.2'
     androidTestCompile 'com.loopj.android:android-async-http:1.4.9'
+    androidTestCompile 'org.awaitility:awaitility:3.0.0'
 
 }
 

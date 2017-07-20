@@ -1,44 +1,15 @@
 package org.restcomm.android.olympus;
 
 
+import android.content.Context;
 import android.content.Intent;
-import android.graphics.drawable.ColorDrawable;
-import android.net.Uri;
-import android.os.Build;
 import android.os.IBinder;
 import android.support.test.InstrumentationRegistry;
-import android.support.test.espresso.NoMatchingViewException;
-import android.support.test.espresso.ViewInteraction;
-import android.support.test.espresso.matcher.BoundedMatcher;
-import android.support.test.internal.util.Checks;
-import android.support.test.rule.ActivityTestRule;
+import android.support.test.annotation.UiThreadTest;
 import android.support.test.rule.ServiceTestRule;
+import android.support.test.rule.UiThreadTestRule;
 import android.support.test.runner.AndroidJUnit4;
-import android.support.test.uiautomator.UiDevice;
-import android.support.test.uiautomator.UiObject;
-import android.support.test.uiautomator.UiObjectNotFoundException;
-import android.support.test.uiautomator.UiSelector;
-import android.support.v4.content.ContextCompat;
-import android.test.suitebuilder.annotation.LargeTest;
 import android.util.Log;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.ViewParent;
-import android.widget.EditText;
-import android.widget.TextView;
-import android.widget.Toast;
-
-import org.hamcrest.Description;
-import org.hamcrest.Matcher;
-import org.hamcrest.Matchers;
-import org.hamcrest.TypeSafeMatcher;
-
-import static android.support.test.espresso.Espresso.onData;
-import static org.hamcrest.Matchers.is;
-import static org.hamcrest.core.AllOf.allOf;
-
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -46,13 +17,29 @@ import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.RCDeviceListener;
 
+import org.hamcrest.Description;
+import org.hamcrest.Matcher;
+import org.hamcrest.Matchers;
+import org.hamcrest.TypeSafeMatcher;
+import org.restcomm.android.sdk.util.RCException;
+
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.core.AllOf.allOf;
+
+import static org.awaitility.Awaitility.*;
+
 import java.util.HashMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 @RunWith(AndroidJUnit4.class)
 public class IntegrationTests implements RCDeviceListener {
     private static final String TAG = "IntegrationTests";
-    final String smsText = "Hello there";
+    private boolean initialized = false;
+
+    @Rule
+    public UiThreadTestRule uiThreadTestRule = new UiThreadTestRule();
 
     @Rule
     public final ServiceTestRule mServiceRule = new ServiceTestRule();
@@ -72,19 +59,24 @@ public class IntegrationTests implements RCDeviceListener {
 
 
     @Test
+    @UiThreadTest
     // Test on calling a Restcomm number, using 1235
     public void integrationTest1() throws TimeoutException
     {
         // Create the service Intent.
-        Intent serviceIntent =
-                new Intent(InstrumentationRegistry.getTargetContext(),
-                        RCDevice.class);
+        //Intent serviceIntent = new Intent(InstrumentationRegistry.getTargetContext(), RCDevice.class);
+
 
         // Data can be passed to the service via the Intent.
         //serviceIntent.putExtra(LocalService.SEED_KEY, 42L);
 
-        // Bind the service and grab a reference to the binder.
-        IBinder binder = mServiceRule.bindService(serviceIntent);
+        //IBinder binder = mServiceRule.bindService(new Intent(InstrumentationRegistry.getTargetContext(), MyService.class));
+        //MyService service = ((MyService.LocalBinder) binder).getService();
+        //assertTrue("True wasn't returned", service.doSomethingToReturnTrue());
+
+        // Bind the service and grab a reference to the binder
+        IBinder binder = mServiceRule.bindService(new Intent(InstrumentationRegistry.getTargetContext(), RCDevice.class));
+        //bindService(new Intent(this, RCDevice.class), this, Context.BIND_AUTO_CREATE);
 
         // Get the reference to the service, or you can call
         // public methods on the binder directly.
@@ -93,7 +85,7 @@ public class IntegrationTests implements RCDeviceListener {
         HashMap<String, Object> params = new HashMap<String, Object>();
         params.put(RCDevice.ParameterKeys.INTENT_INCOMING_CALL, new Intent(RCDevice.ACTION_INCOMING_CALL, null, InstrumentationRegistry.getTargetContext(), CallActivity.class));
         params.put(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE, new Intent(RCDevice.ACTION_INCOMING_MESSAGE, null, InstrumentationRegistry.getTargetContext(), MessageActivity.class));
-        params.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN, "192.168.2.35:5080");
+        params.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN, "192.168.2.3:5080");
         params.put(RCDevice.ParameterKeys.SIGNALING_USERNAME, "bob");
         params.put(RCDevice.ParameterKeys.SIGNALING_PASSWORD, "1234");
         params.put(RCDevice.ParameterKeys.MEDIA_ICE_URL, "https://service.xirsys.com/ice");
@@ -117,8 +109,30 @@ public class IntegrationTests implements RCDeviceListener {
         //params.put(RCDevice.ParameterKeys.DEBUG_JAIN_SIP_LOGGING_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.DEBUG_JAIN_SIP_LOGGING_ENABLED, true));
 
         device.setLogLevel(Log.VERBOSE);
+
+/*
+        try {
+            device.initialize(InstrumentationRegistry.getTargetContext(), params, this);
+        }
+        catch (RCException e) {
+            Log.e(TAG, "RCDevice Initialization Error: " + e.errorText);
+        }
+*/
+
         // Verify that the service is working correctly.
         //assertThat(service.getRandomInt(), is(any(Integer.class)));
+
+        Log.i(TAG, "Before wait");
+        await().atMost(15, TimeUnit.SECONDS).until(deviceOnInitialized());
+        Log.i(TAG, "After wait");
+    }
+
+    private Callable<Boolean> deviceOnInitialized() {
+        return new Callable<Boolean>() {
+            public Boolean call() throws Exception {
+                return initialized; // The condition that must be fulfilled
+            }
+        };
     }
 
 
@@ -138,6 +152,7 @@ public class IntegrationTests implements RCDeviceListener {
     public void onInitialized(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus, int statusCode, String statusText)
     {
         Log.i(TAG, "%% onInitialized");
+        initialized = true;
     }
 
     public void onReleased(RCDevice device, int statusCode, String statusText)
