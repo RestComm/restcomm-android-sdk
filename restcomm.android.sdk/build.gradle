@@ -84,7 +84,7 @@ dependencies {
     compile(group: 'org.restcomm.android', name: 'libwebrtc', version: '1.0.0-beta5-16765', ext: 'aar')
 
     //compile files('libs/libjingle_peerconnection_java.jar')
-    compile 'com.android.support:appcompat-v7:25.1.1'
+    compile 'com.android.support:appcompat-v7:25.3.1'
     // Notice that log4j 2.7 doesn't work on account of JAIN SIP expecting log4j GroupId, not org.apache.logging.log4j
     // TODO: We should try to fix that at some point
     //compile 'org.apache.logging.log4j:log4j:2.7'
@@ -95,6 +95,9 @@ dependencies {
     compile 'com.madgag.spongycastle:core:1.54.0.0'
     compile 'com.madgag.spongycastle:prov:1.54.0.0'
     compile 'com.madgag.spongycastle:pkix:1.54.0.0'
+
+    // Required for local unit tests (JUnit 4 framework)
+    //testCompile 'junit:junit:4.12'
 }
 
 // Upload to sonatype stuff

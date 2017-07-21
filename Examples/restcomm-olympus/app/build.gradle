@@ -151,19 +151,25 @@ dependencies {
     compile project(':restcomm.android.sdk')
     // If you want to use latest released restcomm-android-sdk library, please uncomment this and comment previous line
     //compile 'org.restcomm:restcomm-android-sdk:1.0.3-BETA6-134'
-    compile 'com.android.support:appcompat-v7:25.1.1'
-    compile 'com.android.support:design:25.1.1'
-    compile 'com.android.support:support-v4:25.1.1'
+    compile 'com.android.support:appcompat-v7:25.3.1'
+    compile 'com.android.support:design:25.3.1'
+    compile 'com.android.support:support-v4:25.3.1'
     compile 'testfairy:testfairy-android-sdk:1.+@aar'
     //compile 'testfairy:testfairy-android-sdk:1.4.5'
     //compile 'net.hockeyapp.android:HockeySDK:4.1.1'
     ////compile files('./libs/testfairy-android-sdk-1.4.6-unlimited-events.jar')
+
     androidTestCompile 'com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     }
+    // We need uiautomator so that we can interact with permission dialogs that come from the Android system, NOT the App
     androidTestCompile 'com.android.support.test.uiautomator:uiautomator-v18:2.1.2'
     androidTestCompile 'com.loopj.android:android-async-http:1.4.9'
     androidTestCompile 'org.awaitility:awaitility:3.0.0'
+
+    androidTestCompile 'com.squareup.assertj:assertj-android:1.1.1', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    }
 
 }
 
