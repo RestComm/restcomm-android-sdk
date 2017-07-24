@@ -41,15 +41,13 @@ import static org.assertj.core.api.Assertions.*;
 
 import java.util.HashMap;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 @RunWith(AndroidJUnit4.class)
 public class IntegrationTests implements RCDeviceListener, ServiceConnection {
     private static final String TAG = "IntegrationTests";
     //private Handler testHandler;
-    static private final int TIMEOUT = 120000;
+    static private final int TIMEOUT = 30000;
 
     // Condition variables
     private boolean initialized;  // = false;
@@ -58,17 +56,15 @@ public class IntegrationTests implements RCDeviceListener, ServiceConnection {
 
     RCDevice.RCDeviceBinder binder;
 
-
     //@Rule
     //public UiThreadTestRule uiThreadTestRule = new UiThreadTestRule();
 
     //@Rule
     //public final ServiceTestRule mServiceRule = new ServiceTestRule();
-    //public final ServiceTestRule mServiceRule = ServiceTestRule.withTimeout(60L, TimeUnit.SECONDS);
 
-
-
-
+    /**
+     * Test Cases
+     */
     @Before
     public void initialize()
     {
@@ -78,31 +74,25 @@ public class IntegrationTests implements RCDeviceListener, ServiceConnection {
         serviceDisconnected = false;
     }
 
-
     /*
     @After
     public void afterAction() {
     }
     */
 
-
-    @Test(timeout = TIMEOUT)
     // Test initializing RCDevice with proper credentials and cleartext signaling
-    public void deviceInitialize_Valid() throws TimeoutException
+    @Test(timeout = TIMEOUT)
+    public void deviceInitialize_Valid()
     {
-        Log.i(TAG, "------------------------------------------------------------");
         InstrumentationRegistry.getTargetContext().bindService(new Intent(InstrumentationRegistry.getTargetContext(), RCDevice.class), this, Context.BIND_AUTO_CREATE);
 
         await().atMost(10, TimeUnit.SECONDS).until(serviceOnConnected());
-        //device = binder.getService();
-        //IBinder binder = mServiceRule.bindService(new Intent(InstrumentationRegistry.getTargetContext(), RCDevice.class));
 
         // Get the reference to the service, or you can call public methods on the binder directly.
         final RCDevice device = binder.getService();
 
         HandlerThread clientHandlerThread = new HandlerThread("client-thread");
         clientHandlerThread.start();
-        Log.e(TAG, "---- client-thread id: " + clientHandlerThread.getId());
         Handler clientHandler = new Handler(clientHandlerThread.getLooper());
 
         clientHandler.post(new Runnable() {
@@ -132,7 +122,6 @@ public class IntegrationTests implements RCDeviceListener, ServiceConnection {
             }
         });
 
-        //Log.i(TAG, "Before wait");
         await().atMost(10, TimeUnit.SECONDS).until(deviceOnInitialized());
 
         clientHandler.post(new Runnable() {
@@ -145,35 +134,24 @@ public class IntegrationTests implements RCDeviceListener, ServiceConnection {
         await().atMost(10, TimeUnit.SECONDS).until(deviceOnReleased());
 
         clientHandlerThread.quit();
-
-
         //assertThat(released).isTrue();
 
-        Log.i(TAG, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-
         InstrumentationRegistry.getTargetContext().unbindService(this);
-
-        //await().atMost(15, TimeUnit.SECONDS).until(serviceOnDisconnected());
     }
 
-
+    // Test initializing RCDevice with proper credentials and encrypted signaling
     @Test(timeout = TIMEOUT)
-    // Test initializing RCDevice with proper credentials and cleartext signaling
-    public void deviceInitialize_EncryptedSignaling_Valid() throws TimeoutException
+    public void deviceInitialize_EncryptedSignaling_Valid()
     {
-        Log.i(TAG, "------------------------------------------------------------");
         InstrumentationRegistry.getTargetContext().bindService(new Intent(InstrumentationRegistry.getTargetContext(), RCDevice.class), this, Context.BIND_AUTO_CREATE);
 
         await().atMost(10, TimeUnit.SECONDS).until(serviceOnConnected());
-        //device = binder.getService();
-        //IBinder binder = mServiceRule.bindService(new Intent(InstrumentationRegistry.getTargetContext(), RCDevice.class));
 
         // Get the reference to the service, or you can call public methods on the binder directly.
         final RCDevice device = binder.getService();
 
-        HandlerThread clientHandlerThread = new HandlerThread("client-thread-2");
+        HandlerThread clientHandlerThread = new HandlerThread("client-thread");
         clientHandlerThread.start();
-        Log.e(TAG, "---- client-thread-2 id: " + clientHandlerThread.getId());
         Handler clientHandler = new Handler(clientHandlerThread.getLooper());
 
         clientHandler.post(new Runnable() {
@@ -203,7 +181,6 @@ public class IntegrationTests implements RCDeviceListener, ServiceConnection {
             }
         });
 
-        //Log.i(TAG, "Before wait");
         await().atMost(10, TimeUnit.SECONDS).until(deviceOnInitialized());
 
         clientHandler.post(new Runnable() {
@@ -216,15 +193,9 @@ public class IntegrationTests implements RCDeviceListener, ServiceConnection {
         await().atMost(10, TimeUnit.SECONDS).until(deviceOnReleased());
 
         clientHandlerThread.quit();
-
-
         //assertThat(released).isTrue();
 
-        Log.i(TAG, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
-
         InstrumentationRegistry.getTargetContext().unbindService(this);
-
-        //await().atMost(15, TimeUnit.SECONDS).until(serviceOnDisconnected());
     }
 
 
@@ -252,6 +223,7 @@ public class IntegrationTests implements RCDeviceListener, ServiceConnection {
             }
         };
     }
+/*
     private Callable<Boolean> serviceOnDisconnected() {
         return new Callable<Boolean>() {
             public Boolean call() throws Exception {
@@ -259,6 +231,7 @@ public class IntegrationTests implements RCDeviceListener, ServiceConnection {
             }
         };
     }
+*/
 
 
     /**
@@ -281,7 +254,6 @@ public class IntegrationTests implements RCDeviceListener, ServiceConnection {
             initialized = true;
         }
     }
-
     public void onReleased(RCDevice device, int statusCode, String statusText)
     {
         Log.i(TAG, "%% onReleased");
@@ -289,18 +261,20 @@ public class IntegrationTests implements RCDeviceListener, ServiceConnection {
             released = true;
         }
     }
-
     public void onConnectivityUpdate(RCDevice device, RCConnectivityStatus connectivityStatus)
     {
         Log.i(TAG, "%% onConnectivityUpdate");
 
     }
-
     public void onMessageSent(RCDevice device, int statusCode, String statusText, String jobId)
     {
         Log.i(TAG, "%% onMessageSent");
     }
 
+
+    /**
+     * Service callbacks
+     */
     @Override
     public void onServiceConnected(ComponentName name, IBinder service)
     {
@@ -310,6 +284,7 @@ public class IntegrationTests implements RCDeviceListener, ServiceConnection {
         serviceConnected = true;
     }
 
+    // Notice that this isn't called as a result of unbind
     @Override
     public void onServiceDisconnected(ComponentName name)
     {
