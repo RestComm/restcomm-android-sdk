@@ -1,7 +1,10 @@
 package org.restcomm.android.olympus;
 
 
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
+import android.content.ServiceConnection;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
@@ -43,7 +46,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 @RunWith(AndroidJUnit4.class)
-public class IntegrationTests implements RCDeviceListener {
+public class IntegrationTests implements RCDeviceListener, ServiceConnection {
     private static final String TAG = "IntegrationTests";
     //private Handler testHandler;
     static private final int TIMEOUT = 120000;
@@ -51,14 +54,19 @@ public class IntegrationTests implements RCDeviceListener {
     // Condition variables
     private boolean initialized;  // = false;
     private boolean released;  // = false;
+    private boolean serviceConnected, serviceDisconnected;  // = false;
+
+    RCDevice.RCDeviceBinder binder;
 
 
     //@Rule
     //public UiThreadTestRule uiThreadTestRule = new UiThreadTestRule();
 
-    @Rule
-    public final ServiceTestRule mServiceRule = new ServiceTestRule();
+    //@Rule
+    //public final ServiceTestRule mServiceRule = new ServiceTestRule();
     //public final ServiceTestRule mServiceRule = ServiceTestRule.withTimeout(60L, TimeUnit.SECONDS);
+
+
 
 
     @Before
@@ -66,6 +74,8 @@ public class IntegrationTests implements RCDeviceListener {
     {
         initialized = false;
         released = false;
+        serviceConnected = false;
+        serviceDisconnected = false;
     }
 
 
@@ -81,13 +91,18 @@ public class IntegrationTests implements RCDeviceListener {
     public void deviceInitialize_Valid() throws TimeoutException
     {
         Log.i(TAG, "------------------------------------------------------------");
-        IBinder binder = mServiceRule.bindService(new Intent(InstrumentationRegistry.getTargetContext(), RCDevice.class));
+        InstrumentationRegistry.getTargetContext().bindService(new Intent(InstrumentationRegistry.getTargetContext(), RCDevice.class), this, Context.BIND_AUTO_CREATE);
+
+        await().atMost(10, TimeUnit.SECONDS).until(serviceOnConnected());
+        //device = binder.getService();
+        //IBinder binder = mServiceRule.bindService(new Intent(InstrumentationRegistry.getTargetContext(), RCDevice.class));
 
         // Get the reference to the service, or you can call public methods on the binder directly.
-        final RCDevice device = ((RCDevice.RCDeviceBinder) binder).getService();
+        final RCDevice device = binder.getService();
 
         HandlerThread clientHandlerThread = new HandlerThread("client-thread");
         clientHandlerThread.start();
+        Log.e(TAG, "---- client-thread id: " + clientHandlerThread.getId());
         Handler clientHandler = new Handler(clientHandlerThread.getLooper());
 
         clientHandler.post(new Runnable() {
@@ -135,6 +150,10 @@ public class IntegrationTests implements RCDeviceListener {
         //assertThat(released).isTrue();
 
         Log.i(TAG, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+
+        InstrumentationRegistry.getTargetContext().unbindService(this);
+
+        //await().atMost(15, TimeUnit.SECONDS).until(serviceOnDisconnected());
     }
 
 
@@ -142,22 +161,19 @@ public class IntegrationTests implements RCDeviceListener {
     // Test initializing RCDevice with proper credentials and cleartext signaling
     public void deviceInitialize_EncryptedSignaling_Valid() throws TimeoutException
     {
-/*
-        try {
-            Thread.sleep(5000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-*/
-        Log.i(TAG, "----------------------------------------------------------");
-        Intent intent = new Intent(InstrumentationRegistry.getTargetContext(), RCDevice.class);
-        IBinder binder = mServiceRule.bindService(intent);
+        Log.i(TAG, "------------------------------------------------------------");
+        InstrumentationRegistry.getTargetContext().bindService(new Intent(InstrumentationRegistry.getTargetContext(), RCDevice.class), this, Context.BIND_AUTO_CREATE);
+
+        await().atMost(10, TimeUnit.SECONDS).until(serviceOnConnected());
+        //device = binder.getService();
+        //IBinder binder = mServiceRule.bindService(new Intent(InstrumentationRegistry.getTargetContext(), RCDevice.class));
 
         // Get the reference to the service, or you can call public methods on the binder directly.
-        final RCDevice device = ((RCDevice.RCDeviceBinder) binder).getService();
+        final RCDevice device = binder.getService();
 
         HandlerThread clientHandlerThread = new HandlerThread("client-thread-2");
         clientHandlerThread.start();
+        Log.e(TAG, "---- client-thread-2 id: " + clientHandlerThread.getId());
         Handler clientHandler = new Handler(clientHandlerThread.getLooper());
 
         clientHandler.post(new Runnable() {
@@ -200,8 +216,15 @@ public class IntegrationTests implements RCDeviceListener {
         await().atMost(10, TimeUnit.SECONDS).until(deviceOnReleased());
 
         clientHandlerThread.quit();
+
+
         //assertThat(released).isTrue();
+
         Log.i(TAG, "^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^");
+
+        InstrumentationRegistry.getTargetContext().unbindService(this);
+
+        //await().atMost(15, TimeUnit.SECONDS).until(serviceOnDisconnected());
     }
 
 
@@ -215,11 +238,24 @@ public class IntegrationTests implements RCDeviceListener {
             }
         };
     }
-
     private Callable<Boolean> deviceOnReleased() {
         return new Callable<Boolean>() {
             public Boolean call() throws Exception {
                 return released; // The condition that must be fulfilled
+            }
+        };
+    }
+    private Callable<Boolean> serviceOnConnected() {
+        return new Callable<Boolean>() {
+            public Boolean call() throws Exception {
+                return serviceConnected; // The condition that must be fulfilled
+            }
+        };
+    }
+    private Callable<Boolean> serviceOnDisconnected() {
+        return new Callable<Boolean>() {
+            public Boolean call() throws Exception {
+                return serviceDisconnected; // The condition that must be fulfilled
             }
         };
     }
@@ -263,5 +299,22 @@ public class IntegrationTests implements RCDeviceListener {
     public void onMessageSent(RCDevice device, int statusCode, String statusText, String jobId)
     {
         Log.i(TAG, "%% onMessageSent");
+    }
+
+    @Override
+    public void onServiceConnected(ComponentName name, IBinder service)
+    {
+        Log.i(TAG, "%% onServiceConnected");
+        binder = (RCDevice.RCDeviceBinder) service;
+
+        serviceConnected = true;
+    }
+
+    @Override
+    public void onServiceDisconnected(ComponentName name)
+    {
+        Log.i(TAG, "%% onServiceDisconnected");
+
+        serviceDisconnected = true;
     }
 }
