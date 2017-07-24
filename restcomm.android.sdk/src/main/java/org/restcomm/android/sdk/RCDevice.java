@@ -506,7 +506,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          // check if TURN keys are there
          //params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
 
-         signalingClient = SignalingClient.getInstance();
+         signalingClient = new SignalingClient();
          signalingClient.open(this, getApplicationContext(), parameters);
 
          // Create and audio manager that will take care of audio routing,

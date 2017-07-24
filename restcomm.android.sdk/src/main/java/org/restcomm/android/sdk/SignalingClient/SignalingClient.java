@@ -35,7 +35,7 @@ import org.restcomm.android.sdk.util.RCLogger;
 import java.util.HashMap;
 
 /**
- * SignalingClient is a singleton that provides asynchronous access to lower level signaling facilities. Requests are sent typically from UI thread via methods
+ * SignalingClient provides asynchronous access to lower level signaling facilities. Requests are sent typically from UI thread via methods
  * like open(), close(), etc towards signaling thread. Responses are received via Handler.handleMessage() (since this class is also a Handler)
  * from signaling thread and sent for further processing to SignalingClientListener listener for register/configuration specific
  * functionality and to SignalingClientCallListener listener for call related functionality. Hence, users of this API should implement
@@ -126,31 +126,43 @@ public class SignalingClient extends Handler {
    }
 
 
-   private static final SignalingClient instance = new SignalingClient();
+   //private static final SignalingClient instance = new SignalingClient();
    SignalingClientListener listener;
    private static final String TAG = "SignalingClient";
 
    // handler at signaling thread to send messages to
-   SignalingHandlerThread signalingHandlerThread;
-   Handler signalingHandler;
+   private SignalingHandlerThread signalingHandlerThread;
+   private Handler signalingHandler;
    //UIHandler uiHandler;
-   Context context;
+   private Context context;
    //HashMap<String, RCMessage> messages;
+   //private boolean closePending = false;
+   // 10 second timeout for SignalingClient.close()
+   //static private final int CLOSE_TIMEOUT = 10000;
+   private static boolean initialized = false;
 
    // private constructor to avoid client applications to use constructor
-   private SignalingClient()
+   public SignalingClient()
    {
       super();
+
+      if (initialized) {
+         throw new RuntimeException("SignalingClient already initialized");
+      }
 
       // create signaling handler thread and handler/signal
       signalingHandlerThread = new SignalingHandlerThread(this);
       signalingHandler = signalingHandlerThread.getHandler();
+
+      initialized = true;
    }
 
+/*
    public static SignalingClient getInstance()
    {
       return instance;
    }
+*/
 
    /**
     * Initialize the signaling facilities
@@ -280,6 +292,22 @@ public class SignalingClient extends Handler {
       Message message = signalingHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
 
+      /*
+      closePending = true;
+      new Handler(getLooper()).postDelayed(
+              new Runnable() {
+                 @Override
+                 public void run()
+                 {
+                    if (closePending) {
+                       RCLogger.w(TAG, "close() timeout: signaling thread didn't return after: " + CLOSE_TIMEOUT + "ms. Stopping signaling thread");
+                       signalingHandlerThread.quit();
+                    }
+                 }
+              }
+              , CLOSE_TIMEOUT);
+              */
+
       return jobId;
    }
 
@@ -300,6 +328,9 @@ public class SignalingClient extends Handler {
          listener.onOpenReply(message.jobId, message.connectivityStatus, message.status, message.text);
       }
       else if (message.type == SignalingMessage.MessageType.CLOSE_REPLY) {
+         signalingHandlerThread.quit();
+         initialized = false;
+         //closePending = false;
          listener.onCloseReply(message.jobId, message.status, message.text);
       }
       else if (message.type == SignalingMessage.MessageType.RECONFIGURE_REPLY) {
