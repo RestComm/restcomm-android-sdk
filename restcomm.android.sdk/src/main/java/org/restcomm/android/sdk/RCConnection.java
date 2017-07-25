@@ -911,7 +911,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       device.removeConnection(jobId);
 
       if (device.isAttached() && listener != null) {
-         listener.onDisconnected(this, errorCode.ordinal(), errorText);
+         listener.onError(this, errorCode.ordinal(), errorText);
       }
       else {
          RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onDisconnected()");
@@ -1084,7 +1084,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             }
 
             if (device.isAttached()) {
-               RCConnection.this.listener.onDisconnected(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_WEBRTC_TURN_ERROR.ordinal(), description);
+               RCConnection.this.listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_WEBRTC_TURN_ERROR.ordinal(), description);
             }
             else {
                RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onDisconnected()");
@@ -1197,7 +1197,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       handleDisconnect(reason);
 
       if (device.isAttached() && listener != null) {
-         this.listener.onDisconnected(this, errorCode.ordinal(), RCClient.errorText(errorCode));
+         this.listener.onError(this, errorCode.ordinal(), RCClient.errorText(errorCode));
       }
       else {
          RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onDisconnected()");
@@ -1796,10 +1796,22 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             else {
                RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onConnected()");
             }
-
+            peerConnectionClient.enableStatsEvents(true, 1000);
          }
       };
       mainHandler.post(myRunnable);
+
+/*
+      Runnable myRunnable2 = new Runnable() {
+         @Override
+         public void run()
+         {
+            RCLogger.i(TAG, "requesting media stats");
+            peerConnectionClient.
+         }
+      };
+      mainHandler.postDelayed(myRunnable2, 3000);
+*/
    }
 
    @Override
@@ -1835,6 +1847,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          public void run()
          {
             if (iceConnected) {
+               for (StatsReport report: reports) {
+                  RCLogger.d(TAG, ">>>>>> WebRTC media stat report: " + report.toString());
+               }
                //hudFragment.updateEncoderStatistics(reports);
             }
          }
@@ -1860,7 +1875,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             handleDisconnect(reason);
 
             if (device.isAttached() && connection.listener != null) {
-               connection.listener.onDisconnected(connection, RCClient.ErrorCodes.ERROR_CONNECTION_WEBRTC_PEERCONNECTION_ERROR.ordinal(), description);
+               connection.listener.onError(connection, RCClient.ErrorCodes.ERROR_CONNECTION_WEBRTC_PEERCONNECTION_ERROR.ordinal(), description);
             }
             else {
                RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onDisconnected()");

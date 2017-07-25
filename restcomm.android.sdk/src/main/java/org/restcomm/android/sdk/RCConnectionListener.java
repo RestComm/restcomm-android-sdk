@@ -77,10 +77,10 @@ public interface RCConnectionListener {
     * @param errorCode  Error Code
     * @param errorText  Error Text
     */
-   void onDisconnected(RCConnection connection, int errorCode, String errorText);
+   //void onDisconnected(RCConnection connection, int errorCode, String errorText);
 
    /**
-    * Connection just encountered an error (non-disconnect)
+    * Connection just encountered an error and disconnected
     *
     * @param connection Connection
     * @param errorCode  Error Code
