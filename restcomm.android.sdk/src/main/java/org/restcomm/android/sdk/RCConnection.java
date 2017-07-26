@@ -1314,13 +1314,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    private void initializeVideo(boolean videoEnabled, PercentFrameLayout localRenderLayout, PercentFrameLayout remoteRenderLayout)
    {
-      if (videoEnabled) {
-         localMediaType = ConnectionMediaType.AUDIO_VIDEO;
-      }
-      else {
-         localMediaType = ConnectionMediaType.AUDIO;
-      }
-
       if (localRenderLayout == null ||remoteRenderLayout == null) {
          return;
       }
@@ -1456,6 +1449,13 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
       iceConnected = false;
       signalingParameters = null;
+
+      if (videoEnabled) {
+         localMediaType = ConnectionMediaType.AUDIO_VIDEO;
+      }
+      else {
+         localMediaType = ConnectionMediaType.AUDIO;
+      }
 
       if (localRenderLayout != null && remoteRenderLayout != null) {
          initializeVideo(videoEnabled, localRenderLayout, remoteRenderLayout);

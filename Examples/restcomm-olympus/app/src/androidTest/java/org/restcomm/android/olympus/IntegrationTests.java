@@ -39,7 +39,7 @@ import java.util.concurrent.TimeUnit;
 
 @RunWith(AndroidJUnit4.class)
 /**
- * This class implements instrumented (i.e. on Device) integration tests facilities for the Restcomm Android SDK using JUnit4. Instrumented tests
+ * This class implements instrumented integration test facilities (i.e. that run on device) for the Restcomm Android SDK using JUnit4. Instrumented tests
  * are more complex and more time consuming, but they need to be instrumented if we are to get realistic results. Integration tests are not meant to
  * replace UI or Unit tests, but to complement them by providing a way to really test our SDK's API top to bottom.
  *
@@ -53,26 +53,42 @@ import java.util.concurrent.TimeUnit;
  * Design and synchronization considerations
  *
  * The IT facilities are desined so that there are 3 threads involved in the tests (separate media threads are not relevant to this so they are kept out):
- * - The testing thread, where test cases run
- * - The API/Service thread where RCDevice/RCConnection calls are made, and relative callbacks are invoked
+ * - The testing thread, where test cases run; this is the default thread where you test code runs unless told otherwise
+ * - The API/Service thread where RCDevice/RCConnection calls are made, and relative callbacks are invoked (i.e. RCDevice.onInitialized())
  * - The Signaling thread that runs JAIN SIP user code and stack
  *
  * The reason we are using this setup is so that the testing thread that runs Awaitility framework (that provides facilities to wait
- * on various conditions) needs to be on a separate thread than API thread otherwise when API thread is blocked waiting for messages from Signaling thread
+ * on various conditions) needs to be on a separate thread than API/Service thread otherwise when API thread is blocked waiting for messages from Signaling thread
  * the Awaitility framework wouldn't have a way to wait on conditions properly and the whole thing would break. Also, we want the testing thread to
  * be separate so that it's not affected by any timing issues on ANRs that the API thread might encounter. Finally we need to be able to write our tests
- * linearly so that they are easy to read and understand. So even though we could potentially keep Awaitility out and just use a single thread for testing and API
+ * linearly so that they are easy to read and extend. So even though we could potentially keep Awaitility out and just use a single thread for testing and API
  * by adding more logic in the callback, the whole thing would become a mess as we'd have to keep state all over the place
  *
- * TODO: describe how Handlers & HandlerThreads are used, and why. Also describe how to avoid threading issues by always using the Main Looper for API thread
+ * Adding/Extending an integration Test
  *
- * Extending the Integration Tests
+ * Each integration test needs to do the following (please check deviceInitialize_Valid() test case for more details):
+ * - Bind to the RCDevice Android Service and wait until it is connected using Awaitility condition variable (i.e. serviceConnected). This happens in the current (i.e. testing) thread
+ * - Create an Android Handler and associate it with the Main Looper thread so that you can post work for it easily and linearly. Important: the Main Looper thread
+ *   is by default SEPARATE from the test thread, and the reason we use this Main Looper Thread specifically (instead of for example creating a new HandlerThread) is that inside
+ *   the API/Service this is the thread we explicitly use in some occasions to refer to the Service thread, so we need to stay consistent. For example the first thing
+ *   you will want to do in a test case is call RCDevice.initialize(). This needs to happen inside the API/Service thread
+ * - Wait for RCDevice to be initialized on the testing thread. To do this you need to wait on an Awaitility condition variable (i.e. deviceInitialized) which is set when RCDevice.onInitialized() is called
+ *   on the API/Service thread.
+ * - Assert that all is good by inspecting the context. Context is a HashMap that gets filled from the API/Service thread when a response is received with any information that we might need
+ *   like RCDevice object or status code
+ * - After that you can continue posting actions in the API/Service thread, waiting for responses in the testing thread and asserting results sequentially.
  *
- * TODO: describe the assumptions made about the tests, like conditions variables and context, as well as synchronization between test & API threads that is not really implemented
+ * Note that in the future if needed, we could potentially use another thread for API/Service instead of Main Looper thread. But if we do that we need to make sure to fix code
+ * inside API/Service so that it doesn't use .getMainLooper() as it does right now. Otherwise we are bound to have synchronization issues.
+ *
+ * Notice that so far synchronization between test & API threads is not really implemented. So far it hasn't caused us any issues in the sense that context is not read by the test thread
+ * until condition variable is set by the API/Service thread, which means that API/Service thread has finished writing it. Still the condition variable is accessed by both API/Service
+ * thread and test thread, so we might need to remedy that at some point.
  *
  * Additional notes
  *
- * TODO: describe the issues with ServiceTestRule and why we removed it
+ * Originally we used a ServiceTestRule to help us in waiting until the Android Service is ready, but we encountered some issues so we fell back to using Awaitility since it provides
+ * pretty nice facilities on waiting for condition.
  *
  */
 public class IntegrationTests implements RCDeviceListener, RCConnectionListener, ServiceConnection {
@@ -138,14 +154,15 @@ public class IntegrationTests implements RCDeviceListener, RCConnectionListener,
     public void deviceInitialize_Valid() throws InterruptedException
     {
         InstrumentationRegistry.getTargetContext().bindService(new Intent(InstrumentationRegistry.getTargetContext(), RCDevice.class), this, Context.BIND_AUTO_CREATE);
-
         await().atMost(SIGNALING_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("serviceConnected"), equalTo(true));
 
         // Get the reference to the service, or you can call public methods on the binder directly.
         final RCDevice device = binder.getService();
 
-        HandlerThread clientHandlerThread = new HandlerThread("client-thread");
-        clientHandlerThread.start();
+        // Even though we don't use a HandlerThread now and use the Main Looper thread that is separate from the testing thread, let's keep this
+        // code in case we want to change the threading logic later
+        //HandlerThread clientHandlerThread = new HandlerThread("client-thread");
+        //clientHandlerThread.start();
         //Handler clientHandler = new Handler(clientHandlerThread.getLooper());
         Handler clientHandler = new Handler(Looper.getMainLooper());
 
@@ -191,8 +208,7 @@ public class IntegrationTests implements RCDeviceListener, RCConnectionListener,
         assertThat(((RCDevice)context.get("device")).getState()).isEqualTo(RCDevice.DeviceState.OFFLINE);
         assertThat(context.get("status-code")).isEqualTo(0);
 
-        clientHandlerThread.quit();
-        //assertThat(deviceReleased).isTrue();
+        //clientHandlerThread.quit();
 
         InstrumentationRegistry.getTargetContext().unbindService(this);
     }
@@ -209,9 +225,6 @@ public class IntegrationTests implements RCDeviceListener, RCConnectionListener,
         // Get the reference to the service, or you can call public methods on the binder directly.
         final RCDevice device = binder.getService();
 
-        HandlerThread clientHandlerThread = new HandlerThread("client-thread");
-        clientHandlerThread.start();
-        //Handler clientHandler = new Handler(clientHandlerThread.getLooper());
         Handler clientHandler = new Handler(Looper.getMainLooper());
 
         clientHandler.post(new Runnable() {
@@ -246,7 +259,6 @@ public class IntegrationTests implements RCDeviceListener, RCConnectionListener,
         assertThat(((RCDevice)context.get("device")).getState()).isEqualTo(RCDevice.DeviceState.READY);
         assertThat(context.get("status-code")).isEqualTo(0);
 
-
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -257,10 +269,6 @@ public class IntegrationTests implements RCDeviceListener, RCConnectionListener,
         await().atMost(SIGNALING_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceReleased"), equalTo(true));
         assertThat(((RCDevice)context.get("device")).getState()).isEqualTo(RCDevice.DeviceState.OFFLINE);
         assertThat(context.get("status-code")).isEqualTo(0);
-
-
-        clientHandlerThread.quit();
-        //assertThat(deviceReleased).isTrue();
 
         InstrumentationRegistry.getTargetContext().unbindService(this);
     }
@@ -277,9 +285,6 @@ public class IntegrationTests implements RCDeviceListener, RCConnectionListener,
         // Get the reference to the service, or you can call public methods on the binder directly.
         final RCDevice device = binder.getService();
 
-        HandlerThread clientHandlerThread = new HandlerThread("client-thread");
-        clientHandlerThread.start();
-        //Handler clientHandler = new Handler(clientHandlerThread.getLooper());
         Handler clientHandler = new Handler(Looper.getMainLooper());
 
         clientHandler.post(new Runnable() {
@@ -356,7 +361,6 @@ public class IntegrationTests implements RCDeviceListener, RCConnectionListener,
         assertThat(((RCDevice)context.get("device")).getState()).isEqualTo(RCDevice.DeviceState.OFFLINE);
         assertThat(context.get("status-code")).isEqualTo(0);
 
-        clientHandlerThread.quit();
         assertThat(deviceReleased).isTrue();
 
         InstrumentationRegistry.getTargetContext().unbindService(this);
@@ -374,9 +378,6 @@ public class IntegrationTests implements RCDeviceListener, RCConnectionListener,
         // Get the reference to the service, or you can call public methods on the binder directly.
         final RCDevice device = binder.getService();
 
-        HandlerThread clientHandlerThread = new HandlerThread("client-thread");
-        clientHandlerThread.start();
-        //Handler clientHandler = new Handler(clientHandlerThread.getLooper());
         Handler clientHandler = new Handler(Looper.getMainLooper());
 
         clientHandler.post(new Runnable() {
@@ -456,10 +457,6 @@ public class IntegrationTests implements RCDeviceListener, RCConnectionListener,
         await().atMost(SIGNALING_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceReleased"), equalTo(true));
         assertThat(((RCDevice)context.get("device")).getState()).isEqualTo(RCDevice.DeviceState.OFFLINE);
         assertThat(context.get("status-code")).isEqualTo(0);
-
-
-        clientHandlerThread.quit();
-        assertThat(deviceReleased).isTrue();
 
         InstrumentationRegistry.getTargetContext().unbindService(this);
     }
