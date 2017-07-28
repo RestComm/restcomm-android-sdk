@@ -750,10 +750,10 @@ public class PeerConnectionClient {
       return videoWidth * videoHeight >= 1280 * 720;
    }
 
-   private void getStats()
+   public boolean getStats()
    {
       if (peerConnection == null || isError) {
-         return;
+         return false;
       }
       boolean success = peerConnection.getStats(new StatsObserver() {
          @Override
@@ -764,7 +764,9 @@ public class PeerConnectionClient {
       }, null);
       if (!success) {
          Log.e(TAG, "getStats() returns false!");
+         return false;
       }
+      return true;
    }
 
    public void enableStatsEvents(boolean enable, int periodMs)

@@ -65,6 +65,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.restcomm.android.sdk.MediaClient.AppRTCAudioManager;
 import org.restcomm.android.sdk.MediaClient.PeerConnectionClient;
 import org.restcomm.android.sdk.SignalingClient.SignalingParameters;
@@ -390,6 +392,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private static final int REMOTE_WIDTH = 100;
    private static final int REMOTE_HEIGHT = 100;
 
+   private String webrtcReportsJsonString = null;
+
 
    private enum VideoViewState {
       NONE,
@@ -522,9 +526,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
     *   <b>RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION</b>: Preferred video resolution to use. Default is HD (1280x720). Possible values are enumerated at <i>RCConnection.VideoResolution</i> <br>
     *   <b>RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE</b>: Preferred frame rate to use. Default is 30fps. Possible values are enumerated at <i>RCConnection.VideoFrameRate</i> <br>
     *   <b>RCConnection.ParameterKeys.CONNECTION_CUSTOM_SIP_HEADERS</b>: An optional HashMap&lt;String,String&gt; of custom SIP headers we want to add. For an example
-
-
-    * means that RCDevice.state not ready to make a call (this usually means no WiFi available)
+    *                   please check restcomm-helloworld or restcomm-olympus sample Apps (optional) <br>
     */
    public void accept(Map<String, Object> parameters)
    {
@@ -656,7 +658,132 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       RCLogger.i(TAG, "disconnect()");
 
-      handleDisconnect(null);
+      boolean statsFailed = true;
+      if (peerConnectionClient != null) {
+         if (peerConnectionClient.getStats()) {
+            statsFailed = false;
+         }
+      }
+
+      // if for any reason stats failed to get gathered, we need to call handleDisconnect() synchronously
+      if (statsFailed) {
+         handleDisconnect(null);
+      }
+   }
+
+   /**
+    * Gather connection statistics asynchronously. The actual stats are delivered when onStatsGathered() is called and are retrieved with RCConnection.getStats().
+    * Right now we 're only supporting webrtc media stats (coming from PeerConnection.getStats()), but in the future we can extend to add more stats/qos info,
+    * like potentially signalling stats or cell stats, etc
+    */
+/*
+    public void gatherStats(String filter) {
+        RCLogger.i(TAG, "gatherStats()");
+    }
+*/
+
+   /**
+    * Converts a WebRTC stats report array as provided by PeerConnection to a valid json string
+    *
+    * The input reports are in the format used by Google facilities at this point and for the most part resemble what is
+    * described in the WebRTC PeerConnection spec: http://w3c.github.io/webrtc-pc/#sec.stats-model, but still there are
+    * inconsistencies. The general idea is that stats are a series of reports, each of which has the following structure:
+    * id, type, timestamp, series of key/value pairs. Here are 2 reports as they are returned from PeerConnection.getStats()
+    * after being converted toString():
+    *
+    * id: ssrc_2321116827_send, type: ssrc, timestamp: 1.501168721148511E12, values: [audioInputLevel:188], [bytesSent:22532], [mediaType:audio], [packetsSent:131],
+    *   [ssrc:2321116827], [transportId:Channel-audio-1], [googCodecName:PCMU], [googEchoCancellationReturnLoss:-100], [googEchoCancellationReturnLossEnhancement:-100],
+    *   [googResidualEchoLikelihood:0.0581064], [googResidualEchoLikelihoodRecentMax:0.0581064], [googTrackId:ARDAMSa0], [googTypingNoiseState:false],
+    * id: Channel-audio-1, type: googComponent, timestamp: 1.501168721148511E12, values: [selectedCandidatePairId: Conn-audio-1-0], [googComponent: 1],
+    *   [dtlsCipher: TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256], [localCertificateId: googCertificate_34:0E:F4:9B:39:06:49:14:E0:25:34:96:95:9E:E3:4B:95:B4:86:31:86:4E:74:5D:4D:A4:C5:13:46:A1:31:17], [remoteCertificateId: googCertificate_82:1E:5E:EB:B5:0D:F8:CF:7A:72:43:FE:91:3A:CE:DC:20:D1:4E:F4:69:4B:06:B4:AA:03:41:67:19:F1:E5:24], [srtpCipher: AES_CM_128_HMAC_SHA1_80],
+    *
+    * We use a conversion mechanism to turn that into a usable json string of the following format. Here's how the previous
+    * 2 reports look like to get an idea of the changes involved:
+    * {
+    *    "media":[
+    *       {
+    *          "id":"ssrc_2321116827_send",
+    *          "type":"ssrc",
+    *          "timestamp":"1.501168721148511E12",
+    *          "values":{
+    *             "audioInputLevel":"188",
+    *             "bytesSent":"22532",
+    *             "mediaType":"audio",
+    *             "packetsSent":"131",
+    *             "ssrc":"2321116827",
+    *             "transportId":"Channel-audio-1",
+    *             "googCodecName":"PCMU",
+    *             "googEchoCancellationReturnLoss":"-100",
+    *             "googEchoCancellationReturnLossEnhancement":"-100",
+    *             "googResidualEchoLikelihood":"0.0581064",
+    *             "googResidualEchoLikelihoodRecentMax":"0.0581064",
+    *             "googTrackId":"ARDAMSa0",
+    *             "googTypingNoiseState":"false"
+    *          }
+    *       },
+    *       {
+    *          "id":"Channel-audio-1",
+    *          "type":"googComponent",
+    *          "timestamp":"1.501168721148511E12",
+    *          "values":{
+    *             "selectedCandidatePairId":"Conn-audio-1-0",
+    *             "googComponent":"1",
+    *             "dtlsCipher":"TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+    *             "localCertificateId":"googCertificate_34:0E:F4:9B:39:06:49:14:E0:25:34:96:95:9E:E3:4B:95:B4:86:31:86:4E:74:5D:4D:A4:C5:13:46:A1:31:17",
+    *             "remoteCertificateId":"googCertificate_82:1E:5E:EB:B5:0D:F8:CF:7A:72:43:FE:91:3A:CE:DC:20:D1:4E:F4:69:4B:06:B4:AA:03:41:67:19:F1:E5:24",
+    *             "srtpCipher":"AES_CM_128_HMAC_SHA1_80"
+    *          }
+    *       },
+    *       ...
+    *    ]
+    * }
+    *
+    * For now we only support stats relevant to the media of the call, but later we can introduce more keys apart from 'media', like 'signaling' or 'cellular'
+    *
+    * @param reports
+    * @return the stats into a valid json string for easy parsing by the application
+    */
+   private String webrtcStatsReports2JsonString(StatsReport[] reports)
+   {
+      // This is a 'special' sequence of chars that is guaranteed to not exist inside the stats string. Reason we want that is that
+      // we want to be able to differentiate in our regex processing between ': ' and ':'. And the reason is that the former is the
+      // the delimiter between keys and values in json, while the second is just a color character that can be found inside values.
+      final String SPECIAL_CHARS = "++";
+
+      // Add a 'media' key that will contain all webrtc media related stats and open an array that will contain all reports coming from PeerConnection.getStats()
+      StringBuilder statsStringBuilder = new StringBuilder("{\"media\": [");
+
+      for (StatsReport report : reports) {
+         // First do the regex work using a String. Strings aren't very efficient due to being immutable, but they have nice regex facilities.
+         // Given that this only happens once every call I think we 're good
+         String stringReport = report.toString().replaceFirst("\\[", "{")   // replace the first '[' found after the 'values' section to '{', so that all key/values in the 'values' section are grouped together
+               .replace("[", "")   // remove all other '[' characters from the values section as they would break json
+               .replace("]", "")   // same for all other '[' characters
+               .replace(": ", SPECIAL_CHARS + " ")   // replace the delimiting character between original report string (i.e. ': ') to some special chars, so that other occurences of ':', like in the DTLS section isn't messed up
+               .replaceAll("([^,\\[\\]\\{\\} ]+)", "\"$1\"")   // add double quotes around all words as they need to be quoted to be valid json
+               .replace(SPECIAL_CHARS + "\"", "\":");   // replace special chars back to ':' now that the previous step is done and there is no fear for confusion
+
+         // Then combine everything using StringBuilder
+         statsStringBuilder.append("{")   // append new section in json before the report starts
+               .append(stringReport)   //  append report we generated before
+               .replace(statsStringBuilder.lastIndexOf(","), statsStringBuilder.lastIndexOf(",") + 1, "")   // remove last comma in report that would mess json, since there is not any other element afterwards
+               .append("}},");   // wrap the report by closing all open braces, and adding a comma, so that reports are separated properly between themselves
+      }
+
+      // go back and remove comma from last report, to avoid ruining json
+      statsStringBuilder.replace(statsStringBuilder.lastIndexOf(","), statsStringBuilder.lastIndexOf(",") + 1, "");
+      // close array of reports and initial section
+      statsStringBuilder.append("]}");
+
+      return statsStringBuilder.toString();
+   }
+
+   // Return a json string representation of the connection stats (currently only webrtc peer connection stats are included)
+   public String getStats()
+   {
+      RCLogger.i(TAG, "getStats()");
+
+      return webrtcReportsJsonString;
    }
 
    /**
@@ -1229,6 +1356,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          peerConnectionClient.stopVideoSource();
       }
    }
+
    // Resume webrtc video, intented for allowing a call to transition from the background into the foreground where we want video enabled (it it was enabled to start with)
    public void resumeVideo()
    {
@@ -1796,7 +1924,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             else {
                RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onConnected()");
             }
-            peerConnectionClient.enableStatsEvents(true, 1000);
+            //peerConnectionClient.enableStatsEvents(true, 1000);
          }
       };
       mainHandler.post(myRunnable);
@@ -1846,12 +1974,34 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          @Override
          public void run()
          {
+            // by the time stats are returned (when requested at disconnect(), iceConnected might have transitioned to disconnected
+/*
             if (iceConnected) {
                for (StatsReport report: reports) {
-                  RCLogger.d(TAG, ">>>>>> WebRTC media stat report: " + report.toString());
                }
                //hudFragment.updateEncoderStatistics(reports);
             }
+*/
+            webrtcReportsJsonString = webrtcStatsReports2JsonString(reports);
+            try {
+               String statsJsonString = "WebRTC getStats() reports in json format: " + new JSONObject(webrtcReportsJsonString).toString(3);
+               //RCLogger.i(TAG, "Stats: " + statsJsonString);
+
+               // Logcat enforces a max size to logged messages, so to avoid getting truncated logs, let's break
+               // the json reports that tend to be huge in 1000-byte chunks
+               final int CHUNK_SIZE = 1000;
+               for (int i = 0; i <= statsJsonString.length() / CHUNK_SIZE; i++) {
+                  int start = i * CHUNK_SIZE;
+                  int end = (i + 1) * CHUNK_SIZE;
+                  end = end > statsJsonString.length() ? statsJsonString.length() : end;
+
+                  RCLogger.i(TAG, statsJsonString.substring(start, end));
+               }
+            } catch (JSONException e) {
+               e.printStackTrace();
+            }
+
+            handleDisconnect(null);
          }
       };
       mainHandler.post(myRunnable);

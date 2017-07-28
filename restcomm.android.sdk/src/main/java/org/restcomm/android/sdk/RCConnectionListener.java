@@ -64,6 +64,13 @@ public interface RCConnectionListener {
    void onCancelled(RCConnection connection);
 
    /**
+    * User has requested to get connection stats by previously calling RCConnection.gatherStats()
+    *
+    * @param connection Connection
+    */
+   //void onStatsGathered(RCConnection connection);
+
+   /**
     * Incoming connection was just declined by remote party
     *
     * @param connection Connection

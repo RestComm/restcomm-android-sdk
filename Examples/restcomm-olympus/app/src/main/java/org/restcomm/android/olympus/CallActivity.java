@@ -53,6 +53,8 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.ListIterator;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCConnectionListener;
 import org.restcomm.android.sdk.RCDevice;
@@ -61,7 +63,6 @@ import org.restcomm.android.sdk.util.RCException;
 
 public class CallActivity extends AppCompatActivity implements RCConnectionListener, View.OnClickListener,
         KeypadFragment.OnFragmentInteractionListener, ServiceConnection {
-
     private RCConnection connection, pendingConnection;
     SharedPreferences prefs;
     private static final String TAG = "CallActivity";
@@ -602,6 +603,17 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         Log.i(TAG, "RCConnection disconnected");
         lblStatus.setText("Disconnected");
 
+        // When onDisconnect() is called, WebRTC PeerConnection stats are also gathered and
+        // can be retrieved using connection.getStats()
+        /*
+        try {
+            JSONObject statsJson = new JSONObject(connection.getStats());
+            Log.i(TAG, "Stats: " + statsJson.toString(3));
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+        */
+
         btnMuteAudio.setVisibility(View.INVISIBLE);
         btnMuteVideo.setVisibility(View.INVISIBLE);
 
@@ -650,6 +662,12 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         this.connection = null;
         pendingConnection = null;
     }
+
+    public void onStatsGathered(RCConnection connection)
+    {
+
+    }
+
 
     public void onDigitSent(RCConnection connection, int statusCode, String statusText)
     {

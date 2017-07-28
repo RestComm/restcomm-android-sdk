@@ -208,6 +208,8 @@ public class IntegrationTests implements RCDeviceListener, RCConnectionListener,
         assertThat(((RCDevice)context.get("device")).getState()).isEqualTo(RCDevice.DeviceState.OFFLINE);
         assertThat(context.get("status-code")).isEqualTo(0);
 
+        // Even though we don't use a HandlerThread now and use the Main Looper thread that is separate from the testing thread, let's keep this
+        // code in case we want to change the threading logic later
         //clientHandlerThread.quit();
 
         InstrumentationRegistry.getTargetContext().unbindService(this);
@@ -681,5 +683,13 @@ public class IntegrationTests implements RCDeviceListener, RCConnectionListener,
     {
         Log.i(TAG, "%% onServiceDisconnected");
     }
+
+    /*
+    @Override
+    public void onStatsGathered(RCConnection connection) {
+
+    }
+    */
+
 
 }
