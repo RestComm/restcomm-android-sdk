@@ -169,6 +169,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       public static final String SIGNALING_LOCAL_PORT = "signaling-local-port";
       public static final String DEBUG_JAIN_SIP_LOGGING_ENABLED = "jain-sip-logging-enabled";
       public static final String DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION = "jain-sip-disable-certificate-verification";
+      // WARNING This is NOT for production. It's for Integration Tests, where there is no activity to receive call/message events
+      public static final String DEBUG_USE_BROADCASTS_FOR_EVENTS = "debug-use-broadcast-for-events";
       public static final String MEDIA_TURN_ENABLED = "turn-enabled";
       public static final String MEDIA_ICE_URL = "turn-url";
       public static final String MEDIA_ICE_USERNAME = "turn-username";
@@ -1066,13 +1068,23 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
             callIntent.putExtra(RCDevice.EXTRA_CUSTOM_HEADERS, customHeaders);
          }
          //startActivity(callIntent);
-         PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, callIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-         try {
-            pendingIntent.send();
-         } catch (PendingIntent.CanceledException e) {
-            throw new RuntimeException("Pending Intent cancelled", e);
-         }
 
+         if (!this.parameters.containsKey(ParameterKeys.DEBUG_USE_BROADCASTS_FOR_EVENTS) || !(Boolean) this.parameters.get(ParameterKeys.DEBUG_USE_BROADCASTS_FOR_EVENTS)) {
+            PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, callIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+
+            try {
+               pendingIntent.send();
+            } catch (PendingIntent.CanceledException e) {
+               throw new RuntimeException("Pending Intent cancelled", e);
+            }
+         }
+         else {
+            // ParameterKeys.DEBUG_USE_BROADCASTS_FOR_EVENTS == true, we need to broadcast a separate intent, so that the Test Case is able to receive it.
+            // For some reason PendingIntent is not received properly even when we construct a broadcast for it using getBroadcast()
+            Intent testIntent = new Intent(RCDevice.ACTION_INCOMING_CALL);  //, null, InstrumentationRegistry.getTargetContext(), IntegrationTests.class));
+            testIntent.putExtra(RCDevice.EXTRA_DID, peerSipUri);
+            sendBroadcast(testIntent);
+         }
          // Phone state Intents to capture incoming phone call event
          sendQoSIncomingConnectionIntent(peerSipUri, connection);
       } else {

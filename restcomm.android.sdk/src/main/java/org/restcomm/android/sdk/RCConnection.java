@@ -761,7 +761,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
                .replace("]", "")   // same for all other '[' characters
                .replace(": ", SPECIAL_CHARS + " ")   // replace the delimiting character between original report string (i.e. ': ') to some special chars, so that other occurences of ':', like in the DTLS section isn't messed up
                .replaceAll("([^,\\[\\]\\{\\} ]+)", "\"$1\"")   // add double quotes around all words as they need to be quoted to be valid json
-               .replace(SPECIAL_CHARS + "\"", "\":");   // replace special chars back to ':' now that the previous step is done and there is no fear for confusion
+               .replace(SPECIAL_CHARS + "\"", "\":")   // replace special chars back to ':' now that the previous step is done and there is no fear for confusion
+               .replace(": ,", ": \"\",");   // fix any non existing values and replace with empty string in the key/values pairs of the 'values' section
 
          // Then combine everything using StringBuilder
          statsStringBuilder.append("{")   // append new section in json before the report starts
@@ -1984,6 +1985,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 */
             webrtcReportsJsonString = webrtcStatsReports2JsonString(reports);
             try {
+               //String statsJsonString = webrtcReportsJsonString;
                String statsJsonString = "WebRTC getStats() reports in json format: " + new JSONObject(webrtcReportsJsonString).toString(3);
                //RCLogger.i(TAG, "Stats: " + statsJsonString);
 

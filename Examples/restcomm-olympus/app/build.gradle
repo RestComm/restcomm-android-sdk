@@ -7,6 +7,8 @@ buildscript {
         // Only add repositories here that are used in *buildscript dependencies* NOT application dependencies. These go to the separate repositories block further down
         mavenCentral()
         maven { url 'https://www.testfairy.com/maven' }
+        maven { url "https://maven.google.com" }
+
 
     }
 
@@ -151,13 +153,17 @@ dependencies {
     compile project(':restcomm.android.sdk')
     // If you want to use latest released restcomm-android-sdk library, please uncomment this and comment previous line
     //compile 'org.restcomm:restcomm-android-sdk:1.0.3-BETA6-134'
-    compile 'com.android.support:appcompat-v7:25.3.1'
-    compile 'com.android.support:design:25.3.1'
-    compile 'com.android.support:support-v4:25.3.1'
+    compile 'com.android.support:appcompat-v7:25.4.0'
+    compile 'com.android.support:design:25.4.0'
+    compile 'com.android.support:support-v4:25.4.0'
     compile 'testfairy:testfairy-android-sdk:1.+@aar'
     //compile 'testfairy:testfairy-android-sdk:1.4.5'
     //compile 'net.hockeyapp.android:HockeySDK:4.1.1'
     ////compile files('./libs/testfairy-android-sdk-1.4.6-unlimited-events.jar')
+
+    // AndroidJUnitRunner and JUnit Rules
+    androidTestCompile 'com.android.support.test:runner:1.0.0'
+    androidTestCompile 'com.android.support.test:rules:1.0.0'
 
     androidTestCompile 'com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
