@@ -27,6 +27,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCConnectionListener;
@@ -81,7 +82,7 @@ import cz.msebera.android.httpclient.HttpResponse;
  * linearly so that they are easy to read and extend. So even though we could potentially keep Awaitility out and just use a single thread for testing and API
  * by adding more logic in the callback, the whole thing would become a mess as we'd have to keep state all over the place
  *
- * Adding/Extending an integration Test
+ * Adding/Extending an Integration Test
  *
  * Each integration test needs to do the following (please check deviceInitialize_Valid() test case for more details):
  * - Bind to the RCDevice Android Service and wait until it is connected using Awaitility condition variable (i.e. serviceConnected; there is a separate condition variable for each
@@ -149,13 +150,15 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
     static private final String REST_PORT = "443";   // "8443";
     static private final String REST_RESTCOMM_ACCOUNT_SID = BuildConfig.TEST_RESTCOMM_ACCOUNT_SID;
     static private final String REST_RESTCOMM_AUTH_TOKEN = BuildConfig.TEST_RESTCOMM_AUTH_TOKEN;
+    static private final String MESSAGE_TEXT = "Hello there for Android IT";
 
 
 
     // Condition variables. Even though its a bit messy I'm keeping different for each state, to make sure we 're not messing the states
     private boolean deviceInitialized, deviceReleased, serviceConnected, connectionConnected, connectionDisconnected, deviceStartedListening,
             deviceStoppedListening, deviceConnectivityUpdated, connectionConnecting, connectionDigitSent, connectionCancelled,
-            connectionDeclined, connectionError, connectionLocalVideo, connectionRemoteVideo, messageAcked, connectionArrived;
+            connectionDeclined, connectionError, connectionLocalVideo, connectionRemoteVideo, messageAcked, connectionArrived,
+            messageArrived;
 
     private RCDevice.RCDeviceBinder binder;
 
@@ -164,6 +167,9 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
     @Rule
     public GrantPermissionRule mRuntimePermissionRule = GrantPermissionRule.grant(Manifest.permission.RECORD_AUDIO, Manifest.permission.USE_SIP,
             Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
+    @Rule
+    public TestName name = new TestName();
 
     //@Rule
     //public UiThreadTestRule uiThreadTestRule = new UiThreadTestRule();
@@ -201,8 +207,11 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         connectionRemoteVideo = false;
         messageAcked = false;
         connectionArrived = false;
+        messageArrived = false;
 
-        IntentFilter filter = new IntentFilter(RCDevice.ACTION_INCOMING_CALL);
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(RCDevice.ACTION_INCOMING_CALL);
+        filter.addAction(RCDevice.ACTION_INCOMING_MESSAGE);
 
         // register for connectivity related events
         InstrumentationRegistry.getTargetContext().registerReceiver(this, filter);  //, null, new Handler(Looper.myLooper()));
@@ -211,6 +220,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
     @After
     public void afterAction()
     {
+        //Log.e(TAG, "TC Name: " + name.getMethodName());
         InstrumentationRegistry.getTargetContext().unregisterReceiver(this);
     }
 
@@ -279,7 +289,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
 
         await().atMost(SIGNALING_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceReleased"), equalTo(true));
         assertThat(((RCDevice)context.get("device")).getState()).isEqualTo(RCDevice.DeviceState.OFFLINE);
-        assertThat(context.get("status-code")).isEqualTo(0);
+        assertThat(context.get("status-code")).isEqualTo(1);
 
         // Even though we don't use a HandlerThread now and use the Main Looper thread that is separate from the testing thread, let's keep this
         // code in case we want to change the threading logic later
@@ -931,6 +941,83 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         InstrumentationRegistry.getTargetContext().unbindService(this);
     }
 
+    @Test(timeout = TC_TIMEOUT)
+    public void deviceReceiveMessage_Valid() throws InterruptedException, JSONException
+    {
+        InstrumentationRegistry.getTargetContext().bindService(new Intent(InstrumentationRegistry.getTargetContext(), RCDevice.class), this, Context.BIND_AUTO_CREATE);
+
+        await().atMost(SIGNALING_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("serviceConnected"), equalTo(true));
+
+        // Get the reference to the service, or you can call public methods on the binder directly.
+        final RCDevice device = binder.getService();
+
+        Handler clientHandler = new Handler(Looper.getMainLooper());
+
+        clientHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                HashMap<String, Object> params = new HashMap<String, Object>();
+                params.put(RCDevice.ParameterKeys.INTENT_INCOMING_CALL, new Intent(RCDevice.ACTION_INCOMING_CALL, null, InstrumentationRegistry.getTargetContext(), IntegrationTests.class));
+                params.put(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE, new Intent(RCDevice.ACTION_INCOMING_MESSAGE, null, InstrumentationRegistry.getTargetContext(), IntegrationTests.class));
+                params.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN, SERVER_HOST + ":" + SERVER_PORT);
+                params.put(RCDevice.ParameterKeys.SIGNALING_USERNAME, CLIENT_NAME);
+                params.put(RCDevice.ParameterKeys.SIGNALING_PASSWORD, CLIENT_PASSWORD);
+                params.put(RCDevice.ParameterKeys.MEDIA_ICE_URL, ICE_URL);
+                params.put(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME, ICE_USERNAME);
+                params.put(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD, ICE_PASSWORD);
+                params.put(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN, ICE_DOMAIN);
+                params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
+                params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
+                params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
+                params.put(RCDevice.ParameterKeys.DEBUG_USE_BROADCASTS_FOR_EVENTS, true);
+
+                device.setLogLevel(Log.VERBOSE);
+
+                try {
+                    device.initialize(InstrumentationRegistry.getTargetContext(), params, IntegrationTests.this);
+                } catch (RCException e) {
+                    Log.e(TAG, "RCDevice Initialization Error: " + e.errorText);
+                }
+            }
+        });
+        await().atMost(SIGNALING_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceInitialized"), equalTo(true));
+        assertThat(((RCDevice)context.get("device")).getState()).isEqualTo(RCDevice.DeviceState.READY);
+        assertThat(context.get("status-code")).isEqualTo(0);
+
+        // Now that we are registered, prepare and do REST request towards Restcomm, so that it initialized a call towards us
+        RequestParams params = new RequestParams();
+        params.put("From", REST_ORIGINATOR);
+        params.put("To", "client:" + CLIENT_NAME);
+        params.put("Url", "https://" + SERVER_HOST + ":" + REST_PORT + "/restcomm/demos/hello-world.xml");
+        params.put("Body", MESSAGE_TEXT);
+        String url = "https://" + REST_RESTCOMM_ACCOUNT_SID + ":" + REST_RESTCOMM_AUTH_TOKEN +
+                "@" + SERVER_HOST + ":" + REST_PORT + "/restcomm/2012-04-24/Accounts/" + REST_RESTCOMM_ACCOUNT_SID +
+                "/SMS/Messages";
+
+        doRestRequest(url, params);
+
+        // wait for incoming call from Restcomm, triggered by REST call above
+        await().atMost(REST_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("messageArrived"), equalTo(true));
+        //assertThat(((String)context.get("message-peer"))).isEqualTo("");
+        assertThat(((String)context.get("message-text"))).isEqualTo(MESSAGE_TEXT);
+
+        clientHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                device.release();
+            }
+        });
+
+        await().atMost(SIGNALING_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceReleased"), equalTo(true));
+        assertThat(((RCDevice)context.get("device")).getState()).isEqualTo(RCDevice.DeviceState.OFFLINE);
+        assertThat(context.get("status-code")).isEqualTo(0);
+
+        assertThat(deviceReleased).isTrue();
+
+        InstrumentationRegistry.getTargetContext().unbindService(this);
+    }
+
+
     /**
      *
      *
@@ -1185,6 +1272,13 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         if (intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL)) {
             connectionArrived = true;
         }
+        if (intent.getAction().equals(RCDevice.ACTION_INCOMING_MESSAGE)) {
+            this.context.clear();
+            this.context.put("message-peer", intent.getStringExtra(RCDevice.EXTRA_DID));
+            this.context.put("message-text", intent.getStringExtra(RCDevice.EXTRA_MESSAGE_TEXT));
+
+            messageArrived = true;
+        }
     }
 
 
@@ -1231,15 +1325,14 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                         }
                         */
                     } else {
+                        // For calls originating at RC/MS we cannot verify much because MS currently doesn't support RTCP XR reports,
+                        // hence getStats() doesn't return anything meaningful. Hence, commenting out for now:
                         // ssrc receive stream
+                        /*
                         int bytesReceived = values.getInt("bytesReceived");
                         int packetsLost = values.getInt("packetsLost");
                         Log.i(TAG, "verifyMediaStats(): bytesReceived: " + bytesReceived);
                         Log.i(TAG, "verifyMediaStats(): packetsLost: " + packetsLost);
-                        if (values.getString("mediaType").equals("audio")) {
-                            Log.i(TAG, "verifyMediaStats(): audioOutputLevel: " + values.getInt("audioOutputLevel"));
-                        }
-
                         if (bytesReceived <= 0) {
                             Log.e(TAG, "Error: bytesReceived: " + bytesReceived);
                             return "error: bytes received: " + bytesReceived;
@@ -1248,6 +1341,11 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                             Log.e(TAG, "Error: packetsLost: " + packetsLost);
                             return "error: packets lost: " + packetsLost;
                         }
+
+                        if (values.getString("mediaType").equals("audio")) {
+                            Log.i(TAG, "verifyMediaStats(): audioOutputLevel: " + values.getInt("audioOutputLevel"));
+                        }
+                        */
                     }
                 }
             }

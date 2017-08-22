@@ -1134,11 +1134,21 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
             messageIntent.putExtra(EXTRA_MESSAGE_TEXT, messageText);
             //startActivity(messageIntent);
 
-            PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, messageIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-            try {
-               pendingIntent.send();
-            } catch (PendingIntent.CanceledException e) {
-               throw new RuntimeException("Pending Intent cancelled", e);
+            if (!this.parameters.containsKey(ParameterKeys.DEBUG_USE_BROADCASTS_FOR_EVENTS) || !(Boolean) this.parameters.get(ParameterKeys.DEBUG_USE_BROADCASTS_FOR_EVENTS)) {
+               PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(), 0, messageIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+               try {
+                  pendingIntent.send();
+               } catch (PendingIntent.CanceledException e) {
+                  throw new RuntimeException("Pending Intent cancelled", e);
+               }
+            }
+            else {
+               // ParameterKeys.DEBUG_USE_BROADCASTS_FOR_EVENTS == true, we need to broadcast a separate intent, so that the Test Case is able to receive it.
+               // For some reason PendingIntent is not received properly even when we construct a broadcast for it using getBroadcast()
+               Intent testIntent = new Intent(RCDevice.ACTION_INCOMING_MESSAGE);  //, null, InstrumentationRegistry.getTargetContext(), IntegrationTests.class));
+               testIntent.putExtra(EXTRA_DID, peerSipUri);
+               testIntent.putExtra(EXTRA_MESSAGE_TEXT, messageText);
+               sendBroadcast(testIntent);
             }
          } else {
             onNotificationMessage(peerSipUri, messageText);
