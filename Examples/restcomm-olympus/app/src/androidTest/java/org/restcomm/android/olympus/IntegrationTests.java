@@ -220,6 +220,8 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
     @After
     public void afterAction()
     {
+        //InstrumentationRegistry.getTargetContext().unbindService(this);
+
         //Log.e(TAG, "TC Name: " + name.getMethodName());
         InstrumentationRegistry.getTargetContext().unregisterReceiver(this);
     }
@@ -289,7 +291,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
 
         await().atMost(SIGNALING_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceReleased"), equalTo(true));
         assertThat(((RCDevice)context.get("device")).getState()).isEqualTo(RCDevice.DeviceState.OFFLINE);
-        assertThat(context.get("status-code")).isEqualTo(1);
+        assertThat(context.get("status-code")).isEqualTo(0);
 
         // Even though we don't use a HandlerThread now and use the Main Looper thread that is separate from the testing thread, let's keep this
         // code in case we want to change the threading logic later

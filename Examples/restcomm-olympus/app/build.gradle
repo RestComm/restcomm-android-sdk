@@ -34,7 +34,7 @@ android {
         // Using 18 instead of initial 16 due to introduction of UIAutomator for tests (and more specifically being able to handle system permission dialogs)
         // TODO: lets see if we can workaround this so that App can still use 16 which is good for backward compatibility, yet use 18 for tests
         // (most probably by using gradle product flavors). Notice though that this doesn't affect SDK so not critical
-        minSdkVersion 18
+        minSdkVersion 21
         targetSdkVersion 25
 
         logger.info("-- Using versionCode: " + VERSION_CODE)
@@ -68,11 +68,16 @@ android {
         testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
     }
 
+    testOptions {
+        execution 'ANDROID_TEST_ORCHESTRATOR'
+    }
+
     buildTypes {
         release {
             applicationVariants.all { variant ->
-                variant.outputs.each { output ->
-                    output.outputFile = new File(output.outputFile.parent, "restcomm-olympus-${variant.versionName}+${variant.versionCode}-RELEASE.apk")
+                variant.outputs.all {
+                    //outputFile = new File(output.outputFile.parent, "restcomm-olympus-${variant.versionName}+${variant.versionCode}-RELEASE.apk")
+                    outputFileName = "restcomm-olympus-${variant.versionName}+${variant.versionCode}-RELEASE.apk"
                 }
             }
 
@@ -82,8 +87,9 @@ android {
 
         debug {
             applicationVariants.all { variant ->
-                variant.outputs.each { output ->
-                    output.outputFile = new File(output.outputFile.parent, "restcomm-olympus-${variant.versionName}+${variant.versionCode}-DEBUG.apk")
+                variant.outputs.all {
+                    //outputFile = new File(output.outputFile.parent, "restcomm-olympus-${variant.versionName}+${variant.versionCode}-DEBUG.apk")
+                    outputFileName = "restcomm-olympus-${variant.versionName}+${variant.versionCode}-DEBUG.apk"
                 }
             }
             minifyEnabled false
@@ -164,10 +170,12 @@ dependencies {
     // AndroidJUnitRunner and JUnit Rules
     androidTestCompile 'com.android.support.test:runner:1.0.0'
     androidTestCompile 'com.android.support.test:rules:1.0.0'
+    androidTestUtil 'com.android.support.test:orchestrator:1.0.0'
 
-    androidTestCompile 'com.android.support.test.espresso:espresso-core:2.2.2', {
+    androidTestCompile 'com.android.support.test.espresso:espresso-core:3.0.0', {
         exclude group: 'com.android.support', module: 'support-annotations'
     }
+
     // We need uiautomator so that we can interact with permission dialogs that come from the Android system, NOT the App
     androidTestCompile 'com.android.support.test.uiautomator:uiautomator-v18:2.1.2'
     androidTestCompile 'com.loopj.android:android-async-http:1.4.9'
