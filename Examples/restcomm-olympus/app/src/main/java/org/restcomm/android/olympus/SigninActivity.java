@@ -73,14 +73,16 @@ public class SigninActivity extends AppCompatActivity {
       //boolean signedUp = prefsGeneral.getBoolean(PREFS_SIGNED_UP_KEY, false);
 
       // see if we are called from an external App trying to make a call
-      if (getIntent().getAction().equals(Intent.ACTION_CALL) && getIntent().getData() != null) {
-         if (getIntent().getData() != null) {
-            // note down the fact that we are signed up so that
-            //SharedPreferences.Editor prefEdit = prefsGeneral.edit();
-            //prefEdit.putString(PREFS_EXTERNAL_CALL_URI, getIntent().getData().getHost());
-            //prefEdit.apply();
-            globalPreferences.setExternalCallUri(getIntent().getData().toString());
-         }
+      // Notice that we also add the ACTION_VIEW, so that it also works for
+      // numbers inside text that we tap on for example in default Android SMS App.
+      // For the ACTION_VIEW, the number comes prepended with tel, like 'tel:XXXXXXXXX'
+      if ((getIntent().getAction().equals(Intent.ACTION_CALL) || getIntent().getAction().equals(Intent.ACTION_VIEW)) &&
+              getIntent().getData() != null) {
+         // note down the fact that we are signed up so that
+         //SharedPreferences.Editor prefEdit = prefsGeneral.edit();
+         //prefEdit.putString(PREFS_EXTERNAL_CALL_URI, getIntent().getData().getHost());
+         //prefEdit.apply();
+         globalPreferences.setExternalCallUri(getIntent().getData().toString());
       }
 
       if (globalPreferences.haveSignedUp()) {
