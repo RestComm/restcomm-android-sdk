@@ -31,9 +31,6 @@ android {
 
     defaultConfig {
         applicationId APPLICATION_ID
-        // Using 18 instead of initial 16 due to introduction of UIAutomator for tests (and more specifically being able to handle system permission dialogs)
-        // TODO: lets see if we can workaround this so that App can still use 16 which is good for backward compatibility, yet use 18 for tests
-        // (most probably by using gradle product flavors). Notice though that this doesn't affect SDK so not critical
         minSdkVersion 21
         targetSdkVersion 25
 
@@ -69,7 +66,7 @@ android {
     }
 
     testOptions {
-        execution 'ANDROID_TEST_ORCHESTRATOR'
+        //execution 'ANDROID_TEST_ORCHESTRATOR'
     }
 
     buildTypes {

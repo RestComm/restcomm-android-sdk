@@ -1246,10 +1246,11 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private void startTurn()
    {
       HashMap<String, Object> deviceParameters = device.getParameters();
-      String url = deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_URL) + "?ident=" +
-            deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME) + "&secret=" +
-            deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD) + "&domain=" +
-            deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN) + "&application=default&room=default&secure=1";
+      String url = deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_URL) +
+              "?ident=" + deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME) +
+              "&secret=" + deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD) +
+              "&domain=" + deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN) +
+              "&application=default&room=default&secure=1";
 
       boolean turnEnabled = false;
       if (deviceParameters.containsKey(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED) &&
