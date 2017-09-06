@@ -124,7 +124,19 @@ class JainSipMessageBuilder {
          else {
             // non register
             // remove spaces and dashes from the sip uri
-            String cleanUri = toSipUri.replace(" ", "").replace("-", "");
+            // NB: better to cast to SipUri?
+            String cleanUri = toSipUri.replace(" ", "");
+            //might not have host part
+            int atPos = toSipUri.indexOf("@");
+            if(atPos != -1){
+                String []cleanUriParts = cleanUri.split("@");
+                cleanUriParts[0].replace("-", "");
+                cleanUri = cleanUriParts[0] + cleanUriParts[1];
+            } else{
+                //replace dashes in numbers
+                cleanUri.replace("-", "");
+            }
+
             toAddress = jainSipAddressFactory.createAddress(cleanUri);
             requestUri = jainSipAddressFactory.createURI(cleanUri);
          }
