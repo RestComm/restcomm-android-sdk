@@ -85,5 +85,14 @@
         <item>ISAC</item>
     </string-array>
 
+    <string-array name="ice_servers_discovery_types">
+        <item>XirsysV2</item>
+        <item>XirsysV3</item>
+        <item>Custom</item>
+        <!--
+        <item>60 fps</item>
+        -->
+    </string-array>
+
 </resources>
 

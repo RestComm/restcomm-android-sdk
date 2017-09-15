@@ -105,6 +105,9 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
       updatedPref = settingsFragment.findPreference(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE);
       updatedPref.setSummary(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE, ""));
 
+      updatedPref = settingsFragment.findPreference(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE);
+      updatedPref.setSummary(prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE, ""));
+
       updated = false;
    }
 
@@ -241,6 +244,14 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
       }
       else if (key.equals(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED)) {
          params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false));
+         updated = true;
+      }
+      else if (key.equals(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE)) {
+         params.put(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE, prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE, "Default"));
+         Preference updatedPref = settingsFragment.findPreference(key);
+         if (updatedPref != null) {
+            updatedPref.setSummary(prefs.getString(key, ""));
+         }
          updated = true;
       }
       else if (key.equals(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC)) {

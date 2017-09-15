@@ -25,8 +25,11 @@ package org.restcomm.android.sdk.util;
 import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCDevice;
+import org.webrtc.PeerConnection;
 
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /*
  * Various internal SDK utilities not to be directly used by App
@@ -61,22 +64,63 @@ public class RCUtils {
          //return new ErrorStruct(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_USERNAME);
       }
 
-      // all those fields are mandatory irrespective if we use TURN or not. Even to only get the STUN url, we need all of them
-      if (!parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_URL) ||
-              parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_URL).equals("")) {
-         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_ICE_URL);
+      if (!parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE)) {
+         // discovery type not provided
+         parameters.put(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE, RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V2);
       }
-      if (!parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME) ||
-              parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME).equals("")) {
-         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_ICE_USERNAME);
-      }
-      if (!parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD) ||
-              parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD).equals("")) {
-         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_ICE_PASSWORD);
-      }
-      if (!parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN) ||
-              parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN).equals("")) {
-         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_ICE_DOMAIN);
+      else {
+         // discovery type provided
+         RCDevice.MediaIceServersDiscoveryType iceServersDiscoveryType = (RCDevice.MediaIceServersDiscoveryType)parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE);
+         if (iceServersDiscoveryType.ordinal() < RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V2.ordinal() ||
+                 iceServersDiscoveryType.ordinal() > RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CUSTOM.ordinal()) {
+            throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_INVALID_ICE_SERVER_DISCOVERY_TYPE);
+         }
+
+         if (iceServersDiscoveryType == RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CUSTOM) {
+            // custom (i.e. no configuration url used)
+            List<Map<String, String>> iceServers = (List<Map<String, String>>)parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS);
+            if (!parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS) || iceServers.size() == 0) {
+               throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_INVALID_CUSTOM_DISCOVERY_NO_ICE_SERVERS);
+            }
+
+            for (Map<String, String> iceServer : iceServers) {
+               if (!iceServer.containsKey(RCConnection.IceServersKeys.ICE_SERVER_URL) ||
+                       iceServer.get(RCConnection.IceServersKeys.ICE_SERVER_URL).equals("")) {
+                  throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_INVALID_CUSTOM_DISCOVERY);
+               }
+            }
+
+            if (parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_URL) ||
+                    parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME) ||
+                    parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD) ||
+                    parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN)) {
+               throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_INVALID_CUSTOM_DISCOVERY);
+            }
+         }
+         else {
+            // not custom; media ice servers shouldn't be provided
+            if (parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS)) {
+               throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_INVALID_ICE_SERVERS_NOT_CUSTOM_DISCOVERY);
+            }
+
+            // all those fields are mandatory when configuration URL is used
+            if (!parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_URL) ||
+                    parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_URL).equals("")) {
+               throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_ICE_URL);
+            }
+            if (!parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME) ||
+                    parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME).equals("")) {
+               throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_ICE_USERNAME);
+            }
+            if (!parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD) ||
+                    parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD).equals("")) {
+               throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_ICE_PASSWORD);
+            }
+            if (!parameters.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN) ||
+                    parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN).equals("")) {
+               throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_ICE_DOMAIN);
+            }
+         }
       }
    }
 

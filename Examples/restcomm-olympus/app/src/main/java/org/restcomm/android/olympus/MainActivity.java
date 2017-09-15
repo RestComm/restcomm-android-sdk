@@ -51,12 +51,15 @@ import com.testfairy.TestFairy;
 //import net.hockeyapp.android.UpdateManager;
 
 import org.restcomm.android.sdk.RCClient;
+import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.RCDeviceListener;
-import org.restcomm.android.sdk.RCPresenceEvent;
 import org.restcomm.android.sdk.util.RCException;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static org.restcomm.android.olympus.ContactsController.CONTACT_KEY;
 import static org.restcomm.android.olympus.ContactsController.CONTACT_VALUE;
@@ -240,27 +243,34 @@ public class MainActivity extends AppCompatActivity
          params.put(RCDevice.ParameterKeys.SIGNALING_USERNAME, prefs.getString(RCDevice.ParameterKeys.SIGNALING_USERNAME, "android-sdk"));
          params.put(RCDevice.ParameterKeys.SIGNALING_PASSWORD, prefs.getString(RCDevice.ParameterKeys.SIGNALING_PASSWORD, "1234"));
 
-         //params.put(RCDevice.ParameterKeys.MEDIA_ICE_TYPE, "CONFIGURATION_URL_XIRSYS|CONFIGURATION_URL_XIRSYS|DIRECT");
+         // Choose an ICE discovery type
+         params.put(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE,
+                 iceServersDiscoveryTypeString2Enum(prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE, ""))
+         );
+         //params.put(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE, RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V3);
+         //params.put(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE, RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V3);
+         //params.put(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE, RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CUSTOM);
 
-         // CONFIGURATION_URL_XIRSYS
+         // Media ICE url is a bit different between V2 and V3. Here are some examples:
+         // - For Xirsys V2: https://service.xirsys.com/ice
+         // - For Xirsys V3: https://es.xirsys.com/_turn/
          params.put(RCDevice.ParameterKeys.MEDIA_ICE_URL, prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_URL, ""));
          params.put(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME, prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME, ""));
          params.put(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD, prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD, ""));
+         // V2 Domains are called Channels in V3 organization, but we use the same key in both of them: MEDIA_ICE_DOMAIN
          params.put(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN, prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN, ""));
          params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
 
          /*
-         // CONFIGURATION_URL_RESTCOMM
-         params.put(RCDevice.ParameterKeys.MEDIA_ICE_URL, prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_URL, ""));
-         params.put(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME, prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME, ""));
-         params.put(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD, prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD, ""));
-         params.put(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN, prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN, ""));
-         params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
+         // If MEDIA_ICE_SERVERS_DISCOVERY_TYPE is ICE_SERVERS_CUSTOM the App needs to discover the ICE urls on its own and provide them in a list to the SDK
+         // { url: "", username: "", password: "" }
+         List<Map<String, String>> iceServers = new ArrayList<Map<String, String>>();
 
-         // DIRECT
-         params.put(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS, { url: "", username: "", password: "" });
+         iceServers.add(RCConnection.createIceServerHashMap("", "", ""));
+         iceServers.add(RCConnection.createIceServerHashMap("", "", ""));
+         // ...
+         params.put(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS, iceServers);
          */
-
 
          params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, true));
 
@@ -595,5 +605,21 @@ public class MainActivity extends AppCompatActivity
       alertDialog.show();
    }
 
+   private RCDevice.MediaIceServersDiscoveryType iceServersDiscoveryTypeString2Enum(String iceServersDiscoveryTypeString)
+   {
+      if (iceServersDiscoveryTypeString.equals(getResources().getStringArray(R.array.ice_servers_discovery_types)[0])) {
+         return RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V2;
+      }
+      else if (iceServersDiscoveryTypeString.equals(getResources().getStringArray(R.array.ice_servers_discovery_types)[1])) {
+         return RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V3;
+      }
+      else if (iceServersDiscoveryTypeString.equals(getResources().getStringArray(R.array.ice_servers_discovery_types)[2])) {
+         return RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CUSTOM;
+      }
+      else {
+         // default to V3
+         return RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V3;
+      }
+   }
 }
 

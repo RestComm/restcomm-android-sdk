@@ -29,6 +29,8 @@ package org.restcomm.android.sdk.MediaClient.util;
 
 import android.util.Base64;
 
+import org.restcomm.android.sdk.RCDevice;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -49,6 +51,9 @@ public class AsyncHttpURLConnection {
   private final String url;
   private final AsyncHttpEvents events;
   private String contentType;
+  private String username;
+  private String password;
+  private RCDevice.MediaIceServersDiscoveryType iceServersDiscoveryType;
 
   /**
    * Http requests callbacks.
@@ -58,10 +63,13 @@ public class AsyncHttpURLConnection {
     public void onHttpComplete(String response);
   }
 
-  public AsyncHttpURLConnection(String method, String url,
+  public AsyncHttpURLConnection(String method, String url, RCDevice.MediaIceServersDiscoveryType iceServersDiscoveryType, String username, String password,
       AsyncHttpEvents events) {
     this.method = method;
     this.url = url;
+    this.iceServersDiscoveryType = iceServersDiscoveryType;
+    this.username = username;
+    this.password = password;
     this.events = events;
   }
 
@@ -105,8 +113,12 @@ public class AsyncHttpURLConnection {
         connection.setFixedLengthStreamingMode(postData.length);
       }
 
-      final String basicAuth = "Basic " + Base64.encodeToString("username_TOCHANGE:password_TOCHANGE".getBytes(), Base64.NO_WRAP);
-      connection.setRequestProperty("Authorization", basicAuth);
+      if (iceServersDiscoveryType == RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V3) {
+        String credentials = username + ":" + password;
+        final String basicAuth = "Basic " + Base64.encodeToString(credentials.getBytes(), Base64.NO_WRAP);
+        connection.setRequestProperty("Authorization", basicAuth);
+      }
+
       if (contentType == null) {
         connection.setRequestProperty("Content-Type", "text/plain; charset=utf-8");
       } else {

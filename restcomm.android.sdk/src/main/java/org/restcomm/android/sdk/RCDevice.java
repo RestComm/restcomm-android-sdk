@@ -157,6 +157,15 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    }
 
    /**
+    * Media ICE server type, or how should SDK figure out the ICE servers
+    */
+   public enum MediaIceServersDiscoveryType {
+      ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V2,  /** Use Xirsys V2 configuration URL to retrieve the ICE servers */
+      ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V3,  /** Use Xirsys V3 configuration URL to retrieve the ICE servers */
+      ICE_SERVERS_CUSTOM,  /** Don't use a configuration URL, but directly provide the set of ICE servers (i.e. the App needs to have logic to retrieve them  and provide them) */
+   }
+
+   /**
     * Parameter keys for RCClient.createDevice() and RCDevice.updateParams()
     */
    public static class ParameterKeys {
@@ -170,6 +179,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       public static final String DEBUG_JAIN_SIP_LOGGING_ENABLED = "jain-sip-logging-enabled";
       public static final String DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION = "jain-sip-disable-certificate-verification";
       public static final String MEDIA_TURN_ENABLED = "turn-enabled";
+      public static final String MEDIA_ICE_SERVERS_DISCOVERY_TYPE = "media-ice-servers-discovery-type";
+      public static final String MEDIA_ICE_SERVERS = "media-ice-servers";
+      //public static final String MEDIA_ICE_ENDPOINT = "media-ice-endpoint";
       public static final String MEDIA_ICE_URL = "turn-url";
       public static final String MEDIA_ICE_USERNAME = "turn-username";
       public static final String MEDIA_ICE_PASSWORD = "turn-password";
@@ -460,10 +472,11 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     *                        <b>RCDevice.ParameterKeys.SIGNALING_USERNAME</b>: Identity for the client, like <i>'bob'</i> (mandatory) <br>
     *                        <b>RCDevice.ParameterKeys.SIGNALING_PASSWORD</b>: Password for the client (optional) <br>
     *                        <b>RCDevice.ParameterKeys.SIGNALING_DOMAIN</b>: Restcomm endpoint to use, like <i>'cloud.restcomm.com'</i>. By default port 5060 will be used for cleartext signaling and 5061 for encrypted signaling. You can override the port by suffixing the domain; for example to use port 5080 instead, use the following: <i>'cloud.restcomm.com:5080'</i>. Don't pass this parameter (or leave empty) for registrar-less mode (optional) <br>
-    *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_URL</b>: ICE url to use, like <i>'https://turn.provider.com/turn'</i> (mandatory) <br>
-    *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_USERNAME</b>: ICE username for authentication (mandatory) <br>
-    *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD</b>: ICE password for authentication (mandatory) <br>
-    *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN</b>: ICE Domain to be used in the ICE configuration URL (mandatory) <br>
+    *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE</b>: Media ICE server discovery type, or how should SDK figure out which the actual set ICE servers to use internally. Use ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V2 to utilize a V2 Xirsys configuration URL to retrieve the ICE servers. Use ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V3 to utilize a V3 Xirsys configuration URL to retrieve the ICE servers. Use ICE_SERVERS_CUSTOM if you don't want to use a configuration URL, but instead provide the set of ICE servers youself to the SDK (i.e. the App needs to have logic to retrieve them and provide them) <br>
+    *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_URL</b>: ICE url to use when using a Xirsys configuration URL, like <i>'https://service.xirsys.com/ice'</i> for Xirsys V2 (i.e. ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V2), and <i></i>https://es.xirsys.com/_turn/</i> for Xirsys V3 (i.e. ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V3). If no Xirsys configuration URL is used (i.e. ICE_SERVERS_CUSTOM) then this key is not applicable shouldn't be passed (optional) <br>
+    *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_USERNAME</b>: ICE username for authentication when using a Xirsys configuration URL (optional) <br>
+    *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD</b>: ICE password for authentication when using a Xirsys configuration URL (optional) <br>
+    *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN</b>: ICE Domain to be used in the ICE configuration URL when using a Xirsys configuration URL. Notice that V2 Domains are called Channels in V3 organization, but we use this same key in both cases (optional) <br>
     *                        <b>RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED</b>: Should signaling traffic be encrypted? If this is the case, then a key pair is generated when
     *                        signaling facilities are initialized and added to a custom keystore. Also, added to this custom keystore are all the trusted certificates from
     *                        the System Wide Android CA Store, so that we properly accept only legit server certificates. If not passed (or false) signaling is cleartext (optional) <br>

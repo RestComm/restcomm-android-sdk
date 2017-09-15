@@ -65,8 +65,15 @@
      <PreferenceCategory
         android:key="webrtc_ice_settings"
         android:title="WebRTC ICE Settings" >
-        <EditTextPreference
-            android:defaultValue="https://service.xirsys.com/ice"
+         <ListPreference
+             android:key="media-ice-servers-discovery-type"
+             android:title="@string/pref_ice_servers_discovery_type"
+             android:defaultValue="@string/pref_ice_servers_discovery_type_default"
+             android:dialogTitle="@string/pref_ice_servers_discovery_type_dlg"
+             android:entries="@array/ice_servers_discovery_types"
+             android:entryValues="@array/ice_servers_discovery_types"/>
+         <EditTextPreference
+            android:defaultValue="https://es.xirsys.com/_turn"
             android:key="turn-url"
             android:title="ICE URL"
             android:summary="Base URL to use for ICE"/>
