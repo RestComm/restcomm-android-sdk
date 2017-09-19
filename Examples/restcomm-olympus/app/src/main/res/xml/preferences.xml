@@ -70,8 +70,8 @@
              android:title="@string/pref_ice_servers_discovery_type"
              android:defaultValue="@string/pref_ice_servers_discovery_type_default"
              android:dialogTitle="@string/pref_ice_servers_discovery_type_dlg"
-             android:entries="@array/ice_servers_discovery_types"
-             android:entryValues="@array/ice_servers_discovery_types"/>
+             android:entries="@array/ice_servers_discovery_types_entries"
+             android:entryValues="@array/ice_servers_discovery_types_values"/>
          <EditTextPreference
             android:defaultValue="https://es.xirsys.com/_turn"
             android:key="turn-url"

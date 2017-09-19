@@ -245,8 +245,9 @@ public class MainActivity extends AppCompatActivity
 
          // Choose an ICE discovery type
          params.put(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE,
-                 iceServersDiscoveryTypeString2Enum(prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE, ""))
+                 RCDevice.MediaIceServersDiscoveryType.values()[Integer.parseInt(prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE, "0"))]
          );
+
          //params.put(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE, RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V3);
          //params.put(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE, RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V3);
          //params.put(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE, RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CUSTOM);
@@ -263,11 +264,11 @@ public class MainActivity extends AppCompatActivity
 
          /*
          // If MEDIA_ICE_SERVERS_DISCOVERY_TYPE is ICE_SERVERS_CUSTOM the App needs to discover the ICE urls on its own and provide them in a list to the SDK
-         // { url: "", username: "", password: "" }
          List<Map<String, String>> iceServers = new ArrayList<Map<String, String>>();
 
-         iceServers.add(RCConnection.createIceServerHashMap("", "", ""));
-         iceServers.add(RCConnection.createIceServerHashMap("", "", ""));
+         // The ICE credentials below are fictional, not to be used
+         iceServers.add(RCConnection.createIceServerHashMap("stun:turn01.uswest.xirsys.com", "", ""));
+         iceServers.add(RCConnection.createIceServerHashMap("turn:turn01.uswest.xirsys.com:80?transport=udp", "412ff434-0c12-31b7-c722-3b25112266a1", "412ff434-0c12-31b7-c722-2aaf653ab121"));
          // ...
          params.put(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS, iceServers);
          */
@@ -605,7 +606,7 @@ public class MainActivity extends AppCompatActivity
       alertDialog.show();
    }
 
-   private RCDevice.MediaIceServersDiscoveryType iceServersDiscoveryTypeString2Enum(String iceServersDiscoveryTypeString)
+/*   private RCDevice.MediaIceServersDiscoveryType iceServersDiscoveryTypeString2Enum(String iceServersDiscoveryTypeString)
    {
       if (iceServersDiscoveryTypeString.equals(getResources().getStringArray(R.array.ice_servers_discovery_types)[0])) {
          return RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V2;
@@ -620,6 +621,6 @@ public class MainActivity extends AppCompatActivity
          // default to V3
          return RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V3;
       }
-   }
+   }*/
 }
 

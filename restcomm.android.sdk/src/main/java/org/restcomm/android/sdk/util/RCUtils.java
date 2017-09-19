@@ -25,7 +25,6 @@ package org.restcomm.android.sdk.util;
 import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCDevice;
-import org.webrtc.PeerConnection;
 
 import java.util.HashMap;
 import java.util.List;
@@ -38,7 +37,7 @@ public class RCUtils {
    private static final String TAG = "RCUtils";
    public static void validateDeviceParms(HashMap<String, Object> parameters) throws RCException
    {
-      validatePreferenceParms(parameters);
+      validateSettingsParms(parameters);
 
       if (!parameters.containsKey(RCDevice.ParameterKeys.INTENT_INCOMING_CALL)) {
          throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_CALL_INTENT);
@@ -51,7 +50,7 @@ public class RCUtils {
       //return new ErrorStruct(RCClient.ErrorCodes.SUCCESS);
    }
 
-   public static void validatePreferenceParms(HashMap<String, Object> parameters) throws RCException
+   public static void validateSettingsParms(HashMap<String, Object> parameters) throws RCException
    {
       /*
       if (parameters.containsKey(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED) &&
