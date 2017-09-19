@@ -267,6 +267,15 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       public static final String CONNECTION_SIP_HEADER_KEY_CALL_SID = "X-RestComm-CallSid";
    }
 
+   /**
+    * Key values for the
+    */
+   public static class IceServersKeys {
+      public static final String ICE_SERVER_URL = "url";
+      public static final String ICE_SERVER_USERNAME = "username";
+      public static final String ICE_SERVER_PASSWORD = "password";
+   }
+
    // Let's use a builder since RCConnections don't have uniform way to construct
    static class Builder {
       // Required parameters
@@ -1246,10 +1255,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private void startTurn()
    {
       HashMap<String, Object> deviceParameters = device.getParameters();
-      String url = deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_URL) + "?ident=" +
-            deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME) + "&secret=" +
-            deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD) + "&domain=" +
-            deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN) + "&application=default&room=default&secure=1";
+      String url;
 
       boolean turnEnabled = false;
       if (deviceParameters.containsKey(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED) &&
@@ -1257,8 +1263,59 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          turnEnabled = true;
       }
 
+      RCDevice.MediaIceServersDiscoveryType iceServerDiscoveryType = (RCDevice.MediaIceServersDiscoveryType)deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE);
+      if (iceServerDiscoveryType == RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V2) {
+         url = deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_URL) +
+                 "?ident=" + deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME) +
+                 "&secret=" + deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD) +
+                 "&domain=" + deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN) +
+                 "&application=default&room=default&secure=1";
+      }
+      else if (iceServerDiscoveryType == RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V3) {
+         url = deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_URL) +
+                 "/" + deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN);
+      }
+      else {
+         // ICE_SERVERS_CUSTOM
+         onIceServersReady(external2InternalIceServers((List<Map<String, String>>)deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS)));
+         return;
+      }
+
       //String url = "https://service.xirsys.com/ice?ident=atsakiridis&secret=SECRET_HERE&domain=cloud.restcomm.com&application=default&room=default&secure=1";
-      new IceServerFetcher(url, turnEnabled, this).makeRequest();
+      //url = "https://ice.restcomm.io/_turn/restcomm";
+      new IceServerFetcher(url, turnEnabled, iceServerDiscoveryType, (String)deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME),
+              (String)deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD), this).makeRequest();
+   }
+
+   private LinkedList<PeerConnection.IceServer> external2InternalIceServers(List<Map<String, String>> iceServers)
+   {
+      RCLogger.e(TAG, "Using manual ICE server discovery");
+      LinkedList<PeerConnection.IceServer> iceServersInternal = new LinkedList<PeerConnection.IceServer>();
+      for (Map<String, String> iceServer : iceServers) {
+         PeerConnection.IceServer iceServerInternal = external2InternalIceServer(iceServer);
+         iceServersInternal.add(iceServerInternal);
+         RCLogger.i(TAG, "ICE server: " + iceServerInternal.uri + ", " + iceServerInternal.username);
+      }
+
+      return iceServersInternal;
+   }
+
+   private PeerConnection.IceServer external2InternalIceServer(Map<String, String> iceServer)
+   {
+      String url = "";
+      if (iceServer.containsKey(IceServersKeys.ICE_SERVER_URL)) {
+         url = iceServer.get(IceServersKeys.ICE_SERVER_URL);
+      }
+      String username = "";
+      if (iceServer.containsKey(IceServersKeys.ICE_SERVER_USERNAME)) {
+         username = iceServer.get(IceServersKeys.ICE_SERVER_USERNAME);
+      }
+      String password = "";
+      if (iceServer.containsKey(IceServersKeys.ICE_SERVER_PASSWORD)) {
+         password = iceServer.get(IceServersKeys.ICE_SERVER_PASSWORD);
+      }
+
+      return new PeerConnection.IceServer(url, username, password);
    }
 
    private void startMediaTimer()
@@ -2377,4 +2434,15 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          // If the MMC class isn't here, no intent
       }
    }
+
+   public static Map<String, String> createIceServerHashMap(String url, String username, String password)
+   {
+      HashMap<String, String> map = new HashMap<>();
+      map.put(RCConnection.IceServersKeys.ICE_SERVER_URL, url);
+      map.put(RCConnection.IceServersKeys.ICE_SERVER_USERNAME, username);
+      map.put(RCConnection.IceServersKeys.ICE_SERVER_PASSWORD, password);
+
+      return map;
+   }
+
 }

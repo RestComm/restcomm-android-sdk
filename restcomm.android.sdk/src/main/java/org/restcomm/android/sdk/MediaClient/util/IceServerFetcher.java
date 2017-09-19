@@ -58,6 +58,7 @@ import android.util.Log;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.util.RCLogger;
 import org.webrtc.PeerConnection;
 
@@ -69,6 +70,9 @@ public class IceServerFetcher {
     private final IceServerFetcherEvents events;
     private final String iceUrl;
     private boolean turnEnabled = true;
+    private RCDevice.MediaIceServersDiscoveryType iceServersDiscoveryType;
+    private String username;
+    private String password;
     private AsyncHttpURLConnection httpConnection;
 
     /**
@@ -86,16 +90,27 @@ public class IceServerFetcher {
         public void onIceServersError(final String description);
     }
 
-    public IceServerFetcher(String iceUrl, boolean turnEnabled, final IceServerFetcherEvents events) {
+    public IceServerFetcher(String iceUrl, boolean turnEnabled, RCDevice.MediaIceServersDiscoveryType iceServersDiscoveryType, String username, String password,
+                            final IceServerFetcherEvents events) {
+        RCLogger.i(TAG, "IceServerFetcher(): iceServersDiscoveryType: " + iceServersDiscoveryType + ", turn enabled: " + turnEnabled + ", username: " + username);
+
         this.iceUrl = iceUrl;
         this.turnEnabled = turnEnabled;
+        this.iceServersDiscoveryType = iceServersDiscoveryType;
+        this.username = username;
+        this.password = password;
         this.events = events;
     }
 
     public void makeRequest() {
         RCLogger.d(TAG, "Requesting ICE servers from: " + iceUrl);
+        String method = "GET";
+        if (iceServersDiscoveryType == RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V3) {
+            method = "PUT";
+        }
+
         httpConnection = new AsyncHttpURLConnection(
-                "GET", iceUrl,
+                method, iceUrl, iceServersDiscoveryType, username, password,
                 new AsyncHttpURLConnection.AsyncHttpEvents() {
                     @Override
                     public void onHttpError(String errorMessage) {
@@ -113,17 +128,35 @@ public class IceServerFetcher {
 
     private void iceServersHttpResponseParse(String response) {
         try {
+            RCLogger.d(TAG, "--- Ice Servers full response: " + response);
             JSONObject iceServersJson = new JSONObject(response);
 
-            int result = iceServersJson.getInt("s");
-            RCLogger.d(TAG, "Ice Servers response status: " + result);
-            if (result != 200) {
-                events.onIceServersError("Ice Servers response error: " + iceServersJson.getString("e"));
-                return;
+            if (iceServersDiscoveryType == RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V2) {
+                int result = iceServersJson.getInt("s");
+                RCLogger.d(TAG, "Ice Servers response status: " + result);
+                if (result != 200) {
+                    events.onIceServersError("Ice Servers response error: " + iceServersJson.getString("e"));
+                    return;
+                }
+            }
+            else {
+                String result = iceServersJson.getString("s");
+                RCLogger.d(TAG, "Ice Servers response status: " + result);
+                if (!result.equals("ok")) {
+                    //events.onIceServersError("Ice Servers response error: " + iceServersJson.getString("e"));
+                    events.onIceServersError("Ice Servers response error: " + iceServersJson.getString("s"));
+                    return;
+                }
             }
 
+            JSONArray iceServersArray;
             LinkedList<PeerConnection.IceServer> iceServers = new LinkedList<PeerConnection.IceServer>();
-            JSONArray iceServersArray = iceServersJson.getJSONObject("d").getJSONArray("iceServers");
+            if (iceServersDiscoveryType == RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V2) {
+                iceServersArray = iceServersJson.getJSONObject("d").getJSONArray("iceServers");
+            }
+            else {
+                iceServersArray = iceServersJson.getJSONObject("v").getJSONArray("iceServers");
+            }
             for (int i = 0; i < iceServersArray.length(); ++i) {
 
                 String iceServerString = iceServersArray.getString(i);
