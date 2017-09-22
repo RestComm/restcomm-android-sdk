@@ -32,6 +32,7 @@ import android.javax.sip.SipFactory;
 import android.javax.sip.SipProvider;
 import android.javax.sip.address.Address;
 import android.javax.sip.address.AddressFactory;
+import android.javax.sip.address.Hop;
 import android.javax.sip.address.SipURI;
 import android.javax.sip.address.URI;
 import android.javax.sip.header.ContactHeader;
@@ -48,6 +49,8 @@ import android.javax.sip.message.Message;
 import android.javax.sip.message.MessageFactory;
 import android.javax.sip.message.Request;
 import android.javax.sip.message.Response;
+import android.org.mobicents.ext.javax.sip.dns.DNSAwareRouter;
+import android.org.mobicents.ext.javax.sip.dns.DefaultDNSServerLocator;
 
 
 import org.restcomm.android.sdk.BuildConfig;
@@ -55,15 +58,19 @@ import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.util.RCLogger;
+import org.xbill.DNS.Lookup;
+import org.xbill.DNS.Resolver;
 
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 
 class JainSipMessageBuilder {
@@ -140,7 +147,7 @@ class JainSipMessageBuilder {
 
          // Add route header with the proxy first, if proxy exists (i.e. non registrar-less)
          if (domain != null && !domain.equals("")) {
-            RouteHeader routeHeader = createRouteHeader(domain);
+            RouteHeader routeHeader = createRouteHeader(domain, listeningPoint);
             request.addFirst(routeHeader);
          }
 
@@ -276,7 +283,7 @@ class JainSipMessageBuilder {
       }
    }
 
-   public Request buildByeRequest(android.javax.sip.Dialog dialog, String reason, HashMap<String, Object> clientConfiguration) throws JainSipException
+   public Request buildByeRequest(android.javax.sip.Dialog dialog, String reason, ListeningPoint listeningPoint, HashMap<String, Object> clientConfiguration) throws JainSipException
    {
       try {
          Request request = dialog.createRequest(Request.BYE);
@@ -285,7 +292,7 @@ class JainSipMessageBuilder {
                !clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
             // we only need this for non-registrarless calls since the problem is only for incoming calls,
             // and when working in registrarless mode there are no incoming calls
-            RouteHeader routeHeader = createRouteHeader((String) clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN));
+            RouteHeader routeHeader = createRouteHeader((String) clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN), listeningPoint);
             request.addFirst(routeHeader);
          }
 
@@ -463,10 +470,24 @@ class JainSipMessageBuilder {
       }
    }
 
-   private RouteHeader createRouteHeader(String route)
+   private RouteHeader createRouteHeader(String route, ListeningPoint listeningPoint)
    {
       try {
-         SipURI routeUri = (SipURI) jainSipAddressFactory.createURI(route);
+         //SipURI routeUri = (SipURI) jainSipAddressFactory.createURI(route);
+
+         Set<String> supportedTransports = new HashSet<String>();
+         supportedTransports.add(ListeningPoint.TLS);
+         //supportedTransports.add(listeningPoint.getTransport());
+         DefaultDNSServerLocator dnsServerLocator = new DefaultDNSServerLocator(supportedTransports);
+         Queue<Hop> hops = dnsServerLocator.locateHops(jainSipAddressFactory.createURI(route));
+         SipURI routeUri = jainSipAddressFactory.createSipURI(null, hops.peek().getHost());
+         routeUri.setParameter(DNSAwareRouter.DNS_ROUTE, Boolean.TRUE.toString());
+         routeUri.setPort(hops.peek().getPort());
+         if (hops.peek().getTransport() != null) {
+            routeUri.setTransportParam(hops.peek().getTransport());
+         }
+         /////////
+
          routeUri.setLrParam();
          Address routeAddress = jainSipAddressFactory.createAddress(routeUri);
          return jainSipHeaderFactory.createRouteHeader(routeAddress);

@@ -50,6 +50,7 @@ import android.javax.sip.message.Request;
 import android.javax.sip.message.Response;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.org.mobicents.ext.javax.sip.dns.DNSAwareRouter;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
@@ -179,6 +180,9 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       Properties properties = new Properties();
       properties.setProperty("android.javax.sip.STACK_NAME", "androidSip");
       properties.setProperty("android.gov.nist.javax.sip.MESSAGE_PROCESSOR_FACTORY", "android.gov.nist.javax.sip.stack.NioMessageProcessorFactory");
+      // DNS SRV
+      // Important: for jain-sip.ext especially, we need to drop the 'android' part
+      properties.setProperty("javax.sip.ROUTER_PATH", DNSAwareRouter.class.getCanonicalName());
 
       // Setup TLS even if currently we aren't using it, so that if user changes the setting later
       // the SIP stack is ready to support it
