@@ -143,10 +143,10 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
    static final int FORCE_CLOSE_INTERVAL = 3000;
 
    // JAIN SIP entities
-   public SipFactory jainSipFactory;
-   public SipStack jainSipStack;
-   public ListeningPoint jainSipListeningPoint;
-   public SipProvider jainSipProvider;
+   private SipFactory jainSipFactory;
+   private SipStack jainSipStack;
+   ListeningPoint jainSipListeningPoint;
+   SipProvider jainSipProvider;
 
    public JainSipClient(Handler signalingHandler)
    {
@@ -202,8 +202,9 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       }
 
       try {
+         JainSipConfiguration.normalizeParameters(configuration);
          jainSipStack = jainSipFactory.createSipStack(properties);
-         jainSipMessageBuilder.normalizeDomain(configuration);
+         JainSipMessageBuilder.normalizeDomain(configuration, JainSipConfiguration.getSecureEnabledValue(null, configuration));
 
          jainSipJobManager.add(jobId, JainSipJob.Type.TYPE_OPEN, configuration);
       }
@@ -263,7 +264,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       RCLogger.i(TAG, "reconfigure(): " + parameters.toString());
 
       // normalize before checking which parameters changed
-      jainSipMessageBuilder.normalizeDomain(parameters);
+      //JainSipMessageBuilder.normalizeDomain(parameters, JainSipConfiguration.getSecureEnabledValue(this.configuration, parameters));
 
       // check which parameters actually changed by comparing this.configuration with parameters
       HashMap<String, Object> modifiedParameters = JainSipConfiguration.modifiedParameters(this.configuration, parameters);
@@ -280,6 +281,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       // remember that the new parameters can be just a subset of the currently stored in configuration, so to update the current parameters we need
       // to merge them with the new (i.e. keep the old and replace any new keys with new values)
       configuration = JainSipConfiguration.mergeParameters(configuration, parameters);
+      JainSipMessageBuilder.normalizeDomain(configuration, JainSipConfiguration.getSecureEnabledValue(null, configuration));
 
       // Set the media parameters right away, since they are irrelevant to signaling
       if (modifiedParameters.containsKey(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED)) {
@@ -330,7 +332,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       }
 
       try {
-         jainSipMessageBuilder.normalizePeer(parameters, configuration);
+         jainSipMessageBuilder.normalizePeer(parameters, configuration, jainSipListeningPoint);
 
          JainSipCall jainSipCall = new JainSipCall(this, listener);
          jainSipCall.open(jobId, parameters);
@@ -397,7 +399,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       }
 
       try {
-         jainSipMessageBuilder.normalizePeer(parameters, configuration);
+         jainSipMessageBuilder.normalizePeer(parameters, configuration, jainSipListeningPoint);
 
          Transaction transaction = jainSipClientSendMessage(parameters);
          jainSipJobManager.add(jobId, JainSipJob.Type.TYPE_MESSAGE, transaction, parameters, null);
@@ -1041,6 +1043,5 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
          jainSipClientContext.remove("via-rport");
       }
    }
-
 
 }

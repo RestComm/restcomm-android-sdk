@@ -22,6 +22,8 @@
 
 package org.restcomm.android.sdk.SignalingClient.JainSipClient;
 
+import org.restcomm.android.sdk.RCDevice;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -49,12 +51,38 @@ public class JainSipConfiguration {
       return mergedParameters;
    }
 
+
+   /**
+    * Normalize configuration hashmap
+    *
+    * @param configuration HashMap containing configuration parameters for signaling facilities
+    */
+   static void normalizeParameters(HashMap<String, Object> configuration)
+   {
+      // if SIGNALING_SECURE_ENABLED is not provided, set to false
+      if (!configuration.containsKey(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED)) {
+         configuration.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
+      }
+   }
+
    static boolean getBoolean(HashMap<String, Object> parameters, String key)
    {
       if (parameters.containsKey(key) && (Boolean) parameters.get(key)) {
          return true;
       }
       return false;
+   }
+
+
+   static boolean getSecureEnabledValue(HashMap<String, Object> oldParameters, HashMap<String, Object> newParameters)
+   {
+      if (newParameters.containsKey(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED)) {
+         return (boolean) newParameters.get(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED);
+      } else {
+         return oldParameters != null && oldParameters.containsKey(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED) &&
+                 (boolean) oldParameters.get(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED);
+      }
+
    }
 
 }
