@@ -494,8 +494,19 @@ class JainSipMessageBuilder {
 
          Set<String> supportedTransports = new HashSet<String>();
          supportedTransports.add(listeningPoint.getTransport());
+         RCLogger.e(TAG, "--- 11111");
+/*
+         try {
+            Thread.sleep(15000);
+         } catch (InterruptedException e) {
+            e.printStackTrace();
+         }
+*/
+
          DefaultDNSServerLocator dnsServerLocator = new DefaultDNSServerLocator(supportedTransports);
+         RCLogger.e(TAG, "--- 22222");
          Queue<Hop> hops = dnsServerLocator.locateHops(jainSipAddressFactory.createURI(route));
+         RCLogger.e(TAG, "--- 33333");
          SipURI routeUri = jainSipAddressFactory.createSipURI(null, hops.peek().getHost());
          routeUri.setParameter(DNSAwareRouter.DNS_ROUTE, Boolean.TRUE.toString());
          routeUri.setPort(hops.peek().getPort());

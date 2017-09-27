@@ -204,7 +204,8 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       try {
          JainSipConfiguration.normalizeParameters(configuration);
          jainSipStack = jainSipFactory.createSipStack(properties);
-         JainSipMessageBuilder.normalizeDomain(configuration, JainSipConfiguration.getSecureEnabledValue(null, configuration));
+         JainSipMessageBuilder.normalizeDomain(configuration, configuration.containsKey(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED) &&
+                 (boolean) configuration.get(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED));
 
          jainSipJobManager.add(jobId, JainSipJob.Type.TYPE_OPEN, configuration);
       }
@@ -263,9 +264,6 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
    {
       RCLogger.i(TAG, "reconfigure(): " + parameters.toString());
 
-      // normalize before checking which parameters changed
-      //JainSipMessageBuilder.normalizeDomain(parameters, JainSipConfiguration.getSecureEnabledValue(this.configuration, parameters));
-
       // check which parameters actually changed by comparing this.configuration with parameters
       HashMap<String, Object> modifiedParameters = JainSipConfiguration.modifiedParameters(this.configuration, parameters);
 
@@ -281,7 +279,8 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       // remember that the new parameters can be just a subset of the currently stored in configuration, so to update the current parameters we need
       // to merge them with the new (i.e. keep the old and replace any new keys with new values)
       configuration = JainSipConfiguration.mergeParameters(configuration, parameters);
-      JainSipMessageBuilder.normalizeDomain(configuration, JainSipConfiguration.getSecureEnabledValue(null, configuration));
+      JainSipMessageBuilder.normalizeDomain(configuration, configuration.containsKey(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED) &&
+              (boolean) configuration.get(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED));
 
       // Set the media parameters right away, since they are irrelevant to signaling
       if (modifiedParameters.containsKey(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED)) {

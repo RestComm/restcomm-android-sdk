@@ -74,15 +74,13 @@ public class JainSipConfiguration {
    }
 
 
-   static boolean getSecureEnabledValue(HashMap<String, Object> oldParameters, HashMap<String, Object> newParameters)
+/*
+   static boolean getSecureEnabledValue(HashMap<String, Object> newParameters)
    {
-      if (newParameters.containsKey(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED)) {
-         return (boolean) newParameters.get(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED);
-      } else {
-         return oldParameters != null && oldParameters.containsKey(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED) &&
-                 (boolean) oldParameters.get(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED);
-      }
+      return newParameters != null && newParameters.containsKey(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED) &&
+              (boolean) newParameters.get(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED);
 
    }
+*/
 
 }
