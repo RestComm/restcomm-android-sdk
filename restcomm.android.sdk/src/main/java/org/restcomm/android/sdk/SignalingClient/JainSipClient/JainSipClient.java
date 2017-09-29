@@ -22,7 +22,9 @@
 
 package org.restcomm.android.sdk.SignalingClient.JainSipClient;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.gov.nist.javax.sip.ResponseEventExt;
 import android.gov.nist.javax.sip.SipStackExt;
 import android.gov.nist.javax.sip.clientauthutils.AuthenticationHelper;
@@ -58,6 +60,7 @@ import android.os.SystemClock;
 import android.text.format.Formatter;
 
 //import org.apache.http.conn.util.InetAddressUtils;
+import org.restcomm.android.sdk.R;
 import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCDevice;
@@ -65,6 +68,10 @@ import org.restcomm.android.sdk.RCDeviceListener;
 import org.restcomm.android.sdk.util.RCLogger;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -199,6 +206,14 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
          File downloadPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
          properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", downloadPath.getAbsolutePath() + "/debug-jain.log");
          properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", downloadPath.getAbsolutePath() + "/server-jain.log");
+
+         properties.setProperty("gov.nist.javax.sip.TRACE_LEVEL", "32");
+         properties.setProperty("gov.nist.javax.sip.DEBUG_LOG", downloadPath.getAbsolutePath() + "/debug-jain-ext.log");
+         properties.setProperty("gov.nist.javax.sip.SERVER_LOG", downloadPath.getAbsolutePath() + "/server-jain-ext.log");
+
+         if (androidContext.checkCallingOrSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            RCLogger.e(TAG, "JAIN SIP logging is enabled but permission " + Manifest.permission.WRITE_EXTERNAL_STORAGE + " is not granted");
+         }
       }
 
       try {
