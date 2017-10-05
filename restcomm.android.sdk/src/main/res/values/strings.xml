@@ -54,7 +54,7 @@
 
     <string name="pref_ice_servers_discovery_type">ICE Servers Discovery Type</string>
     <string name="pref_ice_servers_discovery_type_dlg">Select ICE Servers Discovery Type</string>
-    <string name="pref_ice_servers_discovery_type_default">0</string>
+    <string name="pref_ice_servers_discovery_type_default">1</string>
 
     <string name="pref_startvideobitrate_key">startvideobitrate_preference</string>
     <string name="pref_startvideobitrate_title">Start video bitrate setting.</string>
