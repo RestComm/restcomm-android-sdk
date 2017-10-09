@@ -108,6 +108,11 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
       int iceServersDiscoveryType =  Integer.parseInt(prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE, "0"));
       updatedPref.setSummary(getResources().getStringArray(R.array.ice_servers_discovery_types_entries)[iceServersDiscoveryType]);
 
+      updatedPref = settingsFragment.findPreference(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT);
+      //int candidateTimeout =  Integer.parseInt(prefs.getString(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT, "0"));
+      //updatedPref.setSummary(getResources().getStringArray(R.array.candidate_timeout_entries)[candidateTimeout]);
+      updatedPref.setSummary(candidateTimeoutValue2Summary(prefs.getString(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT, "0")));
+
       updated = false;
    }
 
@@ -187,6 +192,15 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
                        RCDevice.MediaIceServersDiscoveryType.values()[Integer.parseInt(iceServersDiscoveryType)]
                );
 
+               // Same for candidate timeout
+               String candidateTimeout = "0";
+               if (prefHashMap.containsKey(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT)) {
+                  candidateTimeout = (String) prefHashMap.get(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT);
+                  prefHashMap.remove(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT);
+               }
+               prefHashMap.put(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT,
+                       Integer.parseInt(candidateTimeout)
+               );
 
                RCUtils.validateSettingsParms(prefHashMap);
                if (!device.updateParams(params)) {
@@ -272,6 +286,17 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
          }
          updated = true;
       }
+      else if (key.equals(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT)) {
+         params.put(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT,
+                 Integer.parseInt(prefs.getString(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT, "0")));
+         Preference updatedPref = settingsFragment.findPreference(key);
+         if (updatedPref != null) {
+            //int candidateTimeout =  Integer.parseInt(prefs.getString(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT, "0"));
+            //updatedPref.setSummary(getResources().getStringArray(R.array.candidate_timeout_entries)[candidateTimeout]);
+            updatedPref.setSummary(candidateTimeoutValue2Summary(prefs.getString(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT, "0")));
+         }
+         updated = true;
+      }
       else if (key.equals(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC)) {
          params.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, "Default"));
          Preference updatedPref = settingsFragment.findPreference(key);
@@ -318,4 +343,15 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
       });
       alertDialog.show();
    }
+
+   private String candidateTimeoutValue2Summary(String value)
+   {
+      String summary = "No timeout";
+      if (Integer.parseInt(value) > 0) {
+         summary = value + " " + "seconds";
+      }
+      return summary;
+   }
+
+
 }

@@ -652,6 +652,11 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     *                   <b>RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE</b>: Preferred frame rate to use. Default is 30fps. Possible values are enumerated at <i>RCConnection.VideoFrameRate</i> (optional) <br>
     *                   <b>RCConnection.ParameterKeys.CONNECTION_CUSTOM_SIP_HEADERS</b>: An optional HashMap&lt;String,String&gt; of custom SIP headers we want to add. For an example
     *                   please check restcomm-helloworld or restcomm-olympus sample Apps (optional) <br>
+    *                   <b>RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT</b>: An optional Integer denoting how long to wait for ICE candidates. Zero means default behaviour which is
+    *                   to depend on onIceGatheringComplete from Peer Connection facilities. Any other integer value means to wait at most that amount of time no matter if onIceGatheringComplete has fired.
+    *                   The problem we are addressing here is the new Peer Connection ICE gathering timeout which is 40 seconds which is way too long. Notice that the root cause here is in reality
+    *                   lack of support for Trickle ICE, so once it is supported we won't be needing such workarounds.
+    *                   please check restcomm-helloworld or restcomm-olympus sample Apps (optional) <br>
     * @param listener   The listener object that will receive events when the connection state changes
     * @return An RCConnection object representing the new connection or null in case of error. Error
     * means that RCDevice.state not ready to make a call (this usually means no WiFi available)

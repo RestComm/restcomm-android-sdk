@@ -325,6 +325,10 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
             connectParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE,
                   frameRateString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE, ""))
             );
+            // Needed until we implement Trickle ICE
+            connectParams.put(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT,
+                    Integer.parseInt(prefs.getString(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT, "0"))
+            );
 
             // Here's how to set manually
             //connectParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC, RCConnection.VideoCodec.VIDEO_CODEC_VP8);
@@ -389,6 +393,11 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
                     acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC,
                             audioCodecString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, ""))
                     );
+                    // Needed until we implement Trickle ICE
+                    acceptParams.put(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT,
+                            Integer.parseInt(prefs.getString(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT, "0"))
+                    );
+
 
                     if (intent.getAction().equals(RCDevice.ACTION_INCOMING_CALL_ANSWER_VIDEO)) {
                         acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_CODEC,
@@ -495,6 +504,10 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE,
                       frameRateString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE, ""))
                 );
+                acceptParams.put(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT,
+                        Integer.parseInt(prefs.getString(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT, "0"))
+                );
+
 
                 // Check permissions asynchronously and then accept the call
                 handlePermissions(true);
@@ -511,6 +524,10 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC,
                       audioCodecString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, ""))
+                );
+
+                acceptParams.put(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT,
+                        Integer.parseInt(prefs.getString(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT, "0"))
                 );
 
                 // Check permissions asynchronously and then accept the call

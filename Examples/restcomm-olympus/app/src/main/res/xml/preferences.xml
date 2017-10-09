@@ -72,6 +72,13 @@
              android:dialogTitle="@string/pref_ice_servers_discovery_type_dlg"
              android:entries="@array/ice_servers_discovery_types_entries"
              android:entryValues="@array/ice_servers_discovery_types_values"/>
+         <ListPreference
+             android:key="debug-connection-candidate-timeout"
+             android:title="@string/pref_candidate_timeout"
+             android:defaultValue="@string/pref_candidate_timeout_default"
+             android:dialogTitle="@string/pref_candidate_timeout_dlg"
+             android:entries="@array/candidate_timeout_entries"
+             android:entryValues="@array/candidate_timeout_values"/>
          <EditTextPreference
             android:defaultValue="https://es.xirsys.com/_turn"
             android:key="turn-url"

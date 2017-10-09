@@ -91,6 +91,7 @@ public final class RCClient {
       ERROR_CONNECTION_AUDIO_CALL_VIDEO_CODEC_FORBIDDEN,
       ERROR_CONNECTION_AUDIO_CALL_VIDEO_RESOLUTION_FORBIDDEN,
       ERROR_CONNECTION_AUDIO_CALL_VIDEO_FRAME_RATE_FORBIDDEN,
+      ERROR_CONNECTION_WEBRTC_CANDIDATES_TIMED_OUT,
 
       ERROR_MESSAGE_AUTHENTICATION_FORBIDDEN,
       ERROR_MESSAGE_URI_INVALID,
@@ -270,6 +271,9 @@ public final class RCClient {
       }
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_AUDIO_CALL_VIDEO_FRAME_RATE_FORBIDDEN) {
          return "Failed to initiate connection due to parameter validation error; video frame rate not allowed to be specified in an audio call";
+      }
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_WEBRTC_CANDIDATES_TIMED_OUT) {
+         return "Failed to collect any candidates on time; please check your network settings and connectivity or consider increasing candidate timeout";
       }
 
       else if (errorCode == ErrorCodes.ERROR_MESSAGE_AUTHENTICATION_FORBIDDEN) {
