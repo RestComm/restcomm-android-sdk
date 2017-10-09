@@ -128,7 +128,6 @@ public class IceServerFetcher {
 
     private void iceServersHttpResponseParse(String response) {
         try {
-            RCLogger.d(TAG, "--- Ice Servers full response: " + response);
             JSONObject iceServersJson = new JSONObject(response);
 
             if (iceServersDiscoveryType == RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V2) {
