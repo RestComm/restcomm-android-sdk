@@ -26,6 +26,36 @@
             android:title="Secure Signaling"
             android:summary="Encrypt signaling communications (notice that media communications are always encrypted so no need for an extra option)"/>
     </PreferenceCategory>
+    <PreferenceCategory
+        android:key="push_notification_settings"
+        android:title="Push Notifications Settings" >
+        <SwitchPreference
+            android:defaultValue="true"
+            android:key="push-notification-enabled"
+            android:title="Push Notifications"
+            android:summary="Indicates whether Push Notification Server is set to handle Push Notifications"/>
+        <EditTextPreference
+            android:defaultValue=""
+            android:key="restcomm-account-email"
+            android:summary="Restcomm-Connect account email"
+            android:title="Account"/>
+        <EditTextPreference
+            android:defaultValue=""
+            android:inputType="textPassword"
+            android:key="restcomm-account-password"
+            android:summary="Password for Restcomm-Connect account"
+            android:title="Password"/>
+        <EditTextPreference
+            android:defaultValue="push.restcomm.com"
+            android:key="push-notification-domain"
+            android:title="Push Notifications Domain"
+            android:summary="Restcomm Push Notifictions domain, like: 'push.restcomm.com'"/>
+        <EditTextPreference
+            android:defaultValue=""
+            android:key="push-notification-fcm-secret"
+            android:title="Push Notifications Server Credentials"
+            android:summary="FCM Server Token"/>
+    </PreferenceCategory>
 
     <PreferenceCategory
         android:key="media_settings"

@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "264677653395",
+    "firebase_url": "https://olympus-1ed11.firebaseio.com",
+    "project_id": "olympus-1ed11",
+    "storage_bucket": "olympus-1ed11.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:264677653395:android:04bce81c40095859",
+        "android_client_info": {
+          "package_name": "org.restcomm.android.olympus"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "264677653395-taeb7ffjmt4o79f864uteinrukje7092.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "org.restcomm.android.olympus",
+            "certificate_hash": "2c06be8cf3f6ead0c2d13ea174282554fcf2c9b5"
+          }
+        },
+        {
+          "client_id": "264677653395-rdiojklmje96uao6epboti6o3ks0tp7v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAaSZDZDB2M2jOlTlQjEv8gJVztLRIZs8Q"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "264677653395-rdiojklmje96uao6epboti6o3ks0tp7v.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

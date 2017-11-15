@@ -77,6 +77,10 @@ repositories {
     maven {
         url "http://telestax.jfrog.io/telestax/community-releases"
     }
+    maven {
+        url "https://maven.google.com"
+    }
+
 }
 
 dependencies {
@@ -98,6 +102,9 @@ dependencies {
 
     // Required for local unit tests (JUnit 4 framework)
     //testCompile 'junit:junit:4.12'
+    compile 'com.google.firebase:firebase-messaging:11.2.0'
+    compile 'com.firebase:firebase-jobdispatcher:0.6.0'
+
 }
 
 // Upload to sonatype stuff
