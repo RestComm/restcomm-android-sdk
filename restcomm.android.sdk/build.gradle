@@ -13,7 +13,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.3'
+        classpath 'com.android.tools.build:gradle:2.3.3'
         classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.6.1"
 
         // NOTE: Do not place your application dependencies here; they belong
@@ -23,10 +23,10 @@ buildscript {
 
 android {
     compileSdkVersion 25
-    buildToolsVersion '25.0.3'
+    //buildToolsVersion '25.0.3'
 
     defaultConfig {
-        minSdkVersion 16
+        minSdkVersion 21
         targetSdkVersion 25
 
         logger.info("-- Using versionCode: " + VERSION_CODE)
@@ -35,6 +35,7 @@ android {
         logger.info("-- Using versionName: " + VERSION_NAME)
         versionName VERSION_NAME
     }
+
     buildTypes {
         release {
             minifyEnabled false
@@ -44,8 +45,11 @@ android {
         debug {
             minifyEnabled false
         }
-
+        lintOptions {
+            //abortOnError false
+        }
     }
+
     sourceSets.main {
         jni.srcDirs = [] // This prevents the auto generation of Android.mk
         jniLibs.srcDir 'libs/jniLibs' // This is not necessary unless you have precompiled libraries in your project.
