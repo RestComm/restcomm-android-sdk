@@ -50,6 +50,7 @@ import com.testfairy.TestFairy;
 //import net.hockeyapp.android.CrashManager;
 //import net.hockeyapp.android.UpdateManager;
 
+import org.apache.log4j.chainsaw.Main;
 import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.RCDeviceListener;
@@ -576,7 +577,9 @@ public class MainActivity extends AppCompatActivity
             dialog.dismiss();
          }
       });
-      alertDialog.show();
+      if (!MainActivity.this.isFinishing()) {
+         alertDialog.show();
+      }
    }
 
 }

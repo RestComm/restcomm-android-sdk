@@ -32,7 +32,9 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
@@ -424,6 +426,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
       isServiceAttached = true;
       if (signalingClient != null)
+
          signalingClient.open(this, getApplicationContext(), parameters);
 
    }
@@ -448,6 +451,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       isServiceAttached = false;
       if (signalingClient != null)
          signalingClient.close();
+
+      signalingClient = null;
 
 
       return true;
@@ -606,6 +611,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       if (isServiceAttached) {
          isReleasing = true;
          signalingClient.close();
+          signalingClient = null;
       } else {
          listener.onReleased(this, RCClient.ErrorCodes.SUCCESS.ordinal(), "");
          listener = null;
@@ -1637,9 +1643,16 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
          if (isServiceAttached)
             return;
-         state = DeviceState.BUSY;
-        // onNotificationCall(from, message); TODO: OGGIe?!
-      }
+
+           new Handler(Looper.getMainLooper()).post(new Runnable() {
+               @Override
+               public void run() {
+                   signalingClient = new SignalingClient();
+                   signalingClient.open(RCDevice.this, getApplicationContext(), parameters);
+
+               }
+           });
+       }
 
 
       // ------ Helpers

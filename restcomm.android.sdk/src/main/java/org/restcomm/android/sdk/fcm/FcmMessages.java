@@ -375,6 +375,7 @@ public class FcmMessages {
                         break;
                      }
                   }
+
                   String fcmSecret = getPushNotificationFcmSecret();
                   if (!credentialsFound) {
                      if (fcmSecret.length() != 0) {
@@ -622,6 +623,7 @@ public class FcmMessages {
       }
 
       private String getPushNotificationFcmSecret() {
+         //todo: oggie
          return prefs.getString(ParameterKeys.PUSH_NOTIFICATION_FCM_SECRET, "");
       }
 

@@ -66,6 +66,7 @@ android {
             resValue "string", "ICE_DOMAIN", ICE_DOMAIN
         }
         testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
+        multiDexEnabled true
     }
 
     buildTypes {
