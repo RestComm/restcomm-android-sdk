@@ -218,7 +218,7 @@ public class JainSipCall {
       RCLogger.v(TAG, "jainSipCallHangup(): jobId: " + jainSipJob.jobId);
       Request byeRequest = null;
       try {
-         byeRequest = jainSipClient.jainSipMessageBuilder.buildByeRequest(jainSipJob.transaction.getDialog(), reason, clientConfiguration);
+         byeRequest = jainSipClient.jainSipMessageBuilder.buildByeRequest(jainSipJob.transaction.getDialog(), reason, jainSipClient.jainSipListeningPoint, clientConfiguration);
          RCLogger.i(TAG, "Sending SIP request: \n" + byeRequest.toString());
 
          ClientTransaction transaction = jainSipClient.jainSipProvider.getNewClientTransaction(byeRequest);

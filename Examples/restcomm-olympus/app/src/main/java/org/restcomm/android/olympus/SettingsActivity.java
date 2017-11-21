@@ -41,7 +41,6 @@ import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
 
-import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCDevice;
 //import org.restcomm.android.sdk.util.ErrorStruct;
@@ -105,6 +104,15 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
 
       updatedPref = settingsFragment.findPreference(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE);
       updatedPref.setSummary(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE, ""));
+
+      updatedPref = settingsFragment.findPreference(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE);
+      int iceServersDiscoveryType =  Integer.parseInt(prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE, "0"));
+      updatedPref.setSummary(getResources().getStringArray(R.array.ice_servers_discovery_types_entries)[iceServersDiscoveryType]);
+
+      updatedPref = settingsFragment.findPreference(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT);
+      //int candidateTimeout =  Integer.parseInt(prefs.getString(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT, "0"));
+      //updatedPref.setSummary(getResources().getStringArray(R.array.candidate_timeout_entries)[candidateTimeout]);
+      updatedPref.setSummary(candidateTimeoutValue2Summary(prefs.getString(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT, "0")));
 
       updated = false;
    }
@@ -170,7 +178,32 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
       if (id == android.R.id.home) {
          if (updated) {
             try {
-               RCUtils.validatePreferenceParms((HashMap<String, Object>) prefs.getAll());
+               // There a slight difference between the data structure of SharedPreferences and
+               // the one that the SDK understands. In SharedPreferences the value for
+               // MEDIA_ICE_SERVERS_DISCOVERY_TYPE key is a String, which the SDK wants a
+               // MediaIceServersDiscoveryType enum, so we need to convert between the 2.
+               // In this case we remove the one and introduce the other
+               HashMap<String, Object> prefHashMap = (HashMap<String, Object>) prefs.getAll();
+               String iceServersDiscoveryType = "0";
+               if (prefHashMap.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE)) {
+                  iceServersDiscoveryType = (String) prefHashMap.get(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE);
+                  prefHashMap.remove(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE);
+               }
+               prefHashMap.put(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE,
+                       RCDevice.MediaIceServersDiscoveryType.values()[Integer.parseInt(iceServersDiscoveryType)]
+               );
+
+               // Same for candidate timeout
+               String candidateTimeout = "0";
+               if (prefHashMap.containsKey(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT)) {
+                  candidateTimeout = (String) prefHashMap.get(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT);
+                  prefHashMap.remove(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT);
+               }
+               prefHashMap.put(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT,
+                       Integer.parseInt(candidateTimeout)
+               );
+
+               RCUtils.validateSettingsParms(prefHashMap);
                if (!device.updateParams(params)) {
                   // TODO:
                   //showOkAlert("RCDevice Error", "No Wifi connectivity");
@@ -256,6 +289,27 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
          params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false));
          updated = true;
       }
+      else if (key.equals(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE)) {
+         params.put(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE,
+                 RCDevice.MediaIceServersDiscoveryType.values()[Integer.parseInt(prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE, "0"))]);
+         Preference updatedPref = settingsFragment.findPreference(key);
+         if (updatedPref != null) {
+            int iceServersDiscoveryType =  Integer.parseInt(prefs.getString(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE, "0"));
+            updatedPref.setSummary(getResources().getStringArray(R.array.ice_servers_discovery_types_entries)[iceServersDiscoveryType]);
+         }
+         updated = true;
+      }
+      else if (key.equals(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT)) {
+         params.put(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT,
+                 Integer.parseInt(prefs.getString(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT, "0")));
+         Preference updatedPref = settingsFragment.findPreference(key);
+         if (updatedPref != null) {
+            //int candidateTimeout =  Integer.parseInt(prefs.getString(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT, "0"));
+            //updatedPref.setSummary(getResources().getStringArray(R.array.candidate_timeout_entries)[candidateTimeout]);
+            updatedPref.setSummary(candidateTimeoutValue2Summary(prefs.getString(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT, "0")));
+         }
+         updated = true;
+      }
       else if (key.equals(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC)) {
          params.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, "Default"));
          Preference updatedPref = settingsFragment.findPreference(key);
@@ -302,4 +356,15 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
       });
       alertDialog.show();
    }
+
+   private String candidateTimeoutValue2Summary(String value)
+   {
+      String summary = "No timeout";
+      if (Integer.parseInt(value) > 0) {
+         summary = value + " " + "seconds";
+      }
+      return summary;
+   }
+
+
 }

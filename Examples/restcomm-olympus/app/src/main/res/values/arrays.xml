@@ -85,5 +85,31 @@
         <item>ISAC</item>
     </string-array>
 
+    <string-array name="ice_servers_discovery_types_entries">
+        <item>XirsysV2</item>
+        <item>XirsysV3</item>
+        <item>Custom</item>
+    </string-array>
+    <string-array name="ice_servers_discovery_types_values">
+        <item>0</item>
+        <item>1</item>
+        <item>2</item>
+    </string-array>
+
+    <string-array name="candidate_timeout_entries">
+        <item>No timeout</item>
+        <item>3 seconds</item>
+        <item>5 seconds</item>
+        <item>10 seconds</item>
+        <item>20 seconds</item>
+    </string-array>
+    <string-array name="candidate_timeout_values">
+        <item>0</item>
+        <item>3</item>
+        <item>5</item>
+        <item>10</item>
+        <item>20</item>
+    </string-array>
+
 </resources>
 

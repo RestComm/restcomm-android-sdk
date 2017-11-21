@@ -32,6 +32,7 @@ import android.javax.sip.SipFactory;
 import android.javax.sip.SipProvider;
 import android.javax.sip.address.Address;
 import android.javax.sip.address.AddressFactory;
+import android.javax.sip.address.Hop;
 import android.javax.sip.address.SipURI;
 import android.javax.sip.address.URI;
 import android.javax.sip.header.ContactHeader;
@@ -48,6 +49,8 @@ import android.javax.sip.message.Message;
 import android.javax.sip.message.MessageFactory;
 import android.javax.sip.message.Request;
 import android.javax.sip.message.Response;
+import android.org.mobicents.ext.javax.sip.dns.DNSAwareRouter;
+import android.org.mobicents.ext.javax.sip.dns.DefaultDNSServerLocator;
 
 
 import org.restcomm.android.sdk.BuildConfig;
@@ -55,15 +58,19 @@ import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.util.RCLogger;
+//import org.xbill.DNS.Lookup;
+//import org.xbill.DNS.Resolver;
 
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Set;
 
 class JainSipMessageBuilder {
@@ -100,15 +107,20 @@ class JainSipMessageBuilder {
    private Request buildBaseRequest(String method, String username, String domain, String toSipUri, ListeningPoint listeningPoint, HashMap<String, Object> clientContext) throws JainSipException
    {
       try {
-         String fromSipUri;
+         String fromSipUri = "sip:";
+
+         if (listeningPoint.getTransport().equals(ListeningPoint.TLS)) {
+            // non registrar-less; use username@domain logic
+            fromSipUri = "sips:";
+         }
+
          // Add route header with the proxy first, if proxy exists (i.e. )
          if (domain != null && !domain.equals("")) {
-            // non registrar-less; use username@domain logic
-            fromSipUri = "sip:" + username + "@" + sipUri2IpAddress(domain);
+            fromSipUri += username + "@" + sipUri2IpAddress(domain);
          }
          else {
             // registrar-less
-            fromSipUri = "sip:" + username + "@" + listeningPoint.getIPAddress();
+            fromSipUri += username + "@" + listeningPoint.getIPAddress();
          }
 
          Address fromAddress = jainSipAddressFactory.createAddress(fromSipUri);
@@ -140,7 +152,7 @@ class JainSipMessageBuilder {
 
          // Add route header with the proxy first, if proxy exists (i.e. non registrar-less)
          if (domain != null && !domain.equals("")) {
-            RouteHeader routeHeader = createRouteHeader(domain);
+            RouteHeader routeHeader = createRouteHeader(domain, listeningPoint);
             request.addFirst(routeHeader);
          }
 
@@ -182,7 +194,7 @@ class JainSipMessageBuilder {
       }
    }
 
-   public Request buildRegisterRequest(ListeningPoint listeningPoint, int expires, HashMap<String, Object> parameters) throws JainSipException
+   Request buildRegisterRequest(ListeningPoint listeningPoint, int expires, HashMap<String, Object> parameters) throws JainSipException
    {
       try {
          Request request = buildBaseRequest(Request.REGISTER, (String) parameters.get(RCDevice.ParameterKeys.SIGNALING_USERNAME),
@@ -204,7 +216,7 @@ class JainSipMessageBuilder {
       }
    }
 
-   public Request buildInviteRequest(ListeningPoint listeningPoint, HashMap<String, Object> parameters,
+   Request buildInviteRequest(ListeningPoint listeningPoint, HashMap<String, Object> parameters,
                                      HashMap<String, Object> clientConfiguration, HashMap<String, Object> clientContext) throws JainSipException
    {
       try {
@@ -247,7 +259,7 @@ class JainSipMessageBuilder {
       }
    }
 
-   public Request buildMessageRequest(String toSipUri, String message, ListeningPoint listeningPoint, HashMap<String, Object> clientConfiguration) throws JainSipException
+   Request buildMessageRequest(String toSipUri, String message, ListeningPoint listeningPoint, HashMap<String, Object> clientConfiguration) throws JainSipException
    {
       try {
          Request request = buildBaseRequest(Request.MESSAGE, (String) clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_USERNAME),
@@ -276,7 +288,7 @@ class JainSipMessageBuilder {
       }
    }
 
-   public Request buildByeRequest(android.javax.sip.Dialog dialog, String reason, HashMap<String, Object> clientConfiguration) throws JainSipException
+   Request buildByeRequest(android.javax.sip.Dialog dialog, String reason, ListeningPoint listeningPoint, HashMap<String, Object> clientConfiguration) throws JainSipException
    {
       try {
          Request request = dialog.createRequest(Request.BYE);
@@ -285,7 +297,7 @@ class JainSipMessageBuilder {
                !clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
             // we only need this for non-registrarless calls since the problem is only for incoming calls,
             // and when working in registrarless mode there are no incoming calls
-            RouteHeader routeHeader = createRouteHeader((String) clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN));
+            RouteHeader routeHeader = createRouteHeader((String) clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN), listeningPoint);
             request.addFirst(routeHeader);
          }
 
@@ -315,7 +327,7 @@ class JainSipMessageBuilder {
       }
    }
 
-   public Request buildDtmfInfoRequest(android.javax.sip.Dialog dialog, String digits) throws JainSipException
+   Request buildDtmfInfoRequest(android.javax.sip.Dialog dialog, String digits) throws JainSipException
    {
       try {
          Request request = dialog.createRequest(Request.INFO);
@@ -338,7 +350,7 @@ class JainSipMessageBuilder {
       }
    }
 
-   public Response buildInvite200OKResponse(ServerTransaction transaction, String sdp, ListeningPoint listeningPoint, HashMap<String, Object> clientContext) throws JainSipException
+   Response buildInvite200OKResponse(ServerTransaction transaction, String sdp, ListeningPoint listeningPoint, HashMap<String, Object> clientContext) throws JainSipException
    {
       try {
          Response response = jainSipMessageFactory.createResponse(Response.OK, transaction.getRequest());
@@ -361,7 +373,7 @@ class JainSipMessageBuilder {
       }
    }
 
-   public Response buildResponse(int responseType, Request request)
+   Response buildResponse(int responseType, Request request)
    {
       Response response;
       try {
@@ -374,7 +386,7 @@ class JainSipMessageBuilder {
       }
    }
 
-   public Response buildOptions200OKResponse(Request request, ListeningPoint listeningPoint) throws JainSipException
+   Response buildOptions200OKResponse(Request request, ListeningPoint listeningPoint) throws JainSipException
    {
       Response response;
       try {
@@ -410,16 +422,20 @@ class JainSipMessageBuilder {
 
    // -- Helpers
    // Take a short destination of the form 'bob' and create full SIP URI out of it: 'sip:bob@cloud.restcomm.com'
-   public String convert2FullUri(String usernameOrUri, String domain) throws JainSipException
+   private String convert2FullUri(String usernameOrUri, String domain, boolean secure) throws JainSipException
    {
       String fullUri = usernameOrUri;
-      if (!usernameOrUri.contains("sip:")) {
+      if (!usernameOrUri.contains("sip:") && !usernameOrUri.contains("sips:")) {
          if (domain == null || domain.equals("")) {
             throw new JainSipException(RCClient.ErrorCodes.ERROR_CONNECTION_REGISTRARLESS_FULL_URI_REQUIRED,
                   RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_REGISTRARLESS_FULL_URI_REQUIRED));
          }
+         String sip = "sip:";
+         if (secure) {
+            sip = "sips:";
+         }
 
-         fullUri = "sip:" + usernameOrUri + "@" + domain.replaceAll("sip:", "");
+         fullUri = sip + usernameOrUri + "@" + domain.replaceAll("^sip.?:", "");
          RCLogger.i(TAG, "convert2FullUri(): normalizing username to: " + fullUri);
       }
       else {
@@ -429,13 +445,20 @@ class JainSipMessageBuilder {
    }
 
    // Take a short domain of the form 'cloud.restcomm.com' and create full SIP domain out of it: 'sip:cloud.restcomm.com'
-   public String convertDomain2Uri(String domain)
+   private static String convertDomain2Uri(String domain, boolean secure)
    {
       String domainUri = domain;
 
       // when domain is empty (i.e. registrar-less we don't want to touch it)
-      if (!domain.isEmpty() && !domain.contains("sip:")) {
-         domainUri = "sip:" + domain;
+      if (!domain.isEmpty()) {
+         // remove any leading sip: sips:, so that prepending depending on 'secure' will work
+         domain = domain.replaceAll("^sip.?:", "");
+         if (!secure) {
+            domainUri = "sip:" + domain;
+         }
+         else {
+            domainUri = "sips:" + domain;
+         }
          RCLogger.i(TAG, "convertDomain2Uri(): normalizing domain to: " + domainUri);
       }
       else {
@@ -446,27 +469,41 @@ class JainSipMessageBuilder {
    }
 
    // Normalize domain and SIP URIs
-   public void normalizeDomain(HashMap<String, Object> parameters)
+   static void normalizeDomain(HashMap<String, Object> parameters, boolean secure)
    {
       if (parameters.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN)) {
          parameters.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN,
-               convertDomain2Uri((String) parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN)));
+               convertDomain2Uri((String) parameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN), secure));
       }
    }
 
-   public void normalizePeer(HashMap<String, Object> peerParameters, HashMap<String, Object> clientParameters) throws JainSipException
+   void normalizePeer(HashMap<String, Object> peerParameters, HashMap<String, Object> clientParameters, ListeningPoint listeningPoint) throws JainSipException
    {
+      boolean secure = listeningPoint.getTransport().equals(ListeningPoint.TLS);
       if (peerParameters.containsKey(RCConnection.ParameterKeys.CONNECTION_PEER)) {
          peerParameters.put(RCConnection.ParameterKeys.CONNECTION_PEER,
                convert2FullUri((String) peerParameters.get(RCConnection.ParameterKeys.CONNECTION_PEER),
-                     (String) clientParameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN)));
+                     (String) clientParameters.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN), secure));
       }
    }
 
-   private RouteHeader createRouteHeader(String route)
+   private RouteHeader createRouteHeader(String route, ListeningPoint listeningPoint)
    {
       try {
-         SipURI routeUri = (SipURI) jainSipAddressFactory.createURI(route);
+         //SipURI routeUri = (SipURI) jainSipAddressFactory.createURI(route);
+
+         Set<String> supportedTransports = new HashSet<String>();
+         supportedTransports.add(listeningPoint.getTransport());
+         DefaultDNSServerLocator dnsServerLocator = new DefaultDNSServerLocator(supportedTransports);
+         Queue<Hop> hops = dnsServerLocator.locateHops(jainSipAddressFactory.createURI(route));
+         SipURI routeUri = jainSipAddressFactory.createSipURI(null, hops.peek().getHost());
+         routeUri.setParameter(DNSAwareRouter.DNS_ROUTE, Boolean.TRUE.toString());
+         routeUri.setPort(hops.peek().getPort());
+         if (hops.peek().getTransport() != null) {
+            routeUri.setTransportParam(hops.peek().getTransport());
+         }
+         routeUri.setSecure(listeningPoint.getTransport().equals(ListeningPoint.TLS));
+
          routeUri.setLrParam();
          Address routeAddress = jainSipAddressFactory.createAddress(routeUri);
          return jainSipHeaderFactory.createRouteHeader(routeAddress);
@@ -493,7 +530,7 @@ class JainSipMessageBuilder {
    }
 
    // convert sip uri, like  sip:cloud.restcomm.com:5060 -> cloud.restcomm.com
-   public String sipUri2IpAddress(String sipUri) throws ParseException, JainSipException
+   private String sipUri2IpAddress(String sipUri) throws ParseException, JainSipException
    {
       try {
          Address address = jainSipAddressFactory.createAddress(sipUri);
@@ -505,7 +542,7 @@ class JainSipMessageBuilder {
       }
    }
 
-   public ArrayList<ViaHeader> createViaHeaders(ListeningPoint listeningPoint) throws ParseException
+   private ArrayList<ViaHeader> createViaHeaders(ListeningPoint listeningPoint) throws ParseException
    {
       ArrayList<ViaHeader> viaHeaders = new ArrayList<ViaHeader>();
       try {
@@ -523,7 +560,7 @@ class JainSipMessageBuilder {
    }
 
 
-   public Address createContactAddress(ListeningPoint listeningPoint, String domain, HashMap<String, Object> clientContext) throws ParseException, JainSipException
+   private Address createContactAddress(ListeningPoint listeningPoint, String domain, HashMap<String, Object> clientContext) throws ParseException, JainSipException
    {
       RCLogger.i(TAG, "createContactAddress()");
       int contactPort = listeningPoint.getPort();
@@ -539,19 +576,26 @@ class JainSipMessageBuilder {
          }
       }
 
-      String contactString = getContactString(contactIPAddress, contactPort, listeningPoint.getTransport(), domain);
+      String contactString = getContactString(contactIPAddress, contactPort, listeningPoint, domain);
 
       return jainSipAddressFactory.createAddress(contactString);
    }
 
+/*
+   // Keep around in case we need it in the future
    public String getContactString(ListeningPoint listeningPoint, String domain) throws ParseException, JainSipException
    {
       return getContactString(listeningPoint.getIPAddress(), listeningPoint.getPort(), listeningPoint.getTransport(), domain);
    }
+*/
 
-   public String getContactString(String ipAddress, int port, String transport, String domain) throws ParseException, JainSipException
+   private String getContactString(String ipAddress, int port, ListeningPoint listeningPoint, String domain) throws ParseException, JainSipException
    {
-      String contactString = "sip:" + ipAddress + ':' + port + ";transport=" + transport;
+      String sip = "sip:";
+      if (listeningPoint.getTransport().equals(ListeningPoint.TLS)) {
+         sip = "sips:";
+      }
+      String contactString = sip + ipAddress + ':' + port + ";transport=" + listeningPoint.getTransport();
 
       if (domain != null && !domain.equals("")) {
          contactString += ";registering_acc=" + sipUri2IpAddress(domain);
@@ -560,7 +604,7 @@ class JainSipMessageBuilder {
       return contactString;
    }
 
-   public UserAgentHeader createUserAgentHeader()
+   private UserAgentHeader createUserAgentHeader()
    {
       RCLogger.i(TAG, "createUserAgentHeader()");
       List<String> userAgentTokens = new LinkedList<String>();
@@ -579,7 +623,7 @@ class JainSipMessageBuilder {
    /*
     * Parse a SIP request/response (i.e. Message) and extract any custom sip headers inside a HashMap where key is the header name and value is the header value
     */
-   static public HashMap<String, String> parseCustomHeaders(Message message)
+   static HashMap<String, String> parseCustomHeaders(Message message)
    {
       // See if there are any custom SIP headers and expose them. Custom headers are headers starting with 'X-'
       HashMap<String,String> customHeaders = new HashMap<>();

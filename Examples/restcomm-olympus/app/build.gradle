@@ -34,7 +34,7 @@ android {
         // Using 18 instead of initial 16 due to introduction of UIAutomator for tests (and more specifically being able to handle system permission dialogs)
         // TODO: lets see if we can workaround this so that App can still use 16 which is good for backward compatibility, yet use 18 for tests
         // (most probably by using gradle product flavors). Notice though that this doesn't affect SDK so not critical
-        minSdkVersion 18
+        minSdkVersion 21
         targetSdkVersion 25
 
         logger.info("-- Using versionCode: " + VERSION_CODE)
@@ -121,10 +121,11 @@ android {
 }
 
 repositories {
+    //mavenLocal()
     jcenter()
     //mavenCentral()
 
-    // for some weird reason this repo needs to be declared here even though dependency that actually uses it is in restcomm.android.sdk module
+    // IMPORTANT: For some weird reason this repo needs to be declared here even though dependency that actually uses it is in restcomm.android.sdk module
     // If we don't the dependency is not found :(
     maven {
         url "http://telestax.jfrog.io/telestax/community-releases"
@@ -182,6 +183,7 @@ dependencies {
     androidTestCompile 'com.squareup.assertj:assertj-android:1.1.1', {
         exclude group: 'com.android.support', module: 'support-annotations'
     }
+    compile 'com.android.support:multidex:1.0.1'
 
 }
 apply plugin: 'com.google.gms.google-services'

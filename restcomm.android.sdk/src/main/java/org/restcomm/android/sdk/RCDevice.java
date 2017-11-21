@@ -162,6 +162,15 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    }
 
    /**
+    * Media ICE server type, or how should SDK figure out the ICE servers
+    */
+   public enum MediaIceServersDiscoveryType {
+      ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V2,  /** Use Xirsys V2 configuration URL to retrieve the ICE servers */
+      ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V3,  /** Use Xirsys V3 configuration URL to retrieve the ICE servers */
+      ICE_SERVERS_CUSTOM,  /** Don't use a configuration URL, but directly provide the set of ICE servers (i.e. the App needs to have logic to retrieve them  and provide them) */
+   }
+
+   /**
     * Parameter keys for RCClient.createDevice() and RCDevice.updateParams()
     */
    public static class ParameterKeys {
@@ -177,6 +186,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       // WARNING This is NOT for production. It's for Integration Tests, where there is no activity to receive call/message events
       public static final String DEBUG_USE_BROADCASTS_FOR_EVENTS = "debug-use-broadcast-for-events";
       public static final String MEDIA_TURN_ENABLED = "turn-enabled";
+      public static final String MEDIA_ICE_SERVERS_DISCOVERY_TYPE = "media-ice-servers-discovery-type";
+      public static final String MEDIA_ICE_SERVERS = "media-ice-servers";
+      //public static final String MEDIA_ICE_ENDPOINT = "media-ice-endpoint";
       public static final String MEDIA_ICE_URL = "turn-url";
       public static final String MEDIA_ICE_USERNAME = "turn-username";
       public static final String MEDIA_ICE_PASSWORD = "turn-password";
@@ -483,10 +495,11 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     *                        <b>RCDevice.ParameterKeys.SIGNALING_USERNAME</b>: Identity for the client, like <i>'bob'</i> (mandatory) <br>
     *                        <b>RCDevice.ParameterKeys.SIGNALING_PASSWORD</b>: Password for the client (optional) <br>
     *                        <b>RCDevice.ParameterKeys.SIGNALING_DOMAIN</b>: Restcomm endpoint to use, like <i>'cloud.restcomm.com'</i>. By default port 5060 will be used for cleartext signaling and 5061 for encrypted signaling. You can override the port by suffixing the domain; for example to use port 5080 instead, use the following: <i>'cloud.restcomm.com:5080'</i>. Don't pass this parameter (or leave empty) for registrar-less mode (optional) <br>
-    *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_URL</b>: ICE url to use, like <i>'https://turn.provider.com/turn'</i> (mandatory) <br>
-    *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_USERNAME</b>: ICE username for authentication (mandatory) <br>
-    *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD</b>: ICE password for authentication (mandatory) <br>
-    *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN</b>: ICE Domain to be used in the ICE configuration URL (mandatory) <br>
+    *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE</b>: Media ICE server discovery type, or how should SDK figure out which the actual set ICE servers to use internally. Use ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V2 to utilize a V2 Xirsys configuration URL to retrieve the ICE servers. Use ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V3 to utilize a V3 Xirsys configuration URL to retrieve the ICE servers. Use ICE_SERVERS_CUSTOM if you don't want to use a configuration URL, but instead provide the set of ICE servers youself to the SDK (i.e. the App needs to have logic to retrieve them and provide them) <br>
+    *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_URL</b>: ICE url to use when using a Xirsys configuration URL, like <i>'https://service.xirsys.com/ice'</i> for Xirsys V2 (i.e. ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V2), and <i></i>https://es.xirsys.com/_turn/</i> for Xirsys V3 (i.e. ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V3). If no Xirsys configuration URL is used (i.e. ICE_SERVERS_CUSTOM) then this key is not applicable shouldn't be passed (optional) <br>
+    *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_USERNAME</b>: ICE username for authentication when using a Xirsys configuration URL (optional) <br>
+    *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD</b>: ICE password for authentication when using a Xirsys configuration URL (optional) <br>
+    *                        <b>RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN</b>: ICE Domain to be used in the ICE configuration URL when using a Xirsys configuration URL. Notice that V2 Domains are called Channels in V3 organization, but we use this same key in both cases (optional) <br>
     *                        <b>RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED</b>: Should signaling traffic be encrypted? If this is the case, then a key pair is generated when
     *                        signaling facilities are initialized and added to a custom keystore. Also, added to this custom keystore are all the trusted certificates from
     *                        the System Wide Android CA Store, so that we properly accept only legit server certificates. If not passed (or false) signaling is cleartext (optional) <br>
@@ -675,6 +688,11 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     *                   <b>RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION</b>: Preferred video resolution to use. Default is HD (1280x720). Possible values are enumerated at <i>RCConnection.VideoResolution</i>  (optional) <br>
     *                   <b>RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE</b>: Preferred frame rate to use. Default is 30fps. Possible values are enumerated at <i>RCConnection.VideoFrameRate</i> (optional) <br>
     *                   <b>RCConnection.ParameterKeys.CONNECTION_CUSTOM_SIP_HEADERS</b>: An optional HashMap&lt;String,String&gt; of custom SIP headers we want to add. For an example
+    *                   please check restcomm-helloworld or restcomm-olympus sample Apps (optional) <br>
+    *                   <b>RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT</b>: An optional Integer denoting how long to wait for ICE candidates. Zero means default behaviour which is
+    *                   to depend on onIceGatheringComplete from Peer Connection facilities. Any other integer value means to wait at most that amount of time no matter if onIceGatheringComplete has fired.
+    *                   The problem we are addressing here is the new Peer Connection ICE gathering timeout which is 40 seconds which is way too long. Notice that the root cause here is in reality
+    *                   lack of support for Trickle ICE, so once it is supported we won't be needing such workarounds.
     *                   please check restcomm-helloworld or restcomm-olympus sample Apps (optional) <br>
     * @param listener   The listener object that will receive events when the connection state changes
     * @return An RCConnection object representing the new connection or null in case of error. Error

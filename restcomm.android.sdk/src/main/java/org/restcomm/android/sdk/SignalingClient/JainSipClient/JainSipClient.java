@@ -22,7 +22,9 @@
 
 package org.restcomm.android.sdk.SignalingClient.JainSipClient;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.gov.nist.javax.sip.ResponseEventExt;
 import android.gov.nist.javax.sip.SipStackExt;
 import android.gov.nist.javax.sip.clientauthutils.AuthenticationHelper;
@@ -50,6 +52,7 @@ import android.javax.sip.message.Request;
 import android.javax.sip.message.Response;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
+import android.org.mobicents.ext.javax.sip.dns.DNSAwareRouter;
 import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
@@ -57,6 +60,7 @@ import android.os.SystemClock;
 import android.text.format.Formatter;
 
 //import org.apache.http.conn.util.InetAddressUtils;
+import org.restcomm.android.sdk.R;
 import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCDevice;
@@ -64,6 +68,10 @@ import org.restcomm.android.sdk.RCDeviceListener;
 import org.restcomm.android.sdk.util.RCLogger;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -142,10 +150,10 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
    static final int FORCE_CLOSE_INTERVAL = 3000;
 
    // JAIN SIP entities
-   public SipFactory jainSipFactory;
-   public SipStack jainSipStack;
-   public ListeningPoint jainSipListeningPoint;
-   public SipProvider jainSipProvider;
+   private SipFactory jainSipFactory;
+   private SipStack jainSipStack;
+   ListeningPoint jainSipListeningPoint;
+   SipProvider jainSipProvider;
 
    public JainSipClient(Handler signalingHandler)
    {
@@ -179,6 +187,9 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       Properties properties = new Properties();
       properties.setProperty("android.javax.sip.STACK_NAME", "androidSip");
       properties.setProperty("android.gov.nist.javax.sip.MESSAGE_PROCESSOR_FACTORY", "android.gov.nist.javax.sip.stack.NioMessageProcessorFactory");
+      // DNS SRV
+      // Important: for jain-sip.ext especially, we need to drop the 'android' part
+      properties.setProperty("javax.sip.ROUTER_PATH", DNSAwareRouter.class.getCanonicalName());
 
       // Setup TLS even if currently we aren't using it, so that if user changes the setting later
       // the SIP stack is ready to support it
@@ -195,11 +206,21 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
          File downloadPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
          properties.setProperty("android.gov.nist.javax.sip.DEBUG_LOG", downloadPath.getAbsolutePath() + "/debug-jain.log");
          properties.setProperty("android.gov.nist.javax.sip.SERVER_LOG", downloadPath.getAbsolutePath() + "/server-jain.log");
+
+         properties.setProperty("gov.nist.javax.sip.TRACE_LEVEL", "32");
+         properties.setProperty("gov.nist.javax.sip.DEBUG_LOG", downloadPath.getAbsolutePath() + "/debug-jain-ext.log");
+         properties.setProperty("gov.nist.javax.sip.SERVER_LOG", downloadPath.getAbsolutePath() + "/server-jain-ext.log");
+
+         if (androidContext.checkCallingOrSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            RCLogger.e(TAG, "JAIN SIP logging is enabled but permission " + Manifest.permission.WRITE_EXTERNAL_STORAGE + " is not granted");
+         }
       }
 
       try {
+         JainSipConfiguration.normalizeParameters(configuration);
          jainSipStack = jainSipFactory.createSipStack(properties);
-         jainSipMessageBuilder.normalizeDomain(configuration);
+         JainSipMessageBuilder.normalizeDomain(configuration, configuration.containsKey(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED) &&
+                 (boolean) configuration.get(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED));
 
          jainSipJobManager.add(jobId, JainSipJob.Type.TYPE_OPEN, configuration);
       }
@@ -258,9 +279,6 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
    {
       RCLogger.i(TAG, "reconfigure(): " + parameters.toString());
 
-      // normalize before checking which parameters changed
-      jainSipMessageBuilder.normalizeDomain(parameters);
-
       // check which parameters actually changed by comparing this.configuration with parameters
       HashMap<String, Object> modifiedParameters = JainSipConfiguration.modifiedParameters(this.configuration, parameters);
 
@@ -276,6 +294,8 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       // remember that the new parameters can be just a subset of the currently stored in configuration, so to update the current parameters we need
       // to merge them with the new (i.e. keep the old and replace any new keys with new values)
       configuration = JainSipConfiguration.mergeParameters(configuration, parameters);
+      JainSipMessageBuilder.normalizeDomain(configuration, configuration.containsKey(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED) &&
+              (boolean) configuration.get(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED));
 
       // Set the media parameters right away, since they are irrelevant to signaling
       if (modifiedParameters.containsKey(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED)) {
@@ -326,7 +346,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       }
 
       try {
-         jainSipMessageBuilder.normalizePeer(parameters, configuration);
+         jainSipMessageBuilder.normalizePeer(parameters, configuration, jainSipListeningPoint);
 
          JainSipCall jainSipCall = new JainSipCall(this, listener);
          jainSipCall.open(jobId, parameters);
@@ -393,7 +413,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       }
 
       try {
-         jainSipMessageBuilder.normalizePeer(parameters, configuration);
+         jainSipMessageBuilder.normalizePeer(parameters, configuration, jainSipListeningPoint);
 
          Transaction transaction = jainSipClientSendMessage(parameters);
          jainSipJobManager.add(jobId, JainSipJob.Type.TYPE_MESSAGE, transaction, parameters, null);
@@ -1037,6 +1057,5 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
          jainSipClientContext.remove("via-rport");
       }
    }
-
 
 }

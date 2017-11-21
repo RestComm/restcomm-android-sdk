@@ -95,8 +95,22 @@
      <PreferenceCategory
         android:key="webrtc_ice_settings"
         android:title="WebRTC ICE Settings" >
-        <EditTextPreference
-            android:defaultValue="https://service.xirsys.com/ice"
+         <ListPreference
+             android:key="media-ice-servers-discovery-type"
+             android:title="@string/pref_ice_servers_discovery_type"
+             android:defaultValue="@string/pref_ice_servers_discovery_type_default"
+             android:dialogTitle="@string/pref_ice_servers_discovery_type_dlg"
+             android:entries="@array/ice_servers_discovery_types_entries"
+             android:entryValues="@array/ice_servers_discovery_types_values"/>
+         <ListPreference
+             android:key="debug-connection-candidate-timeout"
+             android:title="@string/pref_candidate_timeout"
+             android:defaultValue="@string/pref_candidate_timeout_default"
+             android:dialogTitle="@string/pref_candidate_timeout_dlg"
+             android:entries="@array/candidate_timeout_entries"
+             android:entryValues="@array/candidate_timeout_values"/>
+         <EditTextPreference
+            android:defaultValue="https://es.xirsys.com/_turn"
             android:key="turn-url"
             android:title="ICE URL"
             android:summary="Base URL to use for ICE"/>

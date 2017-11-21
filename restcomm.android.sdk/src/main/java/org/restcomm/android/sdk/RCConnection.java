@@ -265,6 +265,18 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       // Incoming headers from Restcomm both for incoming and outgoing calls
       public static final String CONNECTION_CUSTOM_INCOMING_SIP_HEADERS = "sip-headers-incoming";
       public static final String CONNECTION_SIP_HEADER_KEY_CALL_SID = "X-RestComm-CallSid";
+
+      // Until we have trickle, as a way to timeout sooner than 40 seconds (webrtc default timeout)
+      public static final String DEBUG_CONNECTION_CANDIDATE_TIMEOUT = "debug-connection-candidate-timeout";
+   }
+
+   /**
+    * Key values for the
+    */
+   public static class IceServersKeys {
+      public static final String ICE_SERVER_URL = "url";
+      public static final String ICE_SERVER_USERNAME = "username";
+      public static final String ICE_SERVER_PASSWORD = "password";
    }
 
    // Let's use a builder since RCConnections don't have uniform way to construct
@@ -373,6 +385,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private Handler timeoutHandler = null;
    // call times out if it hasn't been established after 15 seconds
    private final int CALL_TIMEOUT_DURATION_MILIS = 15 * 1000;
+   private Handler candidateTimeoutHandler = null;
+   private boolean iceGatheringCompleteCalled = false;
    // Device was already busy with another Connection when this Connection arrived. If so we need to set this so that we have custom behavior later
    private boolean deviceAlreadyBusy = false;
 
@@ -436,6 +450,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       peer = builder.peer;
       deviceAlreadyBusy = builder.deviceAlreadyBusy;
       timeoutHandler = new Handler(device.getMainLooper());
+      candidateTimeoutHandler = new Handler(device.getMainLooper());
 
       callParams = new HashMap<>();
       if (builder.customHeaders != null) {
@@ -526,6 +541,11 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
     *   <b>RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_RESOLUTION</b>: Preferred video resolution to use. Default is HD (1280x720). Possible values are enumerated at <i>RCConnection.VideoResolution</i> <br>
     *   <b>RCConnection.ParameterKeys.CONNECTION_PREFERRED_VIDEO_FRAME_RATE</b>: Preferred frame rate to use. Default is 30fps. Possible values are enumerated at <i>RCConnection.VideoFrameRate</i> <br>
     *   <b>RCConnection.ParameterKeys.CONNECTION_CUSTOM_SIP_HEADERS</b>: An optional HashMap&lt;String,String&gt; of custom SIP headers we want to add. For an example
+    *                   please check restcomm-helloworld or restcomm-olympus sample Apps (optional) <br>
+    *   <b>RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT</b>: An optional Integer denoting how long to wait for ICE candidates. Zero means default behaviour which is
+    *                   to depend on onIceGatheringComplete from Peer Connection facilities. Any other integer value means to wait at most that amount of time no matter if onIceGatheringComplete has fired.
+    *                   The problem we are addressing here is the new Peer Connection ICE gathering timeout which is 40 seconds which is way too long. Notice that the root cause here is in reality
+    *                   lack of support for Trickle ICE, so once it is supported we won't be needing such workarounds.
     *                   please check restcomm-helloworld or restcomm-olympus sample Apps (optional) <br>
     */
    public void accept(Map<String, Object> parameters)
@@ -1053,6 +1073,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private void handleDisconnected(String jobId, boolean haveDisconnectedLocally)
    {
       timeoutHandler.removeCallbacksAndMessages(null);
+      candidateTimeoutHandler.removeCallbacksAndMessages(null);
 
       // Device was already busy with another Connection, skip all handling here
       if (deviceAlreadyBusy) {
@@ -1101,6 +1122,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       RCLogger.i(TAG, "handleDisconnect(): reason: " + reason);
       timeoutHandler.removeCallbacksAndMessages(null);
+      candidateTimeoutHandler.removeCallbacksAndMessages(null);
 
       audioManager.stop();
 
@@ -1170,6 +1192,22 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          @Override
          public void run()
          {
+
+            if (RCConnection.this.callParams.containsKey(ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT) &&
+                    (Integer) RCConnection.this.callParams.get(ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT) != 0) {
+               // cancel any pending timers before we start new one
+               candidateTimeoutHandler.removeCallbacksAndMessages(null);
+               Runnable runnable = new Runnable() {
+                  @Override
+                  public void run()
+                  {
+                     onCandidatesTimeout();
+                  }
+               };
+               candidateTimeoutHandler.postDelayed(runnable, (Integer) RCConnection.this.callParams.get(ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT) * 1000);
+               //candidateTimeoutHandler.postDelayed(runnable, 150);
+            }
+
             if (!RCConnection.this.incoming) {
                // we are the initiator
 
@@ -1246,10 +1284,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private void startTurn()
    {
       HashMap<String, Object> deviceParameters = device.getParameters();
-      String url = deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_URL) + "?ident=" +
-            deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME) + "&secret=" +
-            deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD) + "&domain=" +
-            deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN) + "&application=default&room=default&secure=1";
+      String url;
 
       boolean turnEnabled = false;
       if (deviceParameters.containsKey(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED) &&
@@ -1257,8 +1292,59 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          turnEnabled = true;
       }
 
+      RCDevice.MediaIceServersDiscoveryType iceServerDiscoveryType = (RCDevice.MediaIceServersDiscoveryType)deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE);
+      if (iceServerDiscoveryType == RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V2) {
+         url = deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_URL) +
+                 "?ident=" + deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME) +
+                 "&secret=" + deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD) +
+                 "&domain=" + deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN) +
+                 "&application=default&room=default&secure=1";
+      }
+      else if (iceServerDiscoveryType == RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V3) {
+         url = deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_URL) +
+                 "/" + deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN);
+      }
+      else {
+         // ICE_SERVERS_CUSTOM
+         onIceServersReady(external2InternalIceServers((List<Map<String, String>>)deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS)));
+         return;
+      }
+
       //String url = "https://service.xirsys.com/ice?ident=atsakiridis&secret=SECRET_HERE&domain=cloud.restcomm.com&application=default&room=default&secure=1";
-      new IceServerFetcher(url, turnEnabled, this).makeRequest();
+      //url = "https://ice.restcomm.io/_turn/restcomm";
+      new IceServerFetcher(url, turnEnabled, iceServerDiscoveryType, (String)deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME),
+              (String)deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD), this).makeRequest();
+   }
+
+   private LinkedList<PeerConnection.IceServer> external2InternalIceServers(List<Map<String, String>> iceServers)
+   {
+      RCLogger.e(TAG, "Using manual ICE server discovery");
+      LinkedList<PeerConnection.IceServer> iceServersInternal = new LinkedList<PeerConnection.IceServer>();
+      for (Map<String, String> iceServer : iceServers) {
+         PeerConnection.IceServer iceServerInternal = external2InternalIceServer(iceServer);
+         iceServersInternal.add(iceServerInternal);
+         RCLogger.i(TAG, "ICE server: " + iceServerInternal.uri + ", " + iceServerInternal.username);
+      }
+
+      return iceServersInternal;
+   }
+
+   private PeerConnection.IceServer external2InternalIceServer(Map<String, String> iceServer)
+   {
+      String url = "";
+      if (iceServer.containsKey(IceServersKeys.ICE_SERVER_URL)) {
+         url = iceServer.get(IceServersKeys.ICE_SERVER_URL);
+      }
+      String username = "";
+      if (iceServer.containsKey(IceServersKeys.ICE_SERVER_USERNAME)) {
+         username = iceServer.get(IceServersKeys.ICE_SERVER_USERNAME);
+      }
+      String password = "";
+      if (iceServer.containsKey(IceServersKeys.ICE_SERVER_PASSWORD)) {
+         password = iceServer.get(IceServersKeys.ICE_SERVER_PASSWORD);
+      }
+
+      return new PeerConnection.IceServer(url, username, password);
    }
 
    private void startMediaTimer()
@@ -1334,6 +1420,35 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       // Phone state Intents to capture dropped call event
       sendQoSDisconnectErrorIntent(errorCode.ordinal(), RCClient.errorText(errorCode));
    }
+
+   private void onCandidatesTimeout()
+   {
+      RCLogger.e(TAG, "onCandidatesTimeout: Candidates timed out after: " + RCConnection.this.callParams.get(ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT) + " seconds");
+
+      if (signalingParameters != null && signalingParameters.iceCandidates != null &&
+              signalingParameters.iceCandidates.size() > 0) {
+         RCLogger.w(TAG, "onCandidatesTimeout: Managed to collect: " + signalingParameters.iceCandidates.size() + " candidates");
+         onIceGatheringComplete();
+      }
+      else {
+         // no candidates are gathered
+         handleDisconnect(null);
+
+         if (RCDevice.state == RCDevice.DeviceState.BUSY) {
+            RCDevice.state = RCDevice.DeviceState.READY;
+         }
+
+         if (device.isAttached()) {
+            RCConnection.this.listener.onError(RCConnection.this, RCClient.ErrorCodes.ERROR_CONNECTION_WEBRTC_CANDIDATES_TIMED_OUT.ordinal(),
+                    RCClient.errorText(RCClient.ErrorCodes.ERROR_CONNECTION_WEBRTC_CANDIDATES_TIMED_OUT));
+         }
+         else {
+            RCLogger.w(TAG, "RCConnectionListener event suppressed since Restcomm Client Service not attached: onDisconnected()");
+         }
+
+      }
+   }
+
 
    /*
    // DEBUG (Issue #380)
@@ -1863,24 +1978,33 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          public void run()
          {
             RCLogger.i(TAG, "onIceGatheringComplete");
-            if (peerConnectionClient == null) {
-               // if the user hangs up the call before its setup we need to bail
-               return;
-            }
-            if (signalingParameters.initiator) {
-               HashMap<String, Object> parameters = new HashMap<String, Object>();
-               parameters.put(RCConnection.ParameterKeys.CONNECTION_PEER, signalingParameters.sipUrl);
-               parameters.put("sdp", connection.signalingParameters.generateSipSdp(connection.signalingParameters.offerSdp, connection.signalingParameters.iceCandidates));
-               parameters.put(ParameterKeys.CONNECTION_CUSTOM_SIP_HEADERS, connection.signalingParameters.sipHeaders);
 
-               signalingClient.call(jobId, parameters);
+            candidateTimeoutHandler.removeCallbacksAndMessages(null);
+
+            if (!iceGatheringCompleteCalled) {
+               iceGatheringCompleteCalled = true;
+
+               if (peerConnectionClient == null) {
+                  // if the user hangs up the call before its setup we need to bail
+                  return;
+               }
+               if (signalingParameters.initiator) {
+                  HashMap<String, Object> parameters = new HashMap<String, Object>();
+                  parameters.put(RCConnection.ParameterKeys.CONNECTION_PEER, signalingParameters.sipUrl);
+                  parameters.put("sdp", connection.signalingParameters.generateSipSdp(connection.signalingParameters.offerSdp, connection.signalingParameters.iceCandidates));
+                  parameters.put(ParameterKeys.CONNECTION_CUSTOM_SIP_HEADERS, connection.signalingParameters.sipHeaders);
+
+                  signalingClient.call(jobId, parameters);
+               } else {
+                  HashMap<String, Object> parameters = new HashMap<>();
+                  parameters.put("sdp", connection.signalingParameters.generateSipSdp(connection.signalingParameters.answerSdp,
+                          connection.signalingParameters.iceCandidates));
+                  signalingClient.accept(jobId, parameters);
+                  //connection.state = ConnectionState.CONNECTING;
+               }
             }
             else {
-               HashMap<String, Object> parameters = new HashMap<>();
-               parameters.put("sdp", connection.signalingParameters.generateSipSdp(connection.signalingParameters.answerSdp,
-                     connection.signalingParameters.iceCandidates));
-               signalingClient.accept(jobId, parameters);
-               //connection.state = ConnectionState.CONNECTING;
+               RCLogger.w(TAG, "onIceGatheringComplete() already called, skipping");
             }
          }
       };
@@ -2377,4 +2501,15 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          // If the MMC class isn't here, no intent
       }
    }
+
+   public static Map<String, String> createIceServerHashMap(String url, String username, String password)
+   {
+      HashMap<String, String> map = new HashMap<>();
+      map.put(RCConnection.IceServersKeys.ICE_SERVER_URL, url);
+      map.put(RCConnection.IceServersKeys.ICE_SERVER_USERNAME, username);
+      map.put(RCConnection.IceServersKeys.ICE_SERVER_PASSWORD, password);
+
+      return map;
+   }
+
 }

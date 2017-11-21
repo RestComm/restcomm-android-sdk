@@ -45,6 +45,11 @@ public final class RCClient {
       ERROR_DEVICE_MISSING_ICE_USERNAME,
       ERROR_DEVICE_MISSING_ICE_PASSWORD,
       ERROR_DEVICE_MISSING_ICE_DOMAIN,
+      ERROR_DEVICE_MISSING_CUSTOM_DISCOVERY_ICE_SERVER,
+      ERROR_DEVICE_INVALID_ICE_SERVER_DISCOVERY_TYPE,
+      ERROR_DEVICE_INVALID_ICE_SERVERS_NOT_CUSTOM_DISCOVERY,
+      ERROR_DEVICE_INVALID_CUSTOM_DISCOVERY_NO_ICE_SERVERS,
+      ERROR_DEVICE_INVALID_CUSTOM_DISCOVERY,
       ERROR_DEVICE_NO_CONNECTIVITY,
       ERROR_DEVICE_ALREADY_INITIALIZED,
       ERROR_DEVICE_ALREADY_OPEN,
@@ -86,6 +91,7 @@ public final class RCClient {
       ERROR_CONNECTION_AUDIO_CALL_VIDEO_CODEC_FORBIDDEN,
       ERROR_CONNECTION_AUDIO_CALL_VIDEO_RESOLUTION_FORBIDDEN,
       ERROR_CONNECTION_AUDIO_CALL_VIDEO_FRAME_RATE_FORBIDDEN,
+      ERROR_CONNECTION_WEBRTC_CANDIDATES_TIMED_OUT,
 
       ERROR_MESSAGE_AUTHENTICATION_FORBIDDEN,
       ERROR_MESSAGE_URI_INVALID,
@@ -125,6 +131,21 @@ public final class RCClient {
       }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_MISSING_ICE_DOMAIN) {
          return "Device parameter validation error; ICE domain is mandatory";
+      }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_MISSING_CUSTOM_DISCOVERY_ICE_SERVER) {
+         return "Device parameter validation error; ICE server is missing url";
+      }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_INVALID_ICE_SERVER_DISCOVERY_TYPE) {
+         return "Device parameter validation error; ICE server discovery type out of range";
+      }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_INVALID_ICE_SERVERS_NOT_CUSTOM_DISCOVERY) {
+         return "Device parameter validation error; ICE servers list shouldn't be passed when media discovery type is not ICE_SERVERS_CUSTOM";
+      }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_INVALID_CUSTOM_DISCOVERY_NO_ICE_SERVERS) {
+         return "Device parameter validation error; media discovery type is ICE_SERVERS_CUSTOM, but no ICE servers list provided";
+      }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_INVALID_CUSTOM_DISCOVERY) {
+         return "Device parameter validation error; media discovery type is ICE_SERVERS_CUSTOM so none of MEDIA_ICE_URL, MEDIA_ICE_USERNAME, MEDIA_ICE_PASSWORD, MEDIA_ICE_DOMAIN should be provided";
       }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY) {
          return "Device has no connectivity";
@@ -250,6 +271,9 @@ public final class RCClient {
       }
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_AUDIO_CALL_VIDEO_FRAME_RATE_FORBIDDEN) {
          return "Failed to initiate connection due to parameter validation error; video frame rate not allowed to be specified in an audio call";
+      }
+      else if (errorCode == ErrorCodes.ERROR_CONNECTION_WEBRTC_CANDIDATES_TIMED_OUT) {
+         return "Failed to collect any candidates on time; please check your network settings and connectivity or consider increasing candidate timeout";
       }
 
       else if (errorCode == ErrorCodes.ERROR_MESSAGE_AUTHENTICATION_FORBIDDEN) {
