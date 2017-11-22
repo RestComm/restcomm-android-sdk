@@ -1,0 +1,42 @@
+{
+  "project_info": {
+    "project_number": "1007910090083",
+    "firebase_url": "https://android-sdk-b0f9e.firebaseio.com",
+    "project_id": "android-sdk-b0f9e",
+    "storage_bucket": "android-sdk-b0f9e.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1007910090083:android:04bce81c40095859",
+        "android_client_info": {
+          "package_name": "org.restcomm.android.olympus"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1007910090083-acv8pagb8mkaodvihhpaifdoqfl44ihu.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA4N9x0akQJAHAmqzDwuu3iLaMgKJr-n3Y"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

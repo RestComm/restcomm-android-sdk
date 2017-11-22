@@ -28,10 +28,13 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
@@ -40,6 +43,8 @@ import org.restcomm.android.sdk.MediaClient.AppRTCAudioManager;
 import org.restcomm.android.sdk.SignalingClient.JainSipClient.JainSipConfiguration;
 import org.restcomm.android.sdk.SignalingClient.SignalingClient;
 //import org.restcomm.android.sdk.util.ErrorStruct;
+import org.restcomm.android.sdk.fcm.FcmMessageListener;
+import org.restcomm.android.sdk.fcm.FcmMessages;
 import org.restcomm.android.sdk.util.RCException;
 import org.restcomm.android.sdk.util.RCLogger;
 import org.restcomm.android.sdk.util.RCUtils;
@@ -104,7 +109,7 @@ import java.util.Map;
  * You can also check the Sample Applications on how to properly use that at the Examples directory in the GitHub repository
  * @see RCConnection
  */
-public class RCDevice extends Service implements SignalingClient.SignalingClientListener {
+public class RCDevice extends Service implements SignalingClient.SignalingClientListener, FcmMessageListener {
    /**
     * Device state
     */
@@ -286,8 +291,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    // that after we add a user in one of the maps they are never removed. Reason is there's a lot of overhead needed of
    // passing all intents back to RCDevice service even for messages and missed calls which are auto-answered, with not
    // too much value, at least for now
-   private HashMap<String, Integer> callNotifications;
-   private HashMap<String, Integer> messageNotifications;
+   private HashMap<String, Integer> callNotifications = new HashMap<>();
+   private HashMap<String, Integer> messageNotifications = new HashMap<>();
+
 
    private final int ONCALL_NOTIFICATION_ID = 1;
    // Unique notification id (incremented for each new notification). Notice that '1' is reserved for RCConnection.ONCALL_NOTIFICATION_ID
@@ -326,6 +332,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    boolean isServiceAttached = false;
    // how many Activities are attached to the Service
    private int serviceReferenceCount = 0;
+
+   private boolean isReleasing = false;
 
    public enum NotificationType {
       ACCEPT_CALL_VIDEO,
@@ -373,6 +381,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       // Runs whenever the user calls startService()
       Log.i(TAG, "%% onStartCommand");
 
+      FcmMessages.getInstance().setMessageListener(this);
+
       if (intent == null) {
          // TODO: this might be an issue, if it happens often. If the service is killed all context will be lost, so it won't
          // be able to automatically re-initialize. The only possible way to avoid this would be to return START_REDELIVER_INTENT
@@ -411,6 +421,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       startService(intent);
 
       isServiceAttached = true;
+      if (signalingClient != null)
+         signalingClient.open(this, getApplicationContext(), parameters);
 
       // provide the binder
       return deviceBinder;
@@ -425,6 +437,10 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       Log.i(TAG, "%%  onRebind");
 
       isServiceAttached = true;
+      if (signalingClient != null)
+
+         signalingClient.open(this, getApplicationContext(), parameters);
+
    }
 
    /**
@@ -445,6 +461,11 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       Log.i(TAG, "%%  onUnbind");
 
       isServiceAttached = false;
+      if (signalingClient != null)
+         signalingClient.close();
+
+      signalingClient = null;
+
 
       return true;
    }
@@ -524,6 +545,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          signalingClient = new SignalingClient();
          signalingClient.open(this, getApplicationContext(), parameters);
 
+
          // Create and audio manager that will take care of audio routing,
          // audio modes, audio device enumeration etc.
          audioManager = AppRTCAudioManager.create(getApplicationContext(), new Runnable() {
@@ -542,8 +564,10 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          RCLogger.d(TAG, "Initializing the audio manager...");
          audioManager.init(parameters);
 
-         callNotifications = new HashMap<>();
-         messageNotifications = new HashMap<>();
+
+         FcmMessages.getInstance().setApplicationContext(getApplicationContext());
+         FcmMessages.getInstance().new SetRpnBindingTask().execute();
+
       }
       else {
          throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_ALREADY_INITIALIZED);
@@ -593,8 +617,21 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          audioManager = null;
       }
 
-      signalingClient.close();
       state = DeviceState.OFFLINE;
+
+      FcmMessages.getInstance().removeMessageListener();
+
+      if (isServiceAttached) {
+         isReleasing = true;
+         signalingClient.close();
+          signalingClient = null;
+      } else {
+         listener.onReleased(this, RCClient.ErrorCodes.SUCCESS.ordinal(), "");
+         listener = null;
+         stopSelf();
+      }
+
+
 
       isServiceAttached = false;
       isServiceInitialized = false;
@@ -981,11 +1018,14 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    {
       RCLogger.i(TAG, "onCloseReply(): id: " + jobId + ", status: " + status + ", text: " + text);
 
-      listener.onReleased(this, status.ordinal(), text);
+      if (isReleasing) {
+         listener.onReleased(this, status.ordinal(), text);
+         listener = null;
+         isReleasing = false;
+         stopSelf();
+      }
 
-      this.listener = null;
-      // Shut down the service
-      stopSelf();
+      state = DeviceState.OFFLINE;
    }
 
     /**
@@ -1251,6 +1291,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          serviceIntentDefault.putExtra(RCDevice.EXTRA_CUSTOM_HEADERS, customHeaders);
       }
 
+
       // Intent to directly answer the call as video (using separate actions instead of EXTRAs, cause with EXTRAs the intents aren't actually differentiated: see PendingIntent reference documentation)
       Intent serviceIntentVideo = new Intent(ACTION_NOTIFICATION_CALL_ACCEPT_VIDEO, null, getApplicationContext(), RCDevice.class);
       serviceIntentVideo.putExtras(serviceIntentDefault);
@@ -1273,17 +1314,26 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
                   .setSmallIcon(R.drawable.ic_call_24dp)
                   .setContentTitle(peerUsername)
                   .setContentText(text)
-                  .setSound(Uri.parse("android.resource://" + getPackageName() + "/" + audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_RINGING)))
                   // Need this to show up as Heads-up Notification
                   .setPriority(NotificationCompat.PRIORITY_HIGH)
                   .setAutoCancel(true)  // cancel notification when user acts on it (Important: only applies to default notification area, not additional actions)
-                  .addAction(R.drawable.ic_videocam_24dp, "Video", PendingIntent.getService(getApplicationContext(), 0, serviceIntentVideo, PendingIntent.FLAG_UPDATE_CURRENT))
-                  .addAction(R.drawable.ic_call_24dp, "Audio", PendingIntent.getService(getApplicationContext(), 0, serviceIntentAudio, PendingIntent.FLAG_UPDATE_CURRENT))
-                  .addAction(R.drawable.ic_call_end_24dp, "Hang Up", PendingIntent.getService(getApplicationContext(), 0, serviceIntentDecline, PendingIntent.FLAG_UPDATE_CURRENT))
                   .setVibrate(notificationVibrationPattern)
-                  .setLights(notificationColor, notificationColorPattern[0], notificationColorPattern[1])
-                  .setContentIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDefault, PendingIntent.FLAG_UPDATE_CURRENT))
-                  .setDeleteIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDelete, PendingIntent.FLAG_UPDATE_CURRENT));
+                  .setLights(notificationColor, notificationColorPattern[0], notificationColorPattern[1]);
+
+      if (audioManager != null)
+         builder = builder.setSound(Uri.parse("android.resource://" + getPackageName() + "/" + audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_RINGING)));
+      if (callIntent != null) {
+         builder = builder
+                 .addAction(R.drawable.ic_videocam_24dp, "Video", PendingIntent.getService(getApplicationContext(), 0, serviceIntentVideo, PendingIntent.FLAG_UPDATE_CURRENT))
+                 .addAction(R.drawable.ic_call_24dp, "Audio", PendingIntent.getService(getApplicationContext(), 0, serviceIntentAudio, PendingIntent.FLAG_UPDATE_CURRENT))
+                 .addAction(R.drawable.ic_call_end_24dp, "Hang Up", PendingIntent.getService(getApplicationContext(), 0, serviceIntentDecline, PendingIntent.FLAG_UPDATE_CURRENT))
+                 .setContentIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDefault, PendingIntent.FLAG_UPDATE_CURRENT))
+                 .setDeleteIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDelete, PendingIntent.FLAG_UPDATE_CURRENT));
+      } else {
+         builder = builder
+                 .setContentIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDefault, PendingIntent.FLAG_UPDATE_CURRENT));
+      }
+
 
       Notification notification = builder.build();
       // Add FLAG_INSISTENT so that the notification rings repeatedly (FLAG_INSISTENT is not exposed via builder, let's add manually)
@@ -1291,6 +1341,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
       boolean notificationIdExists = true;
       Integer activeNotificationId = callNotifications.get(peerUsername);
+
       if (activeNotificationId == null) {
          // get new notification id
          activeNotificationId = notificationId;
@@ -1391,10 +1442,17 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
       */
       if (intentAction.equals(ACTION_NOTIFICATION_CALL_DEFAULT)) {
-         callIntent.setAction(ACTION_INCOMING_CALL);
-         // don't forget to copy the extras to callIntent
-         callIntent.putExtras(intent);
-         actionIntent = callIntent;
+         if (callIntent != null) {
+            callIntent.setAction(ACTION_INCOMING_CALL);
+            // don't forget to copy the extras to callIntent
+            callIntent.putExtras(intent);
+            actionIntent = callIntent;
+         } else {
+            Context context = getApplicationContext();
+            PackageManager packageManager = context.getPackageManager();
+            actionIntent = packageManager.getLaunchIntentForPackage(context.getPackageName());
+         }
+
       }
       else if (intentAction.equals(ACTION_NOTIFICATION_CALL_ACCEPT_VIDEO)) {
          callIntent.setAction(ACTION_INCOMING_CALL_ANSWER_VIDEO);
@@ -1522,7 +1580,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          // Peer has canceled the call and there's an active call ringing, we need to cancel the notification
          String peerUsername = connection.getPeer().replaceAll(".*?sip:", "").replaceAll("@.*$", "");
          NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-         notificationManager.cancel(callNotifications.get(peerUsername));
+          //There's no peer username provided in Push Notification Message, so
+          //the callNotifications map cannot be populated with the right key
+          notificationManager.cancel(callNotifications.get(peerUsername));
 
          // And then create a new notification to show that the call is missed, together with a means to call the peer. Notice
          // that if this notification is tapped, the peer will be called using the video preference of
@@ -1594,7 +1654,26 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       startForeground(ONCALL_NOTIFICATION_ID, builder.build());
    }
 
-   // ------ Helpers
+   // -- FcmMessageListener
+
+       public void onFcmMessageReceived(String from, String message) {
+        RCLogger.i(TAG, "onFcmMessageReceived(): message: " + message);
+
+         if (isServiceAttached)
+            return;
+
+           new Handler(Looper.getMainLooper()).post(new Runnable() {
+               @Override
+               public void run() {
+                   signalingClient = new SignalingClient();
+                   signalingClient.open(RCDevice.this, getApplicationContext(), parameters);
+
+               }
+           });
+       }
+
+
+      // ------ Helpers
 
    // -- Notify QoS module of Device related event through intents, if the module is available
    // Phone state Intents to capture incoming call event

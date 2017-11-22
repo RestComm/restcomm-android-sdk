@@ -38,6 +38,7 @@ class SignalingHandlerThread extends HandlerThread {
       //this.uiHandler = uiHandler;
 
       start();
+
       signalingHandler = new SignalingHandler(this.getLooper(), uiHandler);
    }
 
