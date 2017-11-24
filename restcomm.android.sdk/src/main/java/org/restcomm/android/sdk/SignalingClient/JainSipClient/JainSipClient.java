@@ -417,8 +417,8 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
          // new network interface is up, let's retrieve its ip address
          String transport = "tcp";
          if (JainSipConfiguration.getBoolean(configuration, RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED)) {
-            transport = "tls";
-            //transport = "wss";
+            //transport = "tls";
+            transport = "wss";
          }
 
          Integer port = DEFAULT_LOCAL_SIP_PORT;
