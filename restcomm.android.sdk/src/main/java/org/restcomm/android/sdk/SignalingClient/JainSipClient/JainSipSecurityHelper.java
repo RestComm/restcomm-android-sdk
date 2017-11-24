@@ -24,6 +24,7 @@ package org.restcomm.android.sdk.SignalingClient.JainSipClient;
 
 import android.content.Context;
 
+import org.restcomm.android.sdk.util.RCLogger;
 import org.spongycastle.asn1.x509.BasicConstraints;
 import org.spongycastle.asn1.x509.ExtendedKeyUsage;
 import org.spongycastle.asn1.x509.GeneralName;
@@ -42,6 +43,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
 import java.security.NoSuchProviderException;
+import java.security.Provider;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.SignatureException;
@@ -60,6 +62,21 @@ public class JainSipSecurityHelper {
     static {
         // IMPORTANT: make the SpongyCastle implementation take preference
         Security.insertProviderAt(new BouncyCastleProvider(), 1);
+
+        //String name = "AndroidKeyStoreBCWorkaround";
+        //String name = "BC";
+        //String name = "CertPathProvider";
+        //String name = "AndroidOpenSSL";
+        //String name = "HarmonyJSSE";
+        //String name = "AndroidKeyStore";
+        //String name = "AndroidOpenSSL";
+
+        /*
+        Provider provider = Security.getProvider(name);
+        Security.removeProvider(name);
+        int index = Security.insertProviderAt(provider, 1);
+        RCLogger.e(TAG, "----- Index for provider: " + index);
+        */
     }
 
     /*
@@ -191,9 +208,20 @@ public class JainSipSecurityHelper {
         properties.setProperty("javax.net.ssl.keyStorePassword", keystorePassword );
         properties.setProperty("javax.net.ssl.keyStoreType", "bks" );
         properties.setProperty("android.gov.nist.javax.sip.ENABLED_CIPHER_SUITES", "TLS_RSA_WITH_AES_128_CBC_SHA SSL_RSA_WITH_3DES_EDE_CBC_SHA" );
+
+        //properties.setProperty("android.gov.nist.javax.sip.ENABLED_CIPHER_SUITES", "TLS_RSA_WITH_AES_128_CBC_SHA" );
+        //properties.setProperty("android.gov.nist.javax.sip.ENABLED_CIPHER_SUITES", "TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA" );
+
+        // BAD for pre-oreo:
+        //properties.setProperty("android.gov.nist.javax.sip.ENABLED_CIPHER_SUITES", "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA" );
+        //properties.setProperty("android.gov.nist.javax.sip.ENABLED_CIPHER_SUITES", "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256" );
+        //properties.setProperty("android.gov.nist.javax.sip.ENABLED_CIPHER_SUITES", "TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA" );
+        //properties.setProperty("android.gov.nist.javax.sip.ENABLED_CIPHER_SUITES", "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA" );
+
         if (disableCertVerification != null && disableCertVerification) {
             properties.setProperty("android.gov.nist.javax.sip.TLS_CLIENT_AUTH_TYPE", "DisabledAll");
         }
+        //properties.setProperty("android.gov.nist.javax.sip.TLS_CLIENT_PROTOCOLS", "TLSv1" );
     }
 
 }

@@ -96,8 +96,8 @@ dependencies {
     compile 'log4j:log4j:1.2.17'
     compile 'javax.sip:android-jain-sip-ri:1.2.293'
     // Provide JAIN SIP with proper Bouncy Castle encryption facilities (although Android seems to support BC, it appears that it has issues)
-    compile 'com.madgag.spongycastle:core:1.54.0.0'
-    compile 'com.madgag.spongycastle:prov:1.54.0.0'
+    compile 'com.madgag.spongycastle:core:1.58.0.0'
+    compile 'com.madgag.spongycastle:prov:1.58.0.0'
     compile 'com.madgag.spongycastle:pkix:1.54.0.0'
     // Required for local unit tests (JUnit 4 framework)
     //testCompile 'junit:junit:4.12'
