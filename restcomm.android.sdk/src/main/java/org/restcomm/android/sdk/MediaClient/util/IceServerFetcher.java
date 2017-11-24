@@ -114,8 +114,8 @@ public class IceServerFetcher {
                 new AsyncHttpURLConnection.AsyncHttpEvents() {
                     @Override
                     public void onHttpError(String errorMessage) {
-                        RCLogger.e(TAG, "ICE servers request timeout: " + errorMessage);
-                        events.onIceServersError("ICE servers request timeout");
+                        RCLogger.e(TAG, "ICE servers timeout or error: " + errorMessage);
+                        events.onIceServersError("ICE servers timeout or error: " + errorMessage);
                     }
 
                     @Override
