@@ -63,7 +63,6 @@ android {
             resValue "string", "ICE_DOMAIN", ICE_DOMAIN
         }
         testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
-
         multiDexEnabled true
     }
 
@@ -151,6 +150,11 @@ repositories {
     maven {
         url 'https://www.testfairy.com/maven'
     }
+
+    maven {
+        url "https://maven.google.com"
+    }
+
 }
 
 dependencies {
@@ -187,6 +191,7 @@ dependencies {
     compile 'com.android.support:multidex:1.0.1'
 
 }
+apply plugin: 'com.google.gms.google-services'
 
 //
 /* Uncomment and build with gradle downloadLicenses and a report with all licenses will be generated in build/reports/license

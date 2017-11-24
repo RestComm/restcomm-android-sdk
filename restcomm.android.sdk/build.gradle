@@ -82,6 +82,10 @@ repositories {
     maven {
         url "http://telestax.jfrog.io/telestax/community-releases"
     }
+    maven {
+        url "https://maven.google.com"
+    }
+
 }
 
 dependencies {
@@ -108,6 +112,9 @@ dependencies {
     compile 'dnsjava:dnsjava:2.1.7'
     compile 'org.mobicents.javax.sip:android-jain-sip-ext:1.3.33'
     //compile 'org.mobicents.javax.sip:android-jain-sip-ext:1.3.0-SNAPSHOT'
+    compile 'com.google.firebase:firebase-messaging:11.2.0'
+    compile 'com.firebase:firebase-jobdispatcher:0.6.0'
+
 }
 
 // Upload to sonatype stuff
