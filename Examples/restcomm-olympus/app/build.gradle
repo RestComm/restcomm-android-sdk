@@ -52,10 +52,10 @@ android {
         buildConfigField "String", "TESTFAIRY_APP_TOKEN", TESTFAIRY_APP_TOKEN
 
 
-        // ICE_USERNAME & ICE_PASSWORD are defined in project gradle.properties, but also overriden in global gradle.properties
-        // which exists *only* in Telestax builds. Reason for this is that Telestax builds use different settings
-        // for ICE that are meant for production systems, and which should remain secret (remember that the global gradle.properties
-        // isn't part of the repo)
+        // ICE_USERNAME, ICE_PASSWORD & ICE_DOMAIN are defined in project gradle.properties for community builds, but also overriden
+        // by gradle properties passed from command line (i.e. $ gradlew ... -PICE_DOMAIN=...) for Telestax builds from our
+        // CI scripts. Reason for this is that Telestax builds use different settings
+        // for ICE that are meant for production systems, and which should remain secret 
         if (project.hasProperty('ICE_USERNAME') && project.hasProperty('ICE_PASSWORD') && project.hasProperty('ICE_DOMAIN')) {
             // Add them as resource values which are available in preferences.xml
             resValue "string", "ICE_USERNAME", ICE_USERNAME
