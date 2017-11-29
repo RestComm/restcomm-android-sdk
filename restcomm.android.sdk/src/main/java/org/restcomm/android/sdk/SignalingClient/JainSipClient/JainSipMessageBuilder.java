@@ -293,6 +293,10 @@ class JainSipMessageBuilder {
       try {
          Request request = dialog.createRequest(Request.BYE);
          request.addHeader(createUserAgentHeader());
+
+         // BYE requests are always inside a dialog and hence subsequent, so we shouldn't touch the route set; it should
+         // be already populated properly. Keeping this piece of code though for now in case we need it at some point
+         /*
          if (clientConfiguration.containsKey(RCDevice.ParameterKeys.SIGNALING_DOMAIN) &&
                !clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN).equals("")) {
             // we only need this for non-registrarless calls since the problem is only for incoming calls,
@@ -300,6 +304,7 @@ class JainSipMessageBuilder {
             RouteHeader routeHeader = createRouteHeader((String) clientConfiguration.get(RCDevice.ParameterKeys.SIGNALING_DOMAIN), listeningPoint);
             request.addFirst(routeHeader);
          }
+         */
 
          int reasonCode;
          if (reason == null || reason.isEmpty()) {
@@ -487,7 +492,14 @@ class JainSipMessageBuilder {
       }
    }
 
-   private RouteHeader createRouteHeader(String route, ListeningPoint listeningPoint)
+   /**
+    * Discover and return a route based on DNS SRV query for the given domain FQDN. For now we are returning just the top of the returned hops. In the future we can
+    * follow some more elaborate scheme if it makes sense
+    * @param domain domain FQDN to resolve
+    * @param listeningPoint currently active listening point
+    * @return route based on DNS SRV query
+    */
+   private RouteHeader createRouteHeader(String domain, ListeningPoint listeningPoint)
    {
       try {
          //SipURI routeUri = (SipURI) jainSipAddressFactory.createURI(route);
@@ -495,7 +507,7 @@ class JainSipMessageBuilder {
          Set<String> supportedTransports = new HashSet<String>();
          supportedTransports.add(listeningPoint.getTransport());
          DefaultDNSServerLocator dnsServerLocator = new DefaultDNSServerLocator(supportedTransports);
-         Queue<Hop> hops = dnsServerLocator.locateHops(jainSipAddressFactory.createURI(route));
+         Queue<Hop> hops = dnsServerLocator.locateHops(jainSipAddressFactory.createURI(domain));
          SipURI routeUri = jainSipAddressFactory.createSipURI(null, hops.peek().getHost());
          routeUri.setParameter(DNSAwareRouter.DNS_ROUTE, Boolean.TRUE.toString());
          routeUri.setPort(hops.peek().getPort());
