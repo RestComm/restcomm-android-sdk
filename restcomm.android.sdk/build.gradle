@@ -22,12 +22,12 @@ buildscript {
 }
 
 android {
-    compileSdkVersion 25
+    compileSdkVersion 26
     //buildToolsVersion '25.0.3'
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 25
+        targetSdkVersion 26
 
         logger.info("-- Using versionCode: " + VERSION_CODE)
         versionCode VERSION_CODE.toInteger()
