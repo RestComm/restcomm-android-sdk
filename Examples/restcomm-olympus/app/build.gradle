@@ -93,10 +93,21 @@ android {
             minifyEnabled false
         }
 
+        // build type used for CI until we organize things better
+        /*
+        staging {
+            initWith debug
+
+
+        }
+        */
+
         // TODO: currently getting some lint error from log4j library we 're using, that we need to fix and then remove this altogether:
         lintOptions {
             abortOnError false
         }
+
+
     }
 
     testfairyConfig {
