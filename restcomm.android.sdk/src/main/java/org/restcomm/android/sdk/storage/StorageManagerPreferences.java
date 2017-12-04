@@ -25,7 +25,6 @@ package org.restcomm.android.sdk.storage;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-
 /**
  *  Class which stores data to device's shared preferences
  **/
@@ -76,3 +75,4 @@ public class StorageManagerPreferences implements StorageManager {
         editor.commit();
     }
 }
+

@@ -21,6 +21,8 @@ import com.google.firebase.messaging.RemoteMessage;
 
 import android.util.Log;
 
+import org.restcomm.android.sdk.util.RCLogger;
+
 public class FcmMessagingService extends FirebaseMessagingService {
 
     private static final String TAG = "FcmMessagingService";
@@ -50,28 +52,10 @@ public class FcmMessagingService extends FirebaseMessagingService {
         sendNotification();
     }
 
-
-    /**
-     * Schedule a job using FirebaseJobDispatcher.
-     */
-    private void scheduleJob() {
-        //we dont have any job to schedule
-    }
-
-    /**
-     * Handle time allotted to BroadcastReceivers.
-     */
-    private void handleNow() {
-        Log.d(TAG, "Short lived task is done.");
-    }
-
-    /**
-     * Create and show a simple notification containing the received FCM message.
-     *
-     * @param messageBody
-     *         FCM message body received.
-     */
     private void sendNotification() {
-        //todo: oggie
+        //start service
+        //todo: for now we will not do anything with the notification
+        //just write it on the Log
+        RCLogger.d(TAG, "sendNotification is called");
     }
 }
