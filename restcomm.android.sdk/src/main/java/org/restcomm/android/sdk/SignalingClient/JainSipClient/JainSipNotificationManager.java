@@ -206,11 +206,11 @@ class JainSipNotificationManager extends BroadcastReceiver {
                // used some system properties prefixed 'net.dns1', etc. The problem is that those got removed in Oreo so we have to use
                // alternative means, and that is to use 'dns.server' that 'dnsjava' tries to use before trying 'net.dns1';
                if (stringBuilder.length() != 0) {
-                  RCLogger.i(TAG, "Updating DNS servers for dnsjava with: " + stringBuilder.toString() + ", i/f: + " + linkProperties.getInterfaceName());
+                  RCLogger.i(TAG, "Updating DNS servers for dnsjava with: " + stringBuilder.toString() + ", i/f: " + linkProperties.getInterfaceName());
                   System.setProperty("dns.server", stringBuilder.toString());
                }
                if (linkProperties.getDomains() != null) {
-                  RCLogger.i(TAG, "Updating DNS search domains for dnsjava with: " + linkProperties.getDomains() + ", i/f: + " + linkProperties.getInterfaceName());
+                  RCLogger.i(TAG, "Updating DNS search domains for dnsjava with: " + linkProperties.getDomains() + ", i/f: " + linkProperties.getInterfaceName());
                   System.setProperty("dns.search", linkProperties.getDomains());
                }
             }
