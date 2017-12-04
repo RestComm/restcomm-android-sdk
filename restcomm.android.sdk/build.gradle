@@ -13,7 +13,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.3.3'
+        classpath 'com.android.tools.build:gradle:3.0.0'
         classpath "io.codearte.gradle.nexus:gradle-nexus-staging-plugin:0.6.1"
 
         // NOTE: Do not place your application dependencies here; they belong
@@ -22,12 +22,12 @@ buildscript {
 }
 
 android {
-    compileSdkVersion 25
+    compileSdkVersion 26
     //buildToolsVersion '25.0.3'
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 25
+        targetSdkVersion 26
 
         logger.info("-- Using versionCode: " + VERSION_CODE)
         versionCode VERSION_CODE.toInteger()
@@ -92,7 +92,7 @@ dependencies {
     //compile project(':libwebrtc')
     compile 'org.restcomm.android:libwebrtc:1.0.0-beta5-16765@aar'
     //compile files('libs/libjingle_peerconnection_java.jar')
-    compile 'com.android.support:appcompat-v7:25.3.1'
+    compile 'com.android.support:appcompat-v7:26.1.0'
     // Notice that log4j 2.7 doesn't work on account of JAIN SIP expecting log4j GroupId, not org.apache.logging.log4j
     // TODO: We should try to fix that at some point
     //compile 'org.apache.logging.log4j:log4j:2.7'
