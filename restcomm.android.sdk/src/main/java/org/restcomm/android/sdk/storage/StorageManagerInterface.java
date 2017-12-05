@@ -1,6 +1,6 @@
 /*
  * TeleStax, Open Source Cloud Communications
- * Copyright 2011-2017, Telestax Inc and individual contributors
+ * Copyright 2011-2015, Telestax Inc and individual contributors
  * by the @authors tag.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,11 +19,24 @@
  * For questions related to commercial use licensing, please contact sales@telestax.com.
  *
  */
-package org.restcomm.android.sdk.fcm.model;
 
-import org.json.JSONObject;
+package org.restcomm.android.sdk.storage;
+/**
+ *  Interface with main storage saving and reading functions
+ **/
 
-public abstract class FcmModel<T>{
-   public abstract JSONObject getJSONObject();
-   public abstract void fillFromJson(String jsonString);
+public interface StorageManagerInterface {
+
+    String getString(String key, String defaultValue);
+
+    int getInt(String key, int defaultValue);
+
+    boolean getBoolean(String key, boolean defaultValue);
+
+    void saveString(String key, String value);
+
+    void saveInt(String key, int value);
+
+    void saveBoolean(String key, boolean value);
+
 }

@@ -32,9 +32,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Binder;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
@@ -44,14 +42,13 @@ import org.restcomm.android.sdk.SignalingClient.JainSipClient.JainSipConfigurati
 import org.restcomm.android.sdk.SignalingClient.SignalingClient;
 //import org.restcomm.android.sdk.util.ErrorStruct;
 import org.restcomm.android.sdk.fcm.FcmConfigurationHandler;
-import org.restcomm.android.sdk.fcm.FcmOnPushRegistrationListener;
-import org.restcomm.android.sdk.storage.StorageManager;
+import org.restcomm.android.sdk.fcm.FcmPushRegistrationListener;
+import org.restcomm.android.sdk.storage.StorageManagerInterface;
 import org.restcomm.android.sdk.storage.StorageManagerPreferences;
 import org.restcomm.android.sdk.util.RCException;
 import org.restcomm.android.sdk.util.RCLogger;
 import org.restcomm.android.sdk.util.RCUtils;
 
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -112,7 +109,7 @@ import java.util.Map;
  * You can also check the Sample Applications on how to properly use that at the Examples directory in the GitHub repository
  * @see RCConnection
  */
-public class RCDevice extends Service implements SignalingClient.SignalingClientListener, FcmOnPushRegistrationListener {
+public class RCDevice extends Service implements SignalingClient.SignalingClientListener, FcmPushRegistrationListener {
    /**
     * Device state
     */
@@ -173,7 +170,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       ICE_SERVERS_CUSTOM,  /** Don't use a configuration URL, but directly provide the set of ICE servers (i.e. the App needs to have logic to retrieve them  and provide them) */
    }
 
-    StorageManagerPreferences mStorageManagerPreferences;
 
    /**
     * Parameter keys for RCClient.createDevice() and RCDevice.updateParams()
@@ -347,6 +343,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    boolean isServiceAttached = false;
    // how many Activities are attached to the Service
    private int serviceReferenceCount = 0;
+
+   private StorageManagerPreferences storageManagerPreferences;
 
    private boolean isReleasing = false;
 
@@ -544,7 +542,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       if (!isServiceInitialized) {
 
          isServiceInitialized = true;
-         //context = activityContext; //todo: Oggie, I would remove the activityContext from method initialize we dont use it...
+         //context = activityContext;
          state = DeviceState.OFFLINE;
 
          RCLogger.i(TAG, "RCDevice(): " + parameters.toString());
@@ -552,8 +550,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          RCUtils.validateDeviceParms(parameters);
 
          //save parameters to storage
-          mStorageManagerPreferences = new StorageManagerPreferences(this);
-          saveParams(mStorageManagerPreferences, parameters);
+          storageManagerPreferences = new StorageManagerPreferences(this);
+          saveParams(storageManagerPreferences, parameters);
 
 
          //this.updateCapabilityToken(capabilityToken);
@@ -1021,9 +1019,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
        boolean registerForPushAvailable = false;
        //register for push
-       if (mStorageManagerPreferences != null) {
+       if (storageManagerPreferences != null) {
            if (allPushRegisterDataAvailable()) {
-               new FcmConfigurationHandler(mStorageManagerPreferences, this).registerForPush();
+               new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush();
                registerForPushAvailable = true;
            }
        }
@@ -1032,10 +1030,10 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
        //remove it
        if (!registerForPushAvailable) {
            if (isServiceAttached) {
-               listener.onInitialized(this, connectivityStatus, RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_PARAMETERS_MISSING.ordinal(), RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_PARAMETERS_MISSING));
+               listener.onInitialized(this, connectivityStatus, RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING.ordinal(), RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING));
            } else {
                RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
-                       RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_PARAMETERS_MISSING));
+                       RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING));
            }
            release();
        }
@@ -1767,39 +1765,39 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       // is active.
    }
 
-   private void saveParams(StorageManager storageManager, HashMap<String, Object> params){
+   private void saveParams(StorageManagerInterface storageManagerInterface, HashMap<String, Object> params){
         for (Map.Entry<String, Object> entry : params.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
 
             if (value instanceof String){
-                storageManager.saveString(key, (String) value);
+                storageManagerInterface.saveString(key, (String) value);
             } else if (value instanceof Integer){
-                storageManager.saveInt(key, (int)value);
+                storageManagerInterface.saveInt(key, (int)value);
             } else if (value instanceof Boolean){
-                storageManager.saveBoolean(key, (boolean)value);
+                storageManagerInterface.saveBoolean(key, (boolean)value);
             } else if (value instanceof Intent){
-                storageManager.saveString(key,((Intent) value).toUri(Intent.URI_INTENT_SCHEME));
+                storageManagerInterface.saveString(key,((Intent) value).toUri(Intent.URI_INTENT_SCHEME));
             }
         }
     }
 
 
     private boolean allPushRegisterDataAvailable(){
-        String applicationName = mStorageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, null);
-        String accountEmail = mStorageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, null);
+        String applicationName = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, null);
+        String accountEmail = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, null);
         if (accountEmail.equals("_YOUR_EMAIL_")){
             accountEmail = null;
         }
-        String accountPassword = mStorageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, null);
+        String accountPassword = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, null);
 
         if (accountPassword.equals("_YOUR_PASSWORD_")){
             accountPassword = null;
         }
 
-        String pushDomain = mStorageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, null);
-        String httpDomain = mStorageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, null);
-        String fcmServerKey = mStorageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, null);
+        String pushDomain = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, null);
+        String httpDomain = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, null);
+        String fcmServerKey = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, null);
         if (fcmServerKey.equals("")){
             fcmServerKey = null;
         }

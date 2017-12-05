@@ -29,7 +29,7 @@ import android.content.SharedPreferences;
  *  Class which stores data to device's shared preferences
  **/
 
-public class StorageManagerPreferences implements StorageManager {
+public class StorageManagerPreferences implements StorageManagerInterface {
 
     private final String STORAGE_PREF = "org.restcomm.android.sdk.storage_preferences";
 

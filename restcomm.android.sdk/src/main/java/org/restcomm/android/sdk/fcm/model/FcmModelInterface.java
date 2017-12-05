@@ -19,17 +19,13 @@
  * For questions related to commercial use licensing, please contact sales@telestax.com.
  *
  */
+package org.restcomm.android.sdk.fcm.model;
 
-package org.restcomm.android.sdk.fcm;
+import org.json.JSONObject;
 
-import org.restcomm.android.sdk.RCClient;
+public interface FcmModelInterface {
 
-public interface FcmOnPushRegistrationListener {
-    /**
-     *   It will be called when registering for push notification is completed.
-     *   @param status Error Code - if different than SUCCESS text will be filled with error
-     *   @param text Error text
-    **/
-    void onRegisteredForPush(RCClient.ErrorCodes status, String text);
+   JSONObject getJSONObject();
 
+   void fillFromJson(String jsonString);
 }

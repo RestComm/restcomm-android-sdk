@@ -26,7 +26,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.restcomm.android.sdk.util.RCLogger;
 
-public class FcmCredentials extends FcmModel{
+public class FcmCredentials implements FcmModelInterface {
 
     private static final String TAG = FcmCredentials.class.getCanonicalName();
 

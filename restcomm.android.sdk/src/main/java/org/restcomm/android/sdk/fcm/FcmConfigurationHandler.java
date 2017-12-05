@@ -29,7 +29,7 @@ import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.fcm.model.FcmApplication;
 import org.restcomm.android.sdk.fcm.model.FcmBinding;
 import org.restcomm.android.sdk.fcm.model.FcmCredentials;
-import org.restcomm.android.sdk.storage.StorageManager;
+import org.restcomm.android.sdk.storage.StorageManagerInterface;
 import org.restcomm.android.sdk.util.RCLogger;
 
 import android.os.AsyncTask;
@@ -38,11 +38,9 @@ import android.util.Pair;
 
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
-import java.util.HashSet;
 
 /**
  * Manage logic for registering device and user for push notifications
- *
  */
 
 public class FcmConfigurationHandler {
@@ -57,7 +55,7 @@ public class FcmConfigurationHandler {
 
     private static final String TYPE = "fcm";
 
-    private WeakReference<StorageManager> mStorageManagerWeak;
+    private WeakReference<StorageManagerInterface> mStorageManagerWeak;
     private FcmConfigurationClient mFcmConfigurationClient;
     private String mEmail;
     private String mUsername;
@@ -65,12 +63,12 @@ public class FcmConfigurationHandler {
     private String mFcmSecretKey;
     private boolean mEnablePush;
 
-    private WeakReference<FcmOnPushRegistrationListener> mListenerWeak;
+    private WeakReference<FcmPushRegistrationListener> mListenerWeak;
 
 
     /**
      *  @param listener
-     *  @param storageManager, it will be used for getting/saving
+     *  @param storageManagerInterface, it will be used for getting/saving
      *  Parameters data. Parameters used:
      *  RCDevice.ParameterKeys.SIGNALING_USERNAME - Identity for the client, like bob
      *  RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME - (name of the client application)
@@ -81,17 +79,17 @@ public class FcmConfigurationHandler {
      *  RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN - (Restcomm HTTP domain, like 'cloud.restcomm.com')
      *  RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY - (server hash key for created application in firebase cloud messaging)
      **/
-    public FcmConfigurationHandler(StorageManager storageManager, FcmOnPushRegistrationListener listener){
-        this.mStorageManagerWeak = new WeakReference<StorageManager>(storageManager);
-        this.mListenerWeak = new WeakReference<FcmOnPushRegistrationListener>(listener);
-        mEmail = storageManager.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, "");
-        String password = storageManager.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, "");
-        String pushDomain = storageManager.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, "");
-        String httpDomain = storageManager.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, "");
-        mEnablePush = storageManager.getBoolean(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
-        mUsername = storageManager.getString(RCDevice.ParameterKeys.SIGNALING_USERNAME, "");
-        mApplicationName =  storageManager.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, "");
-        mFcmSecretKey = storageManager.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, "");
+    public FcmConfigurationHandler(StorageManagerInterface storageManagerInterface, FcmPushRegistrationListener listener){
+        this.mStorageManagerWeak = new WeakReference<StorageManagerInterface>(storageManagerInterface);
+        this.mListenerWeak = new WeakReference<FcmPushRegistrationListener>(listener);
+        mEmail = storageManagerInterface.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, "");
+        String password = storageManagerInterface.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, "");
+        String pushDomain = storageManagerInterface.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, "");
+        String httpDomain = storageManagerInterface.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, "");
+        mEnablePush = storageManagerInterface.getBoolean(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
+        mUsername = storageManagerInterface.getString(RCDevice.ParameterKeys.SIGNALING_USERNAME, "");
+        mApplicationName =  storageManagerInterface.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, "");
+        mFcmSecretKey = storageManagerInterface.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, "");
         this.mFcmConfigurationClient = new FcmConfigurationClient(mEmail, password, pushDomain, httpDomain);
     }
 
@@ -174,7 +172,7 @@ public class FcmConfigurationHandler {
                         FcmApplication application = getApplication(fcmApplicationString);
                         if (application == null) {
                             RCLogger.v(TAG, "Application not found, raising error;");
-                            return new Pair<>(null, RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_APPLICATION_MISSING);
+                            return new Pair<>(null, RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_APPLICATION_MISSING);
                         }
 
                         RCLogger.v(TAG, "Application found, Storing it.");
@@ -186,7 +184,7 @@ public class FcmConfigurationHandler {
                         FcmCredentials credentials = getCredentials(fcmCredentialsString, application);
                         if (credentials == null) {
                             RCLogger.v(TAG, "Credentials not found, raising error;");
-                            return new Pair<>(null, RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_CREDENTIALS_MISSING);
+                            return new Pair<>(null, RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_CREDENTIALS_MISSING);
                         }
 
                         RCLogger.v(TAG, "Credentials found, Storing it.");
@@ -207,17 +205,17 @@ public class FcmConfigurationHandler {
                         }
 
                         if (binding == null) {
-                            return new Pair<>(null, RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_BINDING_MISSING);
+                            return new Pair<>(null, RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_BINDING_MISSING);
                         }
 
                         resultHashMap.put(FCM_BINDING, binding.getJSONObject().toString());
                     }
                     return new Pair<>(resultHashMap, RCClient.ErrorCodes.SUCCESS);
                 } else {
-                    return new Pair<>(null, RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_CLIENT_SID_MISSING);
+                    return new Pair<>(null, RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_CLIENT_SID_MISSING);
                 }
             } else {
-                return new Pair<>(null, RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_ACCOUNT_SID_MISSING);
+                return new Pair<>(null, RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ACCOUNT_SID_MISSING);
             }
         }
 
@@ -296,27 +294,7 @@ public class FcmConfigurationHandler {
             } else {
                 RCClient.ErrorCodes errorCode = result.second;
                 if (mListenerWeak.get() != null) {
-                    switch (errorCode) {
-                        case ERROR_MESSAGE_PUSH_NOTIFICATION_ACCOUNT_SID_MISSING:
-                            mListenerWeak.get().onRegisteredForPush(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_ACCOUNT_SID_MISSING,
-                                                          RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_ACCOUNT_SID_MISSING));
-                            break;
-                        case ERROR_MESSAGE_PUSH_NOTIFICATION_CLIENT_SID_MISSING:
-                            mListenerWeak.get().onRegisteredForPush(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_CLIENT_SID_MISSING,
-                                                          RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_CLIENT_SID_MISSING));
-                            break;
-                        case ERROR_MESSAGE_PUSH_NOTIFICATION_BINDING_MISSING:
-                            mListenerWeak.get().onRegisteredForPush(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_BINDING_MISSING,
-                                                          RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_BINDING_MISSING));
-                            break;
-                        case ERROR_MESSAGE_PUSH_NOTIFICATION_CREDENTIALS_MISSING:
-                            mListenerWeak.get().onRegisteredForPush(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_CREDENTIALS_MISSING,
-                                                          RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_CREDENTIALS_MISSING));
-                            break;
-                        case ERROR_MESSAGE_PUSH_NOTIFICATION_APPLICATION_MISSING:
-                            mListenerWeak.get().onRegisteredForPush(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_APPLICATION_MISSING,
-                                                          RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_APPLICATION_MISSING));
-                    }
+                    mListenerWeak.get().onRegisteredForPush(errorCode, RCClient.errorText(errorCode));
                 }
             }
 
