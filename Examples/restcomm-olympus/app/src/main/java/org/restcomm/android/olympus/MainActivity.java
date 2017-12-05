@@ -291,12 +291,12 @@ public class MainActivity extends AppCompatActivity
 
 
           params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, "Olympus");
-          params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, "_YOUR_EMAIL_");
-          params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, "_YOUR_PASSWORD_");
+          params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL , RCDevice.DefaultValues.PUSH_NOTIFICATION_DEFAULT_EMAIL));
+          params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD ,RCDevice.DefaultValues.PUSH_NOTIFICATION_DEFAULT_PASSWORD));
           params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, true);
-          params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, "push.restcomm.com");
-          params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, "cloud.restcomm.com");
-          params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, "_FCM_SERVER_KEY_");
+          params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN ,"push.restcomm.com"));
+          params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN ,"cloud.restcomm.com"));
+          params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, RCDevice.DefaultValues.PUSH_NOTIFICATION_FCM_SERVER_KEY);
 
           device.setLogLevel(Log.VERBOSE);
          try {
@@ -473,8 +473,11 @@ public class MainActivity extends AppCompatActivity
          handleConnectivityUpdate(RCConnectivityStatus.RCConnectivityStatusNone, "RCDevice Released: " + statusText);
       }
 
-      unbindService(this);
-      serviceBound = false;
+      //maybe we stopped the activity before onRelased is called
+      if (serviceBound) {
+         unbindService(this);
+         serviceBound = false;
+      }
    }
 
    public void onConnectivityUpdate(RCDevice device, RCConnectivityStatus connectivityStatus)

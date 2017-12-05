@@ -214,6 +214,12 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
    }
 
+   public interface DefaultValues {
+      String PUSH_NOTIFICATION_DEFAULT_EMAIL = "ACCOUNT EMAIL ";
+      String PUSH_NOTIFICATION_DEFAULT_PASSWORD = "ACCOUNT PASSWORD";
+      String PUSH_NOTIFICATION_FCM_SERVER_KEY = "FCM SERVER KEY";
+   }
+
    private static final String TAG = "RCDevice";
 
    // Service Intent actions sent from RCDevice Service -> Call Activity
@@ -1788,12 +1794,12 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     private boolean allPushRegisterDataAvailable(){
         String applicationName = mStorageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, null);
         String accountEmail = mStorageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, null);
-        if (accountEmail.equals("_YOUR_EMAIL_")){
+        if (accountEmail.equals(DefaultValues.PUSH_NOTIFICATION_DEFAULT_EMAIL)){
             accountEmail = null;
         }
         String accountPassword = mStorageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, null);
 
-        if (accountPassword.equals("_YOUR_PASSWORD_")){
+        if (accountPassword.equals(DefaultValues.PUSH_NOTIFICATION_DEFAULT_PASSWORD)){
             accountPassword = null;
         }
 

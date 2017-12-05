@@ -252,19 +252,6 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
          params.put(RCDevice.ParameterKeys.SIGNALING_PASSWORD, prefs.getString(RCDevice.ParameterKeys.SIGNALING_PASSWORD, "1234"));
          updated = true;
       }
-      //todo:oggie
-//      else if (key.equals(FcmMessages.ParameterKeys.RESTCOMM_ACCOUNT_EMAIL)) {
-//         params.put(FcmMessages.ParameterKeys.RESTCOMM_ACCOUNT_EMAIL, prefs.getString(FcmMessages.ParameterKeys.RESTCOMM_ACCOUNT_EMAIL, "administrator@company.com"));
-//         updated = true;
-//      }
-//      else if (key.equals(FcmMessages.ParameterKeys.RESTCOMM_ACCOUNT_PASSWORD)) {
-//         params.put(FcmMessages.ParameterKeys.RESTCOMM_ACCOUNT_PASSWORD, prefs.getString(FcmMessages.ParameterKeys.RESTCOMM_ACCOUNT_PASSWORD, ""));
-//         updated = true;
-//      }
-//      else if (key.equals(FcmMessages.ParameterKeys.PUSH_NOTIFICATION_DOMAIN)) {
-//         params.put(FcmMessages.ParameterKeys.PUSH_NOTIFICATION_DOMAIN, prefs.getString(FcmMessages.ParameterKeys.PUSH_NOTIFICATION_DOMAIN, "push.restcomm.com"));
-//         updated = true;
-//      }
       else if (key.equals(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED)) {
          params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
          updated = true;
@@ -342,6 +329,9 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
          }
          updated = true;
       }
+      //** NOTE: Push settings are managed with the preferences settings screen and
+      //they are passed to RCDevice by init in MainActivity;
+
    }
 
    private void showOkAlert(final String title, final String detail)
