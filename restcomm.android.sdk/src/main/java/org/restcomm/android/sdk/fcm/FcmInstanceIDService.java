@@ -21,6 +21,9 @@ import com.google.firebase.iid.FirebaseInstanceIdService;
 
 import android.util.Log;
 
+import org.restcomm.android.sdk.storage.StorageManager;
+import org.restcomm.android.sdk.storage.StorageManagerPreferences;
+
 public class FcmInstanceIDService extends FirebaseInstanceIdService {
 
    private static final String TAG = "FcmInstanceIDService";
@@ -40,7 +43,7 @@ public class FcmInstanceIDService extends FirebaseInstanceIdService {
       // If you want to send messages to this application instance or
       // manage this apps subscriptions on the server side, send the
       // Instance ID token to your app server.
-      sendRegistrationToServer(refreshedToken);
+      sendRegistrationToServer();
    }
    // [END refresh_token]
 
@@ -50,9 +53,10 @@ public class FcmInstanceIDService extends FirebaseInstanceIdService {
    * Modify this method to associate the user's FCM InstanceID token with any server-side account
    * maintained by your application.
    *
-   * @param token The new token.
    */
-   private void sendRegistrationToServer(String token) {
-      // TODO: Implement this method to send token to your app server.
+   private void sendRegistrationToServer() {
+      Log.d(TAG, "Updating server");
+      StorageManagerPreferences  storageManagerPreferences = new StorageManagerPreferences(this);
+      new FcmConfigurationHandler(storageManagerPreferences, null).updateBinding();
    }
 }

@@ -95,12 +95,16 @@ public class FcmConfigurationHandler {
         this.mFcmConfigurationClient = new FcmConfigurationClient(mEmail, password, pushDomain, httpDomain);
     }
 
+    public void registerForPush(){
+        registerOrUpdateForPush(false);
+    }
+
     /**
         Method will register/update the account’s data for push messaging on restcomm
         server
     **/
     @SuppressWarnings("unchecked")
-    public void registerForPush(){
+    private void registerOrUpdateForPush(boolean update){
         //get all data before running in background (we dont want context from storage manager to be inside)
         String accountSid = mStorageManagerWeak.get().getString(FCM_ACCOUNT_SID, null);
         String clientSid = mStorageManagerWeak.get().getString(FCM_CLIENT_SID, null);
@@ -115,7 +119,11 @@ public class FcmConfigurationHandler {
         map.put(FCM_CREDENTIALS, credentialsString);
         map.put(FCM_BINDING, bindingString);
 
-        new AsyncTaskRegisterForPush(mEmail, mFcmConfigurationClient, mUsername, mApplicationName, mFcmSecretKey).execute(map);
+        new AsyncTaskRegisterForPush(mEmail, mFcmConfigurationClient, mUsername, mApplicationName, mFcmSecretKey, update).execute(map);
+    }
+
+    public void updateBinding(){
+        registerOrUpdateForPush(true);
     }
 
     private class AsyncTaskRegisterForPush extends AsyncTask<HashMap<String, String>, Void, Pair<HashMap<String, String>, RCClient.ErrorCodes>> {
@@ -124,14 +132,16 @@ public class FcmConfigurationHandler {
         String username;
         String applicationName;
         String fcmSecretKey;
+        boolean update;
 
         public AsyncTaskRegisterForPush(String email, FcmConfigurationClient fcmConfigurationClient,
-                                        String username, String applicationName, String fcmSecretKey){
+                                        String username, String applicationName, String fcmSecretKey, boolean update){
             this.email = email;
             this.username = username;
             this.fcmConfigurationClient = fcmConfigurationClient;
             this.applicationName = applicationName;
             this.fcmSecretKey = fcmSecretKey;
+            this.update = update;
         }
 
         @Override
@@ -139,85 +149,108 @@ public class FcmConfigurationHandler {
             HashMap<String, String> resultHashMap = new HashMap<>();
             HashMap<String, String> inputHashMap = hashMap[0];
 
-            //check the accountSid, if account sid is null we nee to get the new one from the server
-            RCLogger.v(TAG, "Getting an account sid");
-            String accountSid = inputHashMap.get(FCM_ACCOUNT_SID);
+            //if its update then we need to update just binding
+            if (update){
+                RCLogger.v(TAG, "Its un update token;");
+                String bindingString = inputHashMap.get(FCM_BINDING);
 
-            if (accountSid == null){
-                RCLogger.v(TAG, "Account sid not found, getting it from server.");
-                accountSid = fcmConfigurationClient.getAcccountSid(email);
-            }
-
-            if (accountSid !=null){
-                RCLogger.v(TAG, "Account sid found; Storing account sid;");
-                resultHashMap.put(FCM_ACCOUNT_SID, accountSid);
-
-                RCLogger.v(TAG, "Getting a client sid");
-                String clientSid = inputHashMap.get(FCM_CLIENT_SID);
-                if (clientSid == null){
-                    RCLogger.v(TAG, "Client sid not found, getting it from server.");
-                    clientSid = fcmConfigurationClient.getClientSid(accountSid, username);
-                }
-                if (clientSid != null){
-                    RCLogger.v(TAG, "Client sid found; Storing client sid;");
-                    resultHashMap.put(FCM_CLIENT_SID, clientSid);
-
-                    //we need to check should we enable/disable push notifications on server
-                    //for now we will leave it always enabled
-                    //fcmConfigurationClient.enableClientPushSettings(mEnablePush, accountSid, clientSid);
-                    mEnablePush = true;
-
-                    if (mEnablePush) {
-                        //APPLICATION
-                        RCLogger.v(TAG, "Getting an application;");
-                        String fcmApplicationString = inputHashMap.get(FCM_APPLICATION);
-                        FcmApplication application = getApplication(fcmApplicationString);
-                        if (application == null) {
-                            RCLogger.v(TAG, "Application not found, raising error;");
-                            return new Pair<>(null, RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_APPLICATION_MISSING);
-                        }
-
-                        RCLogger.v(TAG, "Application found, Storing it.");
-                        resultHashMap.put(FCM_APPLICATION, application.getJSONObject().toString());
-
-                        //CREDENTIALS
-                        RCLogger.v(TAG, "Getting the credentials;");
-                        String fcmCredentialsString = inputHashMap.get(FCM_CREDENTIALS);
-                        FcmCredentials credentials = getCredentials(fcmCredentialsString, application);
-                        if (credentials == null) {
-                            RCLogger.v(TAG, "Credentials not found, raising error;");
-                            return new Pair<>(null, RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_CREDENTIALS_MISSING);
-                        }
-
-                        RCLogger.v(TAG, "Credentials found, Storing it.");
-                        resultHashMap.put(FCM_CREDENTIALS, credentials.getJSONObject().toString());
-
-                        //BINDING
-                        RCLogger.v(TAG, "Getting binding");
-                        FcmBinding binding = fcmConfigurationClient.getBinding(application);
-                        String token = FirebaseInstanceId.getInstance().getToken();
-                        if (binding != null && !binding.getAddress().equals(token)) {
-                            RCLogger.v(TAG, "Updating binding");
-                            binding.setAddress(token);
-                            binding = fcmConfigurationClient.updateBinding(binding);
-                        } else if (binding == null) {
-                            RCLogger.v(TAG, "Creating binding");
-                            binding = new FcmBinding("", clientSid, application.getSid(), TYPE, token);
-                            binding = fcmConfigurationClient.createBinding(binding);
-                        }
-
-                        if (binding == null) {
-                            return new Pair<>(null, RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_BINDING_MISSING);
-                        }
-
+                if (bindingString != null){
+                    FcmBinding binding = new FcmBinding();
+                    binding.fillFromJson(bindingString);
+                    String token = FirebaseInstanceId.getInstance().getToken();
+                    if (!binding.getAddress().equals(token)) {
+                        RCLogger.v(TAG, "Updating binding");
+                        binding.setAddress(token);
+                        binding = fcmConfigurationClient.updateBinding(binding);
                         resultHashMap.put(FCM_BINDING, binding.getJSONObject().toString());
                     }
-                    return new Pair<>(resultHashMap, RCClient.ErrorCodes.SUCCESS);
                 } else {
-                    return new Pair<>(null, RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_CLIENT_SID_MISSING);
+                    return new Pair<>(null, RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_BINDING_MISSING);
                 }
+             return new Pair<>(resultHashMap, RCClient.ErrorCodes.SUCCESS);
+            // register for push
             } else {
-                return new Pair<>(null, RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_ACCOUNT_SID_MISSING);
+
+                //check the accountSid, if account sid is null we nee to get the new one from the server
+                RCLogger.v(TAG, "Getting an account sid");
+                String accountSid = inputHashMap.get(FCM_ACCOUNT_SID);
+
+                if (accountSid == null) {
+                    RCLogger.v(TAG, "Account sid not found, getting it from server.");
+                    accountSid = fcmConfigurationClient.getAcccountSid(email);
+                }
+
+                if (accountSid != null) {
+                    RCLogger.v(TAG, "Account sid found; Storing account sid;");
+                    resultHashMap.put(FCM_ACCOUNT_SID, accountSid);
+
+                    RCLogger.v(TAG, "Getting a client sid");
+                    String clientSid = inputHashMap.get(FCM_CLIENT_SID);
+                    if (clientSid == null) {
+                        RCLogger.v(TAG, "Client sid not found, getting it from server.");
+                        clientSid = fcmConfigurationClient.getClientSid(accountSid, username);
+                    }
+                    if (clientSid != null) {
+                        RCLogger.v(TAG, "Client sid found; Storing client sid;");
+                        resultHashMap.put(FCM_CLIENT_SID, clientSid);
+
+                        //we need to check should we enable/disable push notifications on server
+                        //for now we will leave it always enabled
+                        //fcmConfigurationClient.enableClientPushSettings(mEnablePush, accountSid, clientSid);
+                        mEnablePush = true;
+
+                        if (mEnablePush) {
+                            //APPLICATION
+                            RCLogger.v(TAG, "Getting an application;");
+                            String fcmApplicationString = inputHashMap.get(FCM_APPLICATION);
+                            FcmApplication application = getApplication(fcmApplicationString);
+                            if (application == null) {
+                                RCLogger.v(TAG, "Application not found, raising error;");
+                                return new Pair<>(null, RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_APPLICATION_MISSING);
+                            }
+
+                            RCLogger.v(TAG, "Application found, Storing it.");
+                            resultHashMap.put(FCM_APPLICATION, application.getJSONObject().toString());
+
+                            //CREDENTIALS
+                            RCLogger.v(TAG, "Getting the credentials;");
+                            String fcmCredentialsString = inputHashMap.get(FCM_CREDENTIALS);
+                            FcmCredentials credentials = getCredentials(fcmCredentialsString, application);
+                            if (credentials == null) {
+                                RCLogger.v(TAG, "Credentials not found, raising error;");
+                                return new Pair<>(null, RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_CREDENTIALS_MISSING);
+                            }
+
+                            RCLogger.v(TAG, "Credentials found, Storing it.");
+                            resultHashMap.put(FCM_CREDENTIALS, credentials.getJSONObject().toString());
+
+                            //BINDING
+                            RCLogger.v(TAG, "Getting binding");
+                            FcmBinding binding = fcmConfigurationClient.getBinding(application);
+                            String token = FirebaseInstanceId.getInstance().getToken();
+                            if (binding != null && !binding.getAddress().equals(token)) {
+                                RCLogger.v(TAG, "Updating binding");
+                                binding.setAddress(token);
+                                binding = fcmConfigurationClient.updateBinding(binding);
+                            } else if (binding == null) {
+                                RCLogger.v(TAG, "Creating binding");
+                                binding = new FcmBinding("", clientSid, application.getSid(), TYPE, token);
+                                binding = fcmConfigurationClient.createBinding(binding);
+                            }
+
+                            if (binding == null) {
+                                return new Pair<>(null, RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_BINDING_MISSING);
+                            }
+
+                            resultHashMap.put(FCM_BINDING, binding.getJSONObject().toString());
+                        }
+                        return new Pair<>(resultHashMap, RCClient.ErrorCodes.SUCCESS);
+                    } else {
+                        return new Pair<>(null, RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_CLIENT_SID_MISSING);
+                    }
+                } else {
+                    return new Pair<>(null, RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_ACCOUNT_SID_MISSING);
+                }
             }
         }
 
@@ -269,53 +302,63 @@ public class FcmConfigurationHandler {
 
         @Override
         protected void onPostExecute(Pair<HashMap<String, String>, RCClient.ErrorCodes> result) {
-            if(result.second == RCClient.ErrorCodes.SUCCESS){
-                HashMap<String, String> resultHash = result.first;
-                //save data to storage
-                String accountSid = resultHash.get(FCM_ACCOUNT_SID);
-                String clientSid = resultHash.get(FCM_CLIENT_SID);
-                String applicationString = resultHash.get(FCM_APPLICATION);
-                String credentialsString = resultHash.get(FCM_CREDENTIALS);
-                String bindingString = resultHash.get(FCM_BINDING);
-
-                RCLogger.v(TAG, "Storing RESULTS");
-                if (mStorageManagerWeak.get() != null) {
-                    mStorageManagerWeak.get().saveString(FCM_ACCOUNT_SID, accountSid);
-                    mStorageManagerWeak.get().saveString(FCM_CLIENT_SID, clientSid);
-                    mStorageManagerWeak.get().saveString(FCM_APPLICATION, applicationString);
-                    mStorageManagerWeak.get().saveString(FCM_CREDENTIALS, credentialsString);
-                    mStorageManagerWeak.get().saveString(FCM_BINDING, bindingString);
+            if (update){
+                if(result.second == RCClient.ErrorCodes.SUCCESS) {
+                    HashMap<String, String> resultHash = result.first;
+                    String bindingString = resultHash.get(FCM_BINDING);
+                    if (mStorageManagerWeak.get() != null) {
+                        mStorageManagerWeak.get().saveString(FCM_BINDING, bindingString);
+                    }
                 }
-
-
-                //if listener exists
-                if (mListenerWeak.get() != null) {
-                    mListenerWeak.get().onRegisteredForPush(RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
-                }
-
             } else {
-                RCClient.ErrorCodes errorCode = result.second;
-                if (mListenerWeak.get() != null) {
-                    switch (errorCode) {
-                        case ERROR_MESSAGE_PUSH_NOTIFICATION_ACCOUNT_SID_MISSING:
-                            mListenerWeak.get().onRegisteredForPush(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_ACCOUNT_SID_MISSING,
-                                                          RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_ACCOUNT_SID_MISSING));
-                            break;
-                        case ERROR_MESSAGE_PUSH_NOTIFICATION_CLIENT_SID_MISSING:
-                            mListenerWeak.get().onRegisteredForPush(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_CLIENT_SID_MISSING,
-                                                          RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_CLIENT_SID_MISSING));
-                            break;
-                        case ERROR_MESSAGE_PUSH_NOTIFICATION_BINDING_MISSING:
-                            mListenerWeak.get().onRegisteredForPush(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_BINDING_MISSING,
-                                                          RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_BINDING_MISSING));
-                            break;
-                        case ERROR_MESSAGE_PUSH_NOTIFICATION_CREDENTIALS_MISSING:
-                            mListenerWeak.get().onRegisteredForPush(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_CREDENTIALS_MISSING,
-                                                          RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_CREDENTIALS_MISSING));
-                            break;
-                        case ERROR_MESSAGE_PUSH_NOTIFICATION_APPLICATION_MISSING:
-                            mListenerWeak.get().onRegisteredForPush(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_APPLICATION_MISSING,
-                                                          RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_APPLICATION_MISSING));
+                if(result.second == RCClient.ErrorCodes.SUCCESS){
+                    HashMap<String, String> resultHash = result.first;
+                    //save data to storage
+                    String accountSid = resultHash.get(FCM_ACCOUNT_SID);
+                    String clientSid = resultHash.get(FCM_CLIENT_SID);
+                    String applicationString = resultHash.get(FCM_APPLICATION);
+                    String credentialsString = resultHash.get(FCM_CREDENTIALS);
+                    String bindingString = resultHash.get(FCM_BINDING);
+
+                    RCLogger.v(TAG, "Storing RESULTS");
+                    if (mStorageManagerWeak.get() != null) {
+                        mStorageManagerWeak.get().saveString(FCM_ACCOUNT_SID, accountSid);
+                        mStorageManagerWeak.get().saveString(FCM_CLIENT_SID, clientSid);
+                        mStorageManagerWeak.get().saveString(FCM_APPLICATION, applicationString);
+                        mStorageManagerWeak.get().saveString(FCM_CREDENTIALS, credentialsString);
+                        mStorageManagerWeak.get().saveString(FCM_BINDING, bindingString);
+                    }
+
+
+                    //if listener exists
+                    if (mListenerWeak.get() != null) {
+                        mListenerWeak.get().onRegisteredForPush(RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
+                    }
+
+                } else {
+                    RCClient.ErrorCodes errorCode = result.second;
+                    if (mListenerWeak.get() != null) {
+                        switch (errorCode) {
+                            case ERROR_MESSAGE_PUSH_NOTIFICATION_ACCOUNT_SID_MISSING:
+                                mListenerWeak.get().onRegisteredForPush(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_ACCOUNT_SID_MISSING,
+                                        RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_ACCOUNT_SID_MISSING));
+                                break;
+                            case ERROR_MESSAGE_PUSH_NOTIFICATION_CLIENT_SID_MISSING:
+                                mListenerWeak.get().onRegisteredForPush(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_CLIENT_SID_MISSING,
+                                        RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_CLIENT_SID_MISSING));
+                                break;
+                            case ERROR_MESSAGE_PUSH_NOTIFICATION_BINDING_MISSING:
+                                mListenerWeak.get().onRegisteredForPush(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_BINDING_MISSING,
+                                        RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_BINDING_MISSING));
+                                break;
+                            case ERROR_MESSAGE_PUSH_NOTIFICATION_CREDENTIALS_MISSING:
+                                mListenerWeak.get().onRegisteredForPush(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_CREDENTIALS_MISSING,
+                                        RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_CREDENTIALS_MISSING));
+                                break;
+                            case ERROR_MESSAGE_PUSH_NOTIFICATION_APPLICATION_MISSING:
+                                mListenerWeak.get().onRegisteredForPush(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_APPLICATION_MISSING,
+                                        RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_NOTIFICATION_APPLICATION_MISSING));
+                        }
                     }
                 }
             }
