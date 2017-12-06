@@ -1,6 +1,6 @@
 /*
  * TeleStax, Open Source Cloud Communications
- * Copyright 2011-2015, Telestax Inc and individual contributors
+ * Copyright 2011-2017, Telestax Inc and individual contributors
  * by the @authors tag.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,23 +20,16 @@
  *
  */
 
-package org.restcomm.android.sdk.storage;
-/**
- *  Interface with main storage saving and reading functions
- **/
+package org.restcomm.android.sdk.fcm;
 
-public interface StorageManager {
+import org.restcomm.android.sdk.RCClient;
 
-    String getString(String key, String defaultValue);
-
-    int getInt(String key, int defaultValue);
-
-    boolean getBoolean(String key, boolean defaultValue);
-
-    void saveString(String key, String value);
-
-    void saveInt(String key, int value);
-
-    void saveBoolean(String key, boolean value);
+public interface FcmPushRegistrationListener {
+    /**
+     *   It will be called when registering for push notification is completed.
+     *   @param status Error Code - if different than SUCCESS text will be filled with error
+     *   @param text Error text
+    **/
+    void onRegisteredForPush(RCClient.ErrorCodes status, String text);
 
 }

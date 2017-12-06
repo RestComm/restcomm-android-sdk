@@ -32,9 +32,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Binder;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
 import android.util.Log;
@@ -44,14 +42,13 @@ import org.restcomm.android.sdk.SignalingClient.JainSipClient.JainSipConfigurati
 import org.restcomm.android.sdk.SignalingClient.SignalingClient;
 //import org.restcomm.android.sdk.util.ErrorStruct;
 import org.restcomm.android.sdk.fcm.FcmConfigurationHandler;
-import org.restcomm.android.sdk.fcm.FcmOnPushRegistrationListener;
-import org.restcomm.android.sdk.storage.StorageManager;
+import org.restcomm.android.sdk.fcm.FcmPushRegistrationListener;
+import org.restcomm.android.sdk.storage.StorageManagerInterface;
 import org.restcomm.android.sdk.storage.StorageManagerPreferences;
 import org.restcomm.android.sdk.util.RCException;
 import org.restcomm.android.sdk.util.RCLogger;
 import org.restcomm.android.sdk.util.RCUtils;
 
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -112,7 +109,7 @@ import java.util.Map;
  * You can also check the Sample Applications on how to properly use that at the Examples directory in the GitHub repository
  * @see RCConnection
  */
-public class RCDevice extends Service implements SignalingClient.SignalingClientListener, FcmOnPushRegistrationListener {
+public class RCDevice extends Service implements SignalingClient.SignalingClientListener, FcmPushRegistrationListener {
    /**
     * Device state
     */
@@ -173,7 +170,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       ICE_SERVERS_CUSTOM,  /** Don't use a configuration URL, but directly provide the set of ICE servers (i.e. the App needs to have logic to retrieve them  and provide them) */
    }
 
-    StorageManagerPreferences mStorageManagerPreferences;
 
    /**
     * Parameter keys for RCClient.createDevice() and RCDevice.updateParams()
@@ -212,12 +208,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       public static final String PUSH_NOTIFICATIONS_FCM_SERVER_KEY = "push-fcm-key";
       public static final String PUSH_NOTIFICATION_TIMEOUT_MESSAGING_SERVICE = "push-timeout-message-service";
 
-   }
-
-   public interface DefaultValues {
-      String PUSH_NOTIFICATION_DEFAULT_EMAIL = "ACCOUNT EMAIL ";
-      String PUSH_NOTIFICATION_DEFAULT_PASSWORD = "ACCOUNT PASSWORD";
-      String PUSH_NOTIFICATION_FCM_SERVER_KEY = "FCM SERVER KEY";
    }
 
    private static final String TAG = "RCDevice";
@@ -354,7 +344,11 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    // how many Activities are attached to the Service
    private int serviceReferenceCount = 0;
 
+   private StorageManagerPreferences storageManagerPreferences;
+
    private boolean isReleasing = false;
+
+   private boolean clearPushData = false;
 
    public enum NotificationType {
       ACCEPT_CALL_VIDEO,
@@ -550,7 +544,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       if (!isServiceInitialized) {
 
          isServiceInitialized = true;
-         //context = activityContext; //todo: Oggie, I would remove the activityContext from method initialize we dont use it...
+         //context = activityContext;
          state = DeviceState.OFFLINE;
 
          RCLogger.i(TAG, "RCDevice(): " + parameters.toString());
@@ -558,8 +552,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          RCUtils.validateDeviceParms(parameters);
 
          //save parameters to storage
-          mStorageManagerPreferences = new StorageManagerPreferences(this);
-          saveParams(mStorageManagerPreferences, parameters);
+          storageManagerPreferences = new StorageManagerPreferences(this);
+          saveParams(storageManagerPreferences, parameters);
 
 
          //this.updateCapabilityToken(capabilityToken);
@@ -569,40 +563,47 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
                (Intent) parameters.get(ParameterKeys.INTENT_INCOMING_MESSAGE));
 
          connections = new HashMap<String, RCConnection>();
-         // initialize JAIN SIP if we have connectivity
-         this.parameters = parameters;
 
-         // check if TURN keys are there
-         //params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
-
-         signalingClient = new SignalingClient();
-         signalingClient.open(this, getApplicationContext(), parameters);
-
-
-         // Create and audio manager that will take care of audio routing,
-         // audio modes, audio device enumeration etc.
-         audioManager = AppRTCAudioManager.create(getApplicationContext(), new Runnable() {
-                  // This method will be called each time the audio state (number and
-                  // type of devices) has been changed.
-                  @Override
-                  public void run()
-                  {
-                     onAudioManagerChangedState();
-                  }
-               }
-         );
-
-         // Store existing audio settings and change audio mode to
-         // MODE_IN_COMMUNICATION for best possible VoIP performance.
-         RCLogger.d(TAG, "Initializing the audio manager...");
-         audioManager.init(parameters);
-
+         //if there is already data for registering to push, dont clear it (onOpenReplay is using this parameter)
+         this.clearPushData = false;
+         connectSignaling(parameters);
       }
       else {
          throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_ALREADY_INITIALIZED);
       }
 
       return true;
+   }
+
+   private void connectSignaling(HashMap<String, Object> params){
+      // initialize JAIN SIP if we have connectivity
+      this.parameters = params;
+
+      // check if TURN keys are there
+      //params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
+      if (signalingClient == null) {
+         signalingClient = new SignalingClient();
+         signalingClient.open(this, getApplicationContext(), params);
+      }
+
+      if (audioManager == null) {
+         // Create and audio manager that will take care of audio routing,
+         // audio modes, audio device enumeration etc.
+         audioManager = AppRTCAudioManager.create(getApplicationContext(), new Runnable() {
+                    // This method will be called each time the audio state (number and
+                    // type of devices) has been changed.
+                    @Override
+                    public void run() {
+                       onAudioManagerChangedState();
+                    }
+                 }
+         );
+
+         // Store existing audio settings and change audio mode to
+         // MODE_IN_COMMUNICATION for best possible VoIP performance.
+         RCLogger.d(TAG, "Initializing the audio manager...");
+         audioManager.init(params);
+      }
    }
 
    /**
@@ -648,11 +649,14 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
       state = DeviceState.OFFLINE;
 
+      if (signalingClient!=null) {
+         signalingClient.close();
+         signalingClient = null;
+      }
 
       if (isServiceAttached) {
          isReleasing = true;
-         signalingClient.close();
-          signalingClient = null;
+
       } else {
          listener.onReleased(this, RCClient.ErrorCodes.SUCCESS.ordinal(), "");
          listener = null;
@@ -965,16 +969,51 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     *               the System Wide Android CA Store, so that we properly accept only legit server certificates. If not passed (or false) signaling is cleartext (optional) <br>
     *               <b>RCDevice.ParameterKeys.MEDIA_TURN_ENABLED</b>: Should TURN be enabled for webrtc media? (optional) <br>
     *               <b>RCDevice.ParameterKeys.SIGNALING_LOCAL_PORT</b>: Local port to use for signaling (optional) <br>
+    *
+    *                //push notification keys
+    *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME</b>: name of the client application
+    *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL</b>: account's email
+    *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD </b>: password for an account
+    *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT</b>: true if we want to enable push on server for the account, otherwise false
+    *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN</b>: domain for the push notifications; for example: push.restcomm.com
+    *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN</b>: Restcomm HTTP domain, like 'cloud.restcomm.com'
+    *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY</b>: server hash key for created application in firebase cloud messaging
+    *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATION_TIMEOUT_MESSAGING_SERVICE</b>: RCDevice will have timer introduced for closing because of the message background logic this is introduced in the design. The timer by default will be 5 seconds; It can be changed by sending parameter with value (in milliseconds)
+
     * @see RCDevice
     * @return right now this is more of a placeholder and always returns true
     */
    public boolean updateParams(HashMap<String, Object> params)
    {
-      signalingClient.reconfigure(params);
 
       // remember that the new parameters can be just a subset of the currently stored in this.parameters, so to update the current parameters we need
       // to merge them with the new (i.e. keep the old and replace any new keys with new values)
+      if (this.parameters == null){
+         this.parameters = new HashMap<String, Object>();
+      }
       this.parameters = JainSipConfiguration.mergeParameters(this.parameters, params);
+
+      //save params for background
+      if (storageManagerPreferences == null){
+         storageManagerPreferences = new StorageManagerPreferences(this);
+      }
+      saveParams(storageManagerPreferences, parameters);
+
+
+      //if there is a signaling object then we will call it's reconfigure method
+      // and for registering push we will call register for push with clear flag.
+      if (signalingClient != null) {
+          signalingClient.reconfigure(params);
+          registerForPush(true);
+      } else {
+         //if we don't have the signaling client object, we need to recreate it
+         //when signaling has been successfully connected registering for push will be called, hence:
+         //we need to set clearing push data (onOpenReplay is using it to know should update all settings for push)
+         this.clearPushData = true;
+         connectSignaling(parameters);
+         //** Note **//
+         // when we change the logic to have signaling and push in parallel we will change this also
+      }
 
       // TODO: need to provide asynchronous status for this
       return true;
@@ -1025,26 +1064,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          return;
       }
 
-       boolean registerForPushAvailable = false;
-       //register for push
-       if (mStorageManagerPreferences != null) {
-           if (allPushRegisterDataAvailable()) {
-               new FcmConfigurationHandler(mStorageManagerPreferences, this).registerForPush();
-               registerForPushAvailable = true;
-           }
-       }
-
-       //something is missing for push configuration,
-       //remove it
-       if (!registerForPushAvailable) {
-           if (isServiceAttached) {
-               listener.onInitialized(this, connectivityStatus, RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_PARAMETERS_MISSING.ordinal(), RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_PARAMETERS_MISSING));
-           } else {
-               RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
-                       RCClient.errorText(RCClient.ErrorCodes.ERROR_MESSAGE_PUSH_PARAMETERS_MISSING));
-           }
-           release();
-       }
+      //we dont need to clear data
+      registerForPush(clearPushData);
+      clearPushData = false;
 
    }
 
@@ -1694,6 +1716,30 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       startForeground(ONCALL_NOTIFICATION_ID, builder.build());
    }
 
+   public void registerForPush(boolean clearFcmData){
+      boolean registerForPushAvailable = false;
+      //register for push
+      if (storageManagerPreferences != null) {
+         if (allPushRegisterDataAvailable()) {
+            new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(clearFcmData);
+            registerForPushAvailable = true;
+         }
+      }
+
+      //something is missing for push configuration,
+      //remove it
+      if (!registerForPushAvailable) {
+         if (isServiceAttached && listener != null) {
+            listener.onInitialized(this, cachedConnectivityStatus, RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING.ordinal(), RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING));
+         } else {
+            RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
+                    RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING));
+         }
+
+         release();
+      }
+   }
+
    // -- FcmMessageListener
 
     @Override
@@ -1715,7 +1761,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
                         RCClient.errorText(status));
             }
 
-            release();
+           release();
         }
     }
 
@@ -1773,39 +1819,40 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       // is active.
    }
 
-   private void saveParams(StorageManager storageManager, HashMap<String, Object> params){
+   private void saveParams(StorageManagerInterface storageManagerInterface, HashMap<String, Object> params){
         for (Map.Entry<String, Object> entry : params.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
 
             if (value instanceof String){
-                storageManager.saveString(key, (String) value);
+                storageManagerInterface.saveString(key, (String) value);
             } else if (value instanceof Integer){
-                storageManager.saveInt(key, (int)value);
+                storageManagerInterface.saveInt(key, (int)value);
             } else if (value instanceof Boolean){
-                storageManager.saveBoolean(key, (boolean)value);
+                storageManagerInterface.saveBoolean(key, (boolean)value);
             } else if (value instanceof Intent){
-                storageManager.saveString(key,((Intent) value).toUri(Intent.URI_INTENT_SCHEME));
+                storageManagerInterface.saveString(key,((Intent) value).toUri(Intent.URI_INTENT_SCHEME));
             }
         }
     }
 
 
     private boolean allPushRegisterDataAvailable(){
-        String applicationName = mStorageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, null);
-        String accountEmail = mStorageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, null);
-        if (accountEmail.equals(DefaultValues.PUSH_NOTIFICATION_DEFAULT_EMAIL)){
-            accountEmail = null;
-        }
-        String accountPassword = mStorageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, null);
+        String applicationName = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, null);
+        String accountEmail = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, null);
 
-        if (accountPassword.equals(DefaultValues.PUSH_NOTIFICATION_DEFAULT_PASSWORD)){
-            accountPassword = null;
+        if (accountEmail.equals("ACCOUNT EMAIL")){
+           accountEmail = null;
+        }
+        String accountPassword = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, null);
+
+        if (accountPassword.equals("ACCOUNT PASSWORD")){
+           accountPassword = null;
         }
 
-        String pushDomain = mStorageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, null);
-        String httpDomain = mStorageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, null);
-        String fcmServerKey = mStorageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, null);
+        String pushDomain = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, null);
+        String httpDomain = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, null);
+        String fcmServerKey = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, null);
         if (fcmServerKey.equals("")){
             fcmServerKey = null;
         }

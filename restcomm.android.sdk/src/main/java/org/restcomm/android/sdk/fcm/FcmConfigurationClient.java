@@ -38,6 +38,10 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 
+
+/**
+ * Manage api calls and responses for registering push on server
+ */
 public class FcmConfigurationClient {
 
     private static final String TAG = FcmConfigurationClient.class.getCanonicalName();
@@ -422,18 +426,18 @@ public class FcmConfigurationClient {
                 JSONArray inputJson = new JSONArray(jsonString);
                 for (int i = 0; i < inputJson.length(); i++){
                     JSONObject client = inputJson.getJSONObject(i);
-                    return extractFromJsonObject(client, applicationName);
+                    return extractFromJsonObjectApplication(client, applicationName);
                 }
             } else {
                 JSONObject client = new JSONObject(jsonString);
-                return extractFromJsonObject(client, applicationName);
+                return extractFromJsonObjectApplication(client, applicationName);
             }
 
         }
         return null;
     }
 
-    private FcmApplication extractFromJsonObject(JSONObject client, String applicationName) throws IOException, JSONException{
+    private FcmApplication extractFromJsonObjectApplication(JSONObject client, String applicationName) throws IOException, JSONException{
         String friendlyName = client.getString("FriendlyName");
         if (friendlyName.equals(applicationName)){
             String sid = client.getString("Sid");

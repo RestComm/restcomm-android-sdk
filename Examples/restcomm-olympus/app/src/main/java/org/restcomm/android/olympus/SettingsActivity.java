@@ -329,8 +329,22 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
          }
          updated = true;
       }
-      //** NOTE: Push settings are managed with the preferences settings screen and
-      //they are passed to RCDevice by init in MainActivity;
+      else if (key.equals(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL)) {
+         params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, ""));
+         updated = true;
+      }
+      else if (key.equals(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD)) {
+         params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, ""));
+         updated = true;
+      }
+      else if (key.equals(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN)) {
+         params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, ""));
+         updated = true;
+      }
+      else if (key.equals(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN)) {
+         params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, ""));
+         updated = true;
+      }
 
    }
 
