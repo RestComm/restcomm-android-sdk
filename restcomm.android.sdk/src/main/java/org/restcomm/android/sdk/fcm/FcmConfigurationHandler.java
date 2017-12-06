@@ -55,7 +55,7 @@ public class FcmConfigurationHandler {
 
     private static final String TYPE = "fcm";
 
-    private WeakReference<StorageManagerInterface> mStorageManagerWeak;
+    private StorageManagerInterface mStorageManager;
     private FcmConfigurationClient mFcmConfigurationClient;
     private String mEmail;
     private String mUsername;
@@ -63,7 +63,7 @@ public class FcmConfigurationHandler {
     private String mFcmSecretKey;
     private boolean mEnablePush;
 
-    private WeakReference<FcmPushRegistrationListener> mListenerWeak;
+    private FcmPushRegistrationListener mListener;
 
 
     /**
@@ -80,16 +80,16 @@ public class FcmConfigurationHandler {
      *  RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY - (server hash key for created application in firebase cloud messaging)
      **/
     public FcmConfigurationHandler(StorageManagerInterface storageManagerInterface, FcmPushRegistrationListener listener){
-        this.mStorageManagerWeak = new WeakReference<StorageManagerInterface>(storageManagerInterface);
-        this.mListenerWeak = new WeakReference<FcmPushRegistrationListener>(listener);
-        mEmail = storageManagerInterface.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, "");
-        String password = storageManagerInterface.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, "");
-        String pushDomain = storageManagerInterface.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, "");
-        String httpDomain = storageManagerInterface.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, "");
-        mEnablePush = storageManagerInterface.getBoolean(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
-        mUsername = storageManagerInterface.getString(RCDevice.ParameterKeys.SIGNALING_USERNAME, "");
-        mApplicationName =  storageManagerInterface.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, "");
-        mFcmSecretKey = storageManagerInterface.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, "");
+        this.mStorageManager = storageManagerInterface;
+        this.mListener = listener;
+        mEmail = this.mStorageManager.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, "");
+        String password = this.mStorageManager.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, "");
+        String pushDomain = this.mStorageManager.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, "");
+        String httpDomain = this.mStorageManager.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, "");
+        mEnablePush = this.mStorageManager.getBoolean(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
+        mUsername = this.mStorageManager.getString(RCDevice.ParameterKeys.SIGNALING_USERNAME, "");
+        mApplicationName =  this.mStorageManager.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, "");
+        mFcmSecretKey = this.mStorageManager.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, "");
         this.mFcmConfigurationClient = new FcmConfigurationClient(mEmail, password, pushDomain, httpDomain);
     }
 
@@ -100,11 +100,11 @@ public class FcmConfigurationHandler {
     @SuppressWarnings("unchecked")
     public void registerForPush(){
         //get all data before running in background (we dont want context from storage manager to be inside)
-        String accountSid = mStorageManagerWeak.get().getString(FCM_ACCOUNT_SID, null);
-        String clientSid = mStorageManagerWeak.get().getString(FCM_CLIENT_SID, null);
-        String applicationString = mStorageManagerWeak.get().getString(FCM_APPLICATION, null);
-        String credentialsString = mStorageManagerWeak.get().getString(FCM_CREDENTIALS, null);
-        String bindingString = mStorageManagerWeak.get().getString(FCM_BINDING, null);
+        String accountSid = mStorageManager.getString(FCM_ACCOUNT_SID, null);
+        String clientSid = mStorageManager.getString(FCM_CLIENT_SID, null);
+        String applicationString = mStorageManager.getString(FCM_APPLICATION, null);
+        String credentialsString = mStorageManager.getString(FCM_CREDENTIALS, null);
+        String bindingString = mStorageManager.getString(FCM_BINDING, null);
 
         HashMap map = new HashMap<String, String>();
         map.put(FCM_ACCOUNT_SID, accountSid);
@@ -277,24 +277,23 @@ public class FcmConfigurationHandler {
                 String bindingString = resultHash.get(FCM_BINDING);
 
                 RCLogger.v(TAG, "Storing RESULTS");
-                if (mStorageManagerWeak.get() != null) {
-                    mStorageManagerWeak.get().saveString(FCM_ACCOUNT_SID, accountSid);
-                    mStorageManagerWeak.get().saveString(FCM_CLIENT_SID, clientSid);
-                    mStorageManagerWeak.get().saveString(FCM_APPLICATION, applicationString);
-                    mStorageManagerWeak.get().saveString(FCM_CREDENTIALS, credentialsString);
-                    mStorageManagerWeak.get().saveString(FCM_BINDING, bindingString);
+                if (mStorageManager != null) {
+                    mStorageManager.saveString(FCM_ACCOUNT_SID, accountSid);
+                    mStorageManager.saveString(FCM_CLIENT_SID, clientSid);
+                    mStorageManager.saveString(FCM_APPLICATION, applicationString);
+                    mStorageManager.saveString(FCM_CREDENTIALS, credentialsString);
+                    mStorageManager.saveString(FCM_BINDING, bindingString);
                 }
 
-
                 //if listener exists
-                if (mListenerWeak.get() != null) {
-                    mListenerWeak.get().onRegisteredForPush(RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
+                if (mListener != null) {
+                    mListener.onRegisteredForPush(RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
                 }
 
             } else {
                 RCClient.ErrorCodes errorCode = result.second;
-                if (mListenerWeak.get() != null) {
-                    mListenerWeak.get().onRegisteredForPush(errorCode, RCClient.errorText(errorCode));
+                if (mListener != null) {
+                    mListener.onRegisteredForPush(errorCode, RCClient.errorText(errorCode));
                 }
             }
 
