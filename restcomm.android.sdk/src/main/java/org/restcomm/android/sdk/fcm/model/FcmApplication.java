@@ -26,7 +26,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.restcomm.android.sdk.util.RCLogger;
 
-public class FcmApplication extends FcmModel{
+public class FcmApplication implements FcmModelInterface {
 
     private static final String TAG = FcmApplication.class.getCanonicalName();
 
