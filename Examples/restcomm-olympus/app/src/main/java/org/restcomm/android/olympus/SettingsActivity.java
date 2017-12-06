@@ -44,7 +44,6 @@ import android.view.MenuItem;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCDevice;
 //import org.restcomm.android.sdk.util.ErrorStruct;
-import org.restcomm.android.sdk.fcm.FcmMessages;
 import org.restcomm.android.sdk.util.RCException;
 import org.restcomm.android.sdk.util.RCUtils;
 
@@ -253,18 +252,19 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
          params.put(RCDevice.ParameterKeys.SIGNALING_PASSWORD, prefs.getString(RCDevice.ParameterKeys.SIGNALING_PASSWORD, "1234"));
          updated = true;
       }
-      else if (key.equals(FcmMessages.ParameterKeys.RESTCOMM_ACCOUNT_EMAIL)) {
-         params.put(FcmMessages.ParameterKeys.RESTCOMM_ACCOUNT_EMAIL, prefs.getString(FcmMessages.ParameterKeys.RESTCOMM_ACCOUNT_EMAIL, "administrator@company.com"));
-         updated = true;
-      }
-      else if (key.equals(FcmMessages.ParameterKeys.RESTCOMM_ACCOUNT_PASSWORD)) {
-         params.put(FcmMessages.ParameterKeys.RESTCOMM_ACCOUNT_PASSWORD, prefs.getString(FcmMessages.ParameterKeys.RESTCOMM_ACCOUNT_PASSWORD, ""));
-         updated = true;
-      }
-      else if (key.equals(FcmMessages.ParameterKeys.PUSH_NOTIFICATION_DOMAIN)) {
-         params.put(FcmMessages.ParameterKeys.PUSH_NOTIFICATION_DOMAIN, prefs.getString(FcmMessages.ParameterKeys.PUSH_NOTIFICATION_DOMAIN, "push.restcomm.com"));
-         updated = true;
-      }
+      //todo:oggie
+//      else if (key.equals(FcmMessages.ParameterKeys.RESTCOMM_ACCOUNT_EMAIL)) {
+//         params.put(FcmMessages.ParameterKeys.RESTCOMM_ACCOUNT_EMAIL, prefs.getString(FcmMessages.ParameterKeys.RESTCOMM_ACCOUNT_EMAIL, "administrator@company.com"));
+//         updated = true;
+//      }
+//      else if (key.equals(FcmMessages.ParameterKeys.RESTCOMM_ACCOUNT_PASSWORD)) {
+//         params.put(FcmMessages.ParameterKeys.RESTCOMM_ACCOUNT_PASSWORD, prefs.getString(FcmMessages.ParameterKeys.RESTCOMM_ACCOUNT_PASSWORD, ""));
+//         updated = true;
+//      }
+//      else if (key.equals(FcmMessages.ParameterKeys.PUSH_NOTIFICATION_DOMAIN)) {
+//         params.put(FcmMessages.ParameterKeys.PUSH_NOTIFICATION_DOMAIN, prefs.getString(FcmMessages.ParameterKeys.PUSH_NOTIFICATION_DOMAIN, "push.restcomm.com"));
+//         updated = true;
+//      }
       else if (key.equals(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED)) {
          params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
          updated = true;

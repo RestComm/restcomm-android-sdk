@@ -22,6 +22,14 @@
 
 package org.restcomm.android.sdk.fcm;
 
-public interface FcmMessageListener {
-   public void onFcmMessageReceived(String from, String message);
+import org.restcomm.android.sdk.RCClient;
+
+public interface FcmPushRegistrationListener {
+    /**
+     *   It will be called when registering for push notification is completed.
+     *   @param status Error Code - if different than SUCCESS text will be filled with error
+     *   @param text Error text
+    **/
+    void onRegisteredForPush(RCClient.ErrorCodes status, String text);
+
 }

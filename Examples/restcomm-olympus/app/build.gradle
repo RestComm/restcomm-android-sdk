@@ -155,6 +155,7 @@ repositories {
         url "https://maven.google.com"
     }
 
+    google()
 }
 
 dependencies {
