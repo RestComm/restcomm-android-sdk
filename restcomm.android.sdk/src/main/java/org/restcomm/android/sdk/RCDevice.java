@@ -346,10 +346,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
    private StorageManagerPreferences storageManagerPreferences;
 
-   private boolean isReleasing = false;
-
-   private boolean clearPushData = false;
-
    public enum NotificationType {
       ACCEPT_CALL_VIDEO,
       ACCEPT_CALL_AUDIO,
@@ -434,8 +430,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       startService(intent);
 
       isServiceAttached = true;
-      if (signalingClient != null)
-         signalingClient.open(this, getApplicationContext(), parameters);
 
       // provide the binder
       return deviceBinder;
@@ -450,10 +444,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       Log.i(TAG, "%%  onRebind");
 
       isServiceAttached = true;
-      if (signalingClient != null)
-
-         signalingClient.open(this, getApplicationContext(), parameters);
-
    }
 
    /**
@@ -474,11 +464,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       Log.i(TAG, "%%  onUnbind");
 
       isServiceAttached = false;
-      if (signalingClient != null)
-         signalingClient.close();
-
-      signalingClient = null;
-
 
       return true;
    }
@@ -565,8 +550,34 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          connections = new HashMap<String, RCConnection>();
 
          //if there is already data for registering to push, dont clear it (onOpenReplay is using this parameter)
-         this.clearPushData = false;
-         connectSignaling(parameters);
+         // initialize JAIN SIP if we have connectivity
+         this.parameters = parameters;
+
+         // check if TURN keys are there
+         //params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
+         if (signalingClient == null) {
+            signalingClient = new SignalingClient();
+            signalingClient.open(this, getApplicationContext(), parameters);
+         }
+
+         if (audioManager == null) {
+            // Create and audio manager that will take care of audio routing,
+            // audio modes, audio device enumeration etc.
+            audioManager = AppRTCAudioManager.create(getApplicationContext(), new Runnable() {
+                       // This method will be called each time the audio state (number and
+                       // type of devices) has been changed.
+                       @Override
+                       public void run() {
+                          onAudioManagerChangedState();
+                       }
+                    }
+            );
+
+            // Store existing audio settings and change audio mode to
+            // MODE_IN_COMMUNICATION for best possible VoIP performance.
+            RCLogger.d(TAG, "Initializing the audio manager...");
+            audioManager.init(parameters);
+         }
       }
       else {
          throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_ALREADY_INITIALIZED);
@@ -575,36 +586,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       return true;
    }
 
-   private void connectSignaling(HashMap<String, Object> params){
-      // initialize JAIN SIP if we have connectivity
-      this.parameters = params;
 
-      // check if TURN keys are there
-      //params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
-      if (signalingClient == null) {
-         signalingClient = new SignalingClient();
-         signalingClient.open(this, getApplicationContext(), params);
-      }
-
-      if (audioManager == null) {
-         // Create and audio manager that will take care of audio routing,
-         // audio modes, audio device enumeration etc.
-         audioManager = AppRTCAudioManager.create(getApplicationContext(), new Runnable() {
-                    // This method will be called each time the audio state (number and
-                    // type of devices) has been changed.
-                    @Override
-                    public void run() {
-                       onAudioManagerChangedState();
-                    }
-                 }
-         );
-
-         // Store existing audio settings and change audio mode to
-         // MODE_IN_COMMUNICATION for best possible VoIP performance.
-         RCLogger.d(TAG, "Initializing the audio manager...");
-         audioManager.init(params);
-      }
-   }
 
    /**
     * Set level for SDK logging
@@ -648,22 +630,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
 
       state = DeviceState.OFFLINE;
-
-      if (signalingClient!=null) {
-         signalingClient.close();
-         signalingClient = null;
-      }
-
-      if (isServiceAttached) {
-         isReleasing = true;
-
-      } else {
-         listener.onReleased(this, RCClient.ErrorCodes.SUCCESS.ordinal(), "");
-         listener = null;
-         stopSelf();
-      }
-
-
 
       isServiceAttached = false;
       isServiceInitialized = false;
@@ -988,9 +954,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
       // remember that the new parameters can be just a subset of the currently stored in this.parameters, so to update the current parameters we need
       // to merge them with the new (i.e. keep the old and replace any new keys with new values)
-      if (this.parameters == null){
-         this.parameters = new HashMap<String, Object>();
-      }
       this.parameters = JainSipConfiguration.mergeParameters(this.parameters, params);
 
       //save params for background
@@ -1000,20 +963,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       saveParams(storageManagerPreferences, parameters);
 
 
-      //if there is a signaling object then we will call it's reconfigure method
-      // and for registering push we will call register for push with clear flag.
-      if (signalingClient != null) {
-          signalingClient.reconfigure(params);
-          registerForPush(true);
-      } else {
-         //if we don't have the signaling client object, we need to recreate it
-         //when signaling has been successfully connected registering for push will be called, hence:
-         //we need to set clearing push data (onOpenReplay is using it to know should update all settings for push)
-         this.clearPushData = true;
-         connectSignaling(parameters);
-         //** Note **//
-         // when we change the logic to have signaling and push in parallel we will change this also
-      }
+      signalingClient.reconfigure(params);
+      registerForPush(true);
 
       // TODO: need to provide asynchronous status for this
       return true;
@@ -1059,15 +1010,21 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          }
          else {
             RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
-                  RCClient.errorText(status));
+                    RCClient.errorText(status));
          }
          return;
       }
 
-      //we dont need to clear data
-      registerForPush(clearPushData);
-      clearPushData = false;
-
+      state = DeviceState.READY;
+      if (isServiceAttached) {
+         listener.onInitialized(this, connectivityStatus, RCClient.ErrorCodes.SUCCESS.ordinal(), RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
+      }
+      else {
+         RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
+                 RCClient.errorText(status));
+      }
+      //register for push
+      registerForPush(false);
    }
 
     /**
@@ -1080,14 +1037,11 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    {
       RCLogger.i(TAG, "onCloseReply(): id: " + jobId + ", status: " + status + ", text: " + text);
 
-      if (isReleasing) {
-         listener.onReleased(this, status.ordinal(), text);
-         listener = null;
-         isReleasing = false;
-         stopSelf();
-      }
+      listener.onReleased(this, status.ordinal(), text);
+      this.listener = null;
+      // Shut down the service
+      stopSelf();
 
-      state = DeviceState.OFFLINE;
    }
 
     /**
@@ -1730,38 +1684,30 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       //remove it
       if (!registerForPushAvailable) {
          if (isServiceAttached && listener != null) {
-            listener.onInitialized(this, cachedConnectivityStatus, RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING.ordinal(), RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING));
+            listener.onWarning(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING.ordinal(), RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING));
          } else {
-            RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
+            RCLogger.w(TAG, "RegisterForPush  warning: " +
                     RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING));
          }
 
-         release();
+
       }
    }
 
    // -- FcmMessageListener
-
     @Override
     public void onRegisteredForPush(RCClient.ErrorCodes status, String text) {
         if (status == RCClient.ErrorCodes.SUCCESS){
-            state = DeviceState.READY;
-            if (isServiceAttached) {
-                listener.onInitialized(this, cachedConnectivityStatus, RCClient.ErrorCodes.SUCCESS.ordinal(), RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
-            } else {
-                RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
-                        RCClient.errorText(status));
-            }
+            //just log success
+           RCLogger.i(TAG, "Device and user are successfully registered!");
     //error
         } else {
             if (isServiceAttached) {
-                listener.onInitialized(this, cachedConnectivityStatus, status.ordinal(), RCClient.errorText(status));
+                listener.onWarning(status.ordinal(), RCClient.errorText(status));
             } else {
-                RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
-                        RCClient.errorText(status));
+               RCLogger.w(TAG, "RegisterForPush  warning: " +
+                       RCClient.errorText(status));
             }
-
-           release();
         }
     }
 
