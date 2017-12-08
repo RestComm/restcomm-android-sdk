@@ -629,10 +629,13 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          audioManager = null;
       }
 
+      signalingClient.close();
       state = DeviceState.OFFLINE;
 
       isServiceAttached = false;
       isServiceInitialized = false;
+
+
    }
 
    /**
@@ -1004,7 +1007,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    {
       RCLogger.i(TAG, "onOpenReply(): id: " + jobId + ", connectivityStatus: " + connectivityStatus + ", status: " + status + ", text: " + text);
       cachedConnectivityStatus = connectivityStatus;
-      if (status != RCClient.ErrorCodes.SUCCESS) {
+
          if (isServiceAttached) {
             listener.onInitialized(this, connectivityStatus, status.ordinal(), text);
          }
@@ -1012,19 +1015,15 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
             RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
                     RCClient.errorText(status));
          }
-         return;
-      }
 
-      state = DeviceState.READY;
-      if (isServiceAttached) {
-         listener.onInitialized(this, connectivityStatus, RCClient.ErrorCodes.SUCCESS.ordinal(), RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
-      }
-      else {
-         RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
-                 RCClient.errorText(status));
-      }
-      //register for push
-      registerForPush(false);
+         if (status == RCClient.ErrorCodes.SUCCESS){
+            state = DeviceState.READY;
+         } else {
+            return;
+         }
+
+         //register for push
+         registerForPush(false);
    }
 
     /**
@@ -1684,7 +1683,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       //remove it
       if (!registerForPushAvailable) {
          if (isServiceAttached && listener != null) {
-            listener.onWarning(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING.ordinal(), RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING));
+            listener.onWarning(this, RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING.ordinal(), RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING));
          } else {
             RCLogger.w(TAG, "RegisterForPush  warning: " +
                     RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING));
@@ -1703,7 +1702,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     //error
         } else {
             if (isServiceAttached) {
-                listener.onWarning(status.ordinal(), RCClient.errorText(status));
+                listener.onWarning(this, status.ordinal(), RCClient.errorText(status));
             } else {
                RCLogger.w(TAG, "RegisterForPush  warning: " +
                        RCClient.errorText(status));

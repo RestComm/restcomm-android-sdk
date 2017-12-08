@@ -486,7 +486,7 @@ public class MainActivity extends AppCompatActivity
    }
 
    @Override
-   public void onWarning(int statusCode, String statusText) {
+   public void onWarning(RCDevice device, int statusCode, String statusText) {
       if (statusCode != RCClient.ErrorCodes.SUCCESS.ordinal()) {
          Toast.makeText(getApplicationContext(), "RCDevice Warning message: " + statusText, Toast.LENGTH_LONG).show();
       }

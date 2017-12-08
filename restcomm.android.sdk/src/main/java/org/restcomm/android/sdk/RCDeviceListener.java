@@ -94,10 +94,11 @@ public interface RCDeviceListener {
 
    /**
     * RCDevice warning has been raised, check statusCode and statusText
+    * @param device    Device of interest
     * @param statusCode Status code
     * @param statusText Status text
     */
-   void onWarning(int statusCode,  String statusText);
+   void onWarning(RCDevice device, int statusCode,  String statusText);
 
    /**
     *  RCDevice failed to initialize
