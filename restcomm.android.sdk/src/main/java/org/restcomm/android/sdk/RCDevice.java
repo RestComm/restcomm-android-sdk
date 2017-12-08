@@ -346,8 +346,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
    private StorageManagerPreferences storageManagerPreferences;
 
-   private boolean isReleasing = false;
-
    public enum NotificationType {
       ACCEPT_CALL_VIDEO,
       ACCEPT_CALL_AUDIO,
@@ -432,8 +430,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       startService(intent);
 
       isServiceAttached = true;
-      if (signalingClient != null)
-         signalingClient.open(this, getApplicationContext(), parameters);
 
       // provide the binder
       return deviceBinder;
@@ -448,10 +444,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       Log.i(TAG, "%%  onRebind");
 
       isServiceAttached = true;
-      if (signalingClient != null)
-
-         signalingClient.open(this, getApplicationContext(), parameters);
-
    }
 
    /**
@@ -472,11 +464,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       Log.i(TAG, "%%  onUnbind");
 
       isServiceAttached = false;
-      if (signalingClient != null)
-         signalingClient.close();
-
-      signalingClient = null;
-
 
       return true;
    }
@@ -561,34 +548,36 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
                (Intent) parameters.get(ParameterKeys.INTENT_INCOMING_MESSAGE));
 
          connections = new HashMap<String, RCConnection>();
+
+         //if there is already data for registering to push, dont clear it (onOpenReplay is using this parameter)
          // initialize JAIN SIP if we have connectivity
          this.parameters = parameters;
 
          // check if TURN keys are there
          //params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
+         if (signalingClient == null) {
+            signalingClient = new SignalingClient();
+            signalingClient.open(this, getApplicationContext(), parameters);
+         }
 
-         signalingClient = new SignalingClient();
-         signalingClient.open(this, getApplicationContext(), parameters);
+         if (audioManager == null) {
+            // Create and audio manager that will take care of audio routing,
+            // audio modes, audio device enumeration etc.
+            audioManager = AppRTCAudioManager.create(getApplicationContext(), new Runnable() {
+                       // This method will be called each time the audio state (number and
+                       // type of devices) has been changed.
+                       @Override
+                       public void run() {
+                          onAudioManagerChangedState();
+                       }
+                    }
+            );
 
-
-         // Create and audio manager that will take care of audio routing,
-         // audio modes, audio device enumeration etc.
-         audioManager = AppRTCAudioManager.create(getApplicationContext(), new Runnable() {
-                  // This method will be called each time the audio state (number and
-                  // type of devices) has been changed.
-                  @Override
-                  public void run()
-                  {
-                     onAudioManagerChangedState();
-                  }
-               }
-         );
-
-         // Store existing audio settings and change audio mode to
-         // MODE_IN_COMMUNICATION for best possible VoIP performance.
-         RCLogger.d(TAG, "Initializing the audio manager...");
-         audioManager.init(parameters);
-
+            // Store existing audio settings and change audio mode to
+            // MODE_IN_COMMUNICATION for best possible VoIP performance.
+            RCLogger.d(TAG, "Initializing the audio manager...");
+            audioManager.init(parameters);
+         }
       }
       else {
          throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_ALREADY_INITIALIZED);
@@ -596,6 +585,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
       return true;
    }
+
+
 
    /**
     * Set level for SDK logging
@@ -638,23 +629,13 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          audioManager = null;
       }
 
+      signalingClient.close();
       state = DeviceState.OFFLINE;
-
-
-      if (isServiceAttached) {
-         isReleasing = true;
-         signalingClient.close();
-          signalingClient = null;
-      } else {
-         listener.onReleased(this, RCClient.ErrorCodes.SUCCESS.ordinal(), "");
-         listener = null;
-         stopSelf();
-      }
-
-
 
       isServiceAttached = false;
       isServiceInitialized = false;
+
+
    }
 
    /**
@@ -957,16 +938,36 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     *               the System Wide Android CA Store, so that we properly accept only legit server certificates. If not passed (or false) signaling is cleartext (optional) <br>
     *               <b>RCDevice.ParameterKeys.MEDIA_TURN_ENABLED</b>: Should TURN be enabled for webrtc media? (optional) <br>
     *               <b>RCDevice.ParameterKeys.SIGNALING_LOCAL_PORT</b>: Local port to use for signaling (optional) <br>
+    *
+    *                //push notification keys
+    *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME</b>: name of the client application
+    *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL</b>: account's email
+    *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD </b>: password for an account
+    *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT</b>: true if we want to enable push on server for the account, otherwise false
+    *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN</b>: domain for the push notifications; for example: push.restcomm.com
+    *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN</b>: Restcomm HTTP domain, like 'cloud.restcomm.com'
+    *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY</b>: server hash key for created application in firebase cloud messaging
+    *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATION_TIMEOUT_MESSAGING_SERVICE</b>: RCDevice will have timer introduced for closing because of the message background logic this is introduced in the design. The timer by default will be 5 seconds; It can be changed by sending parameter with value (in milliseconds)
+
     * @see RCDevice
     * @return right now this is more of a placeholder and always returns true
     */
    public boolean updateParams(HashMap<String, Object> params)
    {
-      signalingClient.reconfigure(params);
 
       // remember that the new parameters can be just a subset of the currently stored in this.parameters, so to update the current parameters we need
       // to merge them with the new (i.e. keep the old and replace any new keys with new values)
       this.parameters = JainSipConfiguration.mergeParameters(this.parameters, params);
+
+      //save params for background
+      if (storageManagerPreferences == null){
+         storageManagerPreferences = new StorageManagerPreferences(this);
+      }
+      saveParams(storageManagerPreferences, parameters);
+
+
+      signalingClient.reconfigure(params);
+      registerForPush(true);
 
       // TODO: need to provide asynchronous status for this
       return true;
@@ -1006,38 +1007,23 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    {
       RCLogger.i(TAG, "onOpenReply(): id: " + jobId + ", connectivityStatus: " + connectivityStatus + ", status: " + status + ", text: " + text);
       cachedConnectivityStatus = connectivityStatus;
-      if (status != RCClient.ErrorCodes.SUCCESS) {
+
          if (isServiceAttached) {
             listener.onInitialized(this, connectivityStatus, status.ordinal(), text);
          }
          else {
             RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
-                  RCClient.errorText(status));
+                    RCClient.errorText(status));
          }
-         return;
-      }
 
-       boolean registerForPushAvailable = false;
-       //register for push
-       if (storageManagerPreferences != null) {
-           if (allPushRegisterDataAvailable()) {
-               new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush();
-               registerForPushAvailable = true;
-           }
-       }
+         if (status == RCClient.ErrorCodes.SUCCESS){
+            state = DeviceState.READY;
+         } else {
+            return;
+         }
 
-       //something is missing for push configuration,
-       //remove it
-       if (!registerForPushAvailable) {
-           if (isServiceAttached) {
-               listener.onInitialized(this, connectivityStatus, RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING.ordinal(), RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING));
-           } else {
-               RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
-                       RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING));
-           }
-           release();
-       }
-
+         //register for push
+         registerForPush(false);
    }
 
     /**
@@ -1050,14 +1036,11 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    {
       RCLogger.i(TAG, "onCloseReply(): id: " + jobId + ", status: " + status + ", text: " + text);
 
-      if (isReleasing) {
-         listener.onReleased(this, status.ordinal(), text);
-         listener = null;
-         isReleasing = false;
-         stopSelf();
-      }
+      listener.onReleased(this, status.ordinal(), text);
+      this.listener = null;
+      // Shut down the service
+      stopSelf();
 
-      state = DeviceState.OFFLINE;
    }
 
     /**
@@ -1686,28 +1669,44 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       startForeground(ONCALL_NOTIFICATION_ID, builder.build());
    }
 
-   // -- FcmMessageListener
+   public void registerForPush(boolean clearFcmData){
+      boolean registerForPushAvailable = false;
+      //register for push
+      if (storageManagerPreferences != null) {
+         if (allPushRegisterDataAvailable()) {
+            new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(clearFcmData);
+            registerForPushAvailable = true;
+         }
+      }
 
+      //something is missing for push configuration,
+      //remove it
+      if (!registerForPushAvailable) {
+         if (isServiceAttached && listener != null) {
+            listener.onWarning(this, RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING.ordinal(), RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING));
+         } else {
+            RCLogger.w(TAG, "RegisterForPush  warning: " +
+                    RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING));
+         }
+
+
+      }
+   }
+
+   // -- FcmMessageListener
     @Override
     public void onRegisteredForPush(RCClient.ErrorCodes status, String text) {
         if (status == RCClient.ErrorCodes.SUCCESS){
-            state = DeviceState.READY;
-            if (isServiceAttached) {
-                listener.onInitialized(this, cachedConnectivityStatus, RCClient.ErrorCodes.SUCCESS.ordinal(), RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
-            } else {
-                RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
-                        RCClient.errorText(status));
-            }
+            //just log success
+           RCLogger.i(TAG, "Device and user are successfully registered!");
     //error
         } else {
             if (isServiceAttached) {
-                listener.onInitialized(this, cachedConnectivityStatus, status.ordinal(), RCClient.errorText(status));
+                listener.onWarning(this, status.ordinal(), RCClient.errorText(status));
             } else {
-                RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
-                        RCClient.errorText(status));
+               RCLogger.w(TAG, "RegisterForPush  warning: " +
+                       RCClient.errorText(status));
             }
-
-            release();
         }
     }
 
@@ -1786,13 +1785,14 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     private boolean allPushRegisterDataAvailable(){
         String applicationName = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, null);
         String accountEmail = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, null);
-        if (accountEmail.equals("_YOUR_EMAIL_")){
-            accountEmail = null;
+
+        if (accountEmail.equals("ACCOUNT EMAIL")){
+           accountEmail = null;
         }
         String accountPassword = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, null);
 
-        if (accountPassword.equals("_YOUR_PASSWORD_")){
-            accountPassword = null;
+        if (accountPassword.equals("ACCOUNT PASSWORD")){
+           accountPassword = null;
         }
 
         String pushDomain = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, null);

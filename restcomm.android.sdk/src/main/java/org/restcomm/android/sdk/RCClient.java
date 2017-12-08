@@ -308,20 +308,21 @@ public final class RCClient {
       }
       else if (errorCode == ErrorCodes.ERROR_MESSAGE_SEND_FAILED_DEVICE_OFFLINE) {
          return "Failed to send message; RCDevice is offline";
-      }else  if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ACCOUNT_SID_MISSING) {
-          return "Failed to register/update for push notification; Account sid cannot be found";
+      }
+      else  if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ACCOUNT_SID_MISSING) {
+          return "Failed to register/update for push notification. Account sid cannot be found";
       }
       else  if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_CLIENT_SID_MISSING) {
-          return "Failed to register/update for push notification; Client sid cannot be found";
+          return "Failed to register/update for push notification. Client sid cannot be found";
       }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_APPLICATION_MISSING){
-          return "Failed to register/update for push notification; Application cannot be found";
+          return "Failed to register/update for push notification. Application cannot be found";
       }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_CREDENTIALS_MISSING){
-          return "Failed to register/update for push notification; Credentials cannot be found";
+          return "Failed to register/update for push notification. Credentials cannot be found";
       }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_BINDING_MISSING){
-          return "Failed to register/update for push notification; Binding cannot be found";
+          return "Failed to register/update for push notification. Binding cannot be found";
       }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING){
           return "Missing parameters to set up push notifications";

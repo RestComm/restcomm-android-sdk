@@ -92,7 +92,18 @@ public class FcmConfigurationHandler {
         this.mFcmConfigurationClient = new FcmConfigurationClient(mEmail, password, pushDomain, httpDomain);
     }
 
-    public void registerForPush(){
+    /**
+     *  It will register device and application for push notifications
+     * @param clearFcmData , true if new data should be used for registration
+     */
+    public void registerForPush(boolean clearFcmData){
+        if (clearFcmData){
+            mStorageManager.saveString(FCM_ACCOUNT_SID, null);
+            mStorageManager.saveString(FCM_CLIENT_SID, null);
+            mStorageManager.saveString(FCM_APPLICATION, null);
+            mStorageManager.saveString(FCM_CREDENTIALS, null);
+            mStorageManager.saveString(FCM_BINDING, null);
+        }
         registerOrUpdateForPush(false);
     }
 
@@ -106,7 +117,7 @@ public class FcmConfigurationHandler {
      **/
     @SuppressWarnings("unchecked")
     private void registerOrUpdateForPush(boolean update){
-        //get all data before running in background (we dont want context from storage manager to be inside)
+        //get all data before running in background (we don't want context from storage manager to be inside)
         String accountSid = mStorageManager.getString(FCM_ACCOUNT_SID, null);
         String clientSid = mStorageManager.getString(FCM_CLIENT_SID, null);
         String applicationString = mStorageManager.getString(FCM_APPLICATION, null);

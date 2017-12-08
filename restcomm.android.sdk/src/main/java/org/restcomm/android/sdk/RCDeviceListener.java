@@ -91,6 +91,15 @@ public interface RCDeviceListener {
     */
    void onConnectivityUpdate(RCDevice device, RCConnectivityStatus connectivityStatus);
 
+
+   /**
+    * RCDevice warning has been raised, check statusCode and statusText
+    * @param device    Device of interest
+    * @param statusCode Status code
+    * @param statusText Status text
+    */
+   void onWarning(RCDevice device, int statusCode,  String statusText);
+
    /**
     *  RCDevice failed to initialize
     *
