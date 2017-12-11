@@ -185,7 +185,7 @@ public class FcmConfigurationHandler {
 
                 if (accountSid == null) {
                     RCLogger.v(TAG, "Account sid not found, getting it from server.");
-                    accountSid = fcmConfigurationClient.getAcccountSid(email);
+                    accountSid = fcmConfigurationClient.getAcccountSid();
                 }
 
                 if (accountSid != null) {

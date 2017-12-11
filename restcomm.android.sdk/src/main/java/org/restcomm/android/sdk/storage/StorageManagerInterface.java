@@ -21,6 +21,9 @@
  */
 
 package org.restcomm.android.sdk.storage;
+
+import java.util.Map;
+
 /**
  *  Interface with main storage saving and reading functions
  **/
@@ -39,4 +42,5 @@ public interface StorageManagerInterface {
 
     void saveBoolean(String key, boolean value);
 
+    Map<String, ?> getAllEntries();
 }

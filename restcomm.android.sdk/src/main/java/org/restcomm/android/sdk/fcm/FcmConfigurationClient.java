@@ -97,7 +97,7 @@ public class FcmConfigurationClient {
      * @param email - account email
      * @return String - account sid
      **/
-    public String getAcccountSid(String email){
+    public String getAcccountSid(){
         RCLogger.v(TAG, "getAcccountSid method started");
         String accountSid = null;
         try{

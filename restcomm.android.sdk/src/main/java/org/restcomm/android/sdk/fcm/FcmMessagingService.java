@@ -19,8 +19,10 @@ package org.restcomm.android.sdk.fcm;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 
+import android.content.Intent;
 import android.util.Log;
 
+import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.util.RCLogger;
 
 public class FcmMessagingService extends FirebaseMessagingService {
@@ -41,8 +43,13 @@ public class FcmMessagingService extends FirebaseMessagingService {
 
     private void sendNotification() {
         //start service
-        //todo: for now we will not do anything with the notification
-        //just write it on the Log
-        RCLogger.d(TAG, "sendNotification is called");
+        Intent intent = new Intent(this, RCDevice.class);
+        intent.setAction(RCDevice.ACTION_IS_FCM);
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O){
+            startForegroundService(intent);
+        } else{
+            startService(intent);
+        }
+        Log.d(TAG, "sendNotification is called");
     }
 }

@@ -24,12 +24,11 @@ package org.restcomm.android.sdk.SignalingClient;
 
 import android.content.Context;
 import android.os.Handler;
-import android.os.Looper;
 import android.os.Message;
+import android.util.Log;
 
 import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.RCDeviceListener;
-//import org.restcomm.android.sdk.RCMessage;
 import org.restcomm.android.sdk.util.RCLogger;
 
 import java.util.HashMap;
@@ -139,7 +138,7 @@ public class SignalingClient extends Handler {
    //private boolean closePending = false;
    // 10 second timeout for SignalingClient.close()
    //static private final int CLOSE_TIMEOUT = 10000;
-   private static boolean initialized = false;
+   private static boolean initialized = false; //todo:antonis, why static
 
    // private constructor to avoid client applications to use constructor
    public SignalingClient()
@@ -184,7 +183,6 @@ public class SignalingClient extends Handler {
 
       Message message = signalingHandler.obtainMessage(1, signalingMessage);
       message.sendToTarget();
-
       return jobId;
    }
 
@@ -322,30 +320,37 @@ public class SignalingClient extends Handler {
       // Gets the image task from the incoming Message object.
       SignalingMessage message = (SignalingMessage) inputMessage.obj;
 
+
       RCLogger.i(TAG, "handleMessage: type: " + message.type + ", jobId: " + message.jobId);
 
-      if (message.type == SignalingMessage.MessageType.OPEN_REPLY) {
+      if (message.type == SignalingMessage.MessageType.OPEN_REPLY && listener != null) {
          listener.onOpenReply(message.jobId, message.connectivityStatus, message.status, message.text);
       }
       else if (message.type == SignalingMessage.MessageType.CLOSE_REPLY) {
          signalingHandlerThread.quit();
          initialized = false;
          //closePending = false;
-         listener.onCloseReply(message.jobId, message.status, message.text);
+         if (listener != null) {
+            listener.onCloseReply(message.jobId, message.status, message.text);
+         }
+
       }
       else if (message.type == SignalingMessage.MessageType.RECONFIGURE_REPLY) {
-         listener.onReconfigureReply(message.jobId, message.connectivityStatus, message.status, message.text);
+         if (listener != null) {
+            listener.onReconfigureReply(message.jobId, message.connectivityStatus, message.status, message.text);
+         }
+
       }
-      else if (message.type == SignalingMessage.MessageType.ERROR_EVENT) {
+      else if (message.type == SignalingMessage.MessageType.ERROR_EVENT && listener != null) {
          listener.onErrorEvent(message.jobId, message.connectivityStatus, message.status, message.text);
       }
-      else if (message.type == SignalingMessage.MessageType.CONNECTIVITY_EVENT) {
+      else if (message.type == SignalingMessage.MessageType.CONNECTIVITY_EVENT  && listener != null) {
          listener.onConnectivityEvent(message.jobId, message.connectivityStatus);
       }
-      else if (message.type == SignalingMessage.MessageType.MESSAGE_INCOMING_EVENT) {
+      else if (message.type == SignalingMessage.MessageType.MESSAGE_INCOMING_EVENT  && listener != null) {
          listener.onMessageArrivedEvent(message.jobId, message.peer, message.messageText);
       }
-      else if (message.type == SignalingMessage.MessageType.MESSAGE_REPLY) {
+      else if (message.type == SignalingMessage.MessageType.MESSAGE_REPLY  && listener != null) {
          /*
          RCMessage rcMessage = messages.get(message.jobId);
          if (rcMessage == null) {
@@ -356,7 +361,7 @@ public class SignalingClient extends Handler {
          */
          listener.onMessageReply(message.jobId, message.status, message.text);
       }
-      else if (message.type == SignalingMessage.MessageType.REGISTERING_EVENT) {
+      else if (message.type == SignalingMessage.MessageType.REGISTERING_EVENT  && listener != null) {
          listener.onRegisteringEvent(message.jobId);
       }
       // Call related events

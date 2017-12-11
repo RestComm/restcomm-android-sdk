@@ -25,6 +25,8 @@ package org.restcomm.android.sdk.storage;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import java.util.Map;
+
 /**
  *  Class which stores data to device's shared preferences
  **/
@@ -73,6 +75,11 @@ public class StorageManagerPreferences implements StorageManagerInterface {
         SharedPreferences.Editor editor = mSharedPreferences.edit();
         editor.putBoolean(key, value).apply();
         editor.commit();
+    }
+
+    @Override
+    public Map<String, ?> getAllEntries(){
+       return mSharedPreferences.getAll();
     }
 }
 

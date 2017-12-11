@@ -171,6 +171,7 @@ dependencies {
     //compile 'testfairy:testfairy-android-sdk:1.4.5'
     //compile 'net.hockeyapp.android:HockeySDK:4.1.1'
     ////compile files('./libs/testfairy-android-sdk-1.4.6-unlimited-events.jar')
+    compile 'com.google.firebase:firebase-messaging:11.6.2'
 
     // AndroidJUnitRunner and JUnit Rules
     androidTestCompile 'com.android.support.test:runner:1.0.1'
