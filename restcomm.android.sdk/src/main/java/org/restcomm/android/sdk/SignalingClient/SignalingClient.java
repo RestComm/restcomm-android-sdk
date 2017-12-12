@@ -138,7 +138,7 @@ public class SignalingClient extends Handler {
    //private boolean closePending = false;
    // 10 second timeout for SignalingClient.close()
    //static private final int CLOSE_TIMEOUT = 10000;
-   private static boolean initialized = false; //todo:antonis, why static
+   private static boolean initialized = false;
 
    // private constructor to avoid client applications to use constructor
    public SignalingClient()

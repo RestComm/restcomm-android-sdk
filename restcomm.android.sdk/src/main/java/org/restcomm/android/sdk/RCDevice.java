@@ -1108,7 +1108,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          if (status == RCClient.ErrorCodes.SUCCESS){
             state = DeviceState.READY;
          } else {
-            release(); //todo:antonis
+            release();
             return;
          }
    }
