@@ -320,10 +320,9 @@ public class FcmConfigurationClient {
     /**
     * Creates credentials on server for the given FcmCredentials object
     * @param credentials - FcmCredentials object
-    * @param fcmSecret - Server key from firebase client
     * @return FcmCredentials - object if everything is okay, otherwise null
     **/
-    public FcmCredentials createCredentials(FcmCredentials credentials, String fcmSecret){
+    public FcmCredentials createCredentials(FcmCredentials credentials){
         RCLogger.v(TAG, "createCredentials method started");
         FcmCredentials fcmCredentials = null;
         HttpURLConnection connection = null;
@@ -337,7 +336,7 @@ public class FcmConfigurationClient {
                     "{\n" +
                             "  \"ApplicationSid\": \"" + credentials.getApplicationSid() + "\",\n" +
                             "  \"CredentialType\": \""+ credentials.getCredentialType() +"\",\n" +
-                            "  \"Secret\": \"" + fcmSecret + "\"\n" +
+                            "  \"Secret\": \"" + credentials.getFcmSecretKey() + "\"\n" +
                             "}";
             OutputStream outputStream = new BufferedOutputStream(connection.getOutputStream());
             outputStream.write(outputString.getBytes());
@@ -427,6 +426,7 @@ public class FcmConfigurationClient {
             RCLogger.v(TAG, "calling url: " + url);
             connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("POST");
+
             if (bindingSid != null){
                 connection.setRequestMethod("PUT");
             }
@@ -441,6 +441,7 @@ public class FcmConfigurationClient {
             OutputStream outputStream = new BufferedOutputStream(connection.getOutputStream());
             outputStream.write(outputString.getBytes());
             outputStream.close();
+
             int responseCode = connection.getResponseCode();
 
             if (responseCode == HttpURLConnection.HTTP_OK){
@@ -518,7 +519,7 @@ public class FcmConfigurationClient {
         String inputCredentialType = client.getString("CredentialType");
         if (applicationSidServer.equals(applicationSid) && inputCredentialType.equals("fcm")){
             String sid = client.getString("Sid");
-            return new FcmCredentials(sid, applicationSidServer, inputCredentialType);
+            return new FcmCredentials(sid, applicationSidServer, inputCredentialType, "");
         }
         return null;
     }

@@ -293,7 +293,8 @@ public class FcmConfigurationHandler {
                 credentials = new FcmCredentials();
                 credentials.fillFromJson(credentialsStorageString);
 
-                if (credentials.getApplicationSid().equals(application.getSid())) {
+                if (credentials.getApplicationSid().equals(application.getSid()) && (credentials.getFcmSecretKey()!=null
+                        && credentials.getFcmSecretKey().equals(fcmSecretKey))) {
                     return credentials;
                 }
             }
@@ -301,8 +302,8 @@ public class FcmConfigurationHandler {
             credentials = fcmConfigurationClient.getCredentials(application);
             //create new credentials
             if (credentials == null) {
-                credentials = new FcmCredentials("", application.getSid(), TYPE);
-                credentials = fcmConfigurationClient.createCredentials(credentials, fcmSecretKey);
+                credentials = new FcmCredentials("", application.getSid(), TYPE, fcmSecretKey);
+                credentials = fcmConfigurationClient.createCredentials(credentials);
             }
             return credentials;
         }
