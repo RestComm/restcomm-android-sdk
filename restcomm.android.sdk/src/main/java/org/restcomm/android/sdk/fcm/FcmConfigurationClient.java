@@ -31,6 +31,7 @@ import org.restcomm.android.sdk.fcm.model.FcmBinding;
 import org.restcomm.android.sdk.fcm.model.FcmCredentials;
 import org.restcomm.android.sdk.util.RCLogger;
 
+import android.text.BoringLayout;
 import android.util.Base64;
 
 import java.io.*;
@@ -320,9 +321,10 @@ public class FcmConfigurationClient {
     /**
     * Creates credentials on server for the given FcmCredentials object
     * @param credentials - FcmCredentials object
+    * @param fcmSecret - Server key from firebase client
     * @return FcmCredentials - object if everything is okay, otherwise null
     **/
-    public FcmCredentials createCredentials(FcmCredentials credentials){
+    public FcmCredentials createCredentials(FcmCredentials credentials, String fcmSecret){
         RCLogger.v(TAG, "createCredentials method started");
         FcmCredentials fcmCredentials = null;
         HttpURLConnection connection = null;
@@ -336,7 +338,7 @@ public class FcmConfigurationClient {
                     "{\n" +
                             "  \"ApplicationSid\": \"" + credentials.getApplicationSid() + "\",\n" +
                             "  \"CredentialType\": \""+ credentials.getCredentialType() +"\",\n" +
-                            "  \"Secret\": \"" + credentials.getFcmSecretKey() + "\"\n" +
+                            "  \"Secret\": \"" + fcmSecret + "\"\n" +
                             "}";
             OutputStream outputStream = new BufferedOutputStream(connection.getOutputStream());
             outputStream.write(outputString.getBytes());
@@ -357,6 +359,33 @@ public class FcmConfigurationClient {
         RCLogger.v(TAG, "createCredentials method ended; returning fcmCredentials");
         return fcmCredentials;
     }
+
+    public boolean deleteCredentials(String credentialsSid) {
+        RCLogger.v(TAG, "createCredentials method started");
+        boolean result = false;
+        HttpURLConnection connection = null;
+        try {
+            String url = "https://" + pushDomain + "/" + this.pushPath + "/credentials/" + credentialsSid;
+            RCLogger.v(TAG, "calling url: " + url);
+            connection = createUrlRequestWithUrl(url);
+            connection.setRequestMethod("DELETE");
+            int responseCode = connection.getResponseCode();
+
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                result = true;
+            }
+
+        } catch (Exception ex) {
+            RCLogger.e(TAG, ex.toString());
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+        RCLogger.v(TAG, "deleteCredentials method endeds");
+        return result;
+    }
+
 
     /**
     * Returns the FcmBinding object for given application
@@ -519,7 +548,7 @@ public class FcmConfigurationClient {
         String inputCredentialType = client.getString("CredentialType");
         if (applicationSidServer.equals(applicationSid) && inputCredentialType.equals("fcm")){
             String sid = client.getString("Sid");
-            return new FcmCredentials(sid, applicationSidServer, inputCredentialType, "");
+            return new FcmCredentials(sid, applicationSidServer, inputCredentialType);
         }
         return null;
     }

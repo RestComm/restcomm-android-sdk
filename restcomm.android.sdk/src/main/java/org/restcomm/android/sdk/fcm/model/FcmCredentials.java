@@ -33,15 +33,13 @@ public class FcmCredentials implements FcmModelInterface {
     private String sid;
     private String applicationSid;
     private String credentialType;
-    private String fcmSecretKey;
 
     public FcmCredentials(){}
 
-    public FcmCredentials(String sid, String applicationSid, String credentialType, String fcmSecretKey){
+    public FcmCredentials(String sid, String applicationSid, String credentialType){
         this.sid = sid;
         this.applicationSid = applicationSid;
         this.credentialType = credentialType;
-        this.fcmSecretKey = fcmSecretKey;
     }
 
     public String getSid() {
@@ -54,10 +52,6 @@ public class FcmCredentials implements FcmModelInterface {
 
     public String getCredentialType() {
         return credentialType;
-    }
-
-    public String getFcmSecretKey() {
-        return fcmSecretKey;
     }
 
     @Override

@@ -49,7 +49,6 @@ public class FcmConfigurationHandler {
     private static final String FCM_ACCOUNT_SID = "fcm-account-sid";
     private static final String FCM_CLIENT_SID = "fcm-client-sid";
     private static final String FCM_APPLICATION = "fcm-application";
-    private static final String FCM_CREDENTIALS = "fcm-credentials";
     private static final String FCM_BINDING = "fcm-binding";
 
     private static final String TYPE = "fcm";
@@ -101,7 +100,6 @@ public class FcmConfigurationHandler {
             mStorageManager.saveString(FCM_ACCOUNT_SID, null);
             mStorageManager.saveString(FCM_CLIENT_SID, null);
             mStorageManager.saveString(FCM_APPLICATION, null);
-            mStorageManager.saveString(FCM_CREDENTIALS, null);
             mStorageManager.saveString(FCM_BINDING, null);
         }
         registerOrUpdateForPush(false);
@@ -121,14 +119,12 @@ public class FcmConfigurationHandler {
         String accountSid = mStorageManager.getString(FCM_ACCOUNT_SID, null);
         String clientSid = mStorageManager.getString(FCM_CLIENT_SID, null);
         String applicationString = mStorageManager.getString(FCM_APPLICATION, null);
-        String credentialsString = mStorageManager.getString(FCM_CREDENTIALS, null);
         String bindingString = mStorageManager.getString(FCM_BINDING, null);
 
         HashMap map = new HashMap<String, String>();
         map.put(FCM_ACCOUNT_SID, accountSid);
         map.put(FCM_CLIENT_SID, clientSid);
         map.put(FCM_APPLICATION, applicationString);
-        map.put(FCM_CREDENTIALS, credentialsString);
         map.put(FCM_BINDING, bindingString);
 
         new AsyncTaskRegisterForPush(mEmail, mFcmConfigurationClient, mUsername, mApplicationName, mFcmSecretKey, update).execute(map);
@@ -221,16 +217,18 @@ public class FcmConfigurationHandler {
                             resultHashMap.put(FCM_APPLICATION, application.getJSONObject().toString());
 
                             //CREDENTIALS
+                            //For the security reasons (we dont save the fcm server key), we delete the credentials
+                            //and create new one
                             RCLogger.v(TAG, "Getting the credentials;");
-                            String fcmCredentialsString = inputHashMap.get(FCM_CREDENTIALS);
-                            FcmCredentials credentials = getCredentials(fcmCredentialsString, application);
+                            FcmCredentials credentials = getCredentials(application);
                             if (credentials == null) {
                                 RCLogger.v(TAG, "Credentials not found, raising error;");
                                 return new Pair<>(null, RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_CREDENTIALS_MISSING);
                             }
 
-                            RCLogger.v(TAG, "Credentials found, Storing it.");
-                            resultHashMap.put(FCM_CREDENTIALS, credentials.getJSONObject().toString());
+
+                            RCLogger.v(TAG, "Credentials found!");
+
 
                             //BINDING
                             RCLogger.v(TAG, "Getting binding");
@@ -285,26 +283,16 @@ public class FcmConfigurationHandler {
         }
 
 
-        private FcmCredentials getCredentials(String credentialsStorageString, FcmApplication application) {
+        private FcmCredentials getCredentials(FcmApplication application) {
             FcmCredentials credentials;
-
-            if (!TextUtils.isEmpty(credentialsStorageString)) {
-                //get fcm credentials object
-                credentials = new FcmCredentials();
-                credentials.fillFromJson(credentialsStorageString);
-
-                if (credentials.getApplicationSid().equals(application.getSid()) && (credentials.getFcmSecretKey()!=null
-                        && credentials.getFcmSecretKey().equals(fcmSecretKey))) {
-                    return credentials;
-                }
-            }
 
             credentials = fcmConfigurationClient.getCredentials(application);
             //create new credentials
-            if (credentials == null) {
-                credentials = new FcmCredentials("", application.getSid(), TYPE, fcmSecretKey);
-                credentials = fcmConfigurationClient.createCredentials(credentials);
+            if (credentials != null) {
+               fcmConfigurationClient.deleteCredentials(credentials.getSid());
             }
+            credentials = new FcmCredentials("", application.getSid(), TYPE);
+            credentials = fcmConfigurationClient.createCredentials(credentials, fcmSecretKey);
             return credentials;
         }
 
@@ -317,7 +305,6 @@ public class FcmConfigurationHandler {
                 String accountSid = resultHash.get(FCM_ACCOUNT_SID);
                 String clientSid = resultHash.get(FCM_CLIENT_SID);
                 String applicationString = resultHash.get(FCM_APPLICATION);
-                String credentialsString = resultHash.get(FCM_CREDENTIALS);
                 String bindingString = resultHash.get(FCM_BINDING);
 
                 RCLogger.v(TAG, "Storing RESULTS");
@@ -325,7 +312,6 @@ public class FcmConfigurationHandler {
                     mStorageManager.saveString(FCM_ACCOUNT_SID, accountSid);
                     mStorageManager.saveString(FCM_CLIENT_SID, clientSid);
                     mStorageManager.saveString(FCM_APPLICATION, applicationString);
-                    mStorageManager.saveString(FCM_CREDENTIALS, credentialsString);
                     mStorageManager.saveString(FCM_BINDING, bindingString);
                 }
 
