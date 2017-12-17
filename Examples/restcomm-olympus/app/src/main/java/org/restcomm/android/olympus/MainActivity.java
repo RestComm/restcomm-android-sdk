@@ -278,13 +278,7 @@ public class MainActivity extends AppCompatActivity
          params.put(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS, iceServers);
          */
 
-         //we have isse with the signaling on Oreo device, while we looking for solution, set to false
-         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
-         } else {
-            params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, true));
-         }
-
+         params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, true));
 
 
          // The SDK provides the user with default sounds for calling, ringing, busy (declined) and message, but the user can override them

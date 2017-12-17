@@ -44,7 +44,7 @@ import java.net.URLEncoder;
  */
 public class FcmConfigurationClient {
 
-    private static final String TAG = FcmConfigurationClient.class.getCanonicalName();
+    private static final String TAG = "FcmConfigurationClient";
 
     private static final String ACCOUNT_SID_URL = "/restcomm/2012-04-24/Accounts.json";
     private static final String CLIENT_SID_URL = "/restcomm/2012-04-24/Accounts";
@@ -94,11 +94,10 @@ public class FcmConfigurationClient {
 
     /**
      * Returns the account sid for given email
-     * @param email - account email
      * @return String - account sid
      **/
-    public String getAcccountSid(){
-        RCLogger.v(TAG, "getAcccountSid method started");
+    public String getAccountSid(){
+        RCLogger.v(TAG, "getAccountSid method started");
         String accountSid = null;
         try{
             String encodedEmail =  URLEncoder.encode(accountEmail, "UTF-8");
@@ -119,7 +118,7 @@ public class FcmConfigurationClient {
         }catch (Exception ex){
             RCLogger.e(TAG, ex.toString());
         }
-        RCLogger.v(TAG, "getAcccountSid method ended; returning account sid: " + accountSid);
+        RCLogger.v(TAG, "getAccountSid method ended; returning account sid: " + accountSid);
         return accountSid;
     }
 

@@ -44,7 +44,7 @@ import java.util.HashMap;
 
 public class FcmConfigurationHandler {
 
-    private static final String TAG = FcmConfigurationHandler.class.getCanonicalName();
+    private static final String TAG = "FcmConfigurationHandler";
 
     private static final String FCM_ACCOUNT_SID = "fcm-account-sid";
     private static final String FCM_CLIENT_SID = "fcm-client-sid";
@@ -185,7 +185,7 @@ public class FcmConfigurationHandler {
 
                 if (accountSid == null) {
                     RCLogger.v(TAG, "Account sid not found, getting it from server.");
-                    accountSid = fcmConfigurationClient.getAcccountSid();
+                    accountSid = fcmConfigurationClient.getAccountSid();
                 }
 
                 if (accountSid != null) {
