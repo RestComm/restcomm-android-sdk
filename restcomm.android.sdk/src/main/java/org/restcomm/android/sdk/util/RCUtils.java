@@ -69,7 +69,13 @@ public class RCUtils {
       }
       else {
          // discovery type provided
-         RCDevice.MediaIceServersDiscoveryType iceServersDiscoveryType = (RCDevice.MediaIceServersDiscoveryType)parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE);
+         RCDevice.MediaIceServersDiscoveryType iceServersDiscoveryType;
+         if (parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE) instanceof Enum){
+            iceServersDiscoveryType = (RCDevice.MediaIceServersDiscoveryType)parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE);
+         } else {
+            iceServersDiscoveryType = RCDevice.MediaIceServersDiscoveryType.values()[(int)parameters.get(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE)];
+         }
+
          if (iceServersDiscoveryType.ordinal() < RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V2.ordinal() ||
                  iceServersDiscoveryType.ordinal() > RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CUSTOM.ordinal()) {
             throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_INVALID_ICE_SERVER_DISCOVERY_TYPE);

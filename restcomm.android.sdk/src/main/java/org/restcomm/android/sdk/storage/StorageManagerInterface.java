@@ -1,6 +1,6 @@
 /*
  * TeleStax, Open Source Cloud Communications
- * Copyright 2011-2017, Telestax Inc and individual contributors
+ * Copyright 2011-2015, Telestax Inc and individual contributors
  * by the @authors tag.
  *
  * This program is free software: you can redistribute it and/or modify
@@ -20,8 +20,27 @@
  *
  */
 
-package org.restcomm.android.sdk.fcm;
+package org.restcomm.android.sdk.storage;
 
-public interface FcmMessageListener {
-   public void onFcmMessageReceived(String from, String message);
+import java.util.Map;
+
+/**
+ *  Interface with main storage saving and reading functions
+ **/
+
+public interface StorageManagerInterface {
+
+    String getString(String key, String defaultValue);
+
+    int getInt(String key, int defaultValue);
+
+    boolean getBoolean(String key, boolean defaultValue);
+
+    void saveString(String key, String value);
+
+    void saveInt(String key, int value);
+
+    void saveBoolean(String key, boolean value);
+
+    Map<String, ?> getAllEntries();
 }

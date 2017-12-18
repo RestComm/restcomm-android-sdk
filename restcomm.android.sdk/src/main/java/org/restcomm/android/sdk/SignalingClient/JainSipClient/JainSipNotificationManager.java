@@ -27,12 +27,18 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.net.ConnectivityManager;
+import android.net.LinkProperties;
+import android.net.Network;
 import android.net.NetworkInfo;
 import android.os.Handler;
 import android.util.Log;
 
 import org.restcomm.android.sdk.RCDeviceListener;
 import org.restcomm.android.sdk.util.RCLogger;
+
+import java.net.InetAddress;
+import java.util.List;
+import java.util.StringJoiner;
 
 /**
  * JainSipNotificationManager listens for Android connectivity changes and notifies NotificationManagerListener (typically JainSipClient)
@@ -153,28 +159,72 @@ class JainSipNotificationManager extends BroadcastReceiver {
 
    static public NetworkStatus checkConnectivity(Context context)
    {
+      NetworkStatus networkStatus = NetworkStatus.NetworkStatusNone;
       RCLogger.d(TAG, "checkConnectivity()");
       ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
 
-      NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
-      if (activeNetwork != null) {
-         if (activeNetwork.getType() == ConnectivityManager.TYPE_WIFI && activeNetwork.isConnected()) {
-            RCLogger.w(TAG, "Connectivity status: WIFI");
-            return NetworkStatus.NetworkStatusWiFi;
+      try {
+         NetworkInfo activeNetwork = connectivityManager.getActiveNetworkInfo();
+         if (activeNetwork != null) {
+            if (activeNetwork.getType() == ConnectivityManager.TYPE_WIFI && activeNetwork.isConnected()) {
+               RCLogger.w(TAG, "Connectivity status: WIFI");
+               networkStatus = NetworkStatus.NetworkStatusWiFi;
+            }
+
+            if (activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE && activeNetwork.isConnected()) {
+               RCLogger.w(TAG, "Connectivity status: CELLULAR DATA");
+               networkStatus = NetworkStatus.NetworkStatusCellular;
+            }
+
+            if (activeNetwork.getType() == ConnectivityManager.TYPE_ETHERNET && activeNetwork.isConnected()) {
+               RCLogger.w(TAG, "Connectivity status: ETHERNET");
+               networkStatus = NetworkStatus.NetworkStatusEthernet;
+            }
          }
 
-         if (activeNetwork.getType() == ConnectivityManager.TYPE_MOBILE && activeNetwork.isConnected()) {
-            RCLogger.w(TAG, "Connectivity status: CELLULAR DATA");
-            return NetworkStatus.NetworkStatusCellular;
-         }
-
-         if (activeNetwork.getType() == ConnectivityManager.TYPE_ETHERNET && activeNetwork.isConnected()) {
-            RCLogger.w(TAG, "Connectivity status: ETHERNET");
-            return NetworkStatus.NetworkStatusEthernet;
+         // Sadly we cannot use getActiveNetwork right away as its added in API 23 (and we want to support > 21), so let's iterate
+         // until we find above activeNetwork
+         for (Network network : connectivityManager.getAllNetworks()) {
+            NetworkInfo networkInfo = connectivityManager.getNetworkInfo(network);
+            if (networkInfo.isConnected() &&
+                    (networkInfo.getType() == activeNetwork.getType()) &&
+                    (networkInfo.getSubtype() == activeNetwork.getSubtype()) &&
+                    (networkInfo.getExtraInfo().equals(activeNetwork.getExtraInfo()))) {
+               LinkProperties linkProperties = connectivityManager.getLinkProperties(network);
+               //Log.d("DnsInfo", "iface = " + linkProperties.getInterfaceName());
+               //Log.d("DnsInfo", "dns = " + linkProperties.getDnsServers());
+               //Log.d("DnsInfo", "domains search = " + linkProperties.getDomains());
+               StringBuilder stringBuilder = new StringBuilder();
+               for (InetAddress inetAddress : linkProperties.getDnsServers()) {
+                  if (stringBuilder.length() != 0) {
+                     stringBuilder.append(",");
+                  }
+                  stringBuilder.append(inetAddress.getHostAddress());
+               }
+               // From Oreo and above we need to explicitly retrieve and provide the name servers used for our DNS queries.
+               // Reason for that is that prior to Oreo underlying dnsjava library for jain-sip.ext (i.e. providing facilities for DNS SRV),
+               // used some system properties prefixed 'net.dns1', etc. The problem is that those got removed in Oreo so we have to use
+               // alternative means, and that is to use 'dns.server' that 'dnsjava' tries to use before trying 'net.dns1';
+               if (stringBuilder.length() != 0) {
+                  RCLogger.i(TAG, "Updating DNS servers for dnsjava with: " + stringBuilder.toString() + ", i/f: " + linkProperties.getInterfaceName());
+                  System.setProperty("dns.server", stringBuilder.toString());
+               }
+               if (linkProperties.getDomains() != null) {
+                  RCLogger.i(TAG, "Updating DNS search domains for dnsjava with: " + linkProperties.getDomains() + ", i/f: " + linkProperties.getInterfaceName());
+                  System.setProperty("dns.search", linkProperties.getDomains());
+               }
+            }
          }
       }
-      RCLogger.w(TAG, "Connectivity status: NONE");
-      return NetworkStatus.NetworkStatusNone;
+      catch (NullPointerException e) {
+         throw new RuntimeException("Failed to retrieve active networks info", e);
+      }
+
+      if (networkStatus == NetworkStatus.NetworkStatusNone) {
+         RCLogger.w(TAG, "Connectivity status: NONE");
+      }
+
+      return networkStatus;
    }
 
    // convert from NetworkStatus -> ConnectivityStatus

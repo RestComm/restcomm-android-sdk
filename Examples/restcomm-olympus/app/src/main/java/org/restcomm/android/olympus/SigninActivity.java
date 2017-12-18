@@ -195,6 +195,19 @@ public class SigninActivity extends AppCompatActivity {
       prefEdit.putString(RCDevice.ParameterKeys.SIGNALING_PASSWORD, txtPassword.getText().toString());
       prefEdit.putString(RCDevice.ParameterKeys.SIGNALING_DOMAIN, txtDomain.getText().toString());
 
+      //push settings
+      /*** IMPORTANT ***/
+      /** Push notifications will not work if these parameters are replaced with real values: **/
+      /** ACCOUNT EMAIL, ACCOUNT PASSWORD, FCM SERVER KEY **/
+      prefEdit.putString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, "Olympus");
+      prefEdit.putString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, "ACCOUNT EMAIL");
+      prefEdit.putString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, "ACCOUNT PASSWORD");
+      prefEdit.putBoolean(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, true);
+      prefEdit.putString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, "push.restcomm.com");
+      prefEdit.putString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, "cloud.restcomm.com");
+      prefEdit.putString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, "FCM SERVER KEY");
+
+
       prefEdit.apply();
    }
 }

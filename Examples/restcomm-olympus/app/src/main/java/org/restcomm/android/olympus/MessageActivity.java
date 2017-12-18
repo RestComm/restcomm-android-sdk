@@ -303,6 +303,13 @@ public class MessageActivity extends AppCompatActivity
       handleConnectivityUpdate(connectivityStatus, null);
    }
 
+   @Override
+   public void onWarning(RCDevice device, int statusCode, String statusText) {
+      if (statusCode != RCClient.ErrorCodes.SUCCESS.ordinal()) {
+         Toast.makeText(getApplicationContext(), "RCDevice Warning message: " + statusText, Toast.LENGTH_LONG).show();
+      }
+   }
+
    public void onMessageSent(RCDevice device, int statusCode, String statusText, String jobId)
    {
       Log.i(TAG, "onMessageSent(): statusCode: " + statusCode + ", statusText: " + statusText);
@@ -329,8 +336,11 @@ public class MessageActivity extends AppCompatActivity
          showOkAlert("RCDevice Error", statusText);
       }
 
-      unbindService(this);
-      serviceBound = false;
+      //maybe we stopped the activity before onReleased is called
+      if (serviceBound) {
+         unbindService(this);
+         serviceBound = false;
+      }
    }
 
    /**
@@ -391,6 +401,7 @@ public class MessageActivity extends AppCompatActivity
 
    public void handleConnectivityUpdate(RCConnectivityStatus connectivityStatus, String text)
    {
+
       if (text == null) {
          if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusNone) {
             text = "RCDevice connectivity change: Lost connectivity";

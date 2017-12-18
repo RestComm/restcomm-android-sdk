@@ -156,6 +156,10 @@ public class MainActivity extends AppCompatActivity
    protected void onPause()
    {
       super.onPause();
+      if (alertDialog.isShowing()) {
+         Log.w(TAG, "Alert already showing, hiding to show new alert");
+         alertDialog.dismiss();
+      }
       // Another activity is taking focus (this activity is about to be "paused").
       Log.i(TAG, "%% onPause");
    }
@@ -276,6 +280,7 @@ public class MainActivity extends AppCompatActivity
 
          params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, true));
 
+
          // The SDK provides the user with default sounds for calling, ringing, busy (declined) and message, but the user can override them
          // by providing their own resource files (i.e. .wav, .mp3, etc) at res/raw passing them with Resource IDs like R.raw.user_provided_calling_sound
          //params.put(RCDevice.ParameterKeys.RESOURCE_SOUND_CALLING, R.raw.user_provided_calling_sound);
@@ -288,6 +293,15 @@ public class MainActivity extends AppCompatActivity
          // With this setting we override that behavior to accept it. NOT for production!
          //params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, prefs.getBoolean(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true));
          //params.put(RCDevice.ParameterKeys.DEBUG_JAIN_SIP_LOGGING_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.DEBUG_JAIN_SIP_LOGGING_ENABLED, true));
+
+         params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME , ""));
+         params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL , ""));
+         params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD , ""));
+         params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, prefs.getBoolean(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT , true));
+         params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN ,""));
+         params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN ,""));
+         params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY ,""));
+
 
          device.setLogLevel(Log.VERBOSE);
          try {
@@ -450,7 +464,9 @@ public class MainActivity extends AppCompatActivity
          //showOkAlert("RCDevice Initialization Error", statusText);
          //handleConnectivityUpdate(connectivityStatus, "RCDevice Initialization Error: " + statusText);
          //Toast.makeText(getApplicationContext(), "RCDevice Initialization Error: " + statusText, Toast.LENGTH_LONG).show();
-         showOkAlert("RCDevice Initialization Error", statusText);
+         if (!isFinishing()) {
+            showOkAlert("RCDevice Initialization Error", statusText);
+         }
       }
    }
 
@@ -464,13 +480,23 @@ public class MainActivity extends AppCompatActivity
          handleConnectivityUpdate(RCConnectivityStatus.RCConnectivityStatusNone, "RCDevice Released: " + statusText);
       }
 
-      unbindService(this);
-      serviceBound = false;
+      //maybe we stopped the activity before onRelased is called
+      if (serviceBound) {
+         unbindService(this);
+         serviceBound = false;
+      }
    }
 
    public void onConnectivityUpdate(RCDevice device, RCConnectivityStatus connectivityStatus)
    {
       handleConnectivityUpdate(connectivityStatus, null);
+   }
+
+   @Override
+   public void onWarning(RCDevice device, int statusCode, String statusText) {
+      if (statusCode != RCClient.ErrorCodes.SUCCESS.ordinal()) {
+         Toast.makeText(getApplicationContext(), "RCDevice Warning message: " + statusText, Toast.LENGTH_LONG).show();
+      }
    }
 
    public void handleConnectivityUpdate(RCConnectivityStatus connectivityStatus, String text)
@@ -606,9 +632,9 @@ public class MainActivity extends AppCompatActivity
             dialog.dismiss();
          }
       });
-      if (!MainActivity.this.isFinishing()) {
+
          alertDialog.show();
-      }
+
    }
 
 /*   private RCDevice.MediaIceServersDiscoveryType iceServersDiscoveryTypeString2Enum(String iceServersDiscoveryTypeString)

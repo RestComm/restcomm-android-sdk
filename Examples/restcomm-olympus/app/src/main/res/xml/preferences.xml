@@ -31,30 +31,30 @@
         android:title="Push Notifications Settings" >
         <SwitchPreference
             android:defaultValue="true"
-            android:key="push-notification-enabled"
+            android:key="push-enable-push-for-account"
             android:title="Push Notifications"
             android:summary="Indicates whether Push Notification Server is set to handle Push Notifications"/>
         <EditTextPreference
             android:defaultValue=""
-            android:key="restcomm-account-email"
+            android:key="push-account-email"
             android:summary="Restcomm-Connect account email"
             android:title="Account"/>
         <EditTextPreference
             android:defaultValue=""
             android:inputType="textPassword"
-            android:key="restcomm-account-password"
+            android:key="push-account-password"
             android:summary="Password for Restcomm-Connect account"
             android:title="Password"/>
         <EditTextPreference
             android:defaultValue="push.restcomm.com"
-            android:key="push-notification-domain"
+            android:key="push-domain"
             android:title="Push Notifications Domain"
             android:summary="Restcomm Push Notifictions domain, like: 'push.restcomm.com'"/>
         <EditTextPreference
-            android:defaultValue=""
-            android:key="push-notification-fcm-secret"
-            android:title="Push Notifications Server Credentials"
-            android:summary="FCM Server Token"/>
+            android:defaultValue="cloud.restcomm.com"
+            android:key="push-http-domain"
+            android:title="Restcomm Connect Domain"
+            android:summary="Restcomm Http domain, like: 'cloud.restcomm.com'"/>
     </PreferenceCategory>
 
     <PreferenceCategory
