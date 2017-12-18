@@ -45,7 +45,7 @@ import java.net.URLEncoder;
  */
 public class FcmConfigurationClient {
 
-    private static final String TAG = FcmConfigurationClient.class.getCanonicalName();
+    private static final String TAG = "FcmConfigurationClient";
 
     private static final String ACCOUNT_SID_URL = "/restcomm/2012-04-24/Accounts.json";
     private static final String CLIENT_SID_URL = "/restcomm/2012-04-24/Accounts";
@@ -124,7 +124,6 @@ public class FcmConfigurationClient {
                 connection.disconnect();
             }
         }
-
         RCLogger.v(TAG, "getAccountSid method ended; returning account sid: " + accountSid);
         return accountSid;
     }
