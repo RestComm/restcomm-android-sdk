@@ -477,7 +477,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
       Log.i(TAG, "%% onDestroy");
       //maybe user killed service
-      if (signalingClient != null) {
+      if (isInitialized()) {
          release();
       }
 
