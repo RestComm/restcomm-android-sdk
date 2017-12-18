@@ -28,6 +28,7 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.SwitchCompat;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.KeyEvent;
@@ -35,15 +36,18 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.inputmethod.EditorInfo;
 import android.widget.Button;
+import android.widget.CompoundButton;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import org.restcomm.android.olympus.Util.Utils;
 import org.restcomm.android.sdk.RCDevice;
 
 /**
  * A login screen that offers Restcomm login.
  */
-public class SigninActivity extends AppCompatActivity {
+public class SigninActivity extends AppCompatActivity implements CompoundButton.OnCheckedChangeListener {
 
    SharedPreferences prefs;
    // UI references.
@@ -58,6 +62,15 @@ public class SigninActivity extends AppCompatActivity {
    GlobalPreferences globalPreferences;
 
    //SharedPreferences prefsGeneral = null;
+
+   //push notifications
+   private SwitchCompat switchCompat;
+   private EditText txtPushAccount;
+   private EditText txtPushPassword;
+   private EditText txtPushDomain;
+   private EditText txtHttpDomain;
+   private LinearLayout llPushContainer;
+
 
    @Override
    protected void onCreate(Bundle savedInstanceState)
@@ -127,6 +140,22 @@ public class SigninActivity extends AppCompatActivity {
          txtUsername.setText(prefs.getString(RCDevice.ParameterKeys.SIGNALING_USERNAME, ""));
          txtDomain.setText(prefs.getString(RCDevice.ParameterKeys.SIGNALING_DOMAIN, ""));
          txtPassword.setText(prefs.getString(RCDevice.ParameterKeys.SIGNALING_PASSWORD, ""));
+
+         llPushContainer = (LinearLayout) findViewById(R.id.ll_push_container);
+         switchCompat = (SwitchCompat) findViewById(R.id.switch_enable_push);
+         txtPushAccount = (EditText) findViewById(R.id.push_account_email);
+         txtPushPassword = (EditText) findViewById(R.id.push_password);
+         txtPushDomain = (EditText) findViewById(R.id.push_domain);
+         txtHttpDomain = (EditText) findViewById(R.id.http_domain);
+
+         switchCompat.setChecked(prefs.getBoolean(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, true));
+         txtPushAccount.setText(prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, ""));
+         txtPushPassword.setText(prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, ""));
+         txtPushDomain.setText(prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, ""));
+         txtHttpDomain.setText(prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, ""));
+
+         switchCompat.setOnCheckedChangeListener(this);
+
       }
    }
 
@@ -139,8 +168,10 @@ public class SigninActivity extends AppCompatActivity {
 
       // Store values at the time of the login attempt.
       String username = txtUsername.getText().toString();
-      String password = txtPassword.getText().toString();
       String domain = txtDomain.getText().toString();
+      boolean pushEnabled = switchCompat.isChecked();
+      String pushDomain = txtPushDomain.getText().toString();
+      String httpDomain = txtHttpDomain.getText().toString();
 
       boolean cancel = false;
       View focusView = null;
@@ -167,12 +198,37 @@ public class SigninActivity extends AppCompatActivity {
          cancel = true;
       }
 
+      if (pushEnabled && !cancel){
+         if (!Utils.isValidEmail(txtPushAccount.getText())){
+            txtPushAccount.setError(getString(R.string.error_invalid_email));
+            focusView = txtPushAccount;
+            cancel = true;
+         } else if (TextUtils.isEmpty(pushDomain)){
+            txtPushDomain.setError(getString(R.string.error_field_required));
+            focusView = txtPushDomain;
+            cancel = true;
+         } else if (TextUtils.isEmpty(httpDomain)){
+            txtHttpDomain.setError(getString(R.string.error_field_required));
+            focusView = txtHttpDomain;
+            cancel = true;
+         } else if (pushDomain.contains(" ")) {
+            txtPushDomain.setError(getString(R.string.error_field_no_whitespace));
+            focusView = txtPushDomain;
+            cancel = true;
+         } else if (httpDomain.contains(" ")) {
+            txtHttpDomain.setError(getString(R.string.error_field_no_whitespace));
+            focusView = txtHttpDomain;
+            cancel = true;
+         }
+      }
+
       if (cancel) {
          // There was an error; don't attempt login and focus the first
          // form field with an error.
          focusView.requestFocus();
       }
       else {
+
          // note down the fact that we are signed up so that
          globalPreferences.setSignedUp(true);
 
@@ -198,17 +254,28 @@ public class SigninActivity extends AppCompatActivity {
       //push settings
       /*** IMPORTANT ***/
       /** Push notifications will not work if these parameters are replaced with real values: **/
-      /** ACCOUNT EMAIL, ACCOUNT PASSWORD, FCM SERVER KEY **/
+      /** PUSH_NOTIFICATIONS_APPLICATION_NAME, PUSH_NOTIFICATIONS_FCM_SERVER_KEY **/
       prefEdit.putString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, "Olympus");
-      prefEdit.putString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, "ACCOUNT EMAIL");
-      prefEdit.putString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, "ACCOUNT PASSWORD");
-      prefEdit.putBoolean(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, true);
-      prefEdit.putString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, "push.restcomm.com");
-      prefEdit.putString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, "cloud.restcomm.com");
       prefEdit.putString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, "FCM SERVER KEY");
+
+      prefEdit.putString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, txtPushAccount.getText().toString());
+      prefEdit.putString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, txtPushPassword.getText().toString());
+      prefEdit.putBoolean(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, switchCompat.isChecked());
+      prefEdit.putString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, txtPushDomain.getText().toString());
+      prefEdit.putString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, txtHttpDomain.getText().toString());
+
 
 
       prefEdit.apply();
+   }
+
+   @Override
+   public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+         if (isChecked){
+            llPushContainer.setVisibility(View.VISIBLE);
+         } else {
+            llPushContainer.setVisibility(View.GONE);
+         }
    }
 }
 

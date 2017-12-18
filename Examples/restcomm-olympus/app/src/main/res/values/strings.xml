@@ -226,4 +226,17 @@
     <string name="pref_displayhud_default" translatable="false">false</string>
     -->
 
+    <!-- sign in activity -->
+    <string name="welcome_to_olympus">Welcome to \nRestcomm Olympus</string>
+    <string name="username">"Username, like \'bob\'</string>
+    <string name="password">Password</string>
+    <string name="domain">Domain, like \'cloud.restcomm.com\'</string>
+    <string name="sign_in">Sign in</string>
+    <string name="enable_push_notifications">Enable push notifications</string>
+    <string name="push_account_email">Restcomm-Connect account email</string>
+    <string name="push_account_password">Password for Restcomm-Connect account</string>
+    <string name="push_domain">Push domain, like: \'push.restcomm.com\'</string>
+    <string name="http_domain">Http domain, like: \'cloud.restcomm.com\'</string>
+
+
 </resources>
