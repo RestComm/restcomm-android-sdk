@@ -1292,7 +1292,14 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          turnEnabled = true;
       }
 
-      RCDevice.MediaIceServersDiscoveryType iceServerDiscoveryType = RCDevice.MediaIceServersDiscoveryType.values()[(int)deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE)];
+      RCDevice.MediaIceServersDiscoveryType iceServerDiscoveryType;
+      //we are storing enum in hash map or in storage manager; in both facilities enum is stored differently
+      if (deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE) instanceof Enum){
+         iceServerDiscoveryType = (RCDevice.MediaIceServersDiscoveryType) deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE);
+      } else {
+         iceServerDiscoveryType = RCDevice.MediaIceServersDiscoveryType.values()[(int)deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE)];
+      }
+     
       if (iceServerDiscoveryType == RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V2) {
          url = deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_URL) +
                  "?ident=" + deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME) +
