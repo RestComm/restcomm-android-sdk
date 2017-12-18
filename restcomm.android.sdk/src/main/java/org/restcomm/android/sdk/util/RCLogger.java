@@ -176,8 +176,10 @@ public class RCLogger {
         // Remove sensitive information. If we want to add more sensitive data, here's where we need to filter it
         msg = msg.replaceAll("turn-password=.*?, ", "turn-password=, ")  // turn password filtering
               .replaceAll("pref_sip_password=.*?, ", "pref_sip_password=, ")  // SIP password
-              .replaceAll("secret=.*?&", "secret=&");  // for ICE/TURN url password
-
+              .replaceAll("secret=.*?&", "secret=&")  // for ICE/TURN url password
+              .replaceAll("push-fcm-key=.*?, ", "push-fcm-key==, ") //fcm server key
+              .replaceAll("push-account-email=.*?, ", "push-account-email==, ") // for push
+              .replaceAll("push-account-password=.*?, ", "push-account-password==, "); // for push
         //return msg.replaceAll("\"", "").replaceAll("\\r", "").replaceAll("", "");
         // Remove special carriage return characters that seem to not be allowed to be written in logcat.
         // WARNING: Also another VERY weird issue is that if we are logging full INVITE requests (together with SDP)

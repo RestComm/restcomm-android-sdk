@@ -186,7 +186,12 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
 
       Properties properties = new Properties();
       properties.setProperty("android.javax.sip.STACK_NAME", "androidSip");
-      properties.setProperty("android.gov.nist.javax.sip.MESSAGE_PROCESSOR_FACTORY", "android.gov.nist.javax.sip.stack.NioMessageProcessorFactory");
+
+      //we have issue with the signaling on Oreo device
+      if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.O) {
+         properties.setProperty("android.gov.nist.javax.sip.MESSAGE_PROCESSOR_FACTORY", "android.gov.nist.javax.sip.stack.NioMessageProcessorFactory");
+      }
+
       // DNS SRV
       // Important: for jain-sip.ext especially, we need to drop the 'android' part
       properties.setProperty("javax.sip.ROUTER_PATH", DNSAwareRouter.class.getCanonicalName());

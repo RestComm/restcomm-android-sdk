@@ -336,8 +336,11 @@ public class MessageActivity extends AppCompatActivity
          showOkAlert("RCDevice Error", statusText);
       }
 
-      unbindService(this);
-      serviceBound = false;
+      //maybe we stopped the activity before onReleased is called
+      if (serviceBound) {
+         unbindService(this);
+         serviceBound = false;
+      }
    }
 
    /**
@@ -398,6 +401,7 @@ public class MessageActivity extends AppCompatActivity
 
    public void handleConnectivityUpdate(RCConnectivityStatus connectivityStatus, String text)
    {
+
       if (text == null) {
          if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusNone) {
             text = "RCDevice connectivity change: Lost connectivity";

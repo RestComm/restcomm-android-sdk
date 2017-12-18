@@ -156,6 +156,10 @@ public class MainActivity extends AppCompatActivity
    protected void onPause()
    {
       super.onPause();
+      if (alertDialog.isShowing()) {
+         Log.w(TAG, "Alert already showing, hiding to show new alert");
+         alertDialog.dismiss();
+      }
       // Another activity is taking focus (this activity is about to be "paused").
       Log.i(TAG, "%% onPause");
    }
@@ -275,6 +279,7 @@ public class MainActivity extends AppCompatActivity
          */
 
          params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, true));
+
 
          // The SDK provides the user with default sounds for calling, ringing, busy (declined) and message, but the user can override them
          // by providing their own resource files (i.e. .wav, .mp3, etc) at res/raw passing them with Resource IDs like R.raw.user_provided_calling_sound
@@ -459,7 +464,9 @@ public class MainActivity extends AppCompatActivity
          //showOkAlert("RCDevice Initialization Error", statusText);
          //handleConnectivityUpdate(connectivityStatus, "RCDevice Initialization Error: " + statusText);
          //Toast.makeText(getApplicationContext(), "RCDevice Initialization Error: " + statusText, Toast.LENGTH_LONG).show();
-         showOkAlert("RCDevice Initialization Error", statusText);
+         if (!isFinishing()) {
+            showOkAlert("RCDevice Initialization Error", statusText);
+         }
       }
    }
 
@@ -625,9 +632,9 @@ public class MainActivity extends AppCompatActivity
             dialog.dismiss();
          }
       });
-      if (!MainActivity.this.isFinishing()) {
+
          alertDialog.show();
-      }
+
    }
 
 /*   private RCDevice.MediaIceServersDiscoveryType iceServersDiscoveryTypeString2Enum(String iceServersDiscoveryTypeString)
