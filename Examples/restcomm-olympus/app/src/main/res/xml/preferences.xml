@@ -53,7 +53,7 @@
         <EditTextPreference
             android:defaultValue="cloud.restcomm.com"
             android:key="push-http-domain"
-            android:title="Http Domain"
+            android:title="Restcomm Connect Domain"
             android:summary="Restcomm Http domain, like: 'cloud.restcomm.com'"/>
     </PreferenceCategory>
 

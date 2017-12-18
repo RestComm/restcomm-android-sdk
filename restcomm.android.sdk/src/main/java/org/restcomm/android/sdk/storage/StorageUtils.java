@@ -44,8 +44,10 @@ public class StorageUtils {
 
             if (value instanceof String){
                 storageManagerInterface.saveString(key, (String) value);
-            } else if (value instanceof Integer){
-                storageManagerInterface.saveInt(key, (int)value);
+            } else if (value instanceof Integer) {
+                storageManagerInterface.saveInt(key, (int) value);
+            } else if (value instanceof Enum){
+                storageManagerInterface.saveInt(key, ((Enum) value).ordinal());
             } else if (value instanceof Boolean){
                 storageManagerInterface.saveBoolean(key, (boolean)value);
             } else if (value instanceof Intent){

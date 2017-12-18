@@ -45,7 +45,6 @@ import org.restcomm.android.sdk.SignalingClient.SignalingClient;
 //import org.restcomm.android.sdk.util.ErrorStruct;
 import org.restcomm.android.sdk.fcm.FcmConfigurationHandler;
 import org.restcomm.android.sdk.fcm.FcmPushRegistrationListener;
-import org.restcomm.android.sdk.storage.StorageManagerInterface;
 import org.restcomm.android.sdk.storage.StorageManagerPreferences;
 import org.restcomm.android.sdk.storage.StorageUtils;
 import org.restcomm.android.sdk.util.RCException;
@@ -106,16 +105,11 @@ import java.util.Map;
  * <h2>How to use RCDevice Service</h2>
  * You typically bind to the service with bindService() at your Activity's onStart() method and unbind using unbindService() at your Activity's onStop() method. Your
  * Activity needs to extend ServiceConnection to be able to receive binding events and then once you receive onServiceConnected() which means that your Activity is successfully
-// * bound to the RCDevice service, you need to initialize RCDevice with your parameters (Important: only if NOT already initialized).
-
- /* THIS IS NOT ANYMORE TRUE (OGGIE)
- * Remember that once the service starts,
- * it will continue run even if you Activity is not around (that is unless you stop it with RCDevice.release()). This means that you will need to initialize it only once
- * -the first time an Activity ever binds to it, hence the need to check if initialized, with RCDevice.isInitialized().
- *
+ * bound to the RCDevice service, you need to initialize RCDevice with your parameters.
  * You can also check the Sample Applications on how to properly use that at the Examples directory in the GitHub repository
  * @see RCConnection
  */
+
 public class RCDevice extends Service implements SignalingClient.SignalingClientListener, FcmPushRegistrationListener {
    /**
     * Device state
@@ -269,7 +263,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     */
    public static String ACTION_INCOMING_MESSAGE = "org.restcomm.android.sdk.ACTION_INCOMING_MESSAGE";
 
-   public static final String ACTION_IS_FCM = "org.restcomm.android.sdk.ACTION_IS_FCM";
+   public static final String ACTION_FCM = "org.restcomm.android.sdk.ACTION_FCM";
 
 
    // Internal intents sent by Notification subsystem -> RCDevice Service when user acts on the Notifications
@@ -359,9 +353,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    private long messageTimeOutInterval;
    private long messageTimeOutIntervalLimit = 10000; //10 seconds
    private static final long TIMEOUT_INTERVAL_TICK = 1000; //1 second
-   //handler for message timeoout count
-   private Handler mHandler;
-
+   //handler for message timeout count
+   private Handler messageTimeoutHandler;
 
    // Apps must not use the constructor, as it is created inside the service, but making it (package) private seems to cause crashes in some devices
    public RCDevice()
@@ -411,22 +404,15 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          Log.e(TAG, "%% onStartCommand after having been killed");
       }
 
-
-
       if (intent != null && intent.getAction() != null) {
          String intentAction = intent.getAction();
 
          //check is intent is from push notifications,
          //if it is, check is service initialized,
          //if its not initialize it
-         if (intentAction.equals(ACTION_IS_FCM)){
+         if (intentAction.equals(ACTION_FCM)){
 
             setLogLevel(Log.VERBOSE);
-
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-               Notification notification = new Notification.Builder(this).getNotification();
-               startForeground(1337, notification); //todo: do it after fix...
-            }
 
             //initialize
             if (!isServiceInitialized) {
@@ -434,7 +420,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
                storageManagerPreferences = new StorageManagerPreferences(this);
                HashMap<String, Object> parameters = StorageUtils.getParams(storageManagerPreferences);
                try {
-                  initialize(parameters);
+                  initialize(null, parameters, null);
                } catch (RCException e) {
                   RCLogger.e(TAG, e.toString());
                }
@@ -444,8 +430,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
             if (intentAction.equals(ACTION_NOTIFICATION_CALL_DEFAULT) || intentAction.equals(ACTION_NOTIFICATION_CALL_ACCEPT_VIDEO) ||
                     intentAction.equals(ACTION_NOTIFICATION_CALL_ACCEPT_AUDIO) || intentAction.equals(ACTION_NOTIFICATION_CALL_DECLINE) ||
                     intentAction.equals(ACTION_NOTIFICATION_CALL_DELETE) || intentAction.equals(ACTION_NOTIFICATION_MESSAGE_DEFAULT) ||
-               /*intentAction.equals(ACTION_NOTIFICATION_CALL_OPEN) || */ intentAction.equals(ACTION_NOTIFICATION_CALL_DISCONNECT) ||
-                    intentAction.equals(ACTION_NOTIFICATION_CALL_MUTE_AUDIO)) {
+                    intentAction.equals(ACTION_NOTIFICATION_CALL_DISCONNECT) || intentAction.equals(ACTION_NOTIFICATION_CALL_MUTE_AUDIO)) {
                onNotificationIntent(intent);
             }
          }
@@ -507,16 +492,24 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       Log.i(TAG, "%%  onUnbind");
 
       isServiceAttached = false;
-      release();
+
+      if (RCDevice.state != DeviceState.BUSY) {
+         release();
+      }
 
       return false;
    }
 
+   @Override
+   public void onTaskRemoved(Intent rootIntent) {
+      super.onTaskRemoved(rootIntent);
+      release();
+   }
 
    /*
-    * Check if RCDevice is already initialized. Since RCDevice is an Android Service that is supposed to run in the background,
-    * this is needed to make sure that RCDevice.initialize() is only invoked once, the first time an Activity binds to the service
-    */
+       * Check if RCDevice is already initialized. Since RCDevice is an Android Service that is supposed to run in the background,
+       * this is needed to make sure that RCDevice.initialize() is only invoked once, the first time an Activity binds to the service
+       */
    public boolean isInitialized()
    {
       return isServiceInitialized;
@@ -585,7 +578,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          //save parameters to storage
          storageManagerPreferences = new StorageManagerPreferences(this);
          StorageUtils.saveParams(storageManagerPreferences, parameters);
-
 
          //this.updateCapabilityToken(capabilityToken);
          this.listener = deviceListener;
@@ -660,12 +652,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       return true;
    }
 
-
-   private boolean initialize(HashMap<String, Object> parameters) throws RCException{
-      return initialize(null, parameters, null);
-   }
-
-
    /**
     * Set level for SDK logging
     * @param level  Level to set, following the Android logging lever defined at Log.*
@@ -716,11 +702,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       isServiceAttached = false;
       isServiceInitialized = false;
 
-      if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-         stopForeground(true);
-      }
 
-      stopSelf();
+      stopForeground(true);
 
    }
 
@@ -794,7 +777,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       if (cachedConnectivityStatus == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
          // Phone state Intents to capture connection failed event
          String username = "";
-         if (parameters != null && parameters.get(RCConnection.ParameterKeys.CONNECTION_PEER) != null)
+         if (parameters.get(RCConnection.ParameterKeys.CONNECTION_PEER) != null)
             username = parameters.get(RCConnection.ParameterKeys.CONNECTION_PEER).toString();
          sendQoSNoConnectionIntent(username, this.getConnectivityStatus().toString());
       }
@@ -1097,19 +1080,19 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
          if (isServiceAttached) {
             listener.onInitialized(this, connectivityStatus, status.ordinal(), text);
-            //register for push
-            registerForPush(false);
          }
          else {
             RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
                     RCClient.errorText(status));
          }
 
+         //register for push
+         registerForPush(false);
+
          if (status == RCClient.ErrorCodes.SUCCESS){
             state = DeviceState.READY;
          } else {
             release();
-            return;
          }
    }
 
@@ -1128,6 +1111,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       this.listener = null;
       // Shut down the service
       release();
+      stopSelf();
 
    }
 
@@ -1279,7 +1263,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    public void onMessageArrivedEvent(String jobId, String peer, String messageText)
    {
       RCLogger.i(TAG, "onMessageArrivedEvent(): id: " + jobId + ", peer: " + peer + ", text: " + messageText);
-      HashMap<String, String> parameters = new HashMap<String, String>();
       // filter out potential '<' and '>' and leave just the SIP URI
       String peerSipUri = peer.replaceAll("^<", "").replaceAll(">$", "");
 
@@ -1311,11 +1294,11 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
                sendBroadcast(testIntent);
             }
          } else {
-            if (mHandler == null) {
-               mHandler = new Handler();
+            if (messageTimeoutHandler == null) {
+               messageTimeoutHandler = new Handler();
             }
-            stopRepeatingTask();
             startRepeatingTask();
+
             //set timer again
             messageTimeOutInterval = messageTimeOutIntervalLimit;
             onNotificationMessage(peerSipUri, messageText);
@@ -1323,7 +1306,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
       else {
          // messageIntent is null cannot really forward event to App, lets ignore with a warning
-         RCLogger.w(TAG, "onMessageArrivedEvent(): Incoming text message event is discarded because Intent is missing for incoming text messages. To receive such event please initialize RCDevice with a RCDevice.ACTION_INCOMING_MESSAGE intent");
+         RCLogger.w(TAG, "onMessageArrivedEvent(): Incoming text message event is discarded because Intent is missing for incoming text messages. " +
+                 "To receive such event please initialize RCDevice with a RCDevice.ACTION_INCOMING_MESSAGE intent");
       }
    }
 
@@ -1337,6 +1321,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    public void onErrorEvent(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
       RCLogger.e(TAG, "onErrorEvent(): id: " + jobId + ", connectivityStatus: " + connectivityStatus + ", status: " + status + ", text: " + text);
+      stopForeground(true);
       cachedConnectivityStatus = connectivityStatus;
       if (status == RCClient.ErrorCodes.SUCCESS) {
       }
@@ -1417,15 +1402,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       Intent serviceIntentDelete = new Intent(ACTION_NOTIFICATION_CALL_DELETE, null, getApplicationContext(), RCDevice.class);
       serviceIntentDelete.putExtras(serviceIntentDefault);
 
-      NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-      if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-         int importance = NotificationManager.IMPORTANCE_HIGH;
-         NotificationChannel mChannel = new NotificationChannel("" + notificationId, "Restcomm Olympus", importance);
-         mChannel.setDescription(text);
-         mChannel.enableVibration(true);
-         mChannel.setVibrationPattern(notificationVibrationPattern);
-         notificationManager.createNotificationChannel(mChannel);
-      }
 
       // Service is not attached to an activity, let's use a notification instead
       NotificationCompat.Builder builder =
@@ -1462,13 +1438,13 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       Integer activeNotificationId = callNotifications.get(peerUsername);
 
       if (activeNotificationId == null) {
-         // get new notification id
          activeNotificationId = notificationId;
          notificationIdExists = false;
       }
 
-      // mId allows you to update the notification later on.
-      notificationManager.notify(activeNotificationId, notification);
+      //show to the user notification and start foreground
+      startForeground(notificationId, notification);
+
 
       if (!notificationIdExists) {
          // We used a new notification id, so we need to update call notifications
@@ -1577,9 +1553,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
             PackageManager packageManager = context.getPackageManager();
             actionIntent = packageManager.getLaunchIntentForPackage(context.getPackageName());
          }
-         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            stopForeground(true);
-         }
 
       }
       else if (intentAction.equals(ACTION_NOTIFICATION_CALL_ACCEPT_VIDEO)) {
@@ -1587,17 +1560,12 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          // don't forget to copy the extras
          callIntent.putExtras(intent);
          actionIntent = callIntent;
-         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            stopForeground(true);
-         }
       }
       else if (intentAction.equals(ACTION_NOTIFICATION_CALL_ACCEPT_AUDIO)) {
          callIntent.setAction(ACTION_INCOMING_CALL_ANSWER_AUDIO);
          // don't forget to copy the extras
          callIntent.putExtras(intent);
-         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            stopForeground(true);
-         }
+
          actionIntent = callIntent;
       }
       else if (intentAction.equals(ACTION_NOTIFICATION_CALL_DECLINE) || intentAction.equals(ACTION_NOTIFICATION_CALL_DELETE)) {
@@ -1671,7 +1639,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
                   if (!isInitialized()){
                      HashMap<String, Object> parameters = StorageUtils.getParams(storageManagerPreferences);
                      try {
-                        initialize(parameters);
+                        initialize(null, parameters, null);
                      } catch (RCException e) {
                         RCLogger.e(TAG, e.toString());
                      }
@@ -1850,7 +1818,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     public void onRegisteredForPush(RCClient.ErrorCodes status, String text) {
         if (status == RCClient.ErrorCodes.SUCCESS){
             //just log success
-           RCLogger.i(TAG, "Device and user are successfully registered!");
+           RCLogger.i(TAG, "Device and user are successfully registered for Push Notifications!");
     //error
         } else {
             if (isServiceAttached) {
@@ -1950,7 +1918,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
        public void run() {
           if (messageTimeOutInterval >= 0){
              messageTimeOutInterval -= TIMEOUT_INTERVAL_TICK;
-             mHandler.postDelayed(mStatusChecker, TIMEOUT_INTERVAL_TICK);
+             messageTimeoutHandler.postDelayed(mStatusChecker, TIMEOUT_INTERVAL_TICK);
           } else {
              stopRepeatingTask();
              release();
@@ -1959,12 +1927,13 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     };
 
    void startRepeatingTask() {
+      stopRepeatingTask();
       mStatusChecker.run();
    }
 
    void stopRepeatingTask() {
-      if (mHandler != null) {
-         mHandler.removeCallbacks(mStatusChecker);
+      if (messageTimeoutHandler != null) {
+         messageTimeoutHandler.removeCallbacks(mStatusChecker);
       }
    }
 

@@ -23,7 +23,6 @@ import android.content.Intent;
 import android.util.Log;
 
 import org.restcomm.android.sdk.RCDevice;
-import org.restcomm.android.sdk.util.RCLogger;
 
 public class FcmMessagingService extends FirebaseMessagingService {
 
@@ -44,9 +43,9 @@ public class FcmMessagingService extends FirebaseMessagingService {
     private void sendNotification() {
         //start service
         Intent intent = new Intent(this, RCDevice.class);
-        intent.setAction(RCDevice.ACTION_IS_FCM);
+        intent.setAction(RCDevice.ACTION_FCM);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O){
-            startForegroundService(intent);
+            startService(intent);
         } else{
             startService(intent);
         }

@@ -1292,7 +1292,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          turnEnabled = true;
       }
 
-      RCDevice.MediaIceServersDiscoveryType iceServerDiscoveryType = (RCDevice.MediaIceServersDiscoveryType)deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE);
+      RCDevice.MediaIceServersDiscoveryType iceServerDiscoveryType = RCDevice.MediaIceServersDiscoveryType.values()[(int)deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE)];
       if (iceServerDiscoveryType == RCDevice.MediaIceServersDiscoveryType.ICE_SERVERS_CONFIGURATION_URL_XIRSYS_V2) {
          url = deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_URL) +
                  "?ident=" + deviceParameters.get(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME) +
