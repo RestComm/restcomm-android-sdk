@@ -99,11 +99,12 @@ public class FcmConfigurationClient {
     public String getAccountSid(){
         RCLogger.v(TAG, "getAccountSid method started");
         String accountSid = null;
+        HttpURLConnection connection = null;
         try{
             String encodedEmail =  URLEncoder.encode(accountEmail, "UTF-8");
             String url = "https://" + restcommDomain + ACCOUNT_SID_URL + "/" + encodedEmail;
             RCLogger.v(TAG, "calling url: " + url);
-            HttpURLConnection connection = createUrlRequestWithUrl(url);
+            connection  = createUrlRequestWithUrl(url);
             connection.setRequestMethod("GET");
             int responseCode = connection.getResponseCode();
 
@@ -115,8 +116,12 @@ public class FcmConfigurationClient {
                 }
             }
 
-        }catch (Exception ex){
+        } catch (Exception ex){
             RCLogger.e(TAG, ex.toString());
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
         RCLogger.v(TAG, "getAccountSid method ended; returning account sid: " + accountSid);
         return accountSid;
@@ -132,9 +137,10 @@ public class FcmConfigurationClient {
     public String getClientSid(String accountSid, String username){
         RCLogger.v(TAG, "getClientSid method started");
         String clientSid = null;
+        HttpURLConnection connection = null;
         try{
             String url = "https://" + restcommDomain + CLIENT_SID_URL + "/" + accountSid + "/Clients.json";
-            HttpURLConnection connection = createUrlRequestWithUrl(url);
+            connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("GET");
             int responseCode = connection.getResponseCode();
 
@@ -153,8 +159,12 @@ public class FcmConfigurationClient {
                 }
             }
 
-        }catch (Exception ex){
+        } catch (Exception ex){
             RCLogger.e(TAG, ex.toString());
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
         RCLogger.v(TAG, "getClientSid method ended; returning client sid: " + clientSid);
         return clientSid;
@@ -172,10 +182,11 @@ public class FcmConfigurationClient {
         boolean ok = false;
         RCLogger.v(TAG, "enableClientPushSettings method started");
         FcmCredentials fcmCredentials = null;
+        HttpURLConnection connection = null;
         try{
             String url = "https://" + accountSid + ":" + this.password + "@" + this.restcommDomain + CLIENT_SID_URL + "/" + accountSid + "/Clients/" + clientSid;
             RCLogger.v(TAG, "calling url: " + url);
-            HttpURLConnection connection = createUrlRequestWithUrl(url, false);
+            connection = createUrlRequestWithUrl(url, false);
             connection.setRequestMethod("PUT");
             connection.setRequestProperty("Content-Type", "txt/html");
             String outputString =
@@ -191,8 +202,12 @@ public class FcmConfigurationClient {
                 ok = true;
             }
 
-        }catch (Exception ex){
+        } catch (Exception ex){
             RCLogger.e(TAG, ex.toString());
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
         RCLogger.v(TAG, "enableClientPushSettings method ended; returning ok:" + ok);
         return ok;
@@ -207,10 +222,11 @@ public class FcmConfigurationClient {
     public FcmApplication getApplication(String applicationName){
         RCLogger.v(TAG, "getApplication method started");
         FcmApplication fcmApplication = null;
+        HttpURLConnection connection = null;
         try{
             String url = "https://" + pushDomain + "/" + this.pushPath + "/applications";
             RCLogger.v(TAG, "calling url: " + url);
-            HttpURLConnection connection = createUrlRequestWithUrl(url);
+            connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("GET");
             int responseCode = connection.getResponseCode();
 
@@ -218,8 +234,12 @@ public class FcmConfigurationClient {
                 fcmApplication = getApplicationFromConnection(connection, applicationName);
             }
 
-        }catch (Exception ex){
+        } catch (Exception ex){
             RCLogger.e(TAG, ex.toString());
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
         RCLogger.v(TAG, "getApplication method ended; returning fcmApplication");
         return fcmApplication;
@@ -234,10 +254,11 @@ public class FcmConfigurationClient {
     public FcmApplication createApplication(FcmApplication application){
         RCLogger.v(TAG, "createApplication method started");
         FcmApplication fcmApplication = null;
+        HttpURLConnection connection = null;
         try{
             String url = "https://" + pushDomain + "/" + this.pushPath + "/applications";
             RCLogger.v(TAG, "calling url: " + url);
-            HttpURLConnection connection = createUrlRequestWithUrl(url);
+            connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "application/json");
             String outputString =
@@ -253,8 +274,12 @@ public class FcmConfigurationClient {
                 fcmApplication = getApplicationFromConnection(connection, application.getFriendlyName());
             }
 
-        }catch (Exception ex){
+        } catch (Exception ex){
             RCLogger.e(TAG, ex.toString());
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
         RCLogger.v(TAG, "createApplication method ended; returning fcmApplication");
         return fcmApplication;
@@ -268,10 +293,11 @@ public class FcmConfigurationClient {
     public FcmCredentials getCredentials(FcmApplication application){
         RCLogger.v(TAG, "getCredentials method started");
         FcmCredentials fcmCredentials = null;
+        HttpURLConnection connection = null;
         try{
             String url = "https://" + pushDomain + "/" + this.pushPath + "/credentials";
             RCLogger.v(TAG, "calling url: " + url);
-            HttpURLConnection connection = createUrlRequestWithUrl(url);
+            connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("GET");
             int responseCode = connection.getResponseCode();
 
@@ -279,8 +305,12 @@ public class FcmConfigurationClient {
                 fcmCredentials = getCredentialsFromConnection(connection, application.getSid());
             }
 
-        }catch (Exception ex){
+        } catch (Exception ex){
             RCLogger.e(TAG, ex.toString());
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
         RCLogger.v(TAG, "getCredentials method ended; returning fcmCredentials");
         return fcmCredentials;
@@ -295,10 +325,11 @@ public class FcmConfigurationClient {
     public FcmCredentials createCredentials(FcmCredentials credentials, String fcmSecret){
         RCLogger.v(TAG, "createCredentials method started");
         FcmCredentials fcmCredentials = null;
+        HttpURLConnection connection = null;
         try{
             String url = "https://" + pushDomain + "/" + this.pushPath + "/credentials";
             RCLogger.v(TAG, "calling url: " + url);
-            HttpURLConnection connection = createUrlRequestWithUrl(url);
+            connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("POST");
             connection.setRequestProperty("Content-Type", "application/json");
             String outputString =
@@ -316,8 +347,12 @@ public class FcmConfigurationClient {
                 fcmCredentials = getCredentialsFromConnection(connection, credentials.getApplicationSid());
             }
 
-        }catch (Exception ex){
+        } catch (Exception ex){
             RCLogger.e(TAG, ex.toString());
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
         RCLogger.v(TAG, "createCredentials method ended; returning fcmCredentials");
         return fcmCredentials;
@@ -331,10 +366,11 @@ public class FcmConfigurationClient {
     public FcmBinding getBinding(FcmApplication application){
         RCLogger.v(TAG, "getBinding method started");
         FcmBinding fcmBinding = null;
+        HttpURLConnection connection = null;
         try{
             String url = "https://" + pushDomain + "/" + this.pushPath + "/bindings";
             RCLogger.v(TAG, "calling url: " + url);
-            HttpURLConnection connection = createUrlRequestWithUrl(url);
+            connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("GET");
             int responseCode = connection.getResponseCode();
 
@@ -342,8 +378,12 @@ public class FcmConfigurationClient {
                 fcmBinding = getBindingFromConnection(connection, application.getSid());
             }
 
-        }catch (Exception ex){
+        } catch (Exception ex){
             RCLogger.e(TAG, ex.toString());
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
         RCLogger.v(TAG, "getBinding method ended; returning fcmBinding");
         return fcmBinding;
@@ -377,13 +417,14 @@ public class FcmConfigurationClient {
     private FcmBinding createOrUpdateBinding(FcmBinding binding, String bindingSid){
         RCLogger.v(TAG, "createBinding method started");
         FcmBinding fcmBinding = null;
+        HttpURLConnection connection = null;
         try{
             String url = "https://" + pushDomain + "/" + this.pushPath + "/bindings";
             if (bindingSid != null){
                 url = "https://" + pushDomain + "/" + this.pushPath + "/bindings/" + bindingSid;
             }
             RCLogger.v(TAG, "calling url: " + url);
-            HttpURLConnection connection = createUrlRequestWithUrl(url);
+            connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("POST");
             if (bindingSid != null){
                 connection.setRequestMethod("PUT");
@@ -405,8 +446,12 @@ public class FcmConfigurationClient {
                 fcmBinding = getBindingFromConnection(connection, binding.getApplicationSid());
             }
 
-        }catch (Exception ex){
+        } catch (Exception ex){
             RCLogger.e(TAG, ex.toString());
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
         }
         RCLogger.v(TAG, "createBinding method ended; returning fcmBinding");
         return fcmBinding;
