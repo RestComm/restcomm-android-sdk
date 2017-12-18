@@ -47,9 +47,9 @@ then
 	exit 1
 fi 
 
-# Upload community version to TF, so that it gets a separate download point from premium
+# Upload community version to TF, so that it gets a separate download point from premium (no need to specify APPLICATION_ID as default is for community)
 echo "-- Building community version of Olympus & uploading to Test Fairy -this might take some time..."
-./gradlew --quiet -x signArchives -x uploadArchives -x androidJavadocs -PAPPLICATION_ID="org.restcomm.android.olympus" -PtestfairyChangelog="Version: $ORG_GRADLE_PROJECT_VERSION_NAME+$ORG_GRADLE_PROJECT_VERSION_CODE, GitHub commit: $COMMIT_SHA1, community build" testfairyDebug || exit 1
+./gradlew --quiet -x signArchives -x uploadArchives -x androidJavadocs -PtestfairyChangelog="Version: $ORG_GRADLE_PROJECT_VERSION_NAME+$ORG_GRADLE_PROJECT_VERSION_CODE, GitHub commit: $COMMIT_SHA1, community build" testfairyDebug || exit 1
 if [ $? -ne 0 ]
 then
 	echo "-- Failed to build Olympus community for uploading to TestFairy."
