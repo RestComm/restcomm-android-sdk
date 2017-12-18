@@ -573,12 +573,11 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
          RCLogger.i(TAG, "RCDevice(): " + parameters.toString());
 
+         RCUtils.validateDeviceParms(parameters);
+
          //save parameters to storage
          storageManagerPreferences = new StorageManagerPreferences(this);
          StorageUtils.saveParams(storageManagerPreferences, parameters);
-         parameters = StorageUtils.getParams(storageManagerPreferences);
-
-         RCUtils.validateDeviceParms(parameters);
 
          //this.updateCapabilityToken(capabilityToken);
          this.listener = deviceListener;
