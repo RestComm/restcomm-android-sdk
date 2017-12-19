@@ -14,7 +14,7 @@ buildscript {
 
     dependencies {
         // TestFairy gradle plugin
-        classpath 'com.testfairy.plugins.gradle:testfairy:1.+'
+        classpath 'com.testfairy.plugins.gradle:testfairy:2.+'
 
         // Show licenses from all dependencies
         classpath 'nl.javadude.gradle.plugins:license-gradle-plugin:0.10.0'
@@ -39,7 +39,7 @@ android {
     }
 
     defaultConfig {
-        applicationId APPLICATION_ID
+        applicationId "org.restcomm.android.olympus"
         minSdkVersion 21
         targetSdkVersion 26
 
@@ -48,18 +48,6 @@ android {
 
         logger.info("-- Using versionName: " + VERSION_NAME)
         versionName VERSION_NAME
-
-        // Pass the credentials to the build config so that they can be accessed by the application.
-        // Notice that those are declared both in global gradle.properties (secret) and project gradle.properties
-        // so that proper testing can be conducted by the team, while community can use default user/pass in their
-        // Restcomm installation
-        buildConfigField "String", "TEST_RESTCOMM_LOGIN", TEST_RESTCOMM_LOGIN
-        buildConfigField "String", "TEST_RESTCOMM_PASSWORD", TEST_RESTCOMM_PASSWORD
-        buildConfigField "String", "TEST_RESTCOMM_ACCOUNT_SID", TEST_RESTCOMM_ACCOUNT_SID
-        buildConfigField "String", "TEST_RESTCOMM_AUTH_TOKEN", TEST_RESTCOMM_AUTH_TOKEN
-        buildConfigField "boolean", "ENABLE_TEST_FAIRY_RUNTIME", ENABLE_TEST_FAIRY_RUNTIME
-        buildConfigField "String", "TESTFAIRY_APP_TOKEN", TESTFAIRY_APP_TOKEN
-
 
         // ICE_USERNAME, ICE_PASSWORD & ICE_DOMAIN are defined in project gradle.properties for community builds, but also overriden
         // by gradle properties passed from command line (i.e. $ gradlew ... -PICE_DOMAIN=...) for Telestax builds from our
@@ -80,13 +68,17 @@ android {
     }
 
     buildTypes {
-        release {
-            applicationVariants.all { variant ->
-                variant.outputs.all {
-                    //outputFile = new File(output.outputFile.parent, "restcomm-olympus-${variant.versionName}+${variant.versionCode}-RELEASE.apk")
-                    outputFileName = "restcomm-olympus-${variant.versionName}+${variant.versionCode}-RELEASE.apk"
-                }
+        // set the .apk names depending on build-type & flavor
+        applicationVariants.all { variant ->
+            variant.outputs.all {
+                outputFileName = "restcomm-olympus-${variant.flavorName}-${variant.versionName}+${variant.versionCode}-${variant.buildType.name}.apk"
             }
+        }
+
+        release {
+            // Not specifying applicationIdSuffix since release uses the default applicationId: org.restcomm.android.olympus
+            buildConfigField "boolean", "ENABLE_TEST_FAIRY_RUNTIME", "true"
+            buildConfigField "String", "TESTFAIRY_APP_TOKEN", TESTFAIRY_APP_TOKEN
 
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
@@ -94,15 +86,20 @@ android {
         }
 
         debug {
+            buildConfigField "boolean", "ENABLE_TEST_FAIRY_RUNTIME", "false"
+            buildConfigField "String", "TESTFAIRY_APP_TOKEN", TESTFAIRY_APP_TOKEN
+            // Pass the credentials to the build config so that they can be accessed by the application.
+            // Notice that those are declared both in global gradle.properties (secret) and project gradle.properties
+            // so that proper testing can be conducted by the team, while community can use default user/pass in their
+            // Restcomm installation
+            buildConfigField "String", "TEST_RESTCOMM_LOGIN", TEST_RESTCOMM_LOGIN
+            buildConfigField "String", "TEST_RESTCOMM_PASSWORD", TEST_RESTCOMM_PASSWORD
+            buildConfigField "String", "TEST_RESTCOMM_ACCOUNT_SID", TEST_RESTCOMM_ACCOUNT_SID
+            buildConfigField "String", "TEST_RESTCOMM_AUTH_TOKEN", TEST_RESTCOMM_AUTH_TOKEN
+
             applicationIdSuffix ".debug"
             debuggable true
 
-            applicationVariants.all { variant ->
-                variant.outputs.all {
-                    //outputFile = new File(output.outputFile.parent, "restcomm-olympus-${variant.versionName}+${variant.versionCode}-DEBUG.apk")
-                    outputFileName = "restcomm-olympus-${variant.versionName}+${variant.versionCode}-DEBUG.apk"
-                }
-            }
             minifyEnabled false
         }
 
@@ -112,6 +109,32 @@ android {
         }
 
 
+    }
+
+    // With Android plugin for Gradle 3.0.0 or higher, you must assign each flavor to a flavor dimension
+    flavorDimensions "defaultFlavorDimension"
+
+    productFlavors {
+        community {
+            // Not specifying applicationIdSuffix since community is the default applicationId: org.restcomm.android.olympus (for release)
+            // or org.restcomm.android.olympus.debug depending on buildType
+
+            // Set specific application name as a resource, so that it's clear in the device what flavor a user is looking at
+            resValue "string", "app_name", "Restcomm Olympus Community"
+            buildConfigField "boolean", "ENABLE_TEST_FAIRY_RUNTIME", "false"
+            buildConfigField "String", "TESTFAIRY_APP_TOKEN", TESTFAIRY_APP_TOKEN
+
+            //applicationIdSuffix ".premium"
+        }
+
+        premium {
+            applicationIdSuffix ".premium"
+
+            // Set specific application name as a resource, so that it's clear in the device what flavor a user is looking at
+            resValue "string", "app_name", "Restcomm Olympus Premium"
+            buildConfigField "boolean", "ENABLE_TEST_FAIRY_RUNTIME", "false"
+            buildConfigField "String", "TESTFAIRY_APP_TOKEN", TESTFAIRY_APP_TOKEN
+        }
     }
 
     testfairyConfig {

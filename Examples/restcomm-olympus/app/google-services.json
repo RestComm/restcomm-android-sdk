@@ -67,6 +67,68 @@
           "status": 2
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:515123525418:android:c802f4017cfc91b0",
+        "android_client_info": {
+          "package_name": "org.restcomm.android.olympus.premium"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "515123525418-mjjbkgaia6kjn1kfoak7m1a2mboe6dgt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAv1gsTufMeDCgkG1mt8jR5FOUR9Ofm4bQ"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:515123525418:android:84e9657b6a54327c",
+        "android_client_info": {
+          "package_name": "org.restcomm.android.olympus.premium.debug"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "515123525418-mjjbkgaia6kjn1kfoak7m1a2mboe6dgt.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAv1gsTufMeDCgkG1mt8jR5FOUR9Ofm4bQ"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
     }
   ],
   "configuration_version": "1"

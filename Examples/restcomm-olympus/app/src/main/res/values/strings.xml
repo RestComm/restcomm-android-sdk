@@ -1,5 +1,7 @@
 <resources>
+    <!-- We 're setting the app_name through Olympus build.gradle to account for flavors
     <string name="app_name">Restcomm Olympus</string>
+    -->
     <string name="contacts_activity_label">Olympus</string>
 
     <string name="action_audio_call">Make Audio Call</string>

@@ -40,7 +40,8 @@ fi
 
 # Upload premium version to TF
 echo "-- Building premium version of Olympus & uploading to Test Fairy -this might take some time..."
-./gradlew --quiet -x signArchives -x uploadArchives -x androidJavadocs -PICE_USERNAME=$ICE_USERNAME -PICE_PASSWORD=$ICE_PASSWORD -PICE_DOMAIN=$ICE_DOMAIN -PAPPLICATION_ID="org.restcomm.android.olympus.premium" -PtestfairyChangelog="Version: $ORG_GRADLE_PROJECT_VERSION_NAME+$ORG_GRADLE_PROJECT_VERSION_CODE, GitHub commit: $COMMIT_SHA1, premium build" testfairyDebug || exit 1
+#./gradlew --quiet -x signArchives -x uploadArchives -x androidJavadocs -PICE_USERNAME=$ICE_USERNAME -PICE_PASSWORD=$ICE_PASSWORD -PICE_DOMAIN=$ICE_DOMAIN -PAPPLICATION_ID="org.restcomm.android.olympus.premium" -PtestfairyChangelog="Version: $ORG_GRADLE_PROJECT_VERSION_NAME+$ORG_GRADLE_PROJECT_VERSION_CODE, GitHub commit: $COMMIT_SHA1, premium build" testfairyDebug || exit 1
+./gradlew --quiet assemblePremiumRelease -PICE_USERNAME=$ICE_USERNAME -PICE_PASSWORD=$ICE_PASSWORD -PICE_DOMAIN=$ICE_DOMAIN -PtestfairyChangelog="Version: $ORG_GRADLE_PROJECT_VERSION_NAME+$ORG_GRADLE_PROJECT_VERSION_CODE, GitHub commit: $COMMIT_SHA1, premium build" testfairyPremiumRelease || exit 1
 if [ $? -ne 0 ]
 then
 	echo "-- Failed to build Olympus premium for uploading to TestFairy."
@@ -49,7 +50,8 @@ fi
 
 # Upload community version to TF, so that it gets a separate download point from premium (no need to specify APPLICATION_ID as default is for community)
 echo "-- Building community version of Olympus & uploading to Test Fairy -this might take some time..."
-./gradlew --quiet -x signArchives -x uploadArchives -x androidJavadocs -PtestfairyChangelog="Version: $ORG_GRADLE_PROJECT_VERSION_NAME+$ORG_GRADLE_PROJECT_VERSION_CODE, GitHub commit: $COMMIT_SHA1, community build" testfairyDebug || exit 1
+#./gradlew --quiet -x signArchives -x uploadArchives -x androidJavadocs -PtestfairyChangelog="Version: $ORG_GRADLE_PROJECT_VERSION_NAME+$ORG_GRADLE_PROJECT_VERSION_CODE, GitHub commit: $COMMIT_SHA1, community build" testfairyDebug || exit 1
+./gradlew --quiet assembleCommunityRelease -PtestfairyChangelog="Version: $ORG_GRADLE_PROJECT_VERSION_NAME+$ORG_GRADLE_PROJECT_VERSION_CODE, GitHub commit: $COMMIT_SHA1, community build" testfairyCommunityRelease || exit 1
 if [ $? -ne 0 ]
 then
 	echo "-- Failed to build Olympus community for uploading to TestFairy."

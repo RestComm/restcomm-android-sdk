@@ -1,5 +1,7 @@
 <resources>
-    <string name="app_name">Restcomm Messenger</string>
+    <!-- -->
+    <string name="app_name">Restcomm Olympus</string>
+    <!-- -->
 
     <string name="messenger">Messenger</string>
     <string name="action_settings">Settings</string>

@@ -38,6 +38,11 @@ then
 		openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/configuration/${GLOBAL_GRADLE_PROPERTIES}.enc -d -a -out scripts/configuration/${GLOBAL_GRADLE_PROPERTIES} || exit 1
 		mv scripts/configuration/${GLOBAL_GRADLE_PROPERTIES} ~/.gradle/${GLOBAL_GRADLE_PROPERTIES} || exit 1
 
+		echo "-- Decrypting and installing keystore for signing release builds"
+		openssl aes-256-cbc -k "$FILE_ENCRYPTION_PASSWORD" -in scripts/configuration/${RELEASE_KEYSTORE}.enc -d -a -out scripts/configuration/${RELEASE_KEYSTORE} || exit 1
+		mkdir -p ~/security
+		mv scripts/configuration/${RELEASE_KEYSTORE} ~/security/${RELEASE_KEYSTORE} || exit 1
+
 		echo "-- Decrypting and installing gnupg resources for maven artifact signing + upload"
 		# DEBUG
 		#ls ~/.gnupg

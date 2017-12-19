@@ -36,7 +36,7 @@ public class FcmMessagingService extends FirebaseMessagingService {
      */
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
-        Log.d(TAG, "From: " + remoteMessage.getFrom());
+        Log.d(TAG, "Push Notification from: " + remoteMessage.getFrom());
         sendNotification();
     }
 

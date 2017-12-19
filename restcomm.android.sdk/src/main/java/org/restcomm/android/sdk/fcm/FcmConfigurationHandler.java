@@ -300,6 +300,8 @@ public class FcmConfigurationHandler {
         @Override
         protected void onPostExecute(Pair<HashMap<String, String>, RCClient.ErrorCodes> result) {
             if (result.second == RCClient.ErrorCodes.SUCCESS) {
+                RCLogger.i(TAG, "Push notifications configuration finished successfully");
+
                 HashMap<String, String> resultHash = result.first;
                 //save data to storage
                 String accountSid = resultHash.get(FCM_ACCOUNT_SID);
@@ -322,6 +324,7 @@ public class FcmConfigurationHandler {
 
             } else {
                 RCClient.ErrorCodes errorCode = result.second;
+                RCLogger.e(TAG, "Push notifications configuration failed, status: " + RCClient.errorText(errorCode));
                 if (mListener != null) {
                     mListener.onRegisteredForPush(errorCode, RCClient.errorText(errorCode));
                 }
