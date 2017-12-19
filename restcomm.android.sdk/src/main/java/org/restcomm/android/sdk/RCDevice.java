@@ -1036,7 +1036,10 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
 
       signalingClient.reconfigure(params);
-      registerForPush(true);
+      //check do we need to register for push
+      if ((Boolean) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT)){
+         registerForPush(true);
+      }
 
       // TODO: need to provide asynchronous status for this
       return true;
@@ -1086,8 +1089,10 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
                     RCClient.errorText(status));
          }
 
-         //register for push
-         registerForPush(false);
+         //check do we need to register for push
+         if ((Boolean) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT)) {
+            registerForPush(false);
+         }
 
          if (status == RCClient.ErrorCodes.SUCCESS){
             state = DeviceState.READY;
@@ -1095,6 +1100,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
             release();
          }
    }
+
 
     /**
      * Internal service callback for when we get a reply from release(); not meant for application use
