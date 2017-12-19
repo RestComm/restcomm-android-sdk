@@ -8,8 +8,6 @@ buildscript {
         mavenCentral()
         maven { url 'https://www.testfairy.com/maven' }
         maven { url "https://maven.google.com" }
-
-
     }
 
     dependencies {
