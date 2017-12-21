@@ -409,24 +409,18 @@ public class MainActivity extends AppCompatActivity
    public void onClick(View view)
    {
       if (view.getId() == R.id.imageButton_add) {
-         /* TODO: Issue #380: once we figure out the issue with the backgrounding we need to uncomment this, but also place it to a suitable place
+         /* TODO: Issue #380: once we figure out the issue with the backgrounding we need to uncomment this,
+            but also place it to a suitable place :)
          Intent intent = new Intent(this, CallActivity.class);
          intent.setAction(RCDevice.LIVE_CALL);
          startActivityForResult(intent, CONNECTION_REQUEST);
          */
+
          //DialogFragment newFragment = AddUserDialogFragment.newInstance(AddUserDialogFragment.DIALOG_TYPE_ADD_CONTACT, "", "");
          //newFragment.show(getFragmentManager(), "dialog");
 
          AddUserDialogFragment newFragment = AddUserDialogFragment.newInstance(AddUserDialogFragment.DIALOG_TYPE_ADD_CONTACT, "", "");
          newFragment.show(getSupportFragmentManager(), "dialog");
-
-         // DEBUG: for adding memory pressure to the App
-         /*
-         for (int i = 0; i < 200; i++) {
-            list.add(new String[100000]);
-         }
-         Log.i(TAG, "List size: " + list.size());
-         */
       }
    }
 

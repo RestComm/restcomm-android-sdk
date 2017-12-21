@@ -157,14 +157,19 @@ android {
         //uploadProguardMapping true
     }
 
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
 repositories {
+
     //mavenLocal()
     jcenter()
-    //mavenCentral()
 
     // IMPORTANT: For some weird reason this repo needs to be declared here even though dependency that actually uses it is in restcomm.android.sdk module
+
     // If we don't the dependency is not found :(
     maven {
         url "http://telestax.jfrog.io/telestax/community-releases"
@@ -208,26 +213,21 @@ dependencies {
     //compile 'net.hockeyapp.android:HockeySDK:4.1.1'
     ////compile files('./libs/testfairy-android-sdk-1.4.6-unlimited-events.jar')
     compile 'com.google.firebase:firebase-messaging:11.6.2'
-
     // AndroidJUnitRunner and JUnit Rules
     androidTestCompile 'com.android.support.test:runner:1.0.1'
     androidTestCompile 'com.android.support.test:rules:1.0.1'
     androidTestUtil 'com.android.support.test:orchestrator:1.0.1'
-
     androidTestCompile 'com.android.support.test.espresso:espresso-core:3.0.0', {
         exclude group: 'com.android.support', module: 'support-annotations'
     }
-
     // We need uiautomator so that we can interact with permission dialogs that come from the Android system, NOT the App
     androidTestCompile 'com.android.support.test.uiautomator:uiautomator-v18:2.1.3'
     androidTestCompile 'com.loopj.android:android-async-http:1.4.9'
     androidTestCompile 'org.awaitility:awaitility:3.0.0'
-
     androidTestCompile 'com.squareup.assertj:assertj-android:1.1.1', {
         exclude group: 'com.android.support', module: 'support-annotations'
     }
     compile 'com.android.support:multidex:1.0.2'
-
 }
 
 //

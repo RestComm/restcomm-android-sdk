@@ -165,9 +165,13 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         super.onPause();
         Log.i(TAG, "%% onPause");
 
+        // TODO: Issue #380: once we figure out the issue with the backgrounding we need to uncomment this
+        // I don't think we need this, but let's keep it around until we 're done with pausing video view functionality
+        /*
         if (connection != null && connection.getState() == RCConnection.ConnectionState.CONNECTED) {
             connection.pauseVideo();
         }
+        */
     }
 
     @Override
@@ -247,8 +251,10 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
                 // incoming established or outgoing any state (pending, connecting, connected)
                 if (connection.getState() == RCConnection.ConnectionState.CONNECTED) {
                     // If user leaves activity while on call we need to stop local video
-                    //connection.pauseVideo();
                     connection.disconnect();
+
+                    // TODO: Issue #380: once we figure out the issue with the backgrounding we need to uncomment this
+                    //connection.pauseVideo();
                 }
                 else {
                     connection = null;

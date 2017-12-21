@@ -76,9 +76,8 @@ import org.restcomm.android.sdk.MediaClient.util.IceServerFetcher;
 import org.restcomm.android.sdk.util.PercentFrameLayout;
 import org.restcomm.android.sdk.util.RCLogger;
 import org.webrtc.Camera1Enumerator;
-import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
-import org.webrtc.EglBase;
+//import org.webrtc.EglBase;
 import org.webrtc.FileVideoCapturer;
 import org.webrtc.IceCandidate;
 import org.webrtc.Logging;
@@ -89,7 +88,7 @@ import org.webrtc.StatsReport;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.RendererCommon.ScalingType;
 import org.webrtc.VideoCapturer;
-import org.webrtc.VideoTrack;
+
 
 /**
  * RCConnection represents a call. An RCConnection can be either incoming or outgoing. RCConnections are not created by themselves but
@@ -361,7 +360,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private SignalingClient signalingClient;
    private String incomingCallSdp = "";
    private String peer;
-   private EglBase rootEglBase;
+   //private EglBase rootEglBase;
    private boolean localVideoReceived = false;
    private boolean remoteVideoReceived = false;
    private SurfaceViewRenderer localRender;
@@ -1574,13 +1573,16 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       this.localRenderLayout = localRenderLayout;
       this.remoteRenderLayout = remoteRenderLayout;
 
-      rootEglBase = EglBase.create();
+      // Create peer connection client.
+      peerConnectionClient = new PeerConnectionClient();
+
+      //rootEglBase = EglBase.create();
       localRender = (SurfaceViewRenderer)localRenderLayout.getChildAt(0);
       remoteRender = (SurfaceViewRenderer)remoteRenderLayout.getChildAt(0);
 
-      localRender.init(rootEglBase.getEglBaseContext(), null);
+      localRender.init(peerConnectionClient.getRenderContext(), null);
       localRender.setZOrderMediaOverlay(true);
-      remoteRender.init(rootEglBase.getEglBaseContext(), null);
+      remoteRender.init(peerConnectionClient.getRenderContext(), null);
       updateVideoView(VideoViewState.NONE);
    }
 
@@ -1740,6 +1742,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             false,  // disable builtin AEC
             false,  // disable builtin AGC
             false,  // disable builtin NS
+            false,
             false);  // enable level control
 
       createPeerConnectionFactory();
@@ -1843,10 +1846,12 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          remoteRenderLayout = null;
       }
 
+      /*
       if (rootEglBase != null) {
          rootEglBase.release();
          rootEglBase = null;
       }
+      */
    }
 
    /*
@@ -1869,10 +1874,10 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          public void run()
          {
             RCLogger.i(TAG, "createPeerConnectionFactory");
-            if (peerConnectionClient == null) {
+            if (peerConnectionClient != null) {
                final long delta = System.currentTimeMillis() - callStartedTimeMs;
                RCLogger.d(TAG, "Creating peer connection factory, delay=" + delta + "ms");
-               peerConnectionClient = PeerConnectionClient.getInstance();
+               //peerConnectionClient = PeerConnectionClient.getInstance();
                peerConnectionClient.createPeerConnectionFactory(device,
                      peerConnectionParameters,
                      connection);
@@ -2335,8 +2340,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
 
       logAndToast("Creating peer connection, delay=" + delta + "ms");
-      peerConnectionClient.createPeerConnection(rootEglBase != null ? rootEglBase.getEglBaseContext(): null,
-            localRender, remoteRender, videoCapturer, signalingParameters);
+      peerConnectionClient.createPeerConnection(localRender, remoteRender, videoCapturer, signalingParameters);
 
       if (signalingParameters.initiator) {
          logAndToast("Creating OFFER...");
