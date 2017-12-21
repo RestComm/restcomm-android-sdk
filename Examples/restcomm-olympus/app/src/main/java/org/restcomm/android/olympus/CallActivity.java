@@ -413,7 +413,7 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
 
 
                     // Check permissions asynchronously and then accept the call
-                    handlePermissions(true);
+                    handlePermissions(answerVideo);
                 }
             }
             else {

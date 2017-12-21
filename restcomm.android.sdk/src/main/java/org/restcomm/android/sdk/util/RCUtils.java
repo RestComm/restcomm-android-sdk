@@ -22,9 +22,13 @@
 
 package org.restcomm.android.sdk.util;
 
+import android.text.TextUtils;
+
 import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCDevice;
+import org.restcomm.android.sdk.fcm.FcmConfigurationHandler;
+import org.restcomm.android.sdk.storage.StorageManagerInterface;
 
 import java.util.HashMap;
 import java.util.List;
@@ -171,6 +175,92 @@ public class RCUtils {
          }
 
       }
+
+   }
+
+   public static boolean shouldUpdatePush(HashMap<String, Object> parameters) throws RCException{
+      if (!parameters.containsKey(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY) ||
+              parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY) == null ||
+              TextUtils.isEmpty((String) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY))) {
+         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_FCM_SERVER_KEY_MISSING);
+      }
+      return true;
+   }
+
+   public static boolean shouldRegisterForPush(HashMap<String, Object> parameters, StorageManagerInterface storageManagerInterface) throws RCException{
+      //check is there fcm server key, if not write a warning
+      if (parameters == null) {
+         return false;
+      }
+
+      if (!parameters.containsKey(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY) ||
+              parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY) == null ||
+              TextUtils.isEmpty((String) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY))) {
+         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_FCM_SERVER_KEY_MISSING);
+      }
+
+      //check empty fields
+      if (!parameters.containsKey(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME) ||
+              parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME) == null ||
+              TextUtils.isEmpty((String) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME))) {
+         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_APPLICATION_NAME_MISSING);
+      }
+
+      if (!parameters.containsKey(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL) ||
+              parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL) == null ||
+              TextUtils.isEmpty((String) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL))) {
+         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ACCOUNT_EMAIL_MISSING);
+      }
+
+      if (!parameters.containsKey(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD) ||
+              parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD) == null ||
+              TextUtils.isEmpty((String) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD))) {
+         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ACCOUNT_PASSWORD_MISSING);
+      }
+
+      if (!parameters.containsKey(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN) ||
+              parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN) == null ||
+              TextUtils.isEmpty((String) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN))) {
+         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_PUSH_DOMAIN_MISSING);
+      }
+
+      if (!parameters.containsKey(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN) ||
+              parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN) == null ||
+              TextUtils.isEmpty((String) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN))) {
+         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_HTTP_DOMAIN_MISSING);
+      }
+
+      //when binding is missing we need to register for push
+      if (storageManagerInterface.getString(FcmConfigurationHandler.FCM_BINDING, null) == null){
+         return true;
+      }
+
+      if (!parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY).equals
+              (storageManagerInterface.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, null))) {
+         return true;
+      }
+
+      if (!parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME).equals
+              (storageManagerInterface.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, null))) {
+         return true;
+      }
+
+      if (!parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD).equals
+              (storageManagerInterface.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, null))) {
+         return true;
+      }
+
+      if (!parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN).equals
+              (storageManagerInterface.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, null))) {
+         return true;
+      }
+
+      if (!parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN).equals
+              (storageManagerInterface.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, null))) {
+         return true;
+      }
+
+      return false;
 
    }
 }

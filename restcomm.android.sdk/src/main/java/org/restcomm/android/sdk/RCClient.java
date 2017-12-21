@@ -107,10 +107,15 @@ public final class RCClient {
 
       ERROR_DEVICE_PUSH_NOTIFICATION_ACCOUNT_SID_MISSING,
       ERROR_DEVICE_PUSH_NOTIFICATION_CLIENT_SID_MISSING,
-      ERROR_DEVICE_PUSH_NOTIFICATION_APPLICATION_MISSING,
       ERROR_DEVICE_PUSH_NOTIFICATION_CREDENTIALS_MISSING,
       ERROR_DEVICE_PUSH_NOTIFICATION_BINDING_MISSING,
-      ERROR_DEVICE_PUSH_PARAMETERS_MISSING,
+      ERROR_DEVICE_PUSH_NOTIFICATION_APPLICATION_MISSING,
+      ERROR_DEVICE_PUSH_NOTIFICATION_FCM_SERVER_KEY_MISSING,
+      ERROR_DEVICE_PUSH_NOTIFICATION_APPLICATION_NAME_MISSING,
+      ERROR_DEVICE_PUSH_NOTIFICATION_ACCOUNT_EMAIL_MISSING,
+      ERROR_DEVICE_PUSH_NOTIFICATION_ACCOUNT_PASSWORD_MISSING,
+      ERROR_DEVICE_PUSH_NOTIFICATION_PUSH_DOMAIN_MISSING,
+      ERROR_DEVICE_PUSH_NOTIFICATION_HTTP_DOMAIN_MISSING,
    }
 
    /**
@@ -323,17 +328,32 @@ public final class RCClient {
       else  if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_CLIENT_SID_MISSING) {
           return "Failed to register/update for push notification; Client sid cannot be found";
       }
-      else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_APPLICATION_MISSING){
-          return "Failed to register/update for push notification; Application cannot be found";
-      }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_CREDENTIALS_MISSING){
           return "Failed to register/update for push notification; Credentials cannot be found";
       }
-      else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_BINDING_MISSING){
-          return "Failed to register/update for push notification; Binding cannot be found";
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_BINDING_MISSING) {
+         return "Failed to register/update for push notification; Binding cannot be found";
       }
-      else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING){
-          return "Missing parameters to set up push notifications";
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_APPLICATION_MISSING){
+         return "Failed to register/update for push notification; Application cannot be found";
+      }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_FCM_SERVER_KEY_MISSING){
+         return "Failed to register/update for push notification; fcm server key cannot be found";
+      }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_APPLICATION_NAME_MISSING){
+         return "Failed to register/update for push notification; Application name cannot be found";
+      }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ACCOUNT_EMAIL_MISSING){
+         return "Failed to register/update for push notification; Account email cannot be found";
+      }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ACCOUNT_PASSWORD_MISSING){
+         return "Failed to register/update for push notification; Account password cannot be found";
+      }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_PUSH_DOMAIN_MISSING){
+         return "Failed to register/update for push notification; Push domain cannot be found";
+      }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_HTTP_DOMAIN_MISSING){
+         return "Failed to register/update for push notification; Http domain cannot be found";
       }
 
       return "Unmapped Restcomm Client error: " + errorCode;

@@ -49,7 +49,7 @@ public class FcmConfigurationHandler {
     private static final String FCM_ACCOUNT_SID = "fcm-account-sid";
     private static final String FCM_CLIENT_SID = "fcm-client-sid";
     private static final String FCM_APPLICATION = "fcm-application";
-    private static final String FCM_BINDING = "fcm-binding";
+    public static final String FCM_BINDING = "fcm-binding";
 
     private static final String TYPE = "fcm";
 
@@ -106,7 +106,15 @@ public class FcmConfigurationHandler {
     }
 
     public void updateBinding(){
-        registerOrUpdateForPush(true);
+        //we will not update the push with token
+        //if we don't have the app registered
+        RCLogger.v(TAG, "updateBinding started");
+        if (mEnablePush && !TextUtils.isEmpty(mUsername)) {
+            RCLogger.v(TAG, "Push is enabled and username is found. Updating the server");
+            registerOrUpdateForPush(true);
+        } else {
+            RCLogger.v(TAG, "Push is not enabled or username cannot be found. Updating the server will not happened.");
+        }
     }
 
     /**

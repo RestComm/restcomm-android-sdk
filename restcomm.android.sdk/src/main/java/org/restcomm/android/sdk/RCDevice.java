@@ -1038,7 +1038,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       signalingClient.reconfigure(params);
       //check do we need to register for push
       if ((Boolean) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT)){
-         registerForPush(true);
+         updatePush();
       }
 
       // TODO: need to provide asynchronous status for this
@@ -1091,7 +1091,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
          //check do we need to register for push
          if ((Boolean) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT)) {
-            registerForPush(false);
+            registerForPush();
          }
 
          if (status == RCClient.ErrorCodes.SUCCESS){
@@ -1795,27 +1795,29 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       startForeground(ONCALL_NOTIFICATION_ID, builder.build());
    }
 
-   public void registerForPush(boolean clearFcmData){
-      boolean registerForPushAvailable = false;
-      //register for push
-      if (storageManagerPreferences != null) {
-         if (allPushRegisterDataAvailable()) {
-            new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(clearFcmData);
-            registerForPushAvailable = true;
+   public void registerForPush(){
+      try {
+         if (storageManagerPreferences != null && RCUtils.shouldRegisterForPush(parameters, storageManagerPreferences)){
+            new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(false);
          }
-      }
-
-      //something is missing for push configuration,
-      //remove it
-      if (!registerForPushAvailable) {
+      } catch (RCException e) {
          if (isServiceAttached && listener != null) {
-            listener.onWarning(this, RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING.ordinal(), RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING));
-         } else {
-            RCLogger.w(TAG, "RegisterForPush  warning: " +
-                    RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING));
+            listener.onWarning(this, e.errorCode.ordinal(), e.errorText);
          }
+         RCLogger.w(TAG, "RegisterForPush  warning: " + e.errorText);
+      }
+   }
 
-
+   public void updatePush(){
+      try {
+         if (storageManagerPreferences != null && RCUtils.shouldUpdatePush(parameters)){
+            new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(true);
+         }
+      } catch (RCException e) {
+         if (isServiceAttached && listener != null) {
+            listener.onWarning(this, e.errorCode.ordinal(), e.errorText);
+         }
+         RCLogger.w(TAG, "Updating push warning: " + e.errorText);
       }
    }
 
@@ -1889,34 +1891,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       // TODO(henrika): disable video if AppRTCAudioManager.AudioDevice.EARPIECE
       // is active.
    }
-
-
-    private boolean allPushRegisterDataAvailable(){
-        String applicationName = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, null);
-        String accountEmail = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, null);
-
-        if (accountEmail.equals("ACCOUNT EMAIL")){
-           accountEmail = null;
-        }
-        String accountPassword = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, null);
-
-        if (accountPassword.equals("ACCOUNT PASSWORD")){
-           accountPassword = null;
-        }
-
-        String pushDomain = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, null);
-        String httpDomain = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, null);
-        String fcmServerKey = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, null);
-        if (fcmServerKey.equals("")){
-            fcmServerKey = null;
-        }
-
-        if (applicationName == null || accountEmail == null || accountPassword == null || pushDomain == null || httpDomain == null || fcmServerKey == null) {
-            return false;
-        }
-
-        return true;
-    }
 
     //FCM message time logic
     Runnable mStatusChecker = new Runnable() {
