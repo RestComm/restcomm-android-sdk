@@ -227,7 +227,7 @@ public class RCUtils {
       if (!parameters.containsKey(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN) ||
               parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN) == null ||
               TextUtils.isEmpty((String) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN))) {
-         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_HTTP_DOMAIN_MISSING);
+         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_RESTCOMM_DOMAIN_MISSING);
       }
 
       //when binding is missing we need to register for push

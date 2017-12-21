@@ -115,7 +115,7 @@ public final class RCClient {
       ERROR_DEVICE_PUSH_NOTIFICATION_ACCOUNT_EMAIL_MISSING,
       ERROR_DEVICE_PUSH_NOTIFICATION_ACCOUNT_PASSWORD_MISSING,
       ERROR_DEVICE_PUSH_NOTIFICATION_PUSH_DOMAIN_MISSING,
-      ERROR_DEVICE_PUSH_NOTIFICATION_HTTP_DOMAIN_MISSING,
+      ERROR_DEVICE_PUSH_NOTIFICATION_RESTCOMM_DOMAIN_MISSING,
    }
 
    /**
@@ -352,8 +352,8 @@ public final class RCClient {
       else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_PUSH_DOMAIN_MISSING){
          return "Failed to register/update for push notification; Push domain cannot be found";
       }
-      else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_HTTP_DOMAIN_MISSING){
-         return "Failed to register/update for push notification; Http domain cannot be found";
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_RESTCOMM_DOMAIN_MISSING){
+         return "Failed to register/update for push notification; Restcomm Connect Domain cannot be found";
       }
 
       return "Unmapped Restcomm Client error: " + errorCode;
