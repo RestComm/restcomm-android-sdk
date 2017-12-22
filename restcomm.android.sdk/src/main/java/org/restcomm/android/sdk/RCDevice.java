@@ -573,6 +573,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
          RCLogger.i(TAG, "RCDevice(): " + parameters.toString());
 
+
          RCUtils.validateDeviceParms(parameters);
 
          //save parameters to storage
@@ -626,10 +627,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
             signalingClient.open(this, getApplicationContext(), parameters);
          }
 
-         //check do we need to register for push
-         if ((Boolean) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT)) {
-            registerForPush(false);
-         }
+         registerForPushNotifications(false);
 
          if (audioManager == null) {
             // Create and audio manager that will take care of audio routing,
@@ -1022,7 +1020,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN</b>: Restcomm HTTP domain, like 'cloud.restcomm.com'
     *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY</b>: server hash key for created application in firebase cloud messaging
     *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATION_TIMEOUT_MESSAGING_SERVICE</b>: RCDevice will have timer introduced for closing because of the message background logic this is introduced in the design. The timer by default will be 5 seconds; It can be changed by sending parameter with value (in milliseconds)
-
     * @see RCDevice
     * @return right now this is more of a placeholder and always returns true
     */
@@ -1041,10 +1038,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
 
       signalingClient.reconfigure(params);
-      //check do we need to register for push
-      if ((Boolean) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT)){
-         registerForPush(true);
-      }
+      registerForPushNotifications(true);
 
       // TODO: need to provide asynchronous status for this
       return true;
@@ -1795,27 +1789,21 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       startForeground(ONCALL_NOTIFICATION_ID, builder.build());
    }
 
-   public void registerForPush(boolean clearFcmData){
-      boolean registerForPushAvailable = false;
-      //register for push
-      if (storageManagerPreferences != null) {
-         if (allPushRegisterDataAvailable()) {
-            new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(clearFcmData);
-            registerForPushAvailable = true;
-         }
-      }
+   public void registerForPushNotifications(boolean itsUpdate){
+      try {
 
-      //something is missing for push configuration,
-      //remove it
-      if (!registerForPushAvailable) {
-         if (isServiceAttached && listener != null) {
-            listener.onWarning(this, RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING.ordinal(), RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING));
+         if ((Boolean) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT)) {
+            if (storageManagerPreferences != null && RCUtils.shouldRegisterForPush(parameters, storageManagerPreferences)) {
+               new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(itsUpdate);
+            }
          } else {
-            RCLogger.w(TAG, "RegisterForPush  warning: " +
-                    RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING));
+            //call server to disable push
          }
-
-
+      } catch (RCException e) {
+         if (isServiceAttached && listener != null) {
+            listener.onWarning(this, e.errorCode.ordinal(), e.errorText);
+         }
+         RCLogger.w(TAG, "RegisterForPush  warning: " + e.errorText);
       }
    }
 
@@ -1889,34 +1877,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       // TODO(henrika): disable video if AppRTCAudioManager.AudioDevice.EARPIECE
       // is active.
    }
-
-
-    private boolean allPushRegisterDataAvailable(){
-        String applicationName = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, null);
-        String accountEmail = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, null);
-
-        if (accountEmail.equals("ACCOUNT EMAIL")){
-           accountEmail = null;
-        }
-        String accountPassword = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, null);
-
-        if (accountPassword.equals("ACCOUNT PASSWORD")){
-           accountPassword = null;
-        }
-
-        String pushDomain = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, null);
-        String httpDomain = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, null);
-        String fcmServerKey = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, null);
-        if (fcmServerKey.equals("")){
-            fcmServerKey = null;
-        }
-
-        if (applicationName == null || accountEmail == null || accountPassword == null || pushDomain == null || httpDomain == null || fcmServerKey == null) {
-            return false;
-        }
-
-        return true;
-    }
 
     //FCM message time logic
     Runnable mStatusChecker = new Runnable() {

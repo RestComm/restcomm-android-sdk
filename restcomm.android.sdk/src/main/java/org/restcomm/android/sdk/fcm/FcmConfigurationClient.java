@@ -33,6 +33,7 @@ import org.restcomm.android.sdk.util.RCLogger;
 
 import android.text.BoringLayout;
 import android.util.Base64;
+import android.util.Log;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -500,8 +501,12 @@ public class FcmConfigurationClient {
                 JSONArray inputJson = new JSONArray(jsonString);
                 for (int i = 0; i < inputJson.length(); i++){
                     JSONObject client = inputJson.getJSONObject(i);
-                    return extractFromJsonObjectApplication(client, applicationName);
+                    FcmApplication app =  extractFromJsonObjectApplication(client, applicationName);
+                    if (app!=null){
+                        return app;
+                    }
                 }
+                return null;
             } else {
                 JSONObject client = new JSONObject(jsonString);
                 return extractFromJsonObjectApplication(client, applicationName);

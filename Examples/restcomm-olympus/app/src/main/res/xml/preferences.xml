@@ -54,7 +54,7 @@
             android:defaultValue="cloud.restcomm.com"
             android:key="push-http-domain"
             android:title="Restcomm Connect Domain"
-            android:summary="Restcomm Http domain, like: 'cloud.restcomm.com'"/>
+            android:summary="Restcomm Connect Domain, like: 'cloud.restcomm.com'"/>
     </PreferenceCategory>
 
     <PreferenceCategory
