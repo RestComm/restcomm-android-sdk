@@ -161,7 +161,7 @@ public class FcmConfigurationHandler {
             HashMap<String, String> resultHashMap = new HashMap<>();
             HashMap<String, String> inputHashMap = hashMap[0];
 
-            if (update) {
+            if (update && mEnablePush) {
                 RCLogger.v(TAG, "Its un update token;");
                 String bindingString = inputHashMap.get(FCM_BINDING);
 

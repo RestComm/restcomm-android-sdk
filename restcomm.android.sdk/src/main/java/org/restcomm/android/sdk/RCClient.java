@@ -117,6 +117,7 @@ public final class RCClient {
       ERROR_DEVICE_PUSH_NOTIFICATION_PUSH_DOMAIN_MISSING,
       ERROR_DEVICE_PUSH_NOTIFICATION_RESTCOMM_DOMAIN_MISSING,
       ERROR_DEVICE_PUSH_NOTIFICATION_ENABLE_DISABLE_PUSH_NOTIFICATION,
+
    }
 
    /**
@@ -359,6 +360,7 @@ public final class RCClient {
       else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ENABLE_DISABLE_PUSH_NOTIFICATION){
          return "Failed to enable/disable push notification for client on server";
       }
+
 
       return "Unmapped Restcomm Client error: " + errorCode;
    }

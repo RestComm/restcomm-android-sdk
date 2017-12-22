@@ -573,6 +573,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
          RCLogger.i(TAG, "RCDevice(): " + parameters.toString());
 
+
          RCUtils.validateDeviceParms(parameters);
 
          //save parameters to storage
@@ -615,7 +616,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
          connections = new HashMap<String, RCConnection>();
 
-         //if there is already data for registering to push, dont clear it (onOpenReplay is using this parameter)
+         //if there is already data for registering to push, dont clear it (onOpenReply is using this parameter)
          // initialize JAIN SIP if we have connectivity
          this.parameters = parameters;
 
@@ -625,6 +626,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
             signalingClient = new SignalingClient();
             signalingClient.open(this, getApplicationContext(), parameters);
          }
+
+         registerForPushNotifications(false);
 
          if (audioManager == null) {
             // Create and audio manager that will take care of audio routing,
@@ -1017,7 +1020,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN</b>: Restcomm HTTP domain, like 'cloud.restcomm.com'
     *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY</b>: server hash key for created application in firebase cloud messaging
     *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATION_TIMEOUT_MESSAGING_SERVICE</b>: RCDevice will have timer introduced for closing because of the message background logic this is introduced in the design. The timer by default will be 5 seconds; It can be changed by sending parameter with value (in milliseconds)
-
+    * @param updatePush True if push shpuld be updated
     * @see RCDevice
     * @return right now this is more of a placeholder and always returns true
     */
@@ -1036,7 +1039,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
 
       signalingClient.reconfigure(params);
-      updatePush();
+      registerForPushNotifications(true);
 
       // TODO: need to provide asynchronous status for this
       return true;
@@ -1084,11 +1087,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          else {
             RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
                     RCClient.errorText(status));
-         }
-
-         //check do we need to register for push
-         if ((Boolean) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT)) {
-            registerForPush();
          }
 
          if (status == RCClient.ErrorCodes.SUCCESS){
@@ -1792,11 +1790,29 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       startForeground(ONCALL_NOTIFICATION_ID, builder.build());
    }
 
-   public void registerForPush(){
+   public void registerForPushNotifications(boolean itsUpdate){
       try {
-         if (storageManagerPreferences != null && RCUtils.shouldRegisterForPush(parameters, storageManagerPreferences)){
-            new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(false);
+          //we can have different state
+          // if there is no data for push and we have flag disable we will ignore it
+
+         boolean enablePush = (Boolean) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT);
+         boolean bindingExists = storageManagerPreferences.getString(FcmConfigurationHandler.FCM_BINDING, null) != null;
+         if (storageManagerPreferences != null){
+            if (!enablePush) {
+               if (!bindingExists){
+                  return;
+               } else {
+                  new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(itsUpdate);
+               }
+            } else {
+               if (RCUtils.shouldRegisterForPush(parameters, storageManagerPreferences)) {
+                  new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(itsUpdate);
+               }
+            }
          }
+
+
+
       } catch (RCException e) {
          if (isServiceAttached && listener != null) {
             listener.onWarning(this, e.errorCode.ordinal(), e.errorText);
@@ -1805,27 +1821,14 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
    }
 
-   public void updatePush(){
-      try {
-         if (storageManagerPreferences != null && RCUtils.shouldUpdatePush(parameters)){
-            new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(true);
-         }
-      } catch (RCException e) {
-         if (isServiceAttached && listener != null) {
-            listener.onWarning(this, e.errorCode.ordinal(), e.errorText);
-         }
-         RCLogger.w(TAG, "Updating push warning: " + e.errorText);
-      }
-   }
-
    // -- FcmMessageListener
     @Override
     public void onRegisteredForPush(RCClient.ErrorCodes status, String text) {
         if (status == RCClient.ErrorCodes.SUCCESS){
             //just log success
-           RCLogger.i(TAG, "Device and user are successfully registered for Push Notifications!");
-    //error
+            RCLogger.i(TAG, "Device and user are successfully registered for Push Notifications!");
         } else {
+            //error
             if (isServiceAttached) {
                 listener.onWarning(this, status.ordinal(), RCClient.errorText(status));
             } else {

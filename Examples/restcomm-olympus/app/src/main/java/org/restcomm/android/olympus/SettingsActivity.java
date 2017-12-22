@@ -57,6 +57,7 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
    RCDevice device;
    boolean serviceBound = false;
    boolean updated;
+   boolean pushUpdated;
    private AlertDialog alertDialog;
    private static final String TAG = "SettingsActivity";
 
@@ -175,14 +176,14 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
       // as you specify a parent activity in AndroidManifest.xml.
       int id = item.getItemId();
       if (id == android.R.id.home) {
-         if (updated) {
-            try {
+         try {
+         HashMap<String, Object> prefHashMap = (HashMap<String, Object>) prefs.getAll();
+         if (updated || pushUpdated) {
                // There a slight difference between the data structure of SharedPreferences and
                // the one that the SDK understands. In SharedPreferences the value for
                // MEDIA_ICE_SERVERS_DISCOVERY_TYPE key is a String, which the SDK wants a
                // MediaIceServersDiscoveryType enum, so we need to convert between the 2.
                // In this case we remove the one and introduce the other
-               HashMap<String, Object> prefHashMap = (HashMap<String, Object>) prefs.getAll();
                String iceServersDiscoveryType = "0";
                if (prefHashMap.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE)) {
                   iceServersDiscoveryType = (String) prefHashMap.get(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE);
@@ -203,16 +204,12 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
                );
 
                RCUtils.validateSettingsParms(prefHashMap);
-               if (!device.updateParams(params)) {
+
+               if (!device.updateParams(params, pushUpdated)) {
                   // TODO:
                   //showOkAlert("RCDevice Error", "No Wifi connectivity");
                }
-               NavUtils.navigateUpFromSameTask(this);
 
-            }
-            catch (RCException e) {
-               showOkAlert("Error saving Settings", e.errorText);
-            }
 
             /*
             if (errorStruct.statusCode != RCClient.ErrorCodes.SUCCESS) {
@@ -226,9 +223,11 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
                NavUtils.navigateUpFromSameTask(this);
             }
             */
-         }
-         else {
+            }
+
             NavUtils.navigateUpFromSameTask(this);
+         } catch (RCException e) {
+            showOkAlert("Error saving Settings", e.errorText);
          }
 
          return true;
@@ -329,21 +328,25 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
          }
          updated = true;
       }
+      else if (key.equals(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT)) {
+         params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, prefs.getBoolean(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT,false));
+         pushUpdated = true;
+      }
       else if (key.equals(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL)) {
          params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, ""));
-         updated = true;
+         pushUpdated = true;
       }
       else if (key.equals(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD)) {
          params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, ""));
-         updated = true;
+         pushUpdated = true;
       }
       else if (key.equals(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN)) {
          params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, ""));
-         updated = true;
+         pushUpdated = true;
       }
       else if (key.equals(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN)) {
          params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, ""));
-         updated = true;
+         pushUpdated = true;
       }
       else if (key.equals(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT)) {
          params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, prefs.getBoolean(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false));
