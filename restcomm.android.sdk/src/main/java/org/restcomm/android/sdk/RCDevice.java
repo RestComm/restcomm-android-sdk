@@ -615,7 +615,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
          connections = new HashMap<String, RCConnection>();
 
-         //if there is already data for registering to push, dont clear it (onOpenReplay is using this parameter)
+         //if there is already data for registering to push, dont clear it (onOpenReply is using this parameter)
          // initialize JAIN SIP if we have connectivity
          this.parameters = parameters;
 
@@ -624,6 +624,11 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          if (signalingClient == null) {
             signalingClient = new SignalingClient();
             signalingClient.open(this, getApplicationContext(), parameters);
+         }
+
+         //check do we need to register for push
+         if ((Boolean) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT)) {
+            registerForPush(false);
          }
 
          if (audioManager == null) {
@@ -1087,11 +1092,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          else {
             RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
                     RCClient.errorText(status));
-         }
-
-         //check do we need to register for push
-         if ((Boolean) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT)) {
-            registerForPush();
          }
 
          if (status == RCClient.ErrorCodes.SUCCESS){
@@ -1826,9 +1826,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     public void onRegisteredForPush(RCClient.ErrorCodes status, String text) {
         if (status == RCClient.ErrorCodes.SUCCESS){
             //just log success
-           RCLogger.i(TAG, "Device and user are successfully registered for Push Notifications!");
-    //error
+            RCLogger.i(TAG, "Device and user are successfully registered for Push Notifications!");
         } else {
+            //error
             if (isServiceAttached) {
                 listener.onWarning(this, status.ordinal(), RCClient.errorText(status));
             } else {
