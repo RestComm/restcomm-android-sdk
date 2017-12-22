@@ -1020,11 +1020,10 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN</b>: Restcomm HTTP domain, like 'cloud.restcomm.com'
     *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY</b>: server hash key for created application in firebase cloud messaging
     *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATION_TIMEOUT_MESSAGING_SERVICE</b>: RCDevice will have timer introduced for closing because of the message background logic this is introduced in the design. The timer by default will be 5 seconds; It can be changed by sending parameter with value (in milliseconds)
-    * @param updatePush True if push shpuld be updated
     * @see RCDevice
     * @return right now this is more of a placeholder and always returns true
     */
-   public boolean updateParams(HashMap<String, Object> params, boolean updatePush)
+   public boolean updateParams(HashMap<String, Object> params)
    {
 
       // remember that the new parameters can be just a subset of the currently stored in this.parameters, so to update the current parameters we need
