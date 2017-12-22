@@ -1036,10 +1036,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
 
       signalingClient.reconfigure(params);
-      //check do we need to register for push
-      if ((Boolean) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT)){
-         updatePush();
-      }
+      updatePush();
 
       // TODO: need to provide asynchronous status for this
       return true;
