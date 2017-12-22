@@ -266,6 +266,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN, ICE_DOMAIN);
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
+                params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
                 params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
 
                 device.setLogLevel(Log.VERBOSE);
@@ -329,6 +330,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN, ICE_DOMAIN);
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, true);
+                params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
                 params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
 
                 device.setLogLevel(Log.VERBOSE);
@@ -397,6 +399,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN, ICE_DOMAIN);
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
+                params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
                 params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
 
                 device.setLogLevel(Log.VERBOSE);
@@ -496,6 +499,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN, ICE_DOMAIN);
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
+                params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
                 params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
 
                 device.setLogLevel(Log.VERBOSE);
@@ -594,6 +598,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN, ICE_DOMAIN);
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, true);
+                params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
                 params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
 
                 device.setLogLevel(Log.VERBOSE);
@@ -688,6 +693,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN, ICE_DOMAIN);
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
+                params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
                 params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
 
                 device.setLogLevel(Log.VERBOSE);
@@ -783,6 +789,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
                 params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
+                params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
                 params.put(RCDevice.ParameterKeys.DEBUG_USE_BROADCASTS_FOR_EVENTS, true);
 
                 device.setLogLevel(Log.VERBOSE);
@@ -895,6 +902,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN, ICE_DOMAIN);
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
+                params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
                 params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
 
                 device.setLogLevel(Log.VERBOSE);
@@ -970,6 +978,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN, ICE_DOMAIN);
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
+                params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
                 params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
                 params.put(RCDevice.ParameterKeys.DEBUG_USE_BROADCASTS_FOR_EVENTS, true);
 
@@ -1099,6 +1108,11 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
 
         deviceInitialized = true;
     }
+
+    public void onWarning(RCDevice device, int statusCode, String statusText)
+    {
+    }
+
     public void onReleased(RCDevice device, int statusCode, String statusText)
     {
         Log.i(TAG, "%% onReleased");
