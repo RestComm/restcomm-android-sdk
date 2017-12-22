@@ -573,6 +573,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
          RCLogger.i(TAG, "RCDevice(): " + parameters.toString());
 
+
          RCUtils.validateDeviceParms(parameters);
 
          //save parameters to storage
@@ -626,10 +627,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
             signalingClient.open(this, getApplicationContext(), parameters);
          }
 
-         //check do we need to register for push
-         if ((Boolean) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT)) {
-            registerForPush(false);
-         }
+         registerForPushNotifications(false);
 
          if (audioManager == null) {
             // Create and audio manager that will take care of audio routing,
@@ -1022,11 +1020,11 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN</b>: Restcomm HTTP domain, like 'cloud.restcomm.com'
     *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY</b>: server hash key for created application in firebase cloud messaging
     *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATION_TIMEOUT_MESSAGING_SERVICE</b>: RCDevice will have timer introduced for closing because of the message background logic this is introduced in the design. The timer by default will be 5 seconds; It can be changed by sending parameter with value (in milliseconds)
-
+    * @param updatePush True if push shpuld be updated
     * @see RCDevice
     * @return right now this is more of a placeholder and always returns true
     */
-   public boolean updateParams(HashMap<String, Object> params)
+   public boolean updateParams(HashMap<String, Object> params, boolean updatePush)
    {
 
       // remember that the new parameters can be just a subset of the currently stored in this.parameters, so to update the current parameters we need
@@ -1041,10 +1039,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
 
       signalingClient.reconfigure(params);
-      //check do we need to register for push
-      if ((Boolean) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT)){
-         updatePush();
-      }
+      registerForPushNotifications(true);
 
       // TODO: need to provide asynchronous status for this
       return true;
@@ -1795,29 +1790,21 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       startForeground(ONCALL_NOTIFICATION_ID, builder.build());
    }
 
-   public void registerForPush(){
+   public void registerForPushNotifications(boolean itsUpdate){
       try {
-         if (storageManagerPreferences != null && RCUtils.shouldRegisterForPush(parameters, storageManagerPreferences)){
-            new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(false);
+
+         if ((Boolean) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT)) {
+            if (storageManagerPreferences != null && RCUtils.shouldRegisterForPush(parameters, storageManagerPreferences)) {
+               new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(itsUpdate);
+            }
+         } else {
+            //call server to disable push
          }
       } catch (RCException e) {
          if (isServiceAttached && listener != null) {
             listener.onWarning(this, e.errorCode.ordinal(), e.errorText);
          }
          RCLogger.w(TAG, "RegisterForPush  warning: " + e.errorText);
-      }
-   }
-
-   public void updatePush(){
-      try {
-         if (storageManagerPreferences != null && RCUtils.shouldUpdatePush(parameters)){
-            new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(true);
-         }
-      } catch (RCException e) {
-         if (isServiceAttached && listener != null) {
-            listener.onWarning(this, e.errorCode.ordinal(), e.errorText);
-         }
-         RCLogger.w(TAG, "Updating push warning: " + e.errorText);
       }
    }
 

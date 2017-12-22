@@ -39,8 +39,10 @@ import java.util.Map;
  */
 public class RCUtils {
    private static final String TAG = "RCUtils";
+
    public static void validateDeviceParms(HashMap<String, Object> parameters) throws RCException
    {
+
       validateSettingsParms(parameters);
 
       if (!parameters.containsKey(RCDevice.ParameterKeys.INTENT_INCOMING_CALL)) {
@@ -56,6 +58,7 @@ public class RCUtils {
 
    public static void validateSettingsParms(HashMap<String, Object> parameters) throws RCException
    {
+      validatePushSettings(parameters);
       /*
       if (parameters.containsKey(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED) &&
             ((Boolean)parameters.get(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED))) {
@@ -178,19 +181,19 @@ public class RCUtils {
 
    }
 
-   public static boolean shouldUpdatePush(HashMap<String, Object> parameters) throws RCException{
-      if (!parameters.containsKey(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY) ||
-              parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY) == null ||
-              TextUtils.isEmpty((String) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY))) {
-         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_FCM_SERVER_KEY_MISSING);
-      }
-      return true;
-   }
-
-   public static boolean shouldRegisterForPush(HashMap<String, Object> parameters, StorageManagerInterface storageManagerInterface) throws RCException{
+   public static boolean validatePushSettings(HashMap<String, Object> parameters) throws RCException{
       //check is there fcm server key, if not write a warning
       if (parameters == null) {
          return false;
+      }
+
+      if (!parameters.containsKey(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT)){
+         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ENABLE_DISABLE_PUSH_NOTIFICATION);
+      }
+
+      boolean validatePushParameters = (Boolean) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT);
+      if (!validatePushParameters){
+         return true;
       }
 
       if (!parameters.containsKey(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY) ||
@@ -230,37 +233,50 @@ public class RCUtils {
          throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_RESTCOMM_DOMAIN_MISSING);
       }
 
+      return false;
+
+   }
+
+   public static boolean shouldRegisterForPush(HashMap<String, Object> parameters, StorageManagerInterface storageManagerInterface) throws RCException{
+
+      validatePushSettings(parameters);
+
       //when binding is missing we need to register for push
       if (storageManagerInterface.getString(FcmConfigurationHandler.FCM_BINDING, null) == null){
+         RCLogger.v(TAG, "shouldRegisterForPush: FCM_BINDING is missing, we should register");
          return true;
       }
 
       if (!parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY).equals
               (storageManagerInterface.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, null))) {
+         RCLogger.v(TAG, "shouldRegisterForPush: FCM Server key is different than saved one, we should register");
          return true;
       }
 
       if (!parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME).equals
               (storageManagerInterface.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, null))) {
+         RCLogger.v(TAG, "shouldRegisterForPush: Application name key is different than saved one, we should register");
          return true;
       }
 
       if (!parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD).equals
               (storageManagerInterface.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, null))) {
+         RCLogger.v(TAG, "shouldRegisterForPush: account password key is different than saved one, we should register");
          return true;
       }
 
       if (!parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN).equals
               (storageManagerInterface.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, null))) {
+         RCLogger.v(TAG, "shouldRegisterForPush: push domain key is different than saved one, we should register");
          return true;
       }
 
       if (!parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN).equals
               (storageManagerInterface.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, null))) {
+         RCLogger.v(TAG, "shouldRegisterForPush: http key is different than saved one, we should register");
          return true;
       }
-
+      RCLogger.v(TAG, "shouldRegisterForPush: Nothing is change, we shouldn't register");
       return false;
-
    }
 }
