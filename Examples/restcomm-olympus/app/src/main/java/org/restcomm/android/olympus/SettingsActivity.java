@@ -205,7 +205,7 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
 
                RCUtils.validateSettingsParms(prefHashMap);
 
-               if (!device.updateParams(params, pushUpdated)) {
+               if (!device.updateParams(params)) {
                   // TODO:
                   //showOkAlert("RCDevice Error", "No Wifi connectivity");
                }

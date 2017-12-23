@@ -1791,27 +1791,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
    public void registerForPushNotifications(boolean itsUpdate){
       try {
-          //we can have different state
-          // if there is no data for push and we have flag disable we will ignore it
-
-         boolean enablePush = (Boolean) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT);
-         boolean bindingExists = storageManagerPreferences.getString(FcmConfigurationHandler.FCM_BINDING, null) != null;
          if (storageManagerPreferences != null){
-            if (!enablePush) {
-               if (!bindingExists){
-                  return;
-               } else {
-                  new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(itsUpdate);
-               }
-            } else {
-               if (RCUtils.shouldRegisterForPush(parameters, storageManagerPreferences)) {
-                  new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(itsUpdate);
-               }
-            }
+            new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(parameters, itsUpdate);
          }
-
-
-
       } catch (RCException e) {
          if (isServiceAttached && listener != null) {
             listener.onWarning(this, e.errorCode.ordinal(), e.errorText);

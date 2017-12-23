@@ -34,7 +34,9 @@ import org.restcomm.android.sdk.fcm.model.FcmApplication;
 import org.restcomm.android.sdk.fcm.model.FcmBinding;
 import org.restcomm.android.sdk.fcm.model.FcmCredentials;
 import org.restcomm.android.sdk.storage.StorageManagerInterface;
+import org.restcomm.android.sdk.util.RCException;
 import org.restcomm.android.sdk.util.RCLogger;
+import org.restcomm.android.sdk.util.RCUtils;
 
 import java.util.HashMap;
 
@@ -93,16 +95,27 @@ public class FcmConfigurationHandler {
 
     /**
      *  It will register device and application for push notifications
+     *  @param parameters, paramaters to check
      * @param clearFcmData , true if new data should be used for registration
      */
-    public void registerForPush(boolean clearFcmData){
+    public void registerForPush(HashMap<String, Object> parameters, boolean clearFcmData) throws RCException{
+
+        boolean bindingExists = mStorageManager.getString(FcmConfigurationHandler.FCM_BINDING, null) != null;
         if (clearFcmData){
             mStorageManager.saveString(FCM_ACCOUNT_SID, null);
             mStorageManager.saveString(FCM_CLIENT_SID, null);
             mStorageManager.saveString(FCM_APPLICATION, null);
             mStorageManager.saveString(FCM_BINDING, null);
         }
-        registerOrUpdateForPush(false);
+
+        // if there is no data for push and we have flag disable we will ignore it
+        if (!mEnablePush){
+            if (bindingExists) {
+                registerOrUpdateForPush(false);
+            }
+        } else if (RCUtils.shouldRegisterForPush(parameters, mStorageManager)) {
+            registerOrUpdateForPush(false);
+        }
     }
 
     public void updateBinding(){
