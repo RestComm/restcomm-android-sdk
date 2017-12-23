@@ -34,11 +34,13 @@ import org.restcomm.android.sdk.util.RCLogger;
 import android.text.BoringLayout;
 import android.util.Base64;
 import android.util.Log;
+import android.util.Pair;
 
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 
 /**
@@ -80,24 +82,18 @@ public class FcmConfigurationClient {
     }
 
     private HttpURLConnection createUrlRequestWithUrl(String urlString) throws Exception{
-        return createUrlRequestWithUrl(urlString, true);
-    }
-
-    private HttpURLConnection createUrlRequestWithUrl(String urlString, boolean authorization) throws Exception{
         URL url = new URL(urlString);
         HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
         urlConnection.setRequestProperty("Content-Type", "application/json");
-        if (authorization) {
-            String authorisationString = Base64.encodeToString((accountEmail + ":" + password).getBytes(), Base64.DEFAULT);
-            urlConnection.setRequestProperty("Authorization", "Basic " + authorisationString);
-        }
+        String authorisationString = Base64.encodeToString((accountEmail + ":" + password).getBytes(), Base64.DEFAULT);
+        urlConnection.setRequestProperty("Authorization", "Basic " + authorisationString);
         return urlConnection;
     }
 
     /**
-     * Returns the account sid for given email
-     * @return String - account sid
-     **/
+     *  Returns the account sid for given email
+     * @return String account sid
+     */
     public String getAccountSid(){
         RCLogger.v(TAG, "getAccountSid method started");
         String accountSid = null;
@@ -183,20 +179,21 @@ public class FcmConfigurationClient {
     public boolean enableClientPushSettings(boolean enable, String accountSid, String clientSid){
         boolean ok = false;
         RCLogger.v(TAG, "enableClientPushSettings method started");
-        FcmCredentials fcmCredentials = null;
         HttpURLConnection connection = null;
         try{
-            String url = "https://" + accountSid + ":" + this.password + "@" + this.restcommDomain + CLIENT_SID_URL + "/" + accountSid + "/Clients/" + clientSid;
+           // String url = "https://" + accountSid + ":" + authToken + "@" + this.restcommDomain + CLIENT_SID_URL + "/" + accountSid + "/Clients/" + clientSid;
+            String url = "https://" + restcommDomain + CLIENT_SID_URL + "/" + accountSid + "/Clients/" + clientSid;
             RCLogger.v(TAG, "calling url: " + url);
-            connection = createUrlRequestWithUrl(url, false);
+            String urlParameters  = "IsPushEnabled=" + enable;
+            byte[] postData = urlParameters.getBytes( StandardCharsets.UTF_8 );
+            int postDataLength = postData.length;
+            connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("PUT");
-            connection.setRequestProperty("Content-Type", "txt/html");
-            String outputString =
-                    "{\n" +
-                            "  \"IsPushEnabled\": \"" + enable + "\"\n" +
-                            "}";
+            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            connection.setRequestProperty("Content-Length", Integer.toString(postDataLength));
+
             OutputStream outputStream = new BufferedOutputStream(connection.getOutputStream());
-            outputStream.write(outputString.getBytes());
+            outputStream.write(postData);
             outputStream.close();
             int responseCode = connection.getResponseCode();
 
@@ -360,20 +357,34 @@ public class FcmConfigurationClient {
         return fcmCredentials;
     }
 
-    public boolean deleteCredentials(String credentialsSid) {
-        RCLogger.v(TAG, "createCredentials method started");
+    public FcmCredentials updateCredentials(FcmCredentials credentials, String fcmSecret) {
+        RCLogger.v(TAG, "updateCredentials method started");
         boolean result = false;
         HttpURLConnection connection = null;
+        FcmCredentials fcmCredentials = null;
         try {
-            String url = "https://" + pushDomain + "/" + this.pushPath + "/credentials/" + credentialsSid;
+            String url = "https://" + pushDomain + "/" + this.pushPath + "/credentials/" + credentials.getSid();
             RCLogger.v(TAG, "calling url: " + url);
             connection = createUrlRequestWithUrl(url);
-            connection.setRequestMethod("DELETE");
+            connection.setRequestMethod("PUT");
+            connection.setRequestProperty("Content-Type", "application/json");
+            String outputString =
+                    "{\n" +
+                            "  \"Sid\": \"" + credentials.getSid() + "\",\n" +
+                            "  \"ApplicationSid\": \"" + credentials.getApplicationSid() + "\",\n" +
+                            "  \"CredentialType\": \"" + credentials.getCredentialType() + "\",\n" +
+                            "  \"Secret\": \"" + fcmSecret + "\"\n" +
+                            "}";
+            OutputStream outputStream = new BufferedOutputStream(connection.getOutputStream());
+            outputStream.write(outputString.getBytes());
+            outputStream.close();
+
             int responseCode = connection.getResponseCode();
 
-            if (responseCode == HttpURLConnection.HTTP_OK) {
-                result = true;
+            if (responseCode == HttpURLConnection.HTTP_OK){
+                fcmCredentials = getCredentialsFromConnection(connection, credentials.getApplicationSid());
             }
+
 
         } catch (Exception ex) {
             RCLogger.e(TAG, ex.toString());
@@ -382,17 +393,18 @@ public class FcmConfigurationClient {
                 connection.disconnect();
             }
         }
-        RCLogger.v(TAG, "deleteCredentials method endeds");
-        return result;
+        RCLogger.v(TAG, "updateCredentials method ends");
+        return fcmCredentials;
     }
 
 
     /**
     * Returns the FcmBinding object for given application
-    * @param  application - FcmApplication object
+    * @param application - FcmApplication object
+    * @param clientSid - Client sid
     * @return FcmBinding - object if everything is okay, otherwise null
     */
-    public FcmBinding getBinding(FcmApplication application){
+    public FcmBinding getBinding(FcmApplication application, String clientSid){
         RCLogger.v(TAG, "getBinding method started");
         FcmBinding fcmBinding = null;
         HttpURLConnection connection = null;
@@ -404,7 +416,7 @@ public class FcmConfigurationClient {
             int responseCode = connection.getResponseCode();
 
             if (responseCode == HttpURLConnection.HTTP_OK){
-                fcmBinding = getBindingFromConnection(connection, application.getSid());
+                fcmBinding = getBindingFromConnection(connection, application.getSid(), clientSid);
             }
 
         } catch (Exception ex){
@@ -474,7 +486,7 @@ public class FcmConfigurationClient {
             int responseCode = connection.getResponseCode();
 
             if (responseCode == HttpURLConnection.HTTP_OK){
-                fcmBinding = getBindingFromConnection(connection, binding.getApplicationSid());
+                fcmBinding = getBindingFromConnection(connection, binding.getApplicationSid(), binding.getIdentity());
             }
 
         } catch (Exception ex){
@@ -489,7 +501,32 @@ public class FcmConfigurationClient {
     }
 
 
+    public boolean deleteBinding(String bindingSid){
+        RCLogger.v(TAG, "deleteBinding method started");
+        boolean result = false;
+        HttpURLConnection connection = null;
+        try{
+            String url = "https://" + pushDomain + "/" + this.pushPath + "/bindings/" + bindingSid;
+            RCLogger.v(TAG, "calling url: " + url);
+            connection = createUrlRequestWithUrl(url);
+            connection.setRequestMethod("DELETE");
+            int responseCode = connection.getResponseCode();
 
+            if (responseCode == HttpURLConnection.HTTP_OK){
+               result = true;
+            }
+
+        } catch (Exception ex){
+            RCLogger.e(TAG, ex.toString());
+        } finally {
+            if (connection != null) {
+                connection.disconnect();
+            }
+        }
+        RCLogger.v(TAG, "deleteBinding method ended;");
+        return result;
+
+    }
 
     //-------------------------Helper methods -----------------------------//
 
@@ -516,11 +553,11 @@ public class FcmConfigurationClient {
         return null;
     }
 
-    private FcmApplication extractFromJsonObjectApplication(JSONObject client, String applicationName) throws IOException, JSONException{
-        String friendlyName = client.getString("FriendlyName");
+    private FcmApplication extractFromJsonObjectApplication(JSONObject jsonObject, String applicationName) throws IOException, JSONException{
+        String friendlyName = jsonObject.getString("FriendlyName");
         if (friendlyName.equals(applicationName)){
-            String sid = client.getString("Sid");
-            String friendlyNameStr = client.getString("FriendlyName");
+            String sid = jsonObject.getString("Sid");
+            String friendlyNameStr = jsonObject.getString("FriendlyName");
             return new FcmApplication(sid, friendlyNameStr);
         }
         return null;
@@ -547,45 +584,46 @@ public class FcmConfigurationClient {
         return null;
     }
 
-    private FcmCredentials extractFromJsonObjectCredentials(JSONObject client, String applicationSid) throws IOException, JSONException{
-        String applicationSidServer = client.getString("ApplicationSid");
-        String inputCredentialType = client.getString("CredentialType");
+    private FcmCredentials extractFromJsonObjectCredentials(JSONObject jsonObject, String applicationSid) throws IOException, JSONException{
+        String applicationSidServer = jsonObject.getString("ApplicationSid");
+        String inputCredentialType = jsonObject.getString("CredentialType");
         if (applicationSidServer.equals(applicationSid) && inputCredentialType.equals("fcm")){
-            String sid = client.getString("Sid");
+            String sid = jsonObject.getString("Sid");
             return new FcmCredentials(sid, applicationSidServer, inputCredentialType);
         }
         return null;
     }
 
-    private FcmBinding getBindingFromConnection(HttpURLConnection connection, String applicationSid) throws IOException, JSONException{
+    private FcmBinding getBindingFromConnection(HttpURLConnection connection, String applicationSid, String clientSid) throws IOException, JSONException{
         String jsonString = getJsonFromStream(connection.getInputStream());
         if (jsonString.length() > 0) {
             Object json = new JSONTokener(jsonString).nextValue();
             if (json instanceof  JSONArray){
                 JSONArray inputJson = new JSONArray(jsonString);
                 for (int i = 0; i < inputJson.length(); i++){
-                    JSONObject client = inputJson.getJSONObject(i);
-                    FcmBinding binding = extractFromJsonObjectBinding(client, applicationSid);
+                    JSONObject jsonObject = inputJson.getJSONObject(i);
+                    FcmBinding binding = extractFromJsonObjectBinding(jsonObject, applicationSid, clientSid);
                     if (binding!=null){
                         return binding;
                     }
                 }
             } else {
-                JSONObject client = new JSONObject(jsonString);
-                return extractFromJsonObjectBinding(client, applicationSid);
+                JSONObject jsonObject = new JSONObject(jsonString);
+                return extractFromJsonObjectBinding(jsonObject, applicationSid, clientSid);
             }
 
         }
         return null;
     }
 
-    private FcmBinding extractFromJsonObjectBinding(JSONObject client, String applicationSid)  throws IOException, JSONException {
-        String applicationSidServer = client.getString("ApplicationSid");
-        String bindingType = client.getString("BindingType");
-        if (applicationSidServer.equals(applicationSid) && bindingType.equals("fcm")){
-            String sid = client.getString("Sid");
-            String identity = client.getString("Identity");
-            String address = client.getString("Address");
+    private FcmBinding extractFromJsonObjectBinding(JSONObject jsonObject, String applicationSid, String clientSid)  throws IOException, JSONException {
+        String applicationSidServer = jsonObject.getString("ApplicationSid");
+        String bindingType = jsonObject.getString("BindingType");
+        String identity = jsonObject.getString("Identity");
+        if (applicationSidServer.equals(applicationSid) && bindingType.equals("fcm") && identity.equals(clientSid) ){
+            String sid = jsonObject.getString("Sid");
+            identity = jsonObject.getString("Identity");
+            String address = jsonObject.getString("Address");
 
             return new FcmBinding(sid, identity, applicationSid, bindingType, address);
         }

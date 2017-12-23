@@ -205,7 +205,7 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
 
                RCUtils.validateSettingsParms(prefHashMap);
 
-               if (!device.updateParams(params, pushUpdated)) {
+               if (!device.updateParams(params)) {
                   // TODO:
                   //showOkAlert("RCDevice Error", "No Wifi connectivity");
                }
@@ -347,6 +347,10 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
       else if (key.equals(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN)) {
          params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, ""));
          pushUpdated = true;
+      }
+      else if (key.equals(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT)) {
+         params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, prefs.getBoolean(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false));
+         updated = true;
       }
 
    }

@@ -1791,13 +1791,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
    public void registerForPushNotifications(boolean itsUpdate){
       try {
-
-         if ((Boolean) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT)) {
-            if (storageManagerPreferences != null && RCUtils.shouldRegisterForPush(parameters, storageManagerPreferences)) {
-               new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(itsUpdate);
-            }
-         } else {
-            //call server to disable push
+         if (storageManagerPreferences != null){
+            new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(parameters, itsUpdate);
          }
       } catch (RCException e) {
          if (isServiceAttached && listener != null) {
