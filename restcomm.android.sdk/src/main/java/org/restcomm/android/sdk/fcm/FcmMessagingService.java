@@ -45,7 +45,7 @@ public class FcmMessagingService extends FirebaseMessagingService {
         Intent intent = new Intent(this, RCDevice.class);
         intent.setAction(RCDevice.ACTION_FCM);
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O){
-            startService(intent);
+            startForegroundService(intent);
         } else{
             startService(intent);
         }
