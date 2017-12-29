@@ -42,13 +42,19 @@ public class FcmMessagingService extends FirebaseMessagingService {
 
     private void sendNotification() {
         //start service
-        Intent intent = new Intent(this, RCDevice.class);
-        intent.setAction(RCDevice.ACTION_FCM);
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O){
-            startForegroundService(intent);
-        } else{
-            startService(intent);
+        //we dont need to start a service if its already running.
+        //The restcomm server will always send the push...
+        if (!RCDevice.isServiceAttached){
+            Log.d(TAG, "service is not attached");
+            Intent intent = new Intent(this, RCDevice.class);
+            intent.setAction(RCDevice.ACTION_FCM);
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O){
+                startService(intent);
+            } else{
+                startService(intent);
+            }
         }
+
         Log.d(TAG, "sendNotification is called");
     }
 }

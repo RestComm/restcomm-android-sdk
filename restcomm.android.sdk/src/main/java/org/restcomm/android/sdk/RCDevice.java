@@ -351,7 +351,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    // Has RCDevice been initialized?
    boolean isServiceInitialized = false;
    // Is an activity currently attached to RCDevice service?
-   boolean isServiceAttached = false;
+   public static boolean isServiceAttached = false;
 
    private StorageManagerPreferences storageManagerPreferences;
 
@@ -419,17 +419,14 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          if (intentAction.equals(ACTION_FCM)){
             setLogLevel(Log.VERBOSE);
 
+            //if service is attached we dont need to run foreground
             if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-               NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-               NotificationChannel notificationChannel = new NotificationChannel(DEFAULT_FOREGROUND_CHANNEL_ID, DEFAULT_FOREGROUND_CHANNEL, NotificationManager.IMPORTANCE_LOW);
-               notificationManager.createNotificationChannel(notificationChannel);
-
-               Notification notification = new NotificationCompat.Builder(this, DEFAULT_FOREGROUND_CHANNEL_ID)
-                       .setSmallIcon(R.drawable.ic_chat_24dp)
-                       .setAutoCancel(true)
-                       .setContentTitle("Restcomm Connect")
-                       .setContentText("Background initialization...").build();
-               startForeground(notificationId, notification);
+               NotificationCompat.Builder builder = getNotificationBuilder(false);
+               builder.setSmallIcon(R.drawable.ic_chat_24dp);
+               builder.setAutoCancel(true);
+               builder.setContentTitle("Restcomm Connect");
+               builder.setContentText("Background initialization...");
+               startForeground(notificationId, builder.build());
             }
 
             //initialize
@@ -511,7 +508,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
       isServiceAttached = false;
 
+
       if (RCDevice.state != DeviceState.BUSY) {
+         Log.i(TAG, "%%  DeviceState state is not BUSY, we are releasing!");
          release();
       }
 
@@ -1421,7 +1420,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       serviceIntentDelete.putExtras(serviceIntentDefault);
 
 
-      NotificationCompat.Builder builder = getNotificationBuilder();
+      NotificationCompat.Builder builder = getNotificationBuilder(true);
 
       builder.setSmallIcon(R.drawable.ic_call_24dp)
       .setContentTitle(peerUsername)
@@ -1430,6 +1429,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       .setPriority(NotificationCompat.PRIORITY_HIGH)
       .setAutoCancel(true)  // cancel notification when user acts on it (Important: only applies to default notification area, not additional actions)
       .setVibrate(notificationVibrationPattern)
+      .setVisibility(Notification.VISIBILITY_PUBLIC)
       .setLights(notificationColor, notificationColorPattern[0], notificationColorPattern[1]);
 
       if (audioManager != null)
@@ -1442,6 +1442,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
                  .setContentIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDefault, PendingIntent.FLAG_UPDATE_CURRENT))
                  .setDeleteIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDelete, PendingIntent.FLAG_UPDATE_CURRENT));
       } else {
+         //we dont want to show the notification to primary channel
          builder = builder
                  .setContentIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDefault, PendingIntent.FLAG_UPDATE_CURRENT));
       }
@@ -1484,11 +1485,13 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
       NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
-      NotificationCompat.Builder builder = getNotificationBuilder();
+      NotificationCompat.Builder builder = getNotificationBuilder(true);
       builder.setSmallIcon(R.drawable.ic_chat_24dp)
       .setContentTitle(peerUsername)
-      .setContentText(messageText)
-      .setSound(Uri.parse("android.resource://" + getPackageName() + "/" + audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_MESSAGE)))  // R.raw.message_sample)) //
+      .setContentText(messageText);
+      if (audioManager != null)
+         builder.setSound(Uri.parse("android.resource://" + getPackageName() + "/" + audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_MESSAGE)))  // R.raw.message_sample)) //
+
       // Need this to show up as Heads-up Notification
       .setPriority(NotificationCompat.PRIORITY_HIGH)
       .setAutoCancel(true)  // cancel notification when user acts on it
@@ -1664,6 +1667,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          // don't forget to copy the extras
          messageIntent.putExtras(intent);
          actionIntent = messageIntent;
+         //we want to stop foreground (notification is tapped)
+         stopForeground(true);
          stopRepeatingTask();
       }
       else {
@@ -1738,7 +1743,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
 
          // Service is not attached to an activity, let's use a notification instead
-         NotificationCompat.Builder builder = getNotificationBuilder();
+         NotificationCompat.Builder builder = getNotificationBuilder(true);
          builder.setSmallIcon(R.drawable.ic_phone_missed_24dp)
          .setContentTitle(connection.getPeer().replaceAll(".*?sip:", "").replaceAll("@.*$", ""))
          .setContentText("Missed call")
@@ -1749,6 +1754,15 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          .setContentIntent(resultPendingIntent);
 
          Notification notification = builder.build();
+
+
+         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O){
+            //we need to stop foreground notification
+            //if we leave it, the notification 'Missed call' will not be dismissible
+            //because foreground notificaiton is shown for id: callNotifications.get(peerUsername)
+            stopForeground(true);
+         }
+
          notificationManager.notify(callNotifications.get(peerUsername), notification);
          // Remove the call notification, as it will be removed automatically
          //callNotifications.remove(peerUsername);
@@ -1777,8 +1791,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
 
 
-      // Service is not attached to an activity, let's use a notification instead
-      NotificationCompat.Builder builder = getNotificationBuilder();
+      // we dont need high importance, user knows he is on the call
+      NotificationCompat.Builder builder = getNotificationBuilder(false);
+
       builder.setSmallIcon(R.drawable.ic_phone_in_talk_24dp)
       .setContentTitle(peerUsername)
       .setContentText("Tap to return to call")
@@ -1900,11 +1915,19 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
    }
 
-   private NotificationCompat.Builder getNotificationBuilder(){
+   /**
+    * Method returns the Notification builder
+    * For Oreo devices we can have channels with HIGH and LOW importance.
+    * If highImportance is true builder will be created with HIGH priority
+    * For pre Oreo devices builder without channel will be returned
+    * @param highImportance true if we need HIGH channel, false if we need LOW
+    * @return
+    */
+   private NotificationCompat.Builder getNotificationBuilder(boolean highImportance){
       NotificationCompat.Builder builder;
       if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-         NotificationChannel channel;
-            channel = new NotificationChannel(PRIMARY_CHANNEL_ID, PRIMARY_CHANNEL, NotificationManager.IMPORTANCE_HIGH);
+         if (highImportance){
+            NotificationChannel channel = new NotificationChannel(PRIMARY_CHANNEL_ID, PRIMARY_CHANNEL, NotificationManager.IMPORTANCE_HIGH);
             channel.setLightColor(Color.GREEN);
             channel.enableLights(true);
             channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
@@ -1913,6 +1936,14 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
             ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).createNotificationChannel(channel);
             builder = new NotificationCompat.Builder(RCDevice.this, PRIMARY_CHANNEL_ID);
+         } else {
+            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            NotificationChannel notificationChannel = new NotificationChannel(DEFAULT_FOREGROUND_CHANNEL_ID, DEFAULT_FOREGROUND_CHANNEL, NotificationManager.IMPORTANCE_LOW);
+            notificationManager.createNotificationChannel(notificationChannel);
+
+           builder = new NotificationCompat.Builder(RCDevice.this, DEFAULT_FOREGROUND_CHANNEL_ID);
+         }
+
       } else {
          builder = new NotificationCompat.Builder(RCDevice.this);
       }
