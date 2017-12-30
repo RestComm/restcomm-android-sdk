@@ -53,6 +53,8 @@ import org.restcomm.android.sdk.util.RCLogger;
 import org.restcomm.android.sdk.util.RCUtils;
 
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -591,14 +593,14 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          RCLogger.i(TAG, "RCDevice(): " + parameters.toString());
 
 
-         RCUtils.validateDeviceParms(parameters);
+         //this.updateCapabilityToken(capabilityToken);
+         this.listener = deviceListener;
+
+         validateSettings(parameters);
 
          //save parameters to storage
          storageManagerPreferences = new StorageManagerPreferences(this);
          StorageUtils.saveParams(storageManagerPreferences, parameters);
-
-         //this.updateCapabilityToken(capabilityToken);
-         this.listener = deviceListener;
 
          //because intents are saved as uri strings we need to check; do we have an
          //actual intent. If not, we must check is it a string and return an intent
@@ -1822,18 +1824,15 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    // -- FcmMessageListener
     @Override
     public void onRegisteredForPush(RCClient.ErrorCodes status, String text) {
-        if (status == RCClient.ErrorCodes.SUCCESS){
-            //just log success
-            RCLogger.i(TAG, "Device and user are successfully registered for Push Notifications!");
-        } else {
-            //error
-            if (isServiceAttached) {
-                listener.onWarning(this, status.ordinal(), RCClient.errorText(status));
-            } else {
-               RCLogger.w(TAG, "RegisterForPush  warning: " +
-                       RCClient.errorText(status));
-            }
-        }
+       if (isServiceAttached) {
+          listener.onWarning(this, status.ordinal(), RCClient.errorText(status));
+       } else {
+           if (status == RCClient.ErrorCodes.SUCCESS){
+              RCLogger.i(TAG, "Device and user are successfully registered for Push Notifications!");
+           } else {
+              RCLogger.w(TAG, "RegisterForPush  warning: " + RCClient.errorText(status));
+           }
+       }
     }
 
     // ------ Helpers
@@ -1951,4 +1950,33 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       return builder;
    }
 
+   /**
+    * We have the settings for the push notification and if some of them
+    * are not valid, we should call onWarning, otherwise we should throw RCException
+    * @throws RCException
+    */
+   private void validateSettings(HashMap<String, Object> parameters) throws RCException{
+      EnumSet<RCClient.ErrorCodes> set = EnumSet.of(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ACCOUNT_SID_MISSING,
+      RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_CLIENT_SID_MISSING,
+              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_CREDENTIALS_MISSING,
+              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_BINDING_MISSING,
+              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_APPLICATION_MISSING,
+              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_FCM_SERVER_KEY_MISSING,
+              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_APPLICATION_NAME_MISSING,
+              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ACCOUNT_EMAIL_MISSING,
+              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ACCOUNT_PASSWORD_MISSING,
+              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_PUSH_DOMAIN_MISSING,
+              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_RESTCOMM_DOMAIN_MISSING,
+              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ENABLE_DISABLE_PUSH_NOTIFICATION);
+      try{
+         RCUtils.validateDeviceParms(parameters);
+      } catch (RCException e){
+         if (set.contains(e.errorCode)){
+            listener.onWarning(this, e.errorCode.ordinal(), e.errorText);
+         } else {
+            throw e;
+         }
+      }
+
+   }
 }

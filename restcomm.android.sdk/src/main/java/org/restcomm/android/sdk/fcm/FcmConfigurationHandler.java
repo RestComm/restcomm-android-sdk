@@ -24,6 +24,7 @@ package org.restcomm.android.sdk.fcm;
 
 import android.os.AsyncTask;
 import android.text.TextUtils;
+import android.util.Log;
 import android.util.Pair;
 
 import com.google.firebase.iid.FirebaseInstanceId;
@@ -48,9 +49,9 @@ public class FcmConfigurationHandler {
 
     private static final String TAG = "FcmConfigurationHandler";
 
-    private static final String FCM_ACCOUNT_SID = "fcm-account-sid";
-    private static final String FCM_CLIENT_SID = "fcm-client-sid";
-    private static final String FCM_APPLICATION = "fcm-application";
+    public static final String FCM_ACCOUNT_SID = "fcm-account-sid";
+    public static final String FCM_CLIENT_SID = "fcm-client-sid";
+    public static final String FCM_APPLICATION = "fcm-application";
     public static final String FCM_BINDING = "fcm-binding";
 
     private static final String TYPE = "fcm";
@@ -199,23 +200,23 @@ public class FcmConfigurationHandler {
                 //check the accountSid, if account sid is null we nee to get the new one from the server
                 RCLogger.v(TAG, "Getting an account sid");
                 String accountSid = inputHashMap.get(FCM_ACCOUNT_SID);
-
-                if (accountSid == null) {
+                if (TextUtils.isEmpty(accountSid)) {
                     RCLogger.v(TAG, "Account sid not found, getting it from server.");
                     accountSid = fcmConfigurationClient.getAccountSid();
                 }
 
-                if (accountSid != null) {
+                if (!TextUtils.isEmpty(accountSid)) {
                     RCLogger.v(TAG, "Account sid found; Storing account sid;");
                     resultHashMap.put(FCM_ACCOUNT_SID, accountSid);
 
                     RCLogger.v(TAG, "Getting a client sid");
                     String clientSid = inputHashMap.get(FCM_CLIENT_SID);
-                    if (clientSid == null) {
+                    if (TextUtils.isEmpty(clientSid)) {
                         RCLogger.v(TAG, "Client sid not found, getting it from server.");
                         clientSid = fcmConfigurationClient.getClientSid(accountSid, username);
                     }
-                    if (clientSid != null) {
+
+                    if (!TextUtils.isEmpty(clientSid)) {
                         RCLogger.v(TAG, "Client sid found; Storing client sid;");
                         resultHashMap.put(FCM_CLIENT_SID, clientSid);
 
@@ -276,6 +277,7 @@ public class FcmConfigurationHandler {
                                 } else {
                                     RCLogger.v(TAG, "Skipping deleting binding on server; binding sid not found");
                                 }
+                                resultHashMap.put(FCM_BINDING, null);
                             }
                             return new Pair<>(resultHashMap, RCClient.ErrorCodes.SUCCESS);
                         } else {

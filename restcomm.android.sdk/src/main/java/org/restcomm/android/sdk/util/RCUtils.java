@@ -242,7 +242,7 @@ public class RCUtils {
       validatePushSettings(parameters);
 
       //when binding is missing we need to register for push
-      if (storageManagerInterface.getString(FcmConfigurationHandler.FCM_BINDING, null) == null){
+      if (TextUtils.isEmpty(storageManagerInterface.getString(FcmConfigurationHandler.FCM_BINDING, null))){
          RCLogger.v(TAG, "shouldRegisterForPush: FCM_BINDING is missing, we should register");
          return true;
       }
