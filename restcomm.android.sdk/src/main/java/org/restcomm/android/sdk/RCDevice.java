@@ -33,6 +33,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Binder;
+import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
@@ -52,6 +53,8 @@ import org.restcomm.android.sdk.util.RCLogger;
 import org.restcomm.android.sdk.util.RCUtils;
 
 import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -283,6 +286,11 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
    private static final String NOTIFICATION_CHANNEL_ID = "1010";
 
+   private static final String DEFAULT_FOREGROUND_CHANNEL_ID = "Default Foreground Channel ID";
+   private static final String DEFAULT_FOREGROUND_CHANNEL = "Default Foreground Channel";
+   private static final String PRIMARY_CHANNEL_ID = "Primary Channel ID";
+   private static final String PRIMARY_CHANNEL = "Primary Channel";
+
    // Intent EXTRAs keys
 
    /**
@@ -345,7 +353,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    // Has RCDevice been initialized?
    boolean isServiceInitialized = false;
    // Is an activity currently attached to RCDevice service?
-   boolean isServiceAttached = false;
+   public static boolean isServiceAttached = false;
 
    private StorageManagerPreferences storageManagerPreferences;
 
@@ -411,8 +419,17 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          //if it is, check is service initialized,
          //if its not initialize it
          if (intentAction.equals(ACTION_FCM)){
-
             setLogLevel(Log.VERBOSE);
+
+            //if service is attached we dont need to run foreground
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+               NotificationCompat.Builder builder = getNotificationBuilder(false);
+               builder.setSmallIcon(R.drawable.ic_chat_24dp);
+               builder.setAutoCancel(true);
+               builder.setContentTitle("Restcomm Connect");
+               builder.setContentText("Background initialization...");
+               startForeground(notificationId, builder.build());
+            }
 
             //initialize
             if (!isServiceInitialized) {
@@ -493,7 +510,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
       isServiceAttached = false;
 
+
       if (RCDevice.state != DeviceState.BUSY) {
+         Log.i(TAG, "%%  DeviceState state is not BUSY, we are releasing!");
          release();
       }
 
@@ -573,14 +592,15 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
          RCLogger.i(TAG, "RCDevice(): " + parameters.toString());
 
-         RCUtils.validateDeviceParms(parameters);
+
+         //this.updateCapabilityToken(capabilityToken);
+         this.listener = deviceListener;
+
+         validateSettings(parameters);
 
          //save parameters to storage
          storageManagerPreferences = new StorageManagerPreferences(this);
          StorageUtils.saveParams(storageManagerPreferences, parameters);
-
-         //this.updateCapabilityToken(capabilityToken);
-         this.listener = deviceListener;
 
          //because intents are saved as uri strings we need to check; do we have an
          //actual intent. If not, we must check is it a string and return an intent
@@ -615,7 +635,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
          connections = new HashMap<String, RCConnection>();
 
-         //if there is already data for registering to push, dont clear it (onOpenReplay is using this parameter)
+         //if there is already data for registering to push, dont clear it (onOpenReply is using this parameter)
          // initialize JAIN SIP if we have connectivity
          this.parameters = parameters;
 
@@ -625,6 +645,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
             signalingClient = new SignalingClient();
             signalingClient.open(this, getApplicationContext(), parameters);
          }
+
+         registerForPushNotifications(false);
 
          if (audioManager == null) {
             // Create and audio manager that will take care of audio routing,
@@ -1017,7 +1039,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN</b>: Restcomm HTTP domain, like 'cloud.restcomm.com'
     *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY</b>: server hash key for created application in firebase cloud messaging
     *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATION_TIMEOUT_MESSAGING_SERVICE</b>: RCDevice will have timer introduced for closing because of the message background logic this is introduced in the design. The timer by default will be 5 seconds; It can be changed by sending parameter with value (in milliseconds)
-
     * @see RCDevice
     * @return right now this is more of a placeholder and always returns true
     */
@@ -1036,10 +1057,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
 
       signalingClient.reconfigure(params);
-      //check do we need to register for push
-      if ((Boolean) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT)){
-         registerForPush(true);
-      }
+      registerForPushNotifications(true);
 
       // TODO: need to provide asynchronous status for this
       return true;
@@ -1087,11 +1105,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          else {
             RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
                     RCClient.errorText(status));
-         }
-
-         //check do we need to register for push
-         if ((Boolean) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT)) {
-            registerForPush(false);
          }
 
          if (status == RCClient.ErrorCodes.SUCCESS){
@@ -1409,17 +1422,17 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       serviceIntentDelete.putExtras(serviceIntentDefault);
 
 
-      // Service is not attached to an activity, let's use a notification instead
-      NotificationCompat.Builder builder =
-            new NotificationCompat.Builder(RCDevice.this)
-                  .setSmallIcon(R.drawable.ic_call_24dp)
-                  .setContentTitle(peerUsername)
-                  .setContentText(text)
-                  // Need this to show up as Heads-up Notification
-                  .setPriority(NotificationCompat.PRIORITY_HIGH)
-                  .setAutoCancel(true)  // cancel notification when user acts on it (Important: only applies to default notification area, not additional actions)
-                  .setVibrate(notificationVibrationPattern)
-                  .setLights(notificationColor, notificationColorPattern[0], notificationColorPattern[1]);
+      NotificationCompat.Builder builder = getNotificationBuilder(true);
+
+      builder.setSmallIcon(R.drawable.ic_call_24dp)
+      .setContentTitle(peerUsername)
+      .setContentText(text)
+      // Need this to show up as Heads-up Notification
+      .setPriority(NotificationCompat.PRIORITY_HIGH)
+      .setAutoCancel(true)  // cancel notification when user acts on it (Important: only applies to default notification area, not additional actions)
+      .setVibrate(notificationVibrationPattern)
+      .setVisibility(Notification.VISIBILITY_PUBLIC)
+      .setLights(notificationColor, notificationColorPattern[0], notificationColorPattern[1]);
 
       if (audioManager != null)
          builder = builder.setSound(Uri.parse("android.resource://" + getPackageName() + "/" + audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_RINGING)));
@@ -1431,6 +1444,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
                  .setContentIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDefault, PendingIntent.FLAG_UPDATE_CURRENT))
                  .setDeleteIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDelete, PendingIntent.FLAG_UPDATE_CURRENT));
       } else {
+         //we dont want to show the notification to primary channel
          builder = builder
                  .setContentIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDefault, PendingIntent.FLAG_UPDATE_CURRENT));
       }
@@ -1472,25 +1486,20 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       serviceIntentDefault.putExtra(EXTRA_MESSAGE_TEXT, messageText);
 
       NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-      if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-         int importance = NotificationManager.IMPORTANCE_DEFAULT;
-         NotificationChannel notificationChannel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, "Resctomm Olympus", importance);
-         notificationManager.createNotificationChannel(notificationChannel);
-      }
 
-      // Service is not attached to an activity, let's use a notification instead
-      NotificationCompat.Builder builder =
-            new NotificationCompat.Builder(RCDevice.this)
-                  .setSmallIcon(R.drawable.ic_chat_24dp)
-                  .setContentTitle(peerUsername)
-                  .setContentText(messageText)
-                  .setSound(Uri.parse("android.resource://" + getPackageName() + "/" + audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_MESSAGE)))  // R.raw.message_sample)) //
-                  // Need this to show up as Heads-up Notification
-                  .setPriority(NotificationCompat.PRIORITY_HIGH)
-                  .setAutoCancel(true)  // cancel notification when user acts on it
-                  .setVibrate(notificationVibrationPattern)
-                  .setLights(notificationColor, notificationColorPattern[0], notificationColorPattern[1])
-                  .setContentIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDefault, PendingIntent.FLAG_ONE_SHOT));
+      NotificationCompat.Builder builder = getNotificationBuilder(true);
+      builder.setSmallIcon(R.drawable.ic_chat_24dp)
+      .setContentTitle(peerUsername)
+      .setContentText(messageText);
+      if (audioManager != null)
+         builder.setSound(Uri.parse("android.resource://" + getPackageName() + "/" + audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_MESSAGE)))  // R.raw.message_sample)) //
+
+      // Need this to show up as Heads-up Notification
+      .setPriority(NotificationCompat.PRIORITY_HIGH)
+      .setAutoCancel(true)  // cancel notification when user acts on it
+      .setVibrate(notificationVibrationPattern)
+      .setLights(notificationColor, notificationColorPattern[0], notificationColorPattern[1])
+      .setContentIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDefault, PendingIntent.FLAG_ONE_SHOT));
 
       boolean notificationIdExists = true;
       Integer activeNotificationId = messageNotifications.get(peerUsername);
@@ -1660,6 +1669,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          // don't forget to copy the extras
          messageIntent.putExtras(intent);
          actionIntent = messageIntent;
+         //we want to stop foreground (notification is tapped)
+         stopForeground(true);
          stopRepeatingTask();
       }
       else {
@@ -1733,25 +1744,27 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          // Gets a PendingIntent containing the entire back stack, but with Component as the active Activity
          PendingIntent resultPendingIntent = stackBuilder.getPendingIntent(0, PendingIntent.FLAG_UPDATE_CURRENT);
 
-         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            int importance = NotificationManager.IMPORTANCE_DEFAULT;
-            NotificationChannel notificationChannel = new NotificationChannel(NOTIFICATION_CHANNEL_ID, "Resctomm Olympus", importance);
-            notificationManager.createNotificationChannel(notificationChannel);
-         }
-
          // Service is not attached to an activity, let's use a notification instead
-         NotificationCompat.Builder builder =
-               new NotificationCompat.Builder(RCDevice.this)
-                     .setSmallIcon(R.drawable.ic_phone_missed_24dp)
-                     .setContentTitle(connection.getPeer().replaceAll(".*?sip:", "").replaceAll("@.*$", ""))
-                     .setContentText("Missed call")
-                     //.setSound(Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.ringing_sample)) // audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_RINGING)))
-                     // Need this to show up as Heads-up Notification
-                     .setPriority(NotificationCompat.PRIORITY_HIGH)
-                     .setAutoCancel(true)  // cancel notification when user acts on it (Important: only applies to default notification area, not additional actions)
-                     .setContentIntent(resultPendingIntent);
+         NotificationCompat.Builder builder = getNotificationBuilder(true);
+         builder.setSmallIcon(R.drawable.ic_phone_missed_24dp)
+         .setContentTitle(connection.getPeer().replaceAll(".*?sip:", "").replaceAll("@.*$", ""))
+         .setContentText("Missed call")
+         //.setSound(Uri.parse("android.resource://" + getPackageName() + "/" + R.raw.ringing_sample)) // audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_RINGING)))
+         // Need this to show up as Heads-up Notification
+         .setPriority(NotificationCompat.PRIORITY_HIGH)
+         .setAutoCancel(true)  // cancel notification when user acts on it (Important: only applies to default notification area, not additional actions)
+         .setContentIntent(resultPendingIntent);
 
          Notification notification = builder.build();
+
+
+         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O){
+            //we need to stop foreground notification
+            //if we leave it, the notification 'Missed call' will not be dismissible
+            //because foreground notificaiton is shown for id: callNotifications.get(peerUsername)
+            stopForeground(true);
+         }
+
          notificationManager.notify(callNotifications.get(peerUsername), notification);
          // Remove the call notification, as it will be removed automatically
          //callNotifications.remove(peerUsername);
@@ -1780,60 +1793,46 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
 
 
-      // Service is not attached to an activity, let's use a notification instead
-      NotificationCompat.Builder builder =
-              new NotificationCompat.Builder(RCDevice.this)
-                      .setSmallIcon(R.drawable.ic_phone_in_talk_24dp)
-                      .setContentTitle(peerUsername)
-                      .setContentText("Tap to return to call")
-                      // Notice that for some reason using FLAG_UPDATE_CURRENT doesn't work. The problem is that the intent creates a new Call Activity instead of
-                      // taking us to the existing.
-                      .addAction(resId, muteString, PendingIntent.getService(getApplicationContext(), 0, serviceIntentMute, PendingIntent.FLAG_CANCEL_CURRENT))
-                      .addAction(R.drawable.ic_call_end_24dp, "Hang up", PendingIntent.getService(getApplicationContext(), 0, serviceIntentDisconnect, PendingIntent.FLAG_CANCEL_CURRENT))
-                      .setContentIntent(PendingIntent.getActivity(getApplicationContext(), 0, callIntent, PendingIntent.FLAG_CANCEL_CURRENT));
+      // we dont need high importance, user knows he is on the call
+      NotificationCompat.Builder builder = getNotificationBuilder(false);
+
+      builder.setSmallIcon(R.drawable.ic_phone_in_talk_24dp)
+      .setContentTitle(peerUsername)
+      .setContentText("Tap to return to call")
+      // Notice that for some reason using FLAG_UPDATE_CURRENT doesn't work. The problem is that the intent creates a new Call Activity instead of
+      // taking us to the existing.
+      .addAction(resId, muteString, PendingIntent.getService(getApplicationContext(), 0, serviceIntentMute, PendingIntent.FLAG_CANCEL_CURRENT))
+      .addAction(R.drawable.ic_call_end_24dp, "Hang up", PendingIntent.getService(getApplicationContext(), 0, serviceIntentDisconnect, PendingIntent.FLAG_CANCEL_CURRENT))
+      .setContentIntent(PendingIntent.getActivity(getApplicationContext(), 0, callIntent, PendingIntent.FLAG_CANCEL_CURRENT));
 
       startForeground(ONCALL_NOTIFICATION_ID, builder.build());
    }
 
-   public void registerForPush(boolean clearFcmData){
-      boolean registerForPushAvailable = false;
-      //register for push
-      if (storageManagerPreferences != null) {
-         if (allPushRegisterDataAvailable()) {
-            new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(clearFcmData);
-            registerForPushAvailable = true;
+   public void registerForPushNotifications(boolean itsUpdate){
+      try {
+         if (storageManagerPreferences != null){
+            new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(parameters, itsUpdate);
          }
-      }
-
-      //something is missing for push configuration,
-      //remove it
-      if (!registerForPushAvailable) {
+      } catch (RCException e) {
          if (isServiceAttached && listener != null) {
-            listener.onWarning(this, RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING.ordinal(), RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING));
-         } else {
-            RCLogger.w(TAG, "RegisterForPush  warning: " +
-                    RCClient.errorText(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_PARAMETERS_MISSING));
+            listener.onWarning(this, e.errorCode.ordinal(), e.errorText);
          }
-
-
+         RCLogger.w(TAG, "RegisterForPush  warning: " + e.errorText);
       }
    }
 
    // -- FcmMessageListener
     @Override
     public void onRegisteredForPush(RCClient.ErrorCodes status, String text) {
-        if (status == RCClient.ErrorCodes.SUCCESS){
-            //just log success
-           RCLogger.i(TAG, "Device and user are successfully registered for Push Notifications!");
-    //error
-        } else {
-            if (isServiceAttached) {
-                listener.onWarning(this, status.ordinal(), RCClient.errorText(status));
-            } else {
-               RCLogger.w(TAG, "RegisterForPush  warning: " +
-                       RCClient.errorText(status));
-            }
-        }
+       if (isServiceAttached) {
+          listener.onWarning(this, status.ordinal(), RCClient.errorText(status));
+       } else {
+           if (status == RCClient.ErrorCodes.SUCCESS){
+              RCLogger.i(TAG, "Device and user are successfully registered for Push Notifications!");
+           } else {
+              RCLogger.w(TAG, "RegisterForPush  warning: " + RCClient.errorText(status));
+           }
+       }
     }
 
     // ------ Helpers
@@ -1890,34 +1889,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       // is active.
    }
 
-
-    private boolean allPushRegisterDataAvailable(){
-        String applicationName = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, null);
-        String accountEmail = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, null);
-
-        if (accountEmail.equals("ACCOUNT EMAIL")){
-           accountEmail = null;
-        }
-        String accountPassword = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, null);
-
-        if (accountPassword.equals("ACCOUNT PASSWORD")){
-           accountPassword = null;
-        }
-
-        String pushDomain = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, null);
-        String httpDomain = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, null);
-        String fcmServerKey = storageManagerPreferences.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, null);
-        if (fcmServerKey.equals("")){
-            fcmServerKey = null;
-        }
-
-        if (applicationName == null || accountEmail == null || accountPassword == null || pushDomain == null || httpDomain == null || fcmServerKey == null) {
-            return false;
-        }
-
-        return true;
-    }
-
     //FCM message time logic
     Runnable mStatusChecker = new Runnable() {
        @Override
@@ -1943,4 +1914,69 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
    }
 
+   /**
+    * Method returns the Notification builder
+    * For Oreo devices we can have channels with HIGH and LOW importance.
+    * If highImportance is true builder will be created with HIGH priority
+    * For pre Oreo devices builder without channel will be returned
+    * @param highImportance true if we need HIGH channel, false if we need LOW
+    * @return
+    */
+   private NotificationCompat.Builder getNotificationBuilder(boolean highImportance){
+      NotificationCompat.Builder builder;
+      if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+         if (highImportance){
+            NotificationChannel channel = new NotificationChannel(PRIMARY_CHANNEL_ID, PRIMARY_CHANNEL, NotificationManager.IMPORTANCE_HIGH);
+            channel.setLightColor(Color.GREEN);
+            channel.enableLights(true);
+            channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
+            channel.enableVibration(true);
+            channel.setVibrationPattern(notificationVibrationPattern);
+
+            ((NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE)).createNotificationChannel(channel);
+            builder = new NotificationCompat.Builder(RCDevice.this, PRIMARY_CHANNEL_ID);
+         } else {
+            NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+            NotificationChannel notificationChannel = new NotificationChannel(DEFAULT_FOREGROUND_CHANNEL_ID, DEFAULT_FOREGROUND_CHANNEL, NotificationManager.IMPORTANCE_LOW);
+            notificationManager.createNotificationChannel(notificationChannel);
+
+           builder = new NotificationCompat.Builder(RCDevice.this, DEFAULT_FOREGROUND_CHANNEL_ID);
+         }
+
+      } else {
+         builder = new NotificationCompat.Builder(RCDevice.this);
+      }
+
+      return builder;
+   }
+
+   /**
+    * We have the settings for the push notification and if some of them
+    * are not valid, we should call onWarning, otherwise we should throw RCException
+    * @throws RCException
+    */
+   private void validateSettings(HashMap<String, Object> parameters) throws RCException{
+      EnumSet<RCClient.ErrorCodes> set = EnumSet.of(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ACCOUNT_SID_MISSING,
+      RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_CLIENT_SID_MISSING,
+              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_CREDENTIALS_MISSING,
+              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_BINDING_MISSING,
+              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_APPLICATION_MISSING,
+              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_FCM_SERVER_KEY_MISSING,
+              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_APPLICATION_NAME_MISSING,
+              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ACCOUNT_EMAIL_MISSING,
+              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ACCOUNT_PASSWORD_MISSING,
+              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_PUSH_DOMAIN_MISSING,
+              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_RESTCOMM_DOMAIN_MISSING,
+              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ENABLE_DISABLE_PUSH_NOTIFICATION);
+      try{
+         RCUtils.validateDeviceParms(parameters);
+      } catch (RCException e){
+         if (set.contains(e.errorCode)){
+            listener.onWarning(this, e.errorCode.ordinal(), e.errorText);
+         } else {
+            throw e;
+         }
+      }
+
+   }
 }

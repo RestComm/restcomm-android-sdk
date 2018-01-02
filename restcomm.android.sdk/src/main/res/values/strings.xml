@@ -9,8 +9,8 @@
 
     <string name="hello_world">Hello world!</string>
 
+    <string name="settings_name">Olympus Settings</string>
 
-    <string name="settings_name" translatable="false">Olympus Settings</string>
     <string name="disconnect_call">Disconnect Call</string>
     <string name="room_names">Room names:</string>
     <string name="room_description">

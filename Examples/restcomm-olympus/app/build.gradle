@@ -62,7 +62,7 @@ android {
     }
 
     testOptions {
-        //execution 'ANDROID_TEST_ORCHESTRATOR'
+        execution 'ANDROID_TEST_ORCHESTRATOR'
     }
 
     buildTypes {
@@ -94,6 +94,10 @@ android {
             buildConfigField "String", "TEST_RESTCOMM_PASSWORD", TEST_RESTCOMM_PASSWORD
             buildConfigField "String", "TEST_RESTCOMM_ACCOUNT_SID", TEST_RESTCOMM_ACCOUNT_SID
             buildConfigField "String", "TEST_RESTCOMM_AUTH_TOKEN", TEST_RESTCOMM_AUTH_TOKEN
+
+            buildConfigField "String", "PUSH_ACCOUNT", PUSH_ACCOUNT
+            buildConfigField "String", "PUSH_PASSWORD", PUSH_PASSWORD
+            buildConfigField "String", "PUSH_FCM_KEY", PUSH_FCM_KEY
 
             applicationIdSuffix ".debug"
             debuggable true

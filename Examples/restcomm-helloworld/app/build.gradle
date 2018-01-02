@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 25
-    buildToolsVersion '25.0.1'
+    compileSdkVersion 26
+    buildToolsVersion '26.0.2'
 
     defaultConfig {
         applicationId "com.telestax.restcomm_helloworld"
-        minSdkVersion 16
-        targetSdkVersion 25
+        minSdkVersion 21
+        targetSdkVersion 26
         versionCode 1
 
         if (project.hasProperty('VERSION_NAME')) {
@@ -35,12 +35,13 @@ repositories {
     maven {
         url "http://telestax.jfrog.io/telestax/community-releases"
     }
+    google()
 }
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-    //compile project(':restcomm.android.sdk')
+   // compile project(':restcomm.android.sdk')
     compile 'org.restcomm:restcomm-android-sdk:1.0.5-BETA7-174'
-    compile 'com.android.support:appcompat-v7:25.1.1'
+    compile 'com.android.support:appcompat-v7:26.1.0'
 }
 
