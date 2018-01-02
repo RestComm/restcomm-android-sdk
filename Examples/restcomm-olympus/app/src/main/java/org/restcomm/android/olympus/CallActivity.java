@@ -58,6 +58,7 @@ import org.json.JSONObject;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCConnectionListener;
 import org.restcomm.android.sdk.RCDevice;
+import org.restcomm.android.sdk.util.PercentFrameLayout;
 import org.restcomm.android.sdk.util.RCException;
 
 
@@ -316,8 +317,8 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
             connectParams = new HashMap<String, Object>();
             connectParams.put(RCConnection.ParameterKeys.CONNECTION_PEER, intent.getStringExtra(RCDevice.EXTRA_DID));
             connectParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
-            connectParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
-            connectParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
+            connectParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, (PercentFrameLayout)findViewById(R.id.local_video_layout));
+            connectParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, (PercentFrameLayout)findViewById(R.id.remote_video_layout));
             // by default we use VP8 for video as it tends to be more adopted, but you can override that and specify VP9 or H264 as follows:
             connectParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC,
                   audioCodecString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, ""))
@@ -394,8 +395,8 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
 
                     acceptParams = new HashMap<String, Object>();
                     acceptParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, answerVideo);
-                    acceptParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
-                    acceptParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
+                    acceptParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, (PercentFrameLayout)findViewById(R.id.local_video_layout));
+                    acceptParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, (PercentFrameLayout)findViewById(R.id.remote_video_layout));
                     acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC,
                             audioCodecString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, ""))
                     );
@@ -496,8 +497,8 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
 
                 acceptParams = new HashMap<String, Object>();
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, true);
-                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
-                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
+                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, (PercentFrameLayout)findViewById(R.id.local_video_layout));
+                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, (PercentFrameLayout)findViewById(R.id.remote_video_layout));
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC,
                       audioCodecString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, ""))
                 );
@@ -526,8 +527,8 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
 
                 acceptParams = new HashMap<String, Object>();
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, false);
-                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
-                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
+                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, (PercentFrameLayout)findViewById(R.id.local_video_layout));
+                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, (PercentFrameLayout)findViewById(R.id.remote_video_layout));
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC,
                       audioCodecString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, ""))
                 );

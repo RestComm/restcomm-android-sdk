@@ -690,6 +690,7 @@ public class PeerConnectionClient {
     mediaStream = factory.createLocalMediaStream("ARDAMS");
     if (videoCallEnabled) {
       mediaStream.addTrack(createVideoTrack(videoCapturer));
+      events.onLocalVideo();
     }
 
     mediaStream.addTrack(createAudioTrack());
@@ -1325,6 +1326,7 @@ public class PeerConnectionClient {
             for (VideoRenderer.Callbacks remoteRender : remoteRenders) {
               remoteVideoTrack.addRenderer(new VideoRenderer(remoteRender));
             }
+            events.onRemoteVideo();
           }
         }
       });
