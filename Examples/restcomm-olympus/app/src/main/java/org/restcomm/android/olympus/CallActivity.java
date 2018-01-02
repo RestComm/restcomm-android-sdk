@@ -252,10 +252,10 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
                 // incoming established or outgoing any state (pending, connecting, connected)
                 if (connection.getState() == RCConnection.ConnectionState.CONNECTED) {
                     // If user leaves activity while on call we need to stop local video
-                    connection.disconnect();
+                    ///connection.disconnect();
 
                     // TODO: Issue #380: once we figure out the issue with the backgrounding we need to uncomment this
-                    //connection.pauseVideo();
+                    connection.stopVideo();
                 }
                 else {
                     connection = null;
@@ -427,8 +427,8 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
                 Log.w(TAG, "Warning: pendingConnection is null, probably reusing past intent");
             }
         }
-        /* TODO: Issue #380: once we figure out the issue with the backgrounding we need to uncomment this
-        if (intent.getAction().equals(RCDevice.LIVE_CALL)) {
+        // TODO: Issue #380: once we figure out the issue with the backgrounding we need to uncomment this
+        if (intent.getAction().equals(RCDevice.ACTION_RESUME_CALL_DESTROYED_ACTIVITY)) {
             String text;
             connection = device.getLiveConnection();
             connection.setConnectionListener(this);
@@ -454,7 +454,7 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
 
             lblCall.setText(text + connection.getPeer().replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
             lblStatus.setText("Connected");
-            connection.resumeVideo((PercentFrameLayout)findViewById(R.id.local_video_layout),
+            connection.restartVideo((PercentFrameLayout)findViewById(R.id.local_video_layout),
                     (PercentFrameLayout)findViewById(R.id.remote_video_layout));
 
             // Hide answering buttons and show mute & keypad
@@ -466,7 +466,6 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
 
             lblTimer.setVisibility(View.VISIBLE);
         }
-        */
     }
 
     // UI Events

@@ -245,6 +245,14 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     * should just allow the existing Call Activity to open.
     */
    public static String ACTION_RESUME_CALL = "org.restcomm.android.sdk.ACTION_RESUME_CALL";
+
+   /**
+    * Call Activity Intent action sent when the call activity has been destroyed previously and we want to re-created it. One such case is when the user is in the Call Activity and presses back
+    * to navigate to Messages screen in order for example to send a text message while talking. When back is pressed the  Call Activity is destroyed and so are the webrtc video views. This intent
+    * ensures that any media resources like local and remote video are bound to relevant Activity resources, like views, etc in a seamless manner
+    */
+   public static String ACTION_RESUME_CALL_DESTROYED_ACTIVITY = "org.restcomm.android.sdk.ACTION_RESUME_CALL_DESTROYED_ACTIVITY";
+
    /**
     * Call Activity Intent action sent when a ringing call was declined via Notification Drawer. You don't have to act on that,
     * but it usually provides a better user experience if you do. If you don't act on that then the Call Activity

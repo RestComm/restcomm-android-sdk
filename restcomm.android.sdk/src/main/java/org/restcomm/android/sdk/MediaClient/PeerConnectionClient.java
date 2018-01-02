@@ -131,6 +131,8 @@ public class PeerConnectionClient {
   private Timer statsTimer;
   private VideoSink localRender;
   private List<VideoRenderer.Callbacks> remoteRenders;
+  //private VideoRenderer localVideoRenderer;
+  private VideoRenderer remoteVideoRenderer;
   private SignalingParameters signalingParameters;
   private MediaConstraints pcConstraints;
   private int videoWidth;
@@ -955,6 +957,154 @@ public class PeerConnectionClient {
     });
   }
 
+
+
+
+
+  //////////////////////////////////////////////
+  /*
+  // ------ DEBUG
+  public void off()
+  {
+    executor.execute(new Runnable() {
+      @Override
+      public void run()
+      {
+        remoteVideoTrack.setEnabled(false);
+        //remoteVideoTrack.removeRenderer(new VideoRenderer(remoteRender));
+        remoteVideoTrack.removeRenderer(remoteVideoRenderer);
+        remoteVideoRenderer = null;
+        remoteRender = null;
+
+        VideoTrack localVideoTrack = mediaStream.videoTracks.get(0);
+        localVideoTrack.setEnabled(false);
+        localVideoTrack.removeRenderer(localVideoRenderer);
+        localVideoRenderer = null;
+        localRender = null;
+
+        events.onVideoPaused();
+      }
+    });
+
+  }
+
+  // ------ DEBUG
+  public void on(final VideoRenderer.Callbacks localRender, final VideoRenderer.Callbacks remoteRender)
+  {
+    this.localRender = localRender;
+    this.remoteRender = remoteRender;
+    executor.execute(new Runnable() {
+      @Override
+      public void run()
+      {
+        localVideoTrack.setEnabled(renderVideo);
+        localVideoRenderer = new VideoRenderer(localRender);
+        localVideoTrack.addRenderer(localVideoRenderer);
+
+        remoteVideoTrack.setEnabled(renderVideo);
+        remoteVideoRenderer = new VideoRenderer(remoteRender);
+        remoteVideoTrack.addRenderer(remoteVideoRenderer);
+
+        events.onVideoResumed();
+      }
+    });
+
+  }
+  */
+
+  // TODO: These are currently not used as I got stuck during implementation and remote view shows up black after resumeVideo() is called
+  // Let's monitor this discussion: https://groups.google.com/forum/#!searchin/discuss-webrtc/tsakiridis$20android%7Csort:relevance/discuss-webrtc/XE2Ok67B1Ks/RrqmfZh9AQAJ
+  // Pause webrtc video, intented for allowing a call to transition to the background where we only want audio enabled
+  public void stopVideo()
+  {
+    executor.execute(new Runnable() {
+      @Override
+      public void run()
+      {
+        removeLocalRenderer();
+        removeRemoteRenderer();
+
+        events.onVideoPaused();
+      }
+    });
+
+  }
+
+  // PeerConnection has a MediaStream which has AudioTracks and VideoTracks (i.e. MediaStreamTrack).
+  // A VideoTrack can have one or more VideoRenderer, which are the actual views
+  private void removeLocalRenderer()
+  {
+    ///VideoTrack localVideoTrack = mediaStream.videoTracks.get(0);
+    localVideoTrack.setEnabled(false);
+
+    ///localVideoTrack.removeRenderer(localVideoRenderer);
+    localVideoTrack.removeSink(localRender);
+    //localVideoRenderer = null;
+    localRender = null;
+
+    //mediaStream.removeTrack(localVideoTrack);
+  }
+
+  private void removeRemoteRenderer()
+  {
+    remoteVideoTrack.setEnabled(false);
+    //remoteVideoTrack.removeRenderer(new VideoRenderer(remoteRender));
+    ///remoteVideoTrack.removeRenderer(remoteVideoRenderer);
+    remoteVideoTrack.removeRenderer(remoteVideoRenderer);
+    ///remoteVideoTrack.removeRenderer((VideoRenderer)remoteRenders.get(0));
+    ///remoteVideoRenderer = null;
+    ///remoteRender = null;
+
+    //remoteMediaStream.removeTrack(remoteVideoTrack);
+  }
+
+  // Resume webrtc video, intented for allowing a call to transition from the background into the foreground where we want video enabled (it it was enabled to start with)
+  public void startVideo(final VideoSink localRender, final VideoRenderer.Callbacks remoteRender)
+  {
+    this.localRender = localRender;
+    this.remoteRenders = Collections.singletonList(remoteRender);
+
+    executor.execute(new Runnable() {
+      @Override
+      public void run()
+      {
+        addLocalRenderer(localRender);
+        addRemoteRenderer(remoteRender);
+
+        events.onVideoResumed();
+      }
+    });
+  }
+
+
+  // For video pause/resume functionality
+  private void addLocalRenderer(final VideoSink localRender)
+  {
+    //localVideoTrack = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
+    localVideoTrack.setEnabled(renderVideo);
+
+    //localVideoRenderer = new VideoRenderer(localRender);
+    ///localVideoTrack.addRenderer(localVideoRenderer);
+    localVideoTrack.addSink(localRender);
+    this.localRender = localRender;
+
+    //mediaStream.addTrack(localVideoTrack);
+  }
+
+  private void addRemoteRenderer(final VideoRenderer.Callbacks remoteRender)
+  {
+    //remoteMediaStream.addTrack(remoteVideoTrack);
+    remoteVideoTrack.setEnabled(renderVideo);
+    remoteVideoRenderer = new VideoRenderer(remoteRender);
+    remoteVideoTrack.addRenderer(remoteVideoRenderer);
+  }
+
+  //////////////////////////////////////////////
+
+
+
+
+
   public void stopVideoSource() {
     executor.execute(new Runnable() {
       @Override
@@ -1323,9 +1473,19 @@ public class PeerConnectionClient {
           if (stream.videoTracks.size() == 1) {
             remoteVideoTrack = stream.videoTracks.get(0);
             remoteVideoTrack.setEnabled(renderVideo);
+            if (remoteRenders.size() > 1) {
+              // until we get the backgrounding working let's only handle 1
+              throw new RuntimeException("Only supporting size 1 remoteRenders");
+            }
+            else if (remoteRenders.size() == 1) {
+              remoteVideoRenderer = new VideoRenderer(remoteRenders.get(0));
+              remoteVideoTrack.addRenderer(remoteVideoRenderer);
+            }
+/*
             for (VideoRenderer.Callbacks remoteRender : remoteRenders) {
               remoteVideoTrack.addRenderer(new VideoRenderer(remoteRender));
             }
+*/
             events.onRemoteVideo();
           }
         }

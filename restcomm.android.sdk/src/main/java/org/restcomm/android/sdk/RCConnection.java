@@ -1479,7 +1479,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
    }
 
-   // Resume webrtc video, intented for allowing a call to transition from the background into the foreground where we want video enabled (it it was enabled to start with)
+   // Resume webrtc video, intended for allowing a call to transition from the background into the foreground where we want video enabled (it it was enabled to start with)
    public void resumeVideo()
    {
       if (localMediaType == ConnectionMediaType.AUDIO_VIDEO) {
@@ -1488,17 +1488,18 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
    }
 
-   /*
+   /**/
    // TODO: Issue #380: We should uncomment this once we figure out https://groups.google.com/forum/#!searchin/discuss-webrtc/tsakiridis$20android%7Csort:relevance/discuss-webrtc/XE2Ok67B1Ks/RrqmfZh9AQAJ
    // Implementation above is meant to be a temporary solution, as it doesn't allow for the call Activity to be destroyed and then re-created
-   public void pauseVideo()
+   public void stopVideo()
    {
       // TODO: handle case of audio only call
       localRender.setVisibility(View.INVISIBLE);
       remoteRender.setVisibility(View.INVISIBLE);
-      peerConnectionClient.pauseVideo();
+      peerConnectionClient.stopVideo();
    }
-   public void resumeVideo(final PercentFrameLayout localRenderLayout, final PercentFrameLayout remoteRenderLayout)
+
+   public void restartVideo(final PercentFrameLayout localRenderLayout, final PercentFrameLayout remoteRenderLayout)
    {
       boolean videoEnabled = false;
       if ((isIncoming() && getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) ||
@@ -1507,9 +1508,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
 
       initializeVideo(videoEnabled, localRenderLayout, remoteRenderLayout);
-      peerConnectionClient.resumeVideo(localRender, remoteRender);
+      peerConnectionClient.startVideo(localRender, remoteRender);
    }
-   */
+   /**/
 
    // Callback fired when video is paused after call to pauseVideo()
    // IMPORTANT: runs in media thread, need to post on Main thread
@@ -1573,8 +1574,8 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       this.localRenderLayout = localRenderLayout;
       this.remoteRenderLayout = remoteRenderLayout;
 
-      // Create peer connection client.
-      peerConnectionClient = new PeerConnectionClient();
+      // Create peer connection client
+      //peerConnectionClient = new PeerConnectionClient();
 
       //rootEglBase = EglBase.create();
       localRender = (SurfaceViewRenderer)localRenderLayout.getChildAt(0);
@@ -1709,6 +1710,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       else {
          localMediaType = ConnectionMediaType.AUDIO;
       }
+
+      // Create peer connection client
+      peerConnectionClient = new PeerConnectionClient();
 
       if (localRenderLayout != null && remoteRenderLayout != null) {
          initializeVideo(videoEnabled, localRenderLayout, remoteRenderLayout);
