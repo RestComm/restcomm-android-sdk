@@ -470,7 +470,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    @Override
    public IBinder onBind(Intent intent)
    {
-      Log.i(TAG, "%%  onBind");
+      Log.i(TAG, "%% onBind");
 
       // We want the service to be both 'bound' and 'started' so that it lingers on after all clients have been unbound (I know the application is supposed
       // to call startService(), but let's make an exception in order to keep the API simple and easy to use
@@ -488,7 +488,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    @Override
    public void onRebind(Intent intent)
    {
-      Log.i(TAG, "%%  onRebind");
+      Log.i(TAG, "%% onRebind");
 
       isServiceAttached = true;
    }
@@ -524,7 +524,15 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          release();
       }
 
-      return false;
+      // We need to return true so that the service's onRebind(Intent) method is called later when new clients bind to it
+      // Reason this is important is to make sure isServiceAttached is always consistent and up to date. Consider this case:
+      // 1. User starts call and hits Home button while call is ongoing. At that point call activity is stopped and service
+      //   is unbound (and hence isServiceAttached is set to false). Notice though that it's still running as a foreground service,
+      //   since the call is still live)
+      // 2. User taps on the App launcher and resumes the call by being navigated to the call screen
+      // 3. In the call activity code we are binding to the service, but because onUnbind() returned false previously, no onBind() or onRebind()
+      //   is called and hence isServiceAttached remains false, even though we are attached to it and this messes up the service state.
+      return true;
    }
 
    @Override
@@ -1433,14 +1441,14 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       NotificationCompat.Builder builder = getNotificationBuilder(true);
 
       builder.setSmallIcon(R.drawable.ic_call_24dp)
-      .setContentTitle(peerUsername)
-      .setContentText(text)
-      // Need this to show up as Heads-up Notification
-      .setPriority(NotificationCompat.PRIORITY_HIGH)
-      .setAutoCancel(true)  // cancel notification when user acts on it (Important: only applies to default notification area, not additional actions)
-      .setVibrate(notificationVibrationPattern)
-      .setVisibility(Notification.VISIBILITY_PUBLIC)
-      .setLights(notificationColor, notificationColorPattern[0], notificationColorPattern[1]);
+              .setContentTitle(peerUsername)
+              .setContentText(text)
+              // Need this to show up as Heads-up Notification
+              .setPriority(NotificationCompat.PRIORITY_HIGH)
+              .setAutoCancel(true)  // cancel notification when user acts on it (Important: only applies to default notification area, not additional actions)
+              .setVibrate(notificationVibrationPattern)
+              .setVisibility(Notification.VISIBILITY_PUBLIC)
+              .setLights(notificationColor, notificationColorPattern[0], notificationColorPattern[1]);
 
       if (audioManager != null)
          builder = builder.setSound(Uri.parse("android.resource://" + getPackageName() + "/" + audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_RINGING)));
@@ -1497,17 +1505,16 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
       NotificationCompat.Builder builder = getNotificationBuilder(true);
       builder.setSmallIcon(R.drawable.ic_chat_24dp)
-      .setContentTitle(peerUsername)
-      .setContentText(messageText);
+              .setContentTitle(peerUsername)
+              .setContentText(messageText);
       if (audioManager != null)
          builder.setSound(Uri.parse("android.resource://" + getPackageName() + "/" + audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_MESSAGE)))  // R.raw.message_sample)) //
-
-      // Need this to show up as Heads-up Notification
-      .setPriority(NotificationCompat.PRIORITY_HIGH)
-      .setAutoCancel(true)  // cancel notification when user acts on it
-      .setVibrate(notificationVibrationPattern)
-      .setLights(notificationColor, notificationColorPattern[0], notificationColorPattern[1])
-      .setContentIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDefault, PendingIntent.FLAG_ONE_SHOT));
+                 // Need this to show up as Heads-up Notification
+                 .setPriority(NotificationCompat.PRIORITY_HIGH)
+                 .setAutoCancel(true)  // cancel notification when user acts on it
+                 .setVibrate(notificationVibrationPattern)
+                 .setLights(notificationColor, notificationColorPattern[0], notificationColorPattern[1])
+                 .setContentIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDefault, PendingIntent.FLAG_ONE_SHOT));
 
       boolean notificationIdExists = true;
       Integer activeNotificationId = messageNotifications.get(peerUsername);

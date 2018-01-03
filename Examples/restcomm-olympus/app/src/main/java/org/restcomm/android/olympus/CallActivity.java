@@ -187,7 +187,7 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
        // User requested to disconnect via foreground service notification. At this point the service has already
        // disconnected the call, so let's close the call activity
        if (getIntent().getAction().equals(RCDevice.ACTION_CALL_DISCONNECT)) {
-          Intent intent = new Intent(this, MainActivity.class);
+           Intent intent = new Intent(this, MainActivity.class);
            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
            intent.setAction(MainActivity.ACTION_DISCONNECTED_BACKGROUND);
            startActivity(intent);
@@ -221,6 +221,9 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         // The activity has become visible (it is now "resumed").
         Log.i(TAG, "%% onResume");
         if (connection != null && connection.getState() == RCConnection.ConnectionState.CONNECTED) {
+           // update the intent action if there's an ongoing call that we need to resume so that we provide a hint
+           // to handleCall() to do proper handling
+           getIntent().setAction(RCDevice.ACTION_RESUME_CALL);
            //connection.resumeVideo();
             //connection.reattachVideo((PercentFrameLayout)findViewById(R.id.local_video_layout),
             //        (PercentFrameLayout)findViewById(R.id.remote_video_layout));
@@ -301,7 +304,46 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         serviceBound = false;
     }
 
-    private void handleCall(Intent intent) {
+    private void handleCall(Intent intent)
+    {
+        if (intent.getAction().equals(RCDevice.ACTION_RESUME_CALL)) {
+            String text;
+            connection = device.getLiveConnection();
+            connection.setConnectionListener(this);
+
+            if (connection.isIncoming()) {
+                // Incoming
+                if (connection.getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) {
+                    text = "Video Call from ";
+                } else {
+                    text = "Audio Call from ";
+                }
+            } else {
+                // Outgoing
+                if (connection.getLocalMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) {
+                    text = "Video Calling ";
+                } else {
+                    text = "Audio Calling ";
+                }
+            }
+
+            lblCall.setText(text + connection.getPeer().replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
+            lblStatus.setText("Connected");
+            connection.reattachVideo((PercentFrameLayout) findViewById(R.id.local_video_layout),
+                    (PercentFrameLayout) findViewById(R.id.remote_video_layout));
+
+            // Hide answering buttons and show mute & keypad
+            btnAnswer.setVisibility(View.INVISIBLE);
+            btnAnswerAudio.setVisibility(View.INVISIBLE);
+            btnMuteAudio.setVisibility(View.VISIBLE);
+            btnMuteVideo.setVisibility(View.VISIBLE);
+            btnKeypad.setVisibility(View.VISIBLE);
+
+            lblTimer.setVisibility(View.VISIBLE);
+
+            return;
+        }
+
         if (connection != null) {
             return;
         }
@@ -431,44 +473,6 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
             else {
                 Log.w(TAG, "Warning: pendingConnection is null, probably reusing past intent");
             }
-        }
-        if (intent.getAction().equals(RCDevice.ACTION_RESUME_CALL)) {
-            String text;
-            connection = device.getLiveConnection();
-            connection.setConnectionListener(this);
-
-            if (connection.isIncoming()) {
-                // Incoming
-                if (connection.getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) {
-                    text = "Video Call from ";
-                }
-                else {
-                    text = "Audio Call from ";
-                }
-            }
-            else {
-                // Outgoing
-                if (connection.getLocalMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) {
-                    text = "Video Calling ";
-                }
-                else {
-                    text = "Audio Calling ";
-                }
-            }
-
-            lblCall.setText(text + connection.getPeer().replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
-            lblStatus.setText("Connected");
-            connection.reattachVideo((PercentFrameLayout)findViewById(R.id.local_video_layout),
-                    (PercentFrameLayout)findViewById(R.id.remote_video_layout));
-
-            // Hide answering buttons and show mute & keypad
-            btnAnswer.setVisibility(View.INVISIBLE);
-            btnAnswerAudio.setVisibility(View.INVISIBLE);
-            btnMuteAudio.setVisibility(View.VISIBLE);
-            btnMuteVideo.setVisibility(View.VISIBLE);
-            btnKeypad.setVisibility(View.VISIBLE);
-
-            lblTimer.setVisibility(View.VISIBLE);
         }
     }
 
