@@ -1470,6 +1470,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    }
    */
 
+   /*
    // Pause webrtc video, intended for allowing a call to transition to the background where we only want audio enabled
    public void pauseVideo()
    {
@@ -1487,20 +1488,23 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          setVideoMuted(videoExpectedMuted);
       }
    }
+   */
 
    /**/
    // TODO: Issue #380: We should uncomment this once we figure out https://groups.google.com/forum/#!searchin/discuss-webrtc/tsakiridis$20android%7Csort:relevance/discuss-webrtc/XE2Ok67B1Ks/RrqmfZh9AQAJ
    // Implementation above is meant to be a temporary solution, as it doesn't allow for the call Activity to be destroyed and then re-created
-   public void stopVideo()
+   public void detachVideo()
    {
+      RCLogger.i(TAG, "detachVideo()");
       // TODO: handle case of audio only call
       localRender.setVisibility(View.INVISIBLE);
       remoteRender.setVisibility(View.INVISIBLE);
-      peerConnectionClient.stopVideo();
+      peerConnectionClient.detachVideo();
    }
 
-   public void restartVideo(final PercentFrameLayout localRenderLayout, final PercentFrameLayout remoteRenderLayout)
+   public void reattachVideo(final PercentFrameLayout localRenderLayout, final PercentFrameLayout remoteRenderLayout)
    {
+      RCLogger.i(TAG, "reattachVideo()");
       boolean videoEnabled = false;
       if ((isIncoming() && getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) ||
               (!isIncoming() && getLocalMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO))  {
@@ -1508,20 +1512,23 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
 
       initializeVideo(videoEnabled, localRenderLayout, remoteRenderLayout);
-      peerConnectionClient.startVideo(localRender, remoteRender);
+      peerConnectionClient.reattachVideo(localRender, remoteRender);
    }
    /**/
 
    // Callback fired when video is paused after call to pauseVideo()
    // IMPORTANT: runs in media thread, need to post on Main thread
-   public void onVideoPaused()
+   public void onVideoDetached()
    {
       Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
          @Override
          public void run()
          {
-            RCLogger.i(TAG, "onVideoPaused");
+            RCLogger.i(TAG, "onVideoDetached");
+            ///localRender.setVisibility(View.INVISIBLE);
+            ///remoteRender.setVisibility(View.INVISIBLE);
+
             releaseVideo();
          }
       };
@@ -1530,14 +1537,14 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    // Callback fired when video is resumed after call to resumeVideo()
    // IMPORTANT: runs in media thread, need to post on Main thread
-   public void onVideoResumed()
+   public void onVideoReattached()
    {
       Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
          @Override
          public void run()
          {
-            RCLogger.i(TAG, "onVideoResumed");
+            RCLogger.i(TAG, "onVideoReattached");
             updateVideoView(VideoViewState.ICE_CONNECTED);
 
             /*
@@ -1754,6 +1761,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    private void updateVideoView(VideoViewState state)
    {
+      RCLogger.i(TAG, "updateVideoView(), state: " + state);
       // only if both local and remote views for video have been provided do we want to go ahead
       // and update the video views
       if (this.localRenderLayout == null && this.remoteRenderLayout == null) {

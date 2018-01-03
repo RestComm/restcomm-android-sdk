@@ -241,7 +241,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    public static String ACTION_INCOMING_CALL_ANSWER_VIDEO = "org.restcomm.android.sdk.ACTION_INCOMING_CALL_ANSWER_VIDEO";
 
    /**
-    * Call Activity Intent action sent when a live background call is resumed via Notification Drawer. The Application
+    * Call Activity Intent action sent when a live background call is resumed (either via Notification Drawer or via App opening). The Application
     * should just allow the existing Call Activity to open.
     */
    public static String ACTION_RESUME_CALL = "org.restcomm.android.sdk.ACTION_RESUME_CALL";
@@ -251,7 +251,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     * to navigate to Messages screen in order for example to send a text message while talking. When back is pressed the  Call Activity is destroyed and so are the webrtc video views. This intent
     * ensures that any media resources like local and remote video are bound to relevant Activity resources, like views, etc in a seamless manner
     */
-   public static String ACTION_RESUME_CALL_DESTROYED_ACTIVITY = "org.restcomm.android.sdk.ACTION_RESUME_CALL_DESTROYED_ACTIVITY";
+   //public static String ACTION_RESUME_CALL_DESTROYED_ACTIVITY = "org.restcomm.android.sdk.ACTION_RESUME_CALL_DESTROYED_ACTIVITY";
 
    /**
     * Call Activity Intent action sent when a ringing call was declined via Notification Drawer. You don't have to act on that,
@@ -1805,13 +1805,13 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       NotificationCompat.Builder builder = getNotificationBuilder(false);
 
       builder.setSmallIcon(R.drawable.ic_phone_in_talk_24dp)
-      .setContentTitle(peerUsername)
-      .setContentText("Tap to return to call")
-      // Notice that for some reason using FLAG_UPDATE_CURRENT doesn't work. The problem is that the intent creates a new Call Activity instead of
-      // taking us to the existing.
-      .addAction(resId, muteString, PendingIntent.getService(getApplicationContext(), 0, serviceIntentMute, PendingIntent.FLAG_CANCEL_CURRENT))
-      .addAction(R.drawable.ic_call_end_24dp, "Hang up", PendingIntent.getService(getApplicationContext(), 0, serviceIntentDisconnect, PendingIntent.FLAG_CANCEL_CURRENT))
-      .setContentIntent(PendingIntent.getActivity(getApplicationContext(), 0, callIntent, PendingIntent.FLAG_CANCEL_CURRENT));
+              .setContentTitle(peerUsername)
+              .setContentText("Tap to return to call")
+              // Notice that for some reason using FLAG_UPDATE_CURRENT doesn't work. The problem is that the intent creates a new Call Activity instead of
+              // taking us to the existing.
+              .addAction(resId, muteString, PendingIntent.getService(getApplicationContext(), 0, serviceIntentMute, PendingIntent.FLAG_CANCEL_CURRENT))
+              .addAction(R.drawable.ic_call_end_24dp, "Hang up", PendingIntent.getService(getApplicationContext(), 0, serviceIntentDisconnect, PendingIntent.FLAG_CANCEL_CURRENT))
+              .setContentIntent(PendingIntent.getActivity(getApplicationContext(), 0, callIntent, PendingIntent.FLAG_CANCEL_CURRENT));
 
       startForeground(ONCALL_NOTIFICATION_ID, builder.build());
    }

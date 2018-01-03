@@ -316,12 +316,12 @@ public class PeerConnectionClient {
     /**
      * Callback fired when video is paused after call to pauseVideo()
      */
-    void onVideoPaused();
+    void onVideoDetached();
 
     /**
      * Callback fired when video is resumed after call to resumeVideo()
      */
-    void onVideoResumed();
+    void onVideoReattached();
   }
 
   public PeerConnectionClient() {
@@ -957,110 +957,34 @@ public class PeerConnectionClient {
     });
   }
 
-
-
-
-
-  //////////////////////////////////////////////
-  /*
-  // ------ DEBUG
-  public void off()
+  /* Detach webrtc video, by stopping rendering and, more importantly, removing the views/renderers from the respective tracks altogether. This allows for use cases where
+   * we need to switch the video views for any reason. This is primarily intended for allowing the user to navigate away from the Call Activity and hence allowing Android OS
+   * to destroy it while the user visits other activities, all while the call remains active until they decide to jump back to the Call Activity. At that point the new video
+   * views/renderers are attached to the respective tracks and video resumes.
+   */
+  public void detachVideo()
   {
+    Log.d(TAG, "detachVideo()");
+
     executor.execute(new Runnable() {
       @Override
       public void run()
       {
-        remoteVideoTrack.setEnabled(false);
-        //remoteVideoTrack.removeRenderer(new VideoRenderer(remoteRender));
-        remoteVideoTrack.removeRenderer(remoteVideoRenderer);
-        remoteVideoRenderer = null;
-        remoteRender = null;
-
-        VideoTrack localVideoTrack = mediaStream.videoTracks.get(0);
-        localVideoTrack.setEnabled(false);
-        localVideoTrack.removeRenderer(localVideoRenderer);
-        localVideoRenderer = null;
-        localRender = null;
-
-        events.onVideoPaused();
-      }
-    });
-
-  }
-
-  // ------ DEBUG
-  public void on(final VideoRenderer.Callbacks localRender, final VideoRenderer.Callbacks remoteRender)
-  {
-    this.localRender = localRender;
-    this.remoteRender = remoteRender;
-    executor.execute(new Runnable() {
-      @Override
-      public void run()
-      {
-        localVideoTrack.setEnabled(renderVideo);
-        localVideoRenderer = new VideoRenderer(localRender);
-        localVideoTrack.addRenderer(localVideoRenderer);
-
-        remoteVideoTrack.setEnabled(renderVideo);
-        remoteVideoRenderer = new VideoRenderer(remoteRender);
-        remoteVideoTrack.addRenderer(remoteVideoRenderer);
-
-        events.onVideoResumed();
-      }
-    });
-
-  }
-  */
-
-  // TODO: These are currently not used as I got stuck during implementation and remote view shows up black after resumeVideo() is called
-  // Let's monitor this discussion: https://groups.google.com/forum/#!searchin/discuss-webrtc/tsakiridis$20android%7Csort:relevance/discuss-webrtc/XE2Ok67B1Ks/RrqmfZh9AQAJ
-  // Pause webrtc video, intented for allowing a call to transition to the background where we only want audio enabled
-  public void stopVideo()
-  {
-    executor.execute(new Runnable() {
-      @Override
-      public void run()
-      {
+        //stopVideoSource();
         removeLocalRenderer();
         removeRemoteRenderer();
 
-        events.onVideoPaused();
+        events.onVideoDetached();
       }
     });
 
   }
 
-  // PeerConnection has a MediaStream which has AudioTracks and VideoTracks (i.e. MediaStreamTrack).
-  // A VideoTrack can have one or more VideoRenderer, which are the actual views
-  private void removeLocalRenderer()
+  // Reattach webrtc video, by attaching new views/renders to existing video tracks and resuming playback. For more info please refer to doc for detachVideo()
+  public void reattachVideo(final VideoSink localRender, final VideoRenderer.Callbacks remoteRender)
   {
-    ///VideoTrack localVideoTrack = mediaStream.videoTracks.get(0);
-    localVideoTrack.setEnabled(false);
+    Log.d(TAG, "reattachVideo()");
 
-    ///localVideoTrack.removeRenderer(localVideoRenderer);
-    localVideoTrack.removeSink(localRender);
-    //localVideoRenderer = null;
-    localRender = null;
-
-    //mediaStream.removeTrack(localVideoTrack);
-  }
-
-  private void removeRemoteRenderer()
-  {
-    remoteVideoTrack.setEnabled(false);
-    //remoteVideoTrack.removeRenderer(new VideoRenderer(remoteRender));
-    ///remoteVideoTrack.removeRenderer(remoteVideoRenderer);
-    remoteVideoTrack.removeRenderer(remoteVideoRenderer);
-    ///remoteVideoTrack.removeRenderer((VideoRenderer)remoteRenders.get(0));
-    ///remoteVideoRenderer = null;
-    ///remoteRender = null;
-
-    //remoteMediaStream.removeTrack(remoteVideoTrack);
-  }
-
-  // Resume webrtc video, intented for allowing a call to transition from the background into the foreground where we want video enabled (it it was enabled to start with)
-  public void startVideo(final VideoSink localRender, final VideoRenderer.Callbacks remoteRender)
-  {
     this.localRender = localRender;
     this.remoteRenders = Collections.singletonList(remoteRender);
 
@@ -1068,41 +992,46 @@ public class PeerConnectionClient {
       @Override
       public void run()
       {
+        //startVideoSource();
+
         addLocalRenderer(localRender);
         addRemoteRenderer(remoteRender);
 
-        events.onVideoResumed();
+        events.onVideoReattached();
       }
     });
   }
 
+  // PeerConnection has a MediaStream which has AudioTracks and VideoTracks (i.e. MediaStreamTrack).
+  // A VideoTrack can have one or more VideoRenderer, which are the actual views
+  private void removeLocalRenderer()
+  {
+    localVideoTrack.setEnabled(false);
+    localVideoTrack.removeSink(localRender);
+    localRender = null;
+  }
+
+  private void removeRemoteRenderer()
+  {
+    remoteVideoTrack.setEnabled(false);
+    remoteVideoTrack.removeRenderer(remoteVideoRenderer);
+    remoteRenders = null;
+  }
 
   // For video pause/resume functionality
   private void addLocalRenderer(final VideoSink localRender)
   {
-    //localVideoTrack = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
     localVideoTrack.setEnabled(renderVideo);
-
-    //localVideoRenderer = new VideoRenderer(localRender);
-    ///localVideoTrack.addRenderer(localVideoRenderer);
     localVideoTrack.addSink(localRender);
     this.localRender = localRender;
-
-    //mediaStream.addTrack(localVideoTrack);
   }
 
   private void addRemoteRenderer(final VideoRenderer.Callbacks remoteRender)
   {
-    //remoteMediaStream.addTrack(remoteVideoTrack);
     remoteVideoTrack.setEnabled(renderVideo);
     remoteVideoRenderer = new VideoRenderer(remoteRender);
     remoteVideoTrack.addRenderer(remoteVideoRenderer);
   }
-
-  //////////////////////////////////////////////
-
-
-
 
 
   public void stopVideoSource() {

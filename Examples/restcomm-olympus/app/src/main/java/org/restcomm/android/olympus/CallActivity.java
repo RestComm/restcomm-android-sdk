@@ -53,8 +53,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.ListIterator;
 
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCConnectionListener;
 import org.restcomm.android.sdk.RCDevice;
@@ -173,6 +171,11 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
             connection.pauseVideo();
         }
         */
+
+        if (connection != null && connection.getState() == RCConnection.ConnectionState.CONNECTED) {
+            connection.detachVideo();
+        }
+
     }
 
     @Override
@@ -218,9 +221,11 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         // The activity has become visible (it is now "resumed").
         Log.i(TAG, "%% onResume");
         if (connection != null && connection.getState() == RCConnection.ConnectionState.CONNECTED) {
-           connection.resumeVideo();
+           //connection.resumeVideo();
+            //connection.reattachVideo((PercentFrameLayout)findViewById(R.id.local_video_layout),
+            //        (PercentFrameLayout)findViewById(R.id.remote_video_layout));
 
-           // Now that we can mute/umnute via notification, we need to update the UI accordingly if there was a change
+            // Now that we can mute/umnute via notification, we need to update the UI accordingly if there was a change
            // while we were not in the foreground
            muteAudio = connection.isAudioMuted();
            if (!muteAudio) {
@@ -255,7 +260,7 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
                     ///connection.disconnect();
 
                     // TODO: Issue #380: once we figure out the issue with the backgrounding we need to uncomment this
-                    connection.stopVideo();
+                    //connection.detachVideo();
                 }
                 else {
                     connection = null;
@@ -427,8 +432,7 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
                 Log.w(TAG, "Warning: pendingConnection is null, probably reusing past intent");
             }
         }
-        // TODO: Issue #380: once we figure out the issue with the backgrounding we need to uncomment this
-        if (intent.getAction().equals(RCDevice.ACTION_RESUME_CALL_DESTROYED_ACTIVITY)) {
+        if (intent.getAction().equals(RCDevice.ACTION_RESUME_CALL)) {
             String text;
             connection = device.getLiveConnection();
             connection.setConnectionListener(this);
@@ -454,7 +458,7 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
 
             lblCall.setText(text + connection.getPeer().replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
             lblStatus.setText("Connected");
-            connection.restartVideo((PercentFrameLayout)findViewById(R.id.local_video_layout),
+            connection.reattachVideo((PercentFrameLayout)findViewById(R.id.local_video_layout),
                     (PercentFrameLayout)findViewById(R.id.remote_video_layout));
 
             // Hide answering buttons and show mute & keypad
@@ -563,12 +567,10 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
                 muteVideo = !muteVideo;
                 if (muteVideo) {
                     btnMuteVideo.setImageResource(R.drawable.video_muted);
-                    //connection.off();
-                    //connection.pauseVideo();
+                    //connection.detachVideo();
                 } else {
                     btnMuteVideo.setImageResource(R.drawable.video_unmuted);
-                    //connection.on((PercentFrameLayout)findViewById(R.id.local_video_layout), (PercentFrameLayout)findViewById(R.id.remote_video_layout));
-                    //connection.resumeVideo((PercentFrameLayout)findViewById(R.id.local_video_layout), (PercentFrameLayout)findViewById(R.id.remote_video_layout));
+                    //connection.reattachVideo((PercentFrameLayout)findViewById(R.id.local_video_layout), (PercentFrameLayout)findViewById(R.id.remote_video_layout));
                 }
 
                 connection.setVideoMuted(muteVideo);
