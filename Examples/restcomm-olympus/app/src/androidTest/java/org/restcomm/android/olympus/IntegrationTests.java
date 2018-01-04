@@ -37,7 +37,6 @@ import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.RCDeviceListener;
 
 import org.restcomm.android.sdk.fcm.FcmConfigurationHandler;
-import org.restcomm.android.sdk.fcm.model.FcmBinding;
 import org.restcomm.android.sdk.storage.StorageManagerPreferences;
 import org.restcomm.android.sdk.storage.StorageUtils;
 import org.restcomm.android.sdk.util.PercentFrameLayout;
@@ -1460,7 +1459,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
             @Override
             public void run() {
                 try {
-                    device.updateParams(params);
+                    device.reconfigure(params);
                 } catch (Exception e) {
                     Log.e(TAG, "RCDevice update Error: " + e.toString());
                 }
@@ -1597,9 +1596,9 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
      *
      *
      */
-    public void onStartListening(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus)
+    public void onReconfigured(RCDevice device, RCConnectivityStatus connectivityStatus, int statusCode, String statusText)
     {
-        Log.i(TAG, "%% onStartListening");
+        Log.i(TAG, "%% onReconfigured");
 
         context.clear();
         context.put("device", device);
@@ -1608,9 +1607,9 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         deviceStartedListening = true;
     }
 
-    public void onStopListening(RCDevice device, int statusCode, String statusText)
+    public void onError(RCDevice device, int statusCode, String statusText)
     {
-        Log.i(TAG, "%% onStopListening: " + statusText);
+        Log.i(TAG, "%% onError: " + statusText);
 
         context.clear();
         context.put("device", device);

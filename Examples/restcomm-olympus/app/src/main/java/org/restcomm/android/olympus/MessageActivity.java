@@ -47,7 +47,6 @@ import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.RCDeviceListener;
-import org.restcomm.android.sdk.RCPresenceEvent;
 import org.restcomm.android.sdk.util.RCException;
 
 import java.util.HashMap;
@@ -281,12 +280,12 @@ public class MessageActivity extends AppCompatActivity
       Log.i(TAG, "%% onInitialized");
    }
 
-   public void onStartListening(RCDevice device, RCConnectivityStatus connectivityStatus)
+   public void onReconfigured(RCDevice device, RCConnectivityStatus connectivityStatus, int statusCode, String statusText)
    {
-      Log.i(TAG, "%% onStartListening");
+      Log.i(TAG, "%% onReconfigured");
    }
 
-   public void onStopListening(RCDevice device, int errorCode, String errorText)
+   public void onError(RCDevice device, int errorCode, String errorText)
    {
       if (errorCode == RCClient.ErrorCodes.SUCCESS.ordinal()) {
          handleConnectivityUpdate(RCConnectivityStatus.RCConnectivityStatusNone, "RCDevice: " + errorText);

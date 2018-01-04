@@ -99,8 +99,7 @@ public class FcmConfigurationHandler {
      *  @param parameters, paramaters to check
      * @param clearFcmData , true if new data should be used for registration
      */
-    public void registerForPush(HashMap<String, Object> parameters, boolean clearFcmData) throws RCException{
-
+    public void registerForPush(HashMap<String, Object> parameters, boolean clearFcmData) {
         boolean bindingExists = mStorageManager.getString(FcmConfigurationHandler.FCM_BINDING, null) != null;
         if (clearFcmData){
             mStorageManager.saveString(FCM_ACCOUNT_SID, null);
