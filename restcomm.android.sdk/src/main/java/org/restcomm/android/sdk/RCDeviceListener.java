@@ -100,7 +100,7 @@ public interface RCDeviceListener {
     * @param statusCode Status code
     * @param statusText Status text
     */
-   void onWarning(RCDevice device, int statusCode,  String statusText);
+   //void onWarning(RCDevice device, int statusCode,  String statusText);
 
    /**
     *  RCDevice failed to initialize

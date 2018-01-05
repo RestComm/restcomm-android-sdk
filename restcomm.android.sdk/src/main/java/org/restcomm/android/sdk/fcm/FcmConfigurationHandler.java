@@ -96,10 +96,12 @@ public class FcmConfigurationHandler {
 
     /**
      *  It will register device and application for push notifications
-     *  @param parameters, paramaters to check
+     * @param parameters, paramaters to check
      * @param clearFcmData , true if new data should be used for registration
+     * @return true if an actual asynchronous operation started to update push configuration, false if an updated wasn't deemed necessary
      */
-    public void registerForPush(HashMap<String, Object> parameters, boolean clearFcmData) {
+    public boolean registerForPush(HashMap<String, Object> parameters, boolean clearFcmData) {
+        boolean needUpdate = false;
         boolean bindingExists = mStorageManager.getString(FcmConfigurationHandler.FCM_BINDING, null) != null;
         if (clearFcmData){
             mStorageManager.saveString(FCM_ACCOUNT_SID, null);
@@ -112,10 +114,14 @@ public class FcmConfigurationHandler {
         if (!mEnablePush){
             if (bindingExists) {
                 registerOrUpdateForPush(false);
+                needUpdate = true;
             }
         } else if (RCUtils.shouldRegisterForPush(parameters, mStorageManager)) {
             registerOrUpdateForPush(false);
+            needUpdate = true;
         }
+
+        return needUpdate;
     }
 
     public void updateBinding(){
