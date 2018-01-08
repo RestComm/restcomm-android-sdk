@@ -487,12 +487,14 @@ public class MainActivity extends AppCompatActivity
       handleConnectivityUpdate(connectivityStatus, null);
    }
 
+/*
    @Override
    public void onWarning(RCDevice device, int statusCode, String statusText) {
       if (statusCode != RCClient.ErrorCodes.SUCCESS.ordinal()) {
          Toast.makeText(getApplicationContext(), "RCDevice Warning message: " + statusText, Toast.LENGTH_LONG).show();
       }
    }
+*/
 
    public void handleConnectivityUpdate(RCConnectivityStatus connectivityStatus, String text)
    {

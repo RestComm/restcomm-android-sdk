@@ -302,12 +302,14 @@ public class MessageActivity extends AppCompatActivity
       handleConnectivityUpdate(connectivityStatus, null);
    }
 
+/*
    @Override
    public void onWarning(RCDevice device, int statusCode, String statusText) {
       if (statusCode != RCClient.ErrorCodes.SUCCESS.ordinal()) {
          Toast.makeText(getApplicationContext(), "RCDevice Warning message: " + statusText, Toast.LENGTH_LONG).show();
       }
    }
+*/
 
    public void onMessageSent(RCDevice device, int statusCode, String statusText, String jobId)
    {

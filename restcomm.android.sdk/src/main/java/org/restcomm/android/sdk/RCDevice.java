@@ -54,6 +54,7 @@ import org.restcomm.android.sdk.util.RCUtils;
 import org.restcomm.android.sdk.util.RCDeviceFSM;
 import org.squirrelframework.foundation.fsm.StateMachineBuilder;
 import org.squirrelframework.foundation.fsm.StateMachineBuilderFactory;
+import org.squirrelframework.foundation.fsm.StateMachineConfiguration;
 import org.squirrelframework.foundation.fsm.impl.AbstractStateMachine;
 
 import java.net.URISyntaxException;
@@ -115,7 +116,7 @@ import java.util.Map;
  * @see RCConnection
  */
 
-public class RCDevice extends Service implements SignalingClient.SignalingClientListener, FcmPushRegistrationListener {
+public class RCDevice extends Service implements SignalingClient.SignalingClientListener, FcmPushRegistrationListener, RCDeviceFSM.RCDeviceFSMListener {
    /**
     * Device state
     */
@@ -1119,19 +1120,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
        cachedConnectivityStatus = connectivityStatus;
 
        registrationFsm.fire(RCDeviceFSM.FSMEvent.signalingRegistrationEvent, new FsmContext(connectivityStatus, status, text));
-
-/*       if (isAttached()) {
-          listener.onInitialized(this, connectivityStatus, status.ordinal(), text);
-       } else {
-          RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
-                  RCClient.errorText(status));
-       }
-
-       if (status == RCClient.ErrorCodes.SUCCESS) {
-          state = DeviceState.READY;
-       } else {
-          release();
-       }*/
     }
 
 
@@ -1168,23 +1156,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       cachedConnectivityStatus = connectivityStatus;
 
       registrationFsm.fire(RCDeviceFSM.FSMEvent.signalingRegistrationEvent, new FsmContext(connectivityStatus, status, text));
-
-/*
-      if (status == RCClient.ErrorCodes.SUCCESS) {
-         state = DeviceState.READY;
-      }
-      else {
-         state = DeviceState.OFFLINE;
-      }
-
-      if (isAttached()) {
-         listener.onReconfigured(this, connectivityStatus, status.ordinal(), text);
-      }
-      else {
-         RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onReconfigured(): " +
-                 RCClient.errorText(status));
-      }
-*/
    }
 
     /**
@@ -1793,6 +1764,40 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
    }
 
+   public void onDeviceFSMInitializeDone(RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
+   {
+      if (isAttached()) {
+         listener.onInitialized(this, connectivityStatus, status.ordinal(), text);
+      } else {
+         RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
+                 RCClient.errorText(status));
+      }
+
+      if (status == RCClient.ErrorCodes.SUCCESS) {
+         state = DeviceState.READY;
+      } else {
+         release();
+      }
+   }
+
+   public void onDeviceFSMReconfigureDone(RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
+   {
+      if (status == RCClient.ErrorCodes.SUCCESS) {
+         state = DeviceState.READY;
+      }
+      else {
+         state = DeviceState.OFFLINE;
+      }
+
+      if (isAttached()) {
+         listener.onReconfigured(this, connectivityStatus, status.ordinal(), text);
+      }
+      else {
+         RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onReconfigured(): " +
+                 RCClient.errorText(status));
+      }
+   }
+
    private void notificationHandleForegroundUpdate(RCConnection connection)
    {
       String peerUsername = connection.getPeer().replaceAll(".*?sip:", "").replaceAll("@.*$", "");
@@ -1974,7 +1979,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       // Build state transitions
       StateMachineBuilder<RCDeviceFSM, RCDeviceFSM.FSMState, RCDeviceFSM.FSMEvent, FsmContext> fsmBuilder =
               StateMachineBuilderFactory.create(RCDeviceFSM.class,
-                      RCDeviceFSM.FSMState.class, RCDeviceFSM.FSMEvent.class, FsmContext.class, RCDevice.class);
+                      RCDeviceFSM.FSMState.class, RCDeviceFSM.FSMEvent.class, FsmContext.class, RCDeviceFSM.RCDeviceFSMListener.class);
 
       // Seems 'fromAny' doesn't work as expected, so sadly we need to add more states
       //fsmBuilder.transit().fromAny().to(RCDeviceFSM.FSMState.signalingReadyState).on(RCDeviceFSM.FSMEvent.signalingRegistrationEvent).callMethod("toSignalingInitializationReady");
@@ -2004,8 +2009,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       fsmBuilder.externalTransition().from(RCDeviceFSM.FSMState.pushReadyState).to(RCDeviceFSM.FSMState.initialState)
               .on(RCDeviceFSM.FSMEvent.resetStateMachine).callMethod("toInitialState");
 
-
-      registrationFsm = fsmBuilder.newStateMachine(RCDeviceFSM.FSMState.initialState, this);
+      HashMap<String, String> map = new HashMap<>();
+      registrationFsm = fsmBuilder.newStateMachine(RCDeviceFSM.FSMState.initialState,
+              StateMachineConfiguration.getInstance().enableDebugMode(false), this);
    }
 
 }

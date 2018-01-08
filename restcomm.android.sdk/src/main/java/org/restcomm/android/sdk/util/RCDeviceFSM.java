@@ -23,22 +23,29 @@
 package org.restcomm.android.sdk.util;
 
 import org.restcomm.android.sdk.RCClient;
+import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCDevice;
+import org.restcomm.android.sdk.RCDeviceListener;
 import org.squirrelframework.foundation.fsm.impl.AbstractStateMachine;
+
+import java.util.HashMap;
 
 // TODO:
 // - Add more doc
 // - Try to move back to RCDevice as inner class (non static) as it will simplify access to RCDevice resources A LOT)
-// - See if we can avoid calling terminate() inside the handler methods
 // - See if we can improve the savedContext
-// - Make sure that once the FSM is done its state is reset to initialState so that the same FSM instance can be reused (for example for a RCDevice.reconfigure())
-// - Remote static from RCDevice state
 // - Fix exception 'java.lang.NoClassDefFoundError: Failed resolution of: Ljava/beans/Introspector' on FSM builder creation
 // Define FSM class to synchronize parallel registration of signaling and push notifications facilities and present a single success/failure point
 
 //@StateMachineParameters(stateType=RCDeviceFSM.FSMState.class, eventType=RCDeviceFSM.FSMEvent.class, contextType=RCDeviceFSM.FsmContext.class)
 //public class RCDeviceFSM extends AbstractUntypedStateMachine {
 public class RCDeviceFSM extends AbstractStateMachine<RCDeviceFSM, RCDeviceFSM.FSMState, RCDeviceFSM.FSMEvent, FsmContext> {
+    public interface RCDeviceFSMListener {
+        // Replies
+        void onDeviceFSMInitializeDone(RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text);
+        void onDeviceFSMReconfigureDone(RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text);
+    }
+
     private static final String TAG = "RCDeviceFSM";
 
     // Define FSM events
@@ -58,15 +65,15 @@ public class RCDeviceFSM extends AbstractStateMachine<RCDeviceFSM, RCDeviceFSM.F
         finishedState,
     }
 
-    RCDeviceFSM(RCDevice device)
+    //RCDeviceFSM(RCDeviceFSMListener listener)
+    RCDeviceFSM(RCDeviceFSMListener listener)
     {
-        this.device = device;
+        this.listener = listener;
     }
 
     // keep internal context as we need to keep data around between state changes
-    FsmContext savedContext;
-    // keep RCDevice reference so that we can use the listeners when needed
-    RCDevice device;
+    private FsmContext savedContext;
+    private RCDeviceFSMListener listener;
 
     protected void toPushReady(FSMState from, FSMState to, FSMEvent event, FsmContext context)
     {
@@ -77,23 +84,14 @@ public class RCDeviceFSM extends AbstractStateMachine<RCDeviceFSM, RCDeviceFSM.F
             savedContext = context;
         } else if (from == FSMState.signalingReadyState) {
             // we are already registered signaling-wise, which means we a can notify app and then we 're done
-            if (device.isAttached()) {
-                if (savedContext.status == RCClient.ErrorCodes.SUCCESS) {
-                    device.getDeviceListener().onInitialized(device, context.connectivityStatus, context.status.ordinal(), RCClient.errorText(context.status));
-                } else {
-                    // we have an error/warning previously stored, so we need to convey it to the user
-                    device.getDeviceListener().onInitialized(device, savedContext.connectivityStatus, savedContext.status.ordinal(), savedContext.text);
-                }
+            if (savedContext.status == RCClient.ErrorCodes.SUCCESS) {
+                listener.onDeviceFSMInitializeDone(context.connectivityStatus, context.status, RCClient.errorText(context.status));
             } else {
-                if (context.status == RCClient.ErrorCodes.SUCCESS) {
-                    RCLogger.i(TAG, "Device and user are successfully registered for Push Notifications!");
-                } else {
-                    RCLogger.w(TAG, "RegisterForPush  warning: " + RCClient.errorText(context.status));
-                }
+                // we have an error/warning previously stored, so we need to convey it to the user
+                listener.onDeviceFSMInitializeDone(savedContext.connectivityStatus, savedContext.status, savedContext.text);
             }
 
-            // terminate the FSM as this was the last state; didn't see any examples on this, so better double check if it's correct
-            //terminate();
+            // reset FSM as this was the last state, so that it can be reused
             fire(FSMEvent.resetStateMachine);
         } else {
             // should never happen; let's add a Runtime Exception for as long we 're testing this to fix any isseues
@@ -110,27 +108,14 @@ public class RCDeviceFSM extends AbstractStateMachine<RCDeviceFSM, RCDeviceFSM.F
             savedContext = context;
         } else if (from == FSMState.pushReadyState) {
             // we are already registered push-wise, which means we a can notify app and then we 're done
-            if (device.isAttached()) {
-                if (savedContext.status == RCClient.ErrorCodes.SUCCESS) {
-                    device.getDeviceListener().onInitialized(device, context.connectivityStatus, context.status.ordinal(), context.text);
-                } else {
-                    // we have an error/warning previously stored, so we need to convey it to the user
-                    device.getDeviceListener().onInitialized(device, savedContext.connectivityStatus, savedContext.status.ordinal(), savedContext.text);
-                }
+            if (savedContext.status == RCClient.ErrorCodes.SUCCESS) {
+                listener.onDeviceFSMInitializeDone(context.connectivityStatus, context.status, RCClient.errorText(context.status));
             } else {
-                RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
-                        RCClient.errorText(context.status));
+                // we have an error/warning previously stored, so we need to convey it to the user
+                listener.onDeviceFSMInitializeDone(savedContext.connectivityStatus, savedContext.status, savedContext.text);
             }
 
-            // the device state is not affected by savedContext, that is even if push registration is messed up, the device is still ready
-            if (context.status == RCClient.ErrorCodes.SUCCESS) {
-                device.state = RCDevice.DeviceState.READY;
-            } else {
-                device.release();
-            }
-
-            // terminate the FSM as this was the last state; didn't see any examples on this, so better double check if it's correct
-            //terminate();
+            // reset FSM as this was the last state, so that it can be reused
             fire(FSMEvent.resetStateMachine);
         } else {
             // should never happen; let's add a Runtime Exception for as long we 're testing this to fix any isseues
@@ -147,23 +132,14 @@ public class RCDeviceFSM extends AbstractStateMachine<RCDeviceFSM, RCDeviceFSM.F
             savedContext = context;
         } else if (from == FSMState.signalingReadyState) {
             // we are already registered signaling-wise, which means we a can notify app and then we 're done
-            if (device.isAttached()) {
-                if (savedContext.status == RCClient.ErrorCodes.SUCCESS) {
-                    device.getDeviceListener().onReconfigured(device, context.connectivityStatus, context.status.ordinal(), RCClient.errorText(context.status));
-                } else {
-                    // we have an error/warning previously stored, so we need to convey it to the user
-                    device.getDeviceListener().onReconfigured(device, savedContext.connectivityStatus, savedContext.status.ordinal(), savedContext.text);
-                }
+            if (savedContext.status == RCClient.ErrorCodes.SUCCESS) {
+                listener.onDeviceFSMReconfigureDone(context.connectivityStatus, context.status, RCClient.errorText(context.status));
             } else {
-                if (context.status == RCClient.ErrorCodes.SUCCESS) {
-                    RCLogger.i(TAG, "Device and user are successfully registered for Push Notifications!");
-                } else {
-                    RCLogger.w(TAG, "RegisterForPush  warning: " + RCClient.errorText(context.status));
-                }
+                // we have an error/warning previously stored, so we need to convey it to the user
+                listener.onDeviceFSMReconfigureDone(savedContext.connectivityStatus, savedContext.status, savedContext.text);
             }
 
-            // terminate the FSM as this was the last state; didn't see any examples on this, so better double check if it's correct
-            // start over
+            // reset FSM as this was the last state, so that it can be reused
             fire(FSMEvent.resetStateMachine);
         } else {
             // should never happen; let's add a Runtime Exception for as long we 're testing this to fix any isseues
@@ -175,31 +151,19 @@ public class RCDeviceFSM extends AbstractStateMachine<RCDeviceFSM, RCDeviceFSM.F
     {
         RCLogger.i(TAG, event + ": " + from + " -> " + to + ", context '" + context + "'");
 
-        if (context.status == RCClient.ErrorCodes.SUCCESS) {
-            device.state = RCDevice.DeviceState.READY;
-        } else {
-            device.state = RCDevice.DeviceState.OFFLINE;
-        }
-
         if (from == FSMState.initialState) {
             // we haven't finished signaling registration; let's keep the state around so that we can use it when signaling is finished
             savedContext = context;
         } else if (from == FSMState.pushReadyState) {
             // we are already registered push-wise, which means we a can notify app and then we 're done
-            if (device.isAttached()) {
-                if (savedContext.status == RCClient.ErrorCodes.SUCCESS) {
-                    device.getDeviceListener().onReconfigured(device, context.connectivityStatus, context.status.ordinal(), context.text);
-                } else {
-                    // we have an error/warning previously stored, so we need to convey it to the user
-                    device.getDeviceListener().onReconfigured(device, savedContext.connectivityStatus, savedContext.status.ordinal(), savedContext.text);
-                }
+            if (savedContext.status == RCClient.ErrorCodes.SUCCESS) {
+                listener.onDeviceFSMReconfigureDone(context.connectivityStatus, context.status, RCClient.errorText(context.status));
             } else {
-                RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onReconfigured(): " +
-                        RCClient.errorText(context.status));
+                // we have an error/warning previously stored, so we need to convey it to the user
+                listener.onDeviceFSMReconfigureDone(savedContext.connectivityStatus, savedContext.status, savedContext.text);
             }
 
-            // terminate the FSM as this was the last state; didn't see any examples on this, so better double check if it's correct
-            //terminate();
+            // reset FSM as this was the last state, so that it can be reused
             fire(FSMEvent.resetStateMachine);
         } else {
             // should never happen; let's add a Runtime Exception for as long we 're testing this to fix any isseues

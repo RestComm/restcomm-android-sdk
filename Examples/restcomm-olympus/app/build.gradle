@@ -194,6 +194,11 @@ repositories {
     maven {
         url "https://maven.google.com"
     }
+/*
+    maven {
+        url "https://maven.repository.redhat.com/ga/"
+    }
+*/
 
     google()
 }
