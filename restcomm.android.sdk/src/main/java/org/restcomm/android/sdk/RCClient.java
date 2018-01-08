@@ -117,7 +117,8 @@ public final class RCClient {
       ERROR_DEVICE_PUSH_NOTIFICATION_PUSH_DOMAIN_MISSING,
       ERROR_DEVICE_PUSH_NOTIFICATION_RESTCOMM_DOMAIN_MISSING,
       ERROR_DEVICE_PUSH_NOTIFICATION_ENABLE_DISABLE_PUSH_NOTIFICATION,
-
+      ERROR_DEVICE_PUSH_NOTIFICATION_INVALID_HTTP_DOMAIN,
+      ERROR_DEVICE_PUSH_NOTIFICATION_INVALID_PUSH_DOMAIN
    }
 
    /**
@@ -357,8 +358,11 @@ public final class RCClient {
       else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_RESTCOMM_DOMAIN_MISSING){
          return "Failed to register/update for push notification; Restcomm Connect Domain cannot be found";
       }
-      else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ENABLE_DISABLE_PUSH_NOTIFICATION){
-         return "Failed to enable/disable push notification for client on server";
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_INVALID_HTTP_DOMAIN){
+         return "Failed to register/update for push notification; Invalid http domain.";
+      }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_INVALID_PUSH_DOMAIN){
+         return "Failed to register/update for push notification; Invalid push domain.";
       }
 
 

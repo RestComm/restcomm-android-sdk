@@ -1438,15 +1438,14 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          builder = builder.setSound(Uri.parse("android.resource://" + getPackageName() + "/" + audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_RINGING)));
       if (callIntent != null) {
          builder = builder
-                 .addAction(R.drawable.ic_videocam_24dp, "Video", PendingIntent.getService(getApplicationContext(), 0, serviceIntentVideo, PendingIntent.FLAG_UPDATE_CURRENT))
-                 .addAction(R.drawable.ic_call_24dp, "Audio", PendingIntent.getService(getApplicationContext(), 0, serviceIntentAudio, PendingIntent.FLAG_UPDATE_CURRENT))
-                 .addAction(R.drawable.ic_call_end_24dp, "Hang Up", PendingIntent.getService(getApplicationContext(), 0, serviceIntentDecline, PendingIntent.FLAG_UPDATE_CURRENT))
-                 .setContentIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDefault, PendingIntent.FLAG_UPDATE_CURRENT))
-                 .setDeleteIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDelete, PendingIntent.FLAG_UPDATE_CURRENT));
+         .addAction(R.drawable.ic_videocam_24dp, "Video", PendingIntent.getService(getApplicationContext(), 0, serviceIntentVideo, PendingIntent.FLAG_UPDATE_CURRENT))
+         .addAction(R.drawable.ic_call_24dp, "Audio", PendingIntent.getService(getApplicationContext(), 0, serviceIntentAudio, PendingIntent.FLAG_UPDATE_CURRENT))
+         .addAction(R.drawable.ic_call_end_24dp, "Hang Up", PendingIntent.getService(getApplicationContext(), 0, serviceIntentDecline, PendingIntent.FLAG_UPDATE_CURRENT))
+         .setContentIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDefault, PendingIntent.FLAG_UPDATE_CURRENT))
+         .setDeleteIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDelete, PendingIntent.FLAG_UPDATE_CURRENT));
       } else {
          //we dont want to show the notification to primary channel
-         builder = builder
-                 .setContentIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDefault, PendingIntent.FLAG_UPDATE_CURRENT));
+         builder = builder.setContentIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDefault, PendingIntent.FLAG_UPDATE_CURRENT));
       }
 
 
@@ -1824,7 +1823,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    // -- FcmMessageListener
     @Override
     public void onRegisteredForPush(RCClient.ErrorCodes status, String text) {
-       if (isServiceAttached) {
+       if (listener != null) {
           listener.onWarning(this, status.ordinal(), RCClient.errorText(status));
        } else {
            if (status == RCClient.ErrorCodes.SUCCESS){

@@ -39,6 +39,7 @@ import org.restcomm.android.sdk.util.RCException;
 import org.restcomm.android.sdk.util.RCLogger;
 import org.restcomm.android.sdk.util.RCUtils;
 
+import java.net.UnknownHostException;
 import java.util.HashMap;
 
 /**
@@ -202,7 +203,11 @@ public class FcmConfigurationHandler {
                 String accountSid = inputHashMap.get(FCM_ACCOUNT_SID);
                 if (TextUtils.isEmpty(accountSid)) {
                     RCLogger.v(TAG, "Account sid not found, getting it from server.");
-                    accountSid = fcmConfigurationClient.getAccountSid();
+                    try {
+                        accountSid = fcmConfigurationClient.getAccountSid();
+                    } catch (UnknownHostException e) {
+                        return new Pair<>(null, RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_INVALID_HTTP_DOMAIN);
+                    }
                 }
 
                 if (!TextUtils.isEmpty(accountSid)) {
@@ -222,8 +227,14 @@ public class FcmConfigurationHandler {
 
                         //APPLICATION
                         RCLogger.v(TAG, "Getting an application;");
-                        String fcmApplicationString = inputHashMap.get(FCM_APPLICATION);
-                        FcmApplication application = getApplication(fcmApplicationString);
+                        String fcmApplicationString  = inputHashMap.get(FCM_APPLICATION);
+                        FcmApplication application;
+                        try{
+                            application = getApplication(fcmApplicationString);
+                        } catch (UnknownHostException e) {
+                            return new Pair<>(null, RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_INVALID_PUSH_DOMAIN);
+                        }
+
                         if (application == null) {
                             RCLogger.v(TAG, "Application not found, raising error;");
                             return new Pair<>(null, RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_APPLICATION_MISSING);
@@ -290,10 +301,11 @@ public class FcmConfigurationHandler {
                     return new Pair<>(null, RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ACCOUNT_SID_MISSING);
                 }
             }
+
         }
 
 
-        private FcmApplication getApplication(String applicationStorageString) {
+        private FcmApplication getApplication(String applicationStorageString) throws UnknownHostException {
             FcmApplication application;
 
             if (!TextUtils.isEmpty(applicationStorageString)) {

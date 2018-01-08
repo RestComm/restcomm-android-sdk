@@ -127,7 +127,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
     static private final int TC_TIMEOUT = 30 * 1000;
     // timeout for signaling actions in seconds
     static private final int SIGNALING_TIMEOUT = 10;
-    static private final int PUSH_TIMEOUT = 30;
+    static private final int PUSH_TIMEOUT = 40;
     // special timeout for a call getting connected in seconds. We use separate timeout for this as we want to enforce separately very low setup times.
     // Starting with 10 seconds, but goal it to not take more than 1-3 seconds
     static private final int CALL_CONNECTED_TIMEOUT = 10;
@@ -164,10 +164,10 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
 
     static private final String PUSH_DOMAIN = "push.restcomm.com";
     static private final String HTTP_DOMAIN = "cloud.restcomm.com";
-    static private final String PUSH_ACCOUNT = BuildConfig.PUSH_ACCOUNT; //bob@telestax.com
-    static private final String PUSH_PASSWORD = BuildConfig.PUSH_PASSWORD; //1234
+    static private final String PUSH_ACCOUNT = BuildConfig.TEST_PUSH_ACCOUNT; //bob@telestax.com
+    static private final String PUSH_PASSWORD = BuildConfig.TEST_PUSH_PASSWORD; //1234
     static private final String PUSH_APPLICATION_NAME = "test android";
-    static private final String PUSH_FCM_KEY = BuildConfig.PUSH_FCM_KEY;
+    static private final String PUSH_FCM_KEY = BuildConfig.TEST_PUSH_FCM_KEY;
 
 
 
@@ -1298,7 +1298,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         });
 
         await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("onWarningReceived"), equalTo(true));
-        assertThat(context.get("status-code")).isEqualTo(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_APPLICATION_MISSING.ordinal());
+        assertThat(context.get("status-code")).isEqualTo(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_INVALID_PUSH_DOMAIN.ordinal());
 
         clientHandler.post(new Runnable() {
             @Override
@@ -1316,7 +1316,72 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
     }
 
     @Test(timeout = TC_TIMEOUT)
-    public void deviceInitializeWithPush_DisableEnablePush() throws InterruptedException {
+    public void deviceInitializeWithPush_InvalidHTTPDomain() throws InterruptedException {
+        InstrumentationRegistry.getTargetContext().bindService(new Intent(InstrumentationRegistry.getTargetContext(), RCDevice.class), this, Context.BIND_AUTO_CREATE);
+        await().atMost(SIGNALING_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("serviceConnected"), equalTo(true));
+
+        // Get the reference to the service, or you can call public methods on the binder directly.
+        final RCDevice device = binder.getService();
+
+        Handler clientHandler = new Handler(Looper.getMainLooper());
+
+        clientHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                resetPushConfiguration();
+                HashMap<String, Object> params = new HashMap<String, Object>();
+                params.put(RCDevice.ParameterKeys.INTENT_INCOMING_CALL, new Intent(RCDevice.ACTION_INCOMING_CALL, null, InstrumentationRegistry.getTargetContext(), CallActivity.class));
+                params.put(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE, new Intent(RCDevice.ACTION_INCOMING_MESSAGE, null, InstrumentationRegistry.getTargetContext(), MessageActivity.class));
+                params.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN, SERVER_HOST + ":" + SERVER_PORT);
+                params.put(RCDevice.ParameterKeys.SIGNALING_USERNAME, CLIENT_NAME);
+                params.put(RCDevice.ParameterKeys.SIGNALING_PASSWORD, CLIENT_PASSWORD);
+                params.put(RCDevice.ParameterKeys.MEDIA_ICE_URL, ICE_URL);
+                params.put(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME, ICE_USERNAME);
+                params.put(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD, ICE_PASSWORD);
+                params.put(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN, ICE_DOMAIN);
+                params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
+                params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
+                params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, true);
+                params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
+
+                params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, PUSH_APPLICATION_NAME);
+                params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, PUSH_ACCOUNT);
+                params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, PUSH_PASSWORD);
+                params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_PUSH_DOMAIN, PUSH_DOMAIN);
+                params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_HTTP_DOMAIN, "http domain");
+                params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, "server key");
+
+
+                device.setLogLevel(Log.VERBOSE);
+
+                try {
+                    device.initialize(InstrumentationRegistry.getTargetContext(), params, IntegrationTests.this);
+                } catch (RCException e) {
+                    Log.e(TAG, "RCDevice Initialization Error: " + e.errorText);
+                }
+            }
+        });
+
+        await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("onWarningReceived"), equalTo(true));
+        assertThat(context.get("status-code")).isEqualTo(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_INVALID_HTTP_DOMAIN.ordinal());
+
+        clientHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                resetPushConfiguration();
+                device.release();
+            }
+        });
+
+        await().atMost(SIGNALING_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceReleased"), equalTo(true));
+        assertThat(((RCDevice) context.get("device")).getState()).isEqualTo(RCDevice.DeviceState.OFFLINE);
+        assertThat(context.get("status-code")).isEqualTo(0);
+
+        InstrumentationRegistry.getTargetContext().unbindService(this);
+    }
+
+    @Test(timeout = TC_TIMEOUT)
+    public void deviceInitializeWithPush_DisableEnablePush_Valid() throws InterruptedException {
         InstrumentationRegistry.getTargetContext().bindService(new Intent(InstrumentationRegistry.getTargetContext(), RCDevice.class), this, Context.BIND_AUTO_CREATE);
         await().atMost(SIGNALING_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("serviceConnected"), equalTo(true));
 
@@ -1375,7 +1440,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         });
 
         await().atMost(SIGNALING_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceReleased"), equalTo(true));
-        //unable
+        //enable
         params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
         clientHandler.post(new Runnable() {
                                @Override
@@ -1404,7 +1469,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
     }
 
     @Test(timeout = TC_TIMEOUT)
-    public void deviceUpdateParamsWithPushDisabled() throws InterruptedException {
+    public void deviceUpdateParamsWithPushDisabled_Valid() throws InterruptedException {
         InstrumentationRegistry.getTargetContext().bindService(new Intent(InstrumentationRegistry.getTargetContext(), RCDevice.class), this, Context.BIND_AUTO_CREATE);
         await().atMost(SIGNALING_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("serviceConnected"), equalTo(true));
 
@@ -1470,9 +1535,6 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("onWarningReceived"), equalTo(true));
         assertThat(context.get("status-code")).isEqualTo(RCClient.ErrorCodes.SUCCESS.ordinal());
 
-        //if the binding is missing its removed.
-        StorageManagerPreferences storageManagerPreferences = new StorageManagerPreferences(InstrumentationRegistry.getTargetContext());
-        assertThat(TextUtils.isEmpty(storageManagerPreferences.getString(FcmConfigurationHandler.FCM_BINDING,"")));
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
@@ -1486,7 +1548,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
     }
 
     @Test(timeout = TC_TIMEOUT)
-    public void deviceUpdateParamsWithPushEnabled() throws InterruptedException {
+    public void deviceUpdateParamsWithPushEnabled_Valid() throws InterruptedException {
         InstrumentationRegistry.getTargetContext().bindService(new Intent(InstrumentationRegistry.getTargetContext(), RCDevice.class), this, Context.BIND_AUTO_CREATE);
         await().atMost(SIGNALING_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("serviceConnected"), equalTo(true));
 
@@ -1511,7 +1573,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN, ICE_DOMAIN);
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
-                params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, true);
+                params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
                 params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
 
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, PUSH_APPLICATION_NAME);
@@ -1535,6 +1597,18 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("onWarningReceived"), equalTo(true));
         assertThat(context.get("status-code")).isEqualTo(RCClient.ErrorCodes.SUCCESS.ordinal());
 
+        //enable
+        params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, true);
+        clientHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    device.updateParams(params);
+                } catch (Exception e) {
+                    Log.e(TAG, "RCDevice update Error: " + e.toString());
+                }
+            }
+        });
 
         //if binding is saved its created on server
         StorageManagerPreferences storageManagerPreferences = new StorageManagerPreferences(InstrumentationRegistry.getTargetContext());

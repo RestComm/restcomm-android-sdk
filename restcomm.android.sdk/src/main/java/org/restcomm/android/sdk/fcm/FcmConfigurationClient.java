@@ -40,6 +40,7 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 
 
@@ -94,19 +95,19 @@ public class FcmConfigurationClient {
      *  Returns the account sid for given email
      * @return String account sid
      */
-    public String getAccountSid(){
+    public String getAccountSid() throws UnknownHostException{
         RCLogger.v(TAG, "getAccountSid method started");
         String accountSid = null;
         HttpURLConnection connection = null;
-        try{
-            String encodedEmail =  URLEncoder.encode(accountEmail, "UTF-8");
+        try {
+            String encodedEmail = URLEncoder.encode(accountEmail, "UTF-8");
             String url = "https://" + restcommDomain + ACCOUNT_SID_URL + "/" + encodedEmail;
             RCLogger.v(TAG, "calling url: " + url);
-            connection  = createUrlRequestWithUrl(url);
+            connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("GET");
             int responseCode = connection.getResponseCode();
 
-            if (responseCode == HttpURLConnection.HTTP_OK){
+            if (responseCode == HttpURLConnection.HTTP_OK) {
                 String jsonString = getJsonFromStream(connection.getInputStream());
                 if (jsonString.length() > 0) {
                     JSONObject inputJson = new JSONObject(jsonString);
@@ -116,6 +117,9 @@ public class FcmConfigurationClient {
 
         } catch (Exception ex){
             RCLogger.e(TAG, ex.toString());
+            if (ex instanceof UnknownHostException){
+                throw (UnknownHostException)ex;
+            }
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -218,7 +222,7 @@ public class FcmConfigurationClient {
      * @param applicationName - application name
      * @return FcmApplication - object if everything is okay, otherwise null
      **/
-    public FcmApplication getApplication(String applicationName){
+    public FcmApplication getApplication(String applicationName) throws UnknownHostException{
         RCLogger.v(TAG, "getApplication method started");
         FcmApplication fcmApplication = null;
         HttpURLConnection connection = null;
@@ -235,6 +239,9 @@ public class FcmConfigurationClient {
 
         } catch (Exception ex){
             RCLogger.e(TAG, ex.toString());
+            if (ex instanceof UnknownHostException){
+                throw (UnknownHostException)ex;
+            }
         } finally {
             if (connection != null) {
                 connection.disconnect();
