@@ -180,7 +180,7 @@ public class RCUtils {
 
    }
 
-   public static boolean validatePushSettings(HashMap<String, Object> parameters) throws RCException{
+   static boolean validatePushSettings(HashMap<String, Object> parameters) throws RCException{
       //check is there fcm server key, if not write a warning
       if (parameters == null) {
          return false;

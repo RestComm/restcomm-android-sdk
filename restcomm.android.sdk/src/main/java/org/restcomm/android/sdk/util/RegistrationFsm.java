@@ -23,35 +23,48 @@
 package org.restcomm.android.sdk.util;
 
 import org.restcomm.android.sdk.RCClient;
-import org.restcomm.android.sdk.RCConnection;
-import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.RCDeviceListener;
-import org.squirrelframework.foundation.fsm.impl.AbstractStateMachine;
+import org.squirrelframework.foundation.fsm.annotation.StateMachineParameters;
+import org.squirrelframework.foundation.fsm.impl.AbstractUntypedStateMachine;
 
-import java.util.HashMap;
+/**
+ *
+ * FSM class to synchronize parallel registration of signaling and push notifications facilities which run in parallel so that we can present a single success/failure point
+ * The way this works is that it doesn't matter which finishes first; application is notified only after both signaling and push registrations have finished processing.
+ * Notice that finished might mean either successful registration, failure and timeout. Also, specifically for push registration, there might be no registration
+ * happening at all if the user has disabled push.
+ *
+ * The FSM is used in 2 RCDevice actions:
+ * - RCDevice.initialize()
+ * - RCDevice.reconfigure()
+ *
+ * The FSM events and states are shared in those actions to make the whole thing simpler. This is possible because initialize() and reconfigure are independent and never intertwine.
+ * However, the FSM methods are separate between initialize() and reconfigure() to make things clearer
+ *
+ * Once FSM finishes, RCDevice (i.e. the listener) is notified via listener callbacks
+ *
+ * Notice that we are using hekailiang's Squirrel FSM
+ *
+ *  TODO:
+ * - See if we can improve the savedContext
+ * - Fix exception 'java.lang.NoClassDefFoundError: Failed resolution of: Ljava/beans/Introspector' on FSM builder creation
+ */
+@StateMachineParameters(stateType=RegistrationFsm.FSMState.class, eventType=RegistrationFsm.FSMEvent.class, contextType=RegistrationFsmContext.class)
+public class RegistrationFsm extends AbstractUntypedStateMachine {
 
-// TODO:
-// - Add more doc
-// - Try to move back to RCDevice as inner class (non static) as it will simplify access to RCDevice resources A LOT)
-// - See if we can improve the savedContext
-// - Fix exception 'java.lang.NoClassDefFoundError: Failed resolution of: Ljava/beans/Introspector' on FSM builder creation
-// Define FSM class to synchronize parallel registration of signaling and push notifications facilities and present a single success/failure point
-
-//@StateMachineParameters(stateType=RCDeviceFSM.FSMState.class, eventType=RCDeviceFSM.FSMEvent.class, contextType=RCDeviceFSM.FsmContext.class)
-//public class RCDeviceFSM extends AbstractUntypedStateMachine {
-public class RCDeviceFSM extends AbstractStateMachine<RCDeviceFSM, RCDeviceFSM.FSMState, RCDeviceFSM.FSMEvent, FsmContext> {
+    // Events to notify listener that FSM is done
     public interface RCDeviceFSMListener {
-        // Replies
+        // RCDevice.initialize() processing is finished
         void onDeviceFSMInitializeDone(RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text);
+        // RCDevice.reconfigure() processing is finished
         void onDeviceFSMReconfigureDone(RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text);
     }
 
-    private static final String TAG = "RCDeviceFSM";
+    private static final String TAG = "RegistrationFsm";
 
-    // Define FSM events
+    // Define FSM events, notice that each of those events are valid both when initializing RCDevice as well as when reconfiguring it
     public enum FSMEvent {
         signalingRegistrationEvent,  // signaling facilities registration finished
-        //signalingReconfigurationEvent,  // signaling reconfiguration finished
         pushRegistrationEvent,  // push registered finished
         pushRegistrationNotNeededEvent,  // push registration isn't needed (it's already up to date)
         resetStateMachine,  // reset state machine to original state
@@ -65,17 +78,17 @@ public class RCDeviceFSM extends AbstractStateMachine<RCDeviceFSM, RCDeviceFSM.F
         finishedState,
     }
 
-    //RCDeviceFSM(RCDeviceFSMListener listener)
-    RCDeviceFSM(RCDeviceFSMListener listener)
+    RegistrationFsm(RCDeviceFSMListener listener)
     {
         this.listener = listener;
     }
 
     // keep internal context as we need to keep data around between state changes
-    private FsmContext savedContext;
+    private RegistrationFsmContext savedContext;
     private RCDeviceFSMListener listener;
 
-    protected void toPushReady(FSMState from, FSMState to, FSMEvent event, FsmContext context)
+    // Methods relevant to RCDevice.initialize()
+    protected void toPushInitializationReady(FSMState from, FSMState to, FSMEvent event, RegistrationFsmContext context)
     {
         RCLogger.i(TAG, event + ": " + from + " -> " + to + ", context '" + context + "'");
 
@@ -99,7 +112,7 @@ public class RCDeviceFSM extends AbstractStateMachine<RCDeviceFSM, RCDeviceFSM.F
         }
     }
 
-    protected void toSignalingInitializationReady(FSMState from, FSMState to, FSMEvent event, FsmContext context)
+    protected void toSignalingInitializationReady(FSMState from, FSMState to, FSMEvent event, RegistrationFsmContext context)
     {
         RCLogger.i(TAG, event + ": " + from + " -> " + to + ", context '" + context + "'");
 
@@ -123,7 +136,8 @@ public class RCDeviceFSM extends AbstractStateMachine<RCDeviceFSM, RCDeviceFSM.F
         }
     }
 
-    protected void toPushReconfigurationReady(FSMState from, FSMState to, FSMEvent event, FsmContext context)
+    // Methods relevant to RCDevice.reconfigure()
+    protected void toPushReconfigurationReady(FSMState from, FSMState to, FSMEvent event, RegistrationFsmContext context)
     {
         RCLogger.i(TAG, event + ": " + from + " -> " + to + ", context '" + context + "'");
 
@@ -147,7 +161,7 @@ public class RCDeviceFSM extends AbstractStateMachine<RCDeviceFSM, RCDeviceFSM.F
         }
     }
 
-    protected void toSignalingReconfigurationReady(FSMState from, FSMState to, FSMEvent event, FsmContext context)
+    protected void toSignalingReconfigurationReady(FSMState from, FSMState to, FSMEvent event, RegistrationFsmContext context)
     {
         RCLogger.i(TAG, event + ": " + from + " -> " + to + ", context '" + context + "'");
 
@@ -171,7 +185,7 @@ public class RCDeviceFSM extends AbstractStateMachine<RCDeviceFSM, RCDeviceFSM.F
         }
     }
 
-    protected void toInitialState(FSMState from, FSMState to, FSMEvent event, FsmContext context)
+    protected void toInitialState(FSMState from, FSMState to, FSMEvent event, RegistrationFsmContext context)
     {
         RCLogger.i(TAG, event + ": " + from + " -> " + to + ", context '" + context + "'");
         savedContext = null;

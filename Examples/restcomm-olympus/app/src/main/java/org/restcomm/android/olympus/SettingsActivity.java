@@ -203,8 +203,8 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
             );
 
             try {
-               // @Oggie not sure if we discussed something here, let me know if I'm messing something up so, for now I'm moving it internally :)
-               //RCUtils.validateSettingsParms(prefHashMap);
+               // TODO: this needs to be moved internally
+               RCUtils.validateSettingsParms(prefHashMap);
                device.reconfigure(params);
 
                NavUtils.navigateUpFromSameTask(this);

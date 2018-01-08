@@ -25,13 +25,15 @@ package org.restcomm.android.sdk.util;
 import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.RCDeviceListener;
 
-// Class for external context provided by FSM users (i.e. RCDevice)
-public class FsmContext {
+/**
+ *  Class for external context provided by RegistrationFsm users (i.e. RCDevice)
+ */
+public class RegistrationFsmContext {
     RCDeviceListener.RCConnectivityStatus connectivityStatus;
     RCClient.ErrorCodes status;
     String text;
 
-    public FsmContext(RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
+    public RegistrationFsmContext(RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
     {
         this.connectivityStatus = connectivityStatus;
         this.status = status;
