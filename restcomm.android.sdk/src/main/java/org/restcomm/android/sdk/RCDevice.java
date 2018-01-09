@@ -119,8 +119,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    /**
     * Device state
     */
-   // TODO: Fix this!
-   public static DeviceState state;
+   static DeviceState state;
    /**
     * Device capabilities (<b>Not Implemented yet</b>)
     */
