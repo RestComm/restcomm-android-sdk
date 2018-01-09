@@ -51,6 +51,7 @@ import org.restcomm.android.sdk.util.RegistrationFsmContext;
 import org.restcomm.android.sdk.util.RCException;
 import org.restcomm.android.sdk.util.RCLogger;
 import org.restcomm.android.sdk.util.RCUtils;
+import org.squirrelframework.foundation.fsm.StateMachine;
 import org.squirrelframework.foundation.fsm.StateMachineBuilderFactory;
 import org.squirrelframework.foundation.fsm.UntypedStateMachine;
 import org.squirrelframework.foundation.fsm.UntypedStateMachineBuilder;
@@ -1775,9 +1776,20 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
       if (status == RCClient.ErrorCodes.SUCCESS) {
          state = DeviceState.READY;
-      } else {
+      }
+
+      // Right now I don't think we can support this. Even though it's the right thing to do from API perspective
+      // we have the issue that Olympus is built in a way that if something goes wrong in RCDevice.initialize()
+      // we don't initialize() again, instead we fix it with reconfigure() through SettingsActivity. Let's leave it
+      // at that for now and we can reconsider once push & backgrounding is stable.
+      /*
+      else if (status == RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY) {
+         state = DeviceState.OFFLINE;
+      }
+      else {
          release();
       }
+      */
    }
 
    public void onDeviceFSMReconfigureDone(RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
@@ -2014,14 +2026,24 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       HashMap<String, String> map = new HashMap<>();
       // notice the extraParams argument is passed to the RegistrationFsm constructor
       registrationFsm = fsmBuilder.newStateMachine(RegistrationFsm.FSMState.initialState, this);
+      registrationFsm.addStateMachineListener(new StateMachine.StateMachineListener<UntypedStateMachine, Object, Object, Object>() {
+         @Override
+         public void stateMachineEvent(StateMachine.StateMachineEvent<UntypedStateMachine, Object, Object, Object> event)
+         {
+            RCLogger.i(TAG, "stateMachineEvent():" + event);
+         }
+      });
    }
 
    private void stopRegistrationFsm()
    {
       RCLogger.i(TAG, "stopRegistrationFsm()");
-      if (registrationFsm.isStarted() && !registrationFsm.isTerminated()) {
-         RCLogger.i(TAG, "startRegistrationFsm(): terminate() actually ran");
-         registrationFsm.terminate();
+      if (registrationFsm != null) {
+         if (registrationFsm.isStarted() && !registrationFsm.isTerminated()) {
+            RCLogger.i(TAG, "startRegistrationFsm(): terminate() actually ran");
+            registrationFsm.terminate();
+         }
+         registrationFsm = null;
       }
    }
 

@@ -88,7 +88,7 @@ public class RegistrationFsm extends AbstractUntypedStateMachine {
     private RCDeviceFSMListener listener;
 
     // Methods relevant to RCDevice.initialize()
-    protected void toPushInitializationReady(FSMState from, FSMState to, FSMEvent event, RegistrationFsmContext context)
+    public void toPushInitializationReady(FSMState from, FSMState to, FSMEvent event, RegistrationFsmContext context)
     {
         RCLogger.i(TAG, event + ": " + from + " -> " + to + ", context '" + context + "'");
 
@@ -100,7 +100,10 @@ public class RegistrationFsm extends AbstractUntypedStateMachine {
             if (savedContext.status == RCClient.ErrorCodes.SUCCESS) {
                 listener.onDeviceFSMInitializeDone(context.connectivityStatus, context.status, RCClient.errorText(context.status));
             } else {
-                // we have an error/warning previously stored, so we need to convey it to the user
+                // we have an error/warning previously stored for signaling, so we need to convey it to the user no matter what happened
+                // for push:
+                // - If we have success for push, we don't really care because without signaling nothing will work
+                // - If we have error for push, we must still prefer to convey signaling error, as its more clear to the user
                 listener.onDeviceFSMInitializeDone(savedContext.connectivityStatus, savedContext.status, savedContext.text);
             }
 
@@ -112,7 +115,7 @@ public class RegistrationFsm extends AbstractUntypedStateMachine {
         }
     }
 
-    protected void toSignalingInitializationReady(FSMState from, FSMState to, FSMEvent event, RegistrationFsmContext context)
+    public void toSignalingInitializationReady(FSMState from, FSMState to, FSMEvent event, RegistrationFsmContext context)
     {
         RCLogger.i(TAG, event + ": " + from + " -> " + to + ", context '" + context + "'");
 
@@ -122,10 +125,18 @@ public class RegistrationFsm extends AbstractUntypedStateMachine {
         } else if (from == FSMState.pushReadyState) {
             // we are already registered push-wise, which means we a can notify app and then we 're done
             if (savedContext.status == RCClient.ErrorCodes.SUCCESS) {
+                // push registration that happened previously is success, return whatever status we got now from signaling
                 listener.onDeviceFSMInitializeDone(context.connectivityStatus, context.status, RCClient.errorText(context.status));
             } else {
-                // we have an error/warning previously stored, so we need to convey it to the user
-                listener.onDeviceFSMInitializeDone(savedContext.connectivityStatus, savedContext.status, savedContext.text);
+                // we already have an error/warning previously stored for push
+                if (context.status == RCClient.ErrorCodes.SUCCESS) {
+                    // if current status is success we need to convey previous error
+                    listener.onDeviceFSMInitializeDone(savedContext.connectivityStatus, savedContext.status, savedContext.text);
+                }
+                else {
+                    // current status is error we need to prefer and convey signaling status instead, as it's more clear to the user
+                    listener.onDeviceFSMInitializeDone(context.connectivityStatus, context.status, context.text);
+                }
             }
 
             // reset FSM as this was the last state, so that it can be reused
@@ -137,7 +148,7 @@ public class RegistrationFsm extends AbstractUntypedStateMachine {
     }
 
     // Methods relevant to RCDevice.reconfigure()
-    protected void toPushReconfigurationReady(FSMState from, FSMState to, FSMEvent event, RegistrationFsmContext context)
+    public void toPushReconfigurationReady(FSMState from, FSMState to, FSMEvent event, RegistrationFsmContext context)
     {
         RCLogger.i(TAG, event + ": " + from + " -> " + to + ", context '" + context + "'");
 
@@ -161,7 +172,7 @@ public class RegistrationFsm extends AbstractUntypedStateMachine {
         }
     }
 
-    protected void toSignalingReconfigurationReady(FSMState from, FSMState to, FSMEvent event, RegistrationFsmContext context)
+    public void toSignalingReconfigurationReady(FSMState from, FSMState to, FSMEvent event, RegistrationFsmContext context)
     {
         RCLogger.i(TAG, event + ": " + from + " -> " + to + ", context '" + context + "'");
 
@@ -173,8 +184,15 @@ public class RegistrationFsm extends AbstractUntypedStateMachine {
             if (savedContext.status == RCClient.ErrorCodes.SUCCESS) {
                 listener.onDeviceFSMReconfigureDone(context.connectivityStatus, context.status, RCClient.errorText(context.status));
             } else {
-                // we have an error/warning previously stored, so we need to convey it to the user
-                listener.onDeviceFSMReconfigureDone(savedContext.connectivityStatus, savedContext.status, savedContext.text);
+                // we already have an error/warning previously stored for push
+                if (context.status == RCClient.ErrorCodes.SUCCESS) {
+                    // if current status is success we need to convey previous error
+                    listener.onDeviceFSMReconfigureDone(savedContext.connectivityStatus, savedContext.status, savedContext.text);
+                }
+                else {
+                    // current status is error we need to prefer and convey signaling status instead, as it's more clear to the user
+                    listener.onDeviceFSMReconfigureDone(context.connectivityStatus, context.status, context.text);
+                }
             }
 
             // reset FSM as this was the last state, so that it can be reused
@@ -185,7 +203,7 @@ public class RegistrationFsm extends AbstractUntypedStateMachine {
         }
     }
 
-    protected void toInitialState(FSMState from, FSMState to, FSMEvent event, RegistrationFsmContext context)
+    public void toInitialState(FSMState from, FSMState to, FSMEvent event, RegistrationFsmContext context)
     {
         RCLogger.i(TAG, event + ": " + from + " -> " + to + ", context '" + context + "'");
         savedContext = null;
