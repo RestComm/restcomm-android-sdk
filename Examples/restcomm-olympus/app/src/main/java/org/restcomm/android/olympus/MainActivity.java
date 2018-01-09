@@ -50,17 +50,12 @@ import com.testfairy.TestFairy;
 //import net.hockeyapp.android.CrashManager;
 //import net.hockeyapp.android.UpdateManager;
 
-import org.apache.log4j.chainsaw.Main;
 import org.restcomm.android.sdk.RCClient;
-import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.RCDeviceListener;
 import org.restcomm.android.sdk.util.RCException;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 import static org.restcomm.android.olympus.ContactsController.CONTACT_KEY;
 import static org.restcomm.android.olympus.ContactsController.CONTACT_VALUE;
@@ -425,14 +420,14 @@ public class MainActivity extends AppCompatActivity
    /**
     * RCDeviceListener callbacks
     */
-   public void onStartListening(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus)
+   public void onReconfigured(RCDevice device, RCConnectivityStatus connectivityStatus, int statusCode, String statusText)
    {
       handleConnectivityUpdate(connectivityStatus, null);
    }
 
-   public void onStopListening(RCDevice device, int errorCode, String errorText)
+   public void onError(RCDevice device, int errorCode, String errorText)
    {
-      Log.i(TAG, "%% onStopListening");
+      Log.i(TAG, "%% onError");
       if (errorCode == RCClient.ErrorCodes.SUCCESS.ordinal()) {
          handleConnectivityUpdate(RCConnectivityStatus.RCConnectivityStatusNone, "RCDevice: " + errorText);
       }
@@ -484,12 +479,14 @@ public class MainActivity extends AppCompatActivity
       handleConnectivityUpdate(connectivityStatus, null);
    }
 
+/*
    @Override
    public void onWarning(RCDevice device, int statusCode, String statusText) {
       if (statusCode != RCClient.ErrorCodes.SUCCESS.ordinal()) {
          Toast.makeText(getApplicationContext(), "RCDevice Warning message: " + statusText, Toast.LENGTH_LONG).show();
       }
    }
+*/
 
    public void handleConnectivityUpdate(RCConnectivityStatus connectivityStatus, String text)
    {

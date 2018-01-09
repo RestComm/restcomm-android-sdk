@@ -42,7 +42,6 @@ public class RCUtils {
 
    public static void validateDeviceParms(HashMap<String, Object> parameters) throws RCException
    {
-
       validateSettingsParms(parameters);
 
       if (!parameters.containsKey(RCDevice.ParameterKeys.INTENT_INCOMING_CALL)) {
@@ -181,7 +180,7 @@ public class RCUtils {
 
    }
 
-   public static boolean validatePushSettings(HashMap<String, Object> parameters) throws RCException{
+   static boolean validatePushSettings(HashMap<String, Object> parameters) throws RCException{
       //check is there fcm server key, if not write a warning
       if (parameters == null) {
          return false;
@@ -237,9 +236,10 @@ public class RCUtils {
 
    }
 
-   public static boolean shouldRegisterForPush(HashMap<String, Object> parameters, StorageManagerInterface storageManagerInterface) throws RCException{
-
-      validatePushSettings(parameters);
+   public static boolean shouldRegisterForPush(HashMap<String, Object> parameters, StorageManagerInterface storageManagerInterface) {
+      // @Oggie: I moved it outside, in RCDevice.updateParams(), now called RCDevice.reconfigure(), let me know if you see any issue here, since I
+      // might be missing something
+      //validatePushSettings(parameters);
 
       //when binding is missing we need to register for push
       if (TextUtils.isEmpty(storageManagerInterface.getString(FcmConfigurationHandler.FCM_BINDING, null))){
