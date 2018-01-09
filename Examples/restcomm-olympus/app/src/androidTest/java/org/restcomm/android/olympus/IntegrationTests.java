@@ -1233,7 +1233,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         });
 
         await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("onWarningReceived"), equalTo(true));
-        assertThat(context.get("status-code")).isEqualTo(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ACCOUNT_SID_MISSING.ordinal());
+        assertThat(context.get("status-code")).isEqualTo(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_AUTHENTICATION_FORBIDDEN.ordinal());
 
         clientHandler.post(new Runnable() {
             @Override
