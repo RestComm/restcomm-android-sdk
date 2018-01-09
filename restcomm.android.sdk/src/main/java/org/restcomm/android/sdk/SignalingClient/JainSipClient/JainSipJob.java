@@ -736,15 +736,15 @@ class JainSipJob {
    }
 
    public enum Type {
-      TYPE_OPEN,
-      TYPE_REGISTER_REFRESH,
-      TYPE_CLOSE,
-      TYPE_RECONFIGURE,
-      TYPE_RECONFIGURE_RELOAD_NETWORKING,
-      TYPE_RELOAD_NETWORKING,
-      TYPE_START_NETWORKING,
-      TYPE_CALL,
-      TYPE_MESSAGE,
+      TYPE_OPEN,  // solicited by the user when initializing RCDevice
+      TYPE_REGISTER_REFRESH,  // unsolicited; triggered internally every register-refresh seconds
+      TYPE_CLOSE,  // solicited by the user when releasing RCDevice
+      TYPE_RECONFIGURE,  // solicited by the user when changing RCDevice configuration (without changing transport from cleartext <-> secure)
+      TYPE_RECONFIGURE_RELOAD_NETWORKING,  // solicited by the user when changing RCDevice configuration and changing transport from cleartext <-> secure
+      TYPE_RELOAD_NETWORKING,  // unsolicited; triggered by connectivity change between Wifi <-> Cellular data
+      TYPE_START_NETWORKING,  // unsolicited; triggered by connectivity change from offline -> Wifi/Cellular Data
+      TYPE_CALL, // solicited by the user when making a call
+      TYPE_MESSAGE,  // solicited by the user when sending a text message
    }
 
    // jobId is a unique identifier for a Job. It is App provided for outgoing requests (typically Unix time with miliseconds, as a string)

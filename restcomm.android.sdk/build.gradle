@@ -78,7 +78,7 @@ gradle.taskGraph.whenReady { taskGraph ->
     }
 }
 repositories {
-    //mavenLocal()
+    mavenLocal()
     jcenter()
     maven {
         url "http://telestax.jfrog.io/telestax/community-releases"
@@ -86,6 +86,9 @@ repositories {
     maven {
         url "https://maven.google.com"
     }
+/*    maven {
+        url "https://maven.repository.redhat.com/ga/"
+    }*/
 
 }
 
@@ -94,6 +97,9 @@ dependencies {
     compile 'org.restcomm.android:libwebrtc:1.0.0-beta5-16765@aar'
     //compile files('libs/libjingle_peerconnection_java.jar')
     compile 'com.android.support:appcompat-v7:26.1.0'
+    // for RCDevice FSM
+    compile 'org.squirrelframework:squirrel-foundation:0.3.8'
+//    compile 'com.googlecode:openbeans:1.0'
     // Notice that log4j 2.7 doesn't work on account of JAIN SIP expecting log4j GroupId, not org.apache.logging.log4j
     // TODO: We should try to fix that at some point
     //compile 'org.apache.logging.log4j:log4j:2.7'

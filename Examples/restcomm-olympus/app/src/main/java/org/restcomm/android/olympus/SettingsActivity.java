@@ -176,58 +176,41 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
       // as you specify a parent activity in AndroidManifest.xml.
       int id = item.getItemId();
       if (id == android.R.id.home) {
-         try {
          HashMap<String, Object> prefHashMap = (HashMap<String, Object>) prefs.getAll();
          if (updated || pushUpdated) {
-               // There a slight difference between the data structure of SharedPreferences and
-               // the one that the SDK understands. In SharedPreferences the value for
-               // MEDIA_ICE_SERVERS_DISCOVERY_TYPE key is a String, which the SDK wants a
-               // MediaIceServersDiscoveryType enum, so we need to convert between the 2.
-               // In this case we remove the one and introduce the other
-               String iceServersDiscoveryType = "0";
-               if (prefHashMap.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE)) {
-                  iceServersDiscoveryType = (String) prefHashMap.get(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE);
-                  prefHashMap.remove(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE);
-               }
-               prefHashMap.put(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE,
-                       RCDevice.MediaIceServersDiscoveryType.values()[Integer.parseInt(iceServersDiscoveryType)]
-               );
+            // There a slight difference between the data structure of SharedPreferences and
+            // the one that the SDK understands. In SharedPreferences the value for
+            // MEDIA_ICE_SERVERS_DISCOVERY_TYPE key is a String, which the SDK wants a
+            // MediaIceServersDiscoveryType enum, so we need to convert between the 2.
+            // In this case we remove the one and introduce the other
+            String iceServersDiscoveryType = "0";
+            if (prefHashMap.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE)) {
+               iceServersDiscoveryType = (String) prefHashMap.get(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE);
+               prefHashMap.remove(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE);
+            }
+            prefHashMap.put(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE,
+                    RCDevice.MediaIceServersDiscoveryType.values()[Integer.parseInt(iceServersDiscoveryType)]
+            );
 
-               // Same for candidate timeout
-               String candidateTimeout = "0";
-               if (prefHashMap.containsKey(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT)) {
-                  candidateTimeout = (String) prefHashMap.get(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT);
-                  prefHashMap.remove(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT);
-               }
-               prefHashMap.put(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT,
-                       Integer.parseInt(candidateTimeout)
-               );
+            // Same for candidate timeout
+            String candidateTimeout = "0";
+            if (prefHashMap.containsKey(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT)) {
+               candidateTimeout = (String) prefHashMap.get(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT);
+               prefHashMap.remove(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT);
+            }
+            prefHashMap.put(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT,
+                    Integer.parseInt(candidateTimeout)
+            );
 
+            try {
+               // TODO: this needs to be moved internally
                RCUtils.validateSettingsParms(prefHashMap);
+               device.reconfigure(params);
 
-               if (!device.updateParams(params)) {
-                  // TODO:
-                  //showOkAlert("RCDevice Error", "No Wifi connectivity");
-               }
-
-
-            /*
-            if (errorStruct.statusCode != RCClient.ErrorCodes.SUCCESS) {
-               showOkAlert("Error saving Settings", errorStruct.statusText);
-            }
-            else {
-               if (!device.updateParams(params)) {
-                  // TODO:
-                  //showOkAlert("RCDevice Error", "No Wifi connectivity");
-               }
                NavUtils.navigateUpFromSameTask(this);
+            } catch (RCException e) {
+               showOkAlert("Error saving Settings", e.errorText);
             }
-            */
-            }
-
-            NavUtils.navigateUpFromSameTask(this);
-         } catch (RCException e) {
-            showOkAlert("Error saving Settings", e.errorText);
          }
 
          return true;

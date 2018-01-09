@@ -33,7 +33,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Binder;
-import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.support.v4.app.NotificationCompat;
@@ -43,18 +42,21 @@ import android.util.Log;
 import org.restcomm.android.sdk.MediaClient.AppRTCAudioManager;
 import org.restcomm.android.sdk.SignalingClient.JainSipClient.JainSipConfiguration;
 import org.restcomm.android.sdk.SignalingClient.SignalingClient;
-//import org.restcomm.android.sdk.util.ErrorStruct;
 import org.restcomm.android.sdk.fcm.FcmConfigurationHandler;
 import org.restcomm.android.sdk.fcm.FcmPushRegistrationListener;
 import org.restcomm.android.sdk.storage.StorageManagerPreferences;
 import org.restcomm.android.sdk.storage.StorageUtils;
+import org.restcomm.android.sdk.util.RegistrationFsm;
+import org.restcomm.android.sdk.util.RegistrationFsmContext;
 import org.restcomm.android.sdk.util.RCException;
 import org.restcomm.android.sdk.util.RCLogger;
 import org.restcomm.android.sdk.util.RCUtils;
+import org.squirrelframework.foundation.fsm.StateMachine;
+import org.squirrelframework.foundation.fsm.StateMachineBuilderFactory;
+import org.squirrelframework.foundation.fsm.UntypedStateMachine;
+import org.squirrelframework.foundation.fsm.UntypedStateMachineBuilder;
 
 import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -113,7 +115,7 @@ import java.util.Map;
  * @see RCConnection
  */
 
-public class RCDevice extends Service implements SignalingClient.SignalingClientListener, FcmPushRegistrationListener {
+public class RCDevice extends Service implements SignalingClient.SignalingClientListener, FcmPushRegistrationListener, RegistrationFsm.RCDeviceFSMListener {
    /**
     * Device state
     */
@@ -176,7 +178,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
 
    /**
-    * Parameter keys for RCClient.createDevice() and RCDevice.updateParams()
+    * Parameter keys for RCClient.createDevice() and RCDevice.reconfigure()
     */
    public static class ParameterKeys {
       public static final String INTENT_INCOMING_CALL = "incoming-call-intent";
@@ -363,6 +365,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    private static final long TIMEOUT_INTERVAL_TICK = 1000; //1 second
    //handler for message timeout count
    private Handler messageTimeoutHandler;
+   // FSM to synchonize between signaling and push registration
+   //AbstractStateMachine<RegistrationFsm, RegistrationFsm.FSMState, RegistrationFsm.FSMEvent, RegistrationFsmContext> registrationFsm;
+   UntypedStateMachine registrationFsm;
 
    // Apps must not use the constructor, as it is created inside the service, but making it (package) private seems to cause crashes in some devices
    public RCDevice()
@@ -510,7 +515,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
       isServiceAttached = false;
 
-
       if (RCDevice.state != DeviceState.BUSY) {
          Log.i(TAG, "%%  DeviceState state is not BUSY, we are releasing!");
          release();
@@ -526,16 +530,19 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    }
 
    /*
-       * Check if RCDevice is already initialized. Since RCDevice is an Android Service that is supposed to run in the background,
-       * this is needed to make sure that RCDevice.initialize() is only invoked once, the first time an Activity binds to the service
-       */
+    * Check if RCDevice is already initialized. Since RCDevice is an Android Service that is supposed to run in the background,
+    * this is needed to make sure that RCDevice.initialize() is only invoked once, the first time an Activity binds to the service
+    */
    public boolean isInitialized()
    {
       return isServiceInitialized;
    }
 
-
-   boolean isAttached()
+   /**
+    * Is service attached to an Activity
+    * @return true if yes, no if not
+    */
+   public boolean isAttached()
    {
       return isServiceAttached;
    }
@@ -596,7 +603,10 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          //this.updateCapabilityToken(capabilityToken);
          this.listener = deviceListener;
 
-         validateSettings(parameters);
+         // With this enhancement (i.e. #784) we are making signaling and push related settings equally important and both should block initialization
+         // so I believe we can pull validateDeviceParms() out of validateSettings(), right? @Oggie, let me know if you have any concerns
+         RCUtils.validateDeviceParms(parameters);
+         //validateSettings(parameters);
 
          //save parameters to storage
          storageManagerPreferences = new StorageManagerPreferences(this);
@@ -638,6 +648,10 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          //if there is already data for registering to push, dont clear it (onOpenReply is using this parameter)
          // initialize JAIN SIP if we have connectivity
          this.parameters = parameters;
+
+         // initialize registration FSM before we start signaling and push notification registrations
+         // important: needs to happen *before* signaling and push registration
+         startRegistrationFsm();
 
          // check if TURN keys are there
          //params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
@@ -724,9 +738,9 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       isServiceAttached = false;
       isServiceInitialized = false;
 
+      stopRegistrationFsm();
 
       stopForeground(true);
-
    }
 
    /**
@@ -737,7 +751,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     */
    public void setDeviceListener(RCDeviceListener listener)
    {
-      RCLogger.i(TAG, "setDeviceListener()");
+      RCLogger.d(TAG, "setDeviceListener()");
 
       this.listener = listener;
    }
@@ -1040,27 +1054,28 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY</b>: server hash key for created application in firebase cloud messaging
     *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATION_TIMEOUT_MESSAGING_SERVICE</b>: RCDevice will have timer introduced for closing because of the message background logic this is introduced in the design. The timer by default will be 5 seconds; It can be changed by sending parameter with value (in milliseconds)
     * @see RCDevice
-    * @return right now this is more of a placeholder and always returns true
     */
-   public boolean updateParams(HashMap<String, Object> params)
+   public void reconfigure(HashMap<String, Object> params) throws RCException
    {
+      // Let's try to fail early & synchronously on validation issues to make them easy to spot,
+      // and if something comes up asynchronously either in signaling or push configuration, we notify via callback
+
+      // TODO: bring this back when we finalize how partial parms can be properly validated inside SDK. Right now we only have all the parms
+      // outside SDK, inside SettingsActivity. Could we use StorageManagerPreferences to work around that?
+      //RCUtils.validateSettingsParms(params);
 
       // remember that the new parameters can be just a subset of the currently stored in this.parameters, so to update the current parameters we need
       // to merge them with the new (i.e. keep the old and replace any new keys with new values)
       this.parameters = JainSipConfiguration.mergeParameters(this.parameters, params);
 
       //save params for background
-      if (storageManagerPreferences == null){
+      if (storageManagerPreferences == null) {
          storageManagerPreferences = new StorageManagerPreferences(this);
       }
       StorageUtils.saveParams(storageManagerPreferences, parameters);
 
-
       signalingClient.reconfigure(params);
       registerForPushNotifications(true);
-
-      // TODO: need to provide asynchronous status for this
-      return true;
    }
 
    HashMap<String, Object> getParameters()
@@ -1093,26 +1108,14 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
      * @param status status code for this action
      * @param text status text for this action
      */
-   public void onOpenReply(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
-   {
-      RCLogger.i(TAG, "onOpenReply(): id: " + jobId + ", connectivityStatus: " + connectivityStatus + ", status: " + status + ", text: " + text);
+    public void onOpenReply(String jobId, RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
+    {
+       RCLogger.i(TAG, "onOpenReply(): id: " + jobId + ", connectivityStatus: " + connectivityStatus + ", status: " + status + ", text: " + text);
 
-      cachedConnectivityStatus = connectivityStatus;
+       cachedConnectivityStatus = connectivityStatus;
 
-         if (isServiceAttached) {
-            listener.onInitialized(this, connectivityStatus, status.ordinal(), text);
-         }
-         else {
-            RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
-                    RCClient.errorText(status));
-         }
-
-         if (status == RCClient.ErrorCodes.SUCCESS){
-            state = DeviceState.READY;
-         } else {
-            release();
-         }
-   }
+       registrationFsm.fire(RegistrationFsm.FSMEvent.signalingRegistrationEvent, new RegistrationFsmContext(connectivityStatus, status, text));
+    }
 
 
     /**
@@ -1124,6 +1127,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    public void onCloseReply(String jobId, RCClient.ErrorCodes status, String text)
    {
       RCLogger.i(TAG, "onCloseReply(): id: " + jobId + ", status: " + status + ", text: " + text);
+
       if (listener != null) {
          listener.onReleased(this, status.ordinal(), text);
       }
@@ -1145,27 +1149,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    {
       RCLogger.i(TAG, "onReconfigureReply(): id: " + jobId + ", connectivityStatus: " + connectivityStatus + ", status: " + status + ", text: " + text);
       cachedConnectivityStatus = connectivityStatus;
-      if (status == RCClient.ErrorCodes.SUCCESS) {
-         state = DeviceState.READY;
-         if (isServiceAttached) {
-            listener.onStartListening(this, connectivityStatus);
-         }
-         else {
-            RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onStartListening(): " +
-                  RCClient.errorText(status));
-         }
 
-      }
-      else {
-         state = DeviceState.OFFLINE;
-         if (isServiceAttached) {
-            listener.onStopListening(this, status.ordinal(), text);
-         }
-         else {
-            RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: isServiceAttached(): " +
-                  RCClient.errorText(status));
-         }
-      }
+      registrationFsm.fire(RegistrationFsm.FSMEvent.signalingRegistrationEvent, new RegistrationFsmContext(connectivityStatus, status, text));
    }
 
     /**
@@ -1178,7 +1163,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    {
       RCLogger.i(TAG, "onMessageReply(): id: " + jobId + ", status: " + status + ", text: " + text);
 
-      if (isServiceAttached) {
+      if (isAttached()) {
          listener.onMessageSent(this, status.ordinal(), text, jobId);
       }
       else {
@@ -1222,7 +1207,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
       state = DeviceState.BUSY;
 
-      if (isServiceAttached) {
+      if (isAttached()) {
          audioManager.playRingingSound();
          // Service is attached to an activity, let's send the intent normally that will open the call activity
          callIntent.setAction(ACTION_INCOMING_CALL);
@@ -1264,13 +1249,12 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    {
       RCLogger.i(TAG, "onRegisteringEvent(): id: " + jobId);
       state = DeviceState.OFFLINE;
-      if (isServiceAttached) {
-         listener.onStopListening(this, RCClient.ErrorCodes.SUCCESS.ordinal(), "Trying to register with Service");
+      if (isAttached()) {
+         listener.onConnectivityUpdate(this, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone);
       }
       else {
-         RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onStopListening()");
+         RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onConnectivityUpdate() due to new registering");
       }
-
    }
 
     /**
@@ -1288,7 +1272,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       //parameters.put(RCConnection.ParameterKeys.CONNECTION_PEER, from);
 
       if (messageIntent != null) {
-         if (isServiceAttached) {
+         if (isAttached()) {
             audioManager.playMessageSound();
 
             messageIntent.setAction(ACTION_INCOMING_MESSAGE);
@@ -1345,11 +1329,11 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       if (status == RCClient.ErrorCodes.SUCCESS) {
       }
       else {
-         if (isServiceAttached) {
-            listener.onStopListening(this, status.ordinal(), text);
+         if (isAttached()) {
+            listener.onError(this, status.ordinal(), text);
          }
          else {
-            RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onStopListening(): " +
+            RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onError(): " +
                   RCClient.errorText(status));
          }
 
@@ -1371,7 +1355,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       if (state != DeviceState.OFFLINE && connectivityStatus == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
          state = DeviceState.OFFLINE;
       }
-      if (isServiceAttached) {
+      if (isAttached()) {
          listener.onConnectivityUpdate(this, connectivityStatus);
       }
       else {
@@ -1425,14 +1409,14 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       NotificationCompat.Builder builder = getNotificationBuilder(true);
 
       builder.setSmallIcon(R.drawable.ic_call_24dp)
-      .setContentTitle(peerUsername)
-      .setContentText(text)
-      // Need this to show up as Heads-up Notification
-      .setPriority(NotificationCompat.PRIORITY_HIGH)
-      .setAutoCancel(true)  // cancel notification when user acts on it (Important: only applies to default notification area, not additional actions)
-      .setVibrate(notificationVibrationPattern)
-      .setVisibility(Notification.VISIBILITY_PUBLIC)
-      .setLights(notificationColor, notificationColorPattern[0], notificationColorPattern[1]);
+              .setContentTitle(peerUsername)
+              .setContentText(text)
+              // Need this to show up as Heads-up Notification
+              .setPriority(NotificationCompat.PRIORITY_HIGH)
+              .setAutoCancel(true)  // cancel notification when user acts on it (Important: only applies to default notification area, not additional actions)
+              .setVibrate(notificationVibrationPattern)
+              .setVisibility(Notification.VISIBILITY_PUBLIC)
+              .setLights(notificationColor, notificationColorPattern[0], notificationColorPattern[1]);
 
       if (audioManager != null)
          builder = builder.setSound(Uri.parse("android.resource://" + getPackageName() + "/" + audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_RINGING)));
@@ -1612,7 +1596,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          if (liveConnection != null) {
             liveConnection.disconnect();
 
-            if (!isServiceAttached) {
+            if (!isAttached()) {
                // if the call has been requested to be disconnected, we shouldn't do any UI handling
                callIntent.setAction(ACTION_CALL_DISCONNECT);
                //callIntent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -1772,6 +1756,51 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
    }
 
+   public void onDeviceFSMInitializeDone(RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
+   {
+      if (isAttached()) {
+         listener.onInitialized(this, connectivityStatus, status.ordinal(), text);
+      } else {
+         RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
+                 RCClient.errorText(status));
+      }
+
+      if (status == RCClient.ErrorCodes.SUCCESS) {
+         state = DeviceState.READY;
+      }
+
+      // Right now I don't think we can support this. Even though it's the right thing to do from API perspective
+      // we have the issue that Olympus is built in a way that if something goes wrong in RCDevice.initialize()
+      // we don't initialize() again, instead we fix it with reconfigure() through SettingsActivity. Let's leave it
+      // at that for now and we can reconsider once push & backgrounding is stable.
+      /*
+      else if (status == RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY) {
+         state = DeviceState.OFFLINE;
+      }
+      else {
+         release();
+      }
+      */
+   }
+
+   public void onDeviceFSMReconfigureDone(RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
+   {
+      if (status == RCClient.ErrorCodes.SUCCESS) {
+         state = DeviceState.READY;
+      }
+      else {
+         state = DeviceState.OFFLINE;
+      }
+
+      if (isAttached()) {
+         listener.onReconfigured(this, connectivityStatus, status.ordinal(), text);
+      }
+      else {
+         RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onReconfigured(): " +
+                 RCClient.errorText(status));
+      }
+   }
+
    private void notificationHandleForegroundUpdate(RCConnection connection)
    {
       String peerUsername = connection.getPeer().replaceAll(".*?sip:", "").replaceAll("@.*$", "");
@@ -1808,30 +1837,31 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    }
 
    public void registerForPushNotifications(boolean itsUpdate){
-      try {
-         if (storageManagerPreferences != null){
-            new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(parameters, itsUpdate);
+      //try {
+      if (storageManagerPreferences != null) {
+         boolean neededUpdate = new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(parameters, itsUpdate);
+         if (!neededUpdate) {
+            // if no update is needed, we need to notify FSM right away that push registration is not needed, so that we don't get stuck here
+            registrationFsm.fire(RegistrationFsm.FSMEvent.pushRegistrationNotNeededEvent, new RegistrationFsmContext(cachedConnectivityStatus,
+                    RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS)));
          }
+      }
+      /*
       } catch (RCException e) {
-         if (isServiceAttached && listener != null) {
+         if (isAttached() && listener != null) {
             listener.onWarning(this, e.errorCode.ordinal(), e.errorText);
          }
          RCLogger.w(TAG, "RegisterForPush  warning: " + e.errorText);
       }
+      */
    }
 
    // -- FcmMessageListener
     @Override
     public void onRegisteredForPush(RCClient.ErrorCodes status, String text) {
-       if (listener != null) {
-          listener.onWarning(this, status.ordinal(), RCClient.errorText(status));
-       } else {
-           if (status == RCClient.ErrorCodes.SUCCESS){
-              RCLogger.i(TAG, "Device and user are successfully registered for Push Notifications!");
-           } else {
-              RCLogger.w(TAG, "RegisterForPush  warning: " + RCClient.errorText(status));
-           }
-       }
+       RCLogger.i(TAG, "onRegisteredForPush(): status: " + status + ", text: " + text);
+
+       registrationFsm.fire(RegistrationFsm.FSMEvent.pushRegistrationEvent, new RegistrationFsmContext(cachedConnectivityStatus, status, text));
     }
 
     // ------ Helpers
@@ -1884,8 +1914,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
    private void onAudioManagerChangedState()
    {
-      // TODO(henrika): disable video if AppRTCAudioManager.AudioDevice.EARPIECE
-      // is active.
+      // TODO: disable video if AppRTCAudioManager.AudioDevice.EARPIECE is active
    }
 
     //FCM message time logic
@@ -1949,33 +1978,64 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       return builder;
    }
 
-   /**
-    * We have the settings for the push notification and if some of them
-    * are not valid, we should call onWarning, otherwise we should throw RCException
-    * @throws RCException
-    */
-   private void validateSettings(HashMap<String, Object> parameters) throws RCException{
-      EnumSet<RCClient.ErrorCodes> set = EnumSet.of(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ACCOUNT_SID_MISSING,
-      RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_CLIENT_SID_MISSING,
-              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_CREDENTIALS_MISSING,
-              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_BINDING_MISSING,
-              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_APPLICATION_MISSING,
-              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_FCM_SERVER_KEY_MISSING,
-              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_APPLICATION_NAME_MISSING,
-              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ACCOUNT_EMAIL_MISSING,
-              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ACCOUNT_PASSWORD_MISSING,
-              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_PUSH_DOMAIN_MISSING,
-              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_RESTCOMM_DOMAIN_MISSING,
-              RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ENABLE_DISABLE_PUSH_NOTIFICATION);
-      try{
-         RCUtils.validateDeviceParms(parameters);
-      } catch (RCException e){
-         if (set.contains(e.errorCode)){
-            listener.onWarning(this, e.errorCode.ordinal(), e.errorText);
-         } else {
-            throw e;
-         }
-      }
+   private void startRegistrationFsm()
+   {
+      RCLogger.i(TAG, "startRegistrationFsm()");
 
+      // Build state transitions
+      UntypedStateMachineBuilder fsmBuilder = StateMachineBuilderFactory.create(RegistrationFsm.class, RegistrationFsm.RCDeviceFSMListener.class);
+
+      // Seems 'fromAny' doesn't work as expected, so sadly we need to add more states. Let's leave this around though in case we can improve in the future
+      //fsmBuilder.transit().fromAny().to(RegistrationFsm.FSMState.signalingReadyState).on(RegistrationFsm.FSMEvent.signalingRegistrationEvent).callMethod("toSignalingInitializationReady");
+      //fsmBuilder.transit().fromAny().to(RegistrationFsm.FSMState.pushReadyState).on(RegistrationFsm.FSMEvent.pushRegistrationEvent).callMethod("toPushInitializationReady");
+
+      // Set up the state transitions of the FSM and associate methods to handle them
+      // transitions to signaling ready
+      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.initialState).to(RegistrationFsm.FSMState.signalingReadyState)
+              .on(RegistrationFsm.FSMEvent.signalingRegistrationEvent).callMethod("toSignalingInitializationReady");
+      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.pushReadyState).to(RegistrationFsm.FSMState.signalingReadyState)
+              .on(RegistrationFsm.FSMEvent.signalingRegistrationEvent).callMethod("toSignalingInitializationReady");
+
+      // transitions to push ready when push configuration really happens asynchronously
+      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.initialState).to(RegistrationFsm.FSMState.pushReadyState)
+              .on(RegistrationFsm.FSMEvent.pushRegistrationEvent).callMethod("toPushInitializationReady");
+      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.signalingReadyState).to(RegistrationFsm.FSMState.pushReadyState)
+              .on(RegistrationFsm.FSMEvent.pushRegistrationEvent).callMethod("toPushInitializationReady");
+
+      // transitions to push ready when push configuration is not necessary because server already up to date
+      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.initialState).to(RegistrationFsm.FSMState.pushReadyState)
+              .on(RegistrationFsm.FSMEvent.pushRegistrationNotNeededEvent).callMethod("toPushInitializationReady");
+      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.signalingReadyState).to(RegistrationFsm.FSMState.pushReadyState)
+              .on(RegistrationFsm.FSMEvent.pushRegistrationNotNeededEvent).callMethod("toPushInitializationReady");
+
+      // transitions back to initial state
+      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.signalingReadyState).to(RegistrationFsm.FSMState.initialState)
+              .on(RegistrationFsm.FSMEvent.resetStateMachine).callMethod("toInitialState");
+      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.pushReadyState).to(RegistrationFsm.FSMState.initialState)
+              .on(RegistrationFsm.FSMEvent.resetStateMachine).callMethod("toInitialState");
+
+      HashMap<String, String> map = new HashMap<>();
+      // notice the extraParams argument is passed to the RegistrationFsm constructor
+      registrationFsm = fsmBuilder.newStateMachine(RegistrationFsm.FSMState.initialState, this);
+      registrationFsm.addStateMachineListener(new StateMachine.StateMachineListener<UntypedStateMachine, Object, Object, Object>() {
+         @Override
+         public void stateMachineEvent(StateMachine.StateMachineEvent<UntypedStateMachine, Object, Object, Object> event)
+         {
+            RCLogger.i(TAG, "stateMachineEvent():" + event);
+         }
+      });
    }
+
+   private void stopRegistrationFsm()
+   {
+      RCLogger.i(TAG, "stopRegistrationFsm()");
+      if (registrationFsm != null) {
+         if (registrationFsm.isStarted() && !registrationFsm.isTerminated()) {
+            RCLogger.i(TAG, "startRegistrationFsm(): terminate() actually ran");
+            registrationFsm.terminate();
+         }
+         registrationFsm = null;
+      }
+   }
+
 }

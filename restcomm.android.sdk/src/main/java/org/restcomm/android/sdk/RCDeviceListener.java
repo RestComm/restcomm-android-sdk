@@ -27,7 +27,7 @@ package org.restcomm.android.sdk;
  */
 public interface RCDeviceListener {
    enum RCConnectivityStatus {
-      RCConnectivityStatusNone,  /** no restcomm connectivity either we have no internet connectivity or couldn't register to restcomm (or both) */
+      RCConnectivityStatusNone,  /** no restcomm connectivity either we have no internet connectivity or couldn't register to restcomm (or both). Notice that even if we have wifi or cellular data connectivity, if we couldn't register to restcomm we are still deemed having no connectivity (i.e. RCConnectivityStatusNone) */
       RCConnectivityStatusWiFi,  /** restcomm reachable and online via Wifi (or if in registrarless mode we don't register with restcomm; we just know that we have internet connectivity) */
       RCConnectivityStatusCellular,  /** restcomm reachable and online via cellular (same as above for registraless) */
       RCConnectivityStatusEthernet,  /** restcomm reachable and online via ethernet (same as above for registraless) */
@@ -35,7 +35,7 @@ public interface RCDeviceListener {
 
    /**
     * RCDevice initialized either successfully or with error (check statusCode and statusText). For regular scenarios (i.e. non-registrarless) success
-    * means that this means that registration is successful. For registrar-less scenarios success means that RCDevice is initialized properly (with no registration)
+    * means that registration is successful. For registrar-less scenarios success means that RCDevice is initialized properly (with no registration)
     *
     * @param device Device of interest
     * @param connectivityStatus Connectivity status
@@ -45,12 +45,13 @@ public interface RCDeviceListener {
    void onInitialized(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus, int statusCode, String statusText);
 
    /**
-    * RCDevice started listening for incoming connections. This occurs when we asynchronously receive the result from RCDevice.updateParams() and it was successful, which means that we registered successfully
-    *
+    * RCDevice reconfigured. This occurs when we asynchronously receive the result from RCDevice.reconfigure()
     * @param device Device of interest
-    * @param connectivityStatus Connectivity status when started listening
+    * @param connectivityStatus Connectivity status of reconfigure()
+    * @param statusCode
+    * @param statusText
     */
-   void onStartListening(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus);
+   void onReconfigured(RCDevice device, RCConnectivityStatus connectivityStatus, int statusCode, String statusText);
 
    /**
     * RCDevice was released as a result of calling RCDevice.release()
@@ -72,19 +73,20 @@ public interface RCDeviceListener {
    void onMessageSent(RCDevice device, int statusCode, String statusText, String jobId);
 
    /**
-    * RCDevice stopped listening for incoming connections (either as a result of correct processing, or error). This occurs when:
-    * a. RCDevice.updateParams() just sent out the registration request (we need that to convey to the UI that we are offline for a bit, until we get a response to the registrations),
-    * b. RCDevice.updateParams() registration failed or
-    * c. A periodic registration refresh failed in which case we need to notify the UI that we are offline
+    * Unsolicited error occured, like:
+    * a. Periodic registration refresh failed. We need to notify user that practically RCDevice is unusable until further notice
+    * b. FCM token refresh failed (remember that this is not caused by a user action)
     *
     * @param device    Device of interest
     * @param statusCode Status code
     * @param statusText Status text
     */
-   void onStopListening(RCDevice device, int statusCode, String statusText);
+   void onError(RCDevice device, int statusCode, String statusText);
 
    /**
-    * RCDevice connectivity status has been updated, like losing internet connectivity, or regaining internet connectivity
+    * RCDevice connectivity status has been updated. For example:
+    * a. Internet connectivity was lost regained or transitioned between wifi <-> cellular data
+    * b. RCDevice.reconfigure() just sent out the registration request (we need that to convey to the UI that we are offline for a bit, until we get a response to the registrations)
     *
     * @param device             Device of interest
     * @param connectivityStatus Connectivity status of Device
@@ -98,7 +100,7 @@ public interface RCDeviceListener {
     * @param statusCode Status code
     * @param statusText Status text
     */
-   void onWarning(RCDevice device, int statusCode,  String statusText);
+   //void onWarning(RCDevice device, int statusCode,  String statusText);
 
    /**
     *  RCDevice failed to initialize
@@ -113,7 +115,7 @@ public interface RCDeviceListener {
     *
     * @param device Device of interest
     */
-   //void onStopListening(RCDevice device);
+   //void onError(RCDevice device);
 
    /**
     *  RCDevice received incoming connection
