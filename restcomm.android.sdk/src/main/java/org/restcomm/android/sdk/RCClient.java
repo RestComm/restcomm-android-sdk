@@ -362,13 +362,27 @@ public final class RCClient {
       else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_RESTCOMM_DOMAIN_MISSING){
          return "Failed to register/update for push notification; Restcomm Connect Domain cannot be found";
       }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ENABLE_DISABLE_PUSH_NOTIFICATION){
+         return "Failed to register/update for push notification; Enable/Disable for push cannot be found";
+      }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_INVALID_HTTP_DOMAIN){
          return "Failed to register/update for push notification; Invalid http domain.";
       }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_INVALID_PUSH_DOMAIN){
          return "Failed to register/update for push notification; Invalid push domain.";
       }
-
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_UNKNOWN_ERROR){
+         return "Failed to register/update for push notification; Unknown error.";
+      }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_AUTHENTICATION_FORBIDDEN){
+         return "Failed to register/update for push notification; Could not authenticate.";
+      }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_HTTP_NOT_FOUND){
+         return "Failed to register/update for push notification; Http 404 not found.";
+      }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_TIMED_OUT){
+         return "Failed to register/update for push notification; Request timed out.";
+      }
 
       return "Unmapped Restcomm Client error: " + errorCode;
    }
