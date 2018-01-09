@@ -756,13 +756,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       this.listener = listener;
    }
 
-   public RCDeviceListener getDeviceListener()
-   {
-      RCLogger.d(TAG, "getDeviceListener()");
-
-      return this.listener;
-   }
-
    /**
     * Retrieves the capability token passed to RCClient.createDevice (<b>Not implemented yet</b>)
     *
