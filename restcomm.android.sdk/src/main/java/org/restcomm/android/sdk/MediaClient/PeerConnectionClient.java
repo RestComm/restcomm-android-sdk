@@ -1006,31 +1006,39 @@ public class PeerConnectionClient {
   // A VideoTrack can have one or more VideoRenderer, which are the actual views
   private void removeLocalRenderer()
   {
-    localVideoTrack.setEnabled(false);
-    localVideoTrack.removeSink(localRender);
-    localRender = null;
+    if (localVideoTrack != null) {
+      localVideoTrack.setEnabled(false);
+      localVideoTrack.removeSink(localRender);
+      localRender = null;
+    }
   }
 
   private void removeRemoteRenderer()
   {
-    remoteVideoTrack.setEnabled(false);
-    remoteVideoTrack.removeRenderer(remoteVideoRenderer);
-    remoteRenders = null;
+    if (remoteVideoTrack != null) {
+      remoteVideoTrack.setEnabled(false);
+      remoteVideoTrack.removeRenderer(remoteVideoRenderer);
+      remoteRenders = null;
+    }
   }
 
   // For video pause/resume functionality
   private void addLocalRenderer(final VideoSink localRender)
   {
-    localVideoTrack.setEnabled(renderVideo);
-    localVideoTrack.addSink(localRender);
-    this.localRender = localRender;
+    if (localVideoTrack != null) {
+      localVideoTrack.setEnabled(renderVideo);
+      localVideoTrack.addSink(localRender);
+      this.localRender = localRender;
+    }
   }
 
   private void addRemoteRenderer(final VideoRenderer.Callbacks remoteRender)
   {
-    remoteVideoTrack.setEnabled(renderVideo);
-    remoteVideoRenderer = new VideoRenderer(remoteRender);
-    remoteVideoTrack.addRenderer(remoteVideoRenderer);
+    if (remoteVideoTrack != null) {
+      remoteVideoTrack.setEnabled(renderVideo);
+      remoteVideoRenderer = new VideoRenderer(remoteRender);
+      remoteVideoTrack.addRenderer(remoteVideoRenderer);
+    }
   }
 
 

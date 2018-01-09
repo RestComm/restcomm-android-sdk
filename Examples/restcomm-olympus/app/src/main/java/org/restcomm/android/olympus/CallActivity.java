@@ -79,6 +79,8 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
     int secondsElapsed = 0;
     private final int PERMISSION_REQUEST_DANGEROUS = 1;
     private AlertDialog alertDialog;
+    private long timeConnected = 0;
+    public static final String LIVE_CALL_PAUSE_TIME = "live-call-pause-time";
     private boolean callOutgoing = true;
 
     ImageButton btnMuteAudio, btnMuteVideo;
@@ -309,37 +311,46 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         if (intent.getAction().equals(RCDevice.ACTION_RESUME_CALL)) {
             String text;
             connection = device.getLiveConnection();
-            connection.setConnectionListener(this);
+            if (connection != null) {
+                connection.setConnectionListener(this);
 
-            if (connection.isIncoming()) {
-                // Incoming
-                if (connection.getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) {
-                    text = "Video Call from ";
+                if (connection.isIncoming()) {
+                    // Incoming
+                    if (connection.getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) {
+                        text = "Video Call from ";
+                    } else {
+                        text = "Audio Call from ";
+                    }
                 } else {
-                    text = "Audio Call from ";
+                    // Outgoing
+                    if (connection.getLocalMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) {
+                        text = "Video Calling ";
+                    } else {
+                        text = "Audio Calling ";
+                    }
                 }
-            } else {
-                // Outgoing
-                if (connection.getLocalMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) {
-                    text = "Video Calling ";
-                } else {
-                    text = "Audio Calling ";
-                }
+
+                lblCall.setText(text + connection.getPeer().replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
+                lblStatus.setText("Connected");
+                connection.reattachVideo((PercentFrameLayout) findViewById(R.id.local_video_layout),
+                        (PercentFrameLayout) findViewById(R.id.remote_video_layout));
+
+                // Get the time when we paused call so that now that we are resuming we can show correct time
+                long difference = (System.currentTimeMillis() - prefs.getLong(LIVE_CALL_PAUSE_TIME, 0));
+                int duration = (int)(difference/1000);
+                startTimer(duration);
+
+                // Hide answering buttons and show mute & keypad
+                btnAnswer.setVisibility(View.INVISIBLE);
+                btnAnswerAudio.setVisibility(View.INVISIBLE);
+                btnMuteAudio.setVisibility(View.VISIBLE);
+                btnMuteVideo.setVisibility(View.VISIBLE);
+                btnKeypad.setVisibility(View.VISIBLE);
+                lblTimer.setVisibility(View.VISIBLE);
             }
-
-            lblCall.setText(text + connection.getPeer().replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
-            lblStatus.setText("Connected");
-            connection.reattachVideo((PercentFrameLayout) findViewById(R.id.local_video_layout),
-                    (PercentFrameLayout) findViewById(R.id.remote_video_layout));
-
-            // Hide answering buttons and show mute & keypad
-            btnAnswer.setVisibility(View.INVISIBLE);
-            btnAnswerAudio.setVisibility(View.INVISIBLE);
-            btnMuteAudio.setVisibility(View.VISIBLE);
-            btnMuteVideo.setVisibility(View.VISIBLE);
-            btnKeypad.setVisibility(View.VISIBLE);
-
-            lblTimer.setVisibility(View.VISIBLE);
+            else {
+                showOkAlert("Resume ongoing call", "No call to resume");
+            }
 
             return;
         }
@@ -619,7 +630,13 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         btnKeypad.setVisibility(View.VISIBLE);
 
         lblTimer.setVisibility(View.VISIBLE);
-        startTimer();
+
+        // Save time we got connected in case the call is paused and we need to resume it
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putLong(LIVE_CALL_PAUSE_TIME, System.currentTimeMillis());
+        editor.apply();
+
+        startTimer(0);
 
         // reset to no mute at beggining of new call
         muteAudio = false;
@@ -832,7 +849,8 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         }
     }
 
-    public void startTimer() {
+    public void startTimer(int startSeconds) {
+        secondsElapsed = startSeconds;
         String time = String.format("%02d:%02d:%02d", secondsElapsed / 3600, (secondsElapsed % 3600) / 60, secondsElapsed % 60);
         lblTimer.setText(time);
         secondsElapsed++;
@@ -842,7 +860,7 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         Runnable timerRunnable = new Runnable() {
             @Override
             public void run() {
-                startTimer();
+                startTimer(secondsElapsed);
             }
         };
         timerHandler.postDelayed(timerRunnable, 1000);
