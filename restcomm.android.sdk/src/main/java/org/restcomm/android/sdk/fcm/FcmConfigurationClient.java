@@ -26,9 +26,11 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.JSONTokener;
+import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.fcm.model.FcmApplication;
 import org.restcomm.android.sdk.fcm.model.FcmBinding;
 import org.restcomm.android.sdk.fcm.model.FcmCredentials;
+import org.restcomm.android.sdk.util.RCException;
 import org.restcomm.android.sdk.util.RCLogger;
 
 import android.text.BoringLayout;
@@ -40,6 +42,7 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 
 
@@ -94,28 +97,27 @@ public class FcmConfigurationClient {
      *  Returns the account sid for given email
      * @return String account sid
      */
-    public String getAccountSid(){
+    public String getAccountSid() throws RCException{
         RCLogger.v(TAG, "getAccountSid method started");
         String accountSid = null;
         HttpURLConnection connection = null;
-        try{
-            String encodedEmail =  URLEncoder.encode(accountEmail, "UTF-8");
+        try {
+            String encodedEmail = URLEncoder.encode(accountEmail, "UTF-8");
             String url = "https://" + restcommDomain + ACCOUNT_SID_URL + "/" + encodedEmail;
             RCLogger.v(TAG, "calling url: " + url);
-            connection  = createUrlRequestWithUrl(url);
+            connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("GET");
-            int responseCode = connection.getResponseCode();
 
-            if (responseCode == HttpURLConnection.HTTP_OK){
-                String jsonString = getJsonFromStream(connection.getInputStream());
-                if (jsonString.length() > 0) {
-                    JSONObject inputJson = new JSONObject(jsonString);
-                    accountSid = inputJson.getString("sid");
-                }
+            checkStatusCode(connection);
+
+            String jsonString = getJsonFromStream(connection.getInputStream());
+            if (jsonString.length() > 0) {
+                JSONObject inputJson = new JSONObject(jsonString);
+                accountSid = inputJson.getString("sid");
             }
 
         } catch (Exception ex){
-            RCLogger.e(TAG, ex.toString());
+            handleException(ex, false);
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -132,7 +134,7 @@ public class FcmConfigurationClient {
      * @param username - signaling username
      * @return String - client sid
      **/
-    public String getClientSid(String accountSid, String username){
+    public String getClientSid(String accountSid, String username) throws RCException{
         RCLogger.v(TAG, "getClientSid method started");
         String clientSid = null;
         HttpURLConnection connection = null;
@@ -140,25 +142,24 @@ public class FcmConfigurationClient {
             String url = "https://" + restcommDomain + CLIENT_SID_URL + "/" + accountSid + "/Clients.json";
             connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("GET");
-            int responseCode = connection.getResponseCode();
 
-            if (responseCode == HttpURLConnection.HTTP_OK){
-                String jsonString = getJsonFromStream(connection.getInputStream());
-                if (jsonString.length() > 0) {
-                    JSONArray inputJson = new JSONArray(jsonString);
-                    for (int i = 0; i < inputJson.length(); i++){
-                        JSONObject client = inputJson.getJSONObject(i);
-                        String clientLogin = client.getString("login");
-                        if (clientLogin.equals(username)){
-                            clientSid = client.getString("sid");
-                            break;
-                        }
+            checkStatusCode(connection);
+
+            String jsonString = getJsonFromStream(connection.getInputStream());
+            if (jsonString.length() > 0) {
+                JSONArray inputJson = new JSONArray(jsonString);
+                for (int i = 0; i < inputJson.length(); i++){
+                    JSONObject client = inputJson.getJSONObject(i);
+                    String clientLogin = client.getString("login");
+                    if (clientLogin.equals(username)){
+                        clientSid = client.getString("sid");
+                        break;
                     }
                 }
             }
 
         } catch (Exception ex){
-            RCLogger.e(TAG, ex.toString());
+            handleException(ex, false);
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -174,9 +175,8 @@ public class FcmConfigurationClient {
      * @param enable - if true, push settings will be enabled on server for the account, otherwise it will be disabled
      * @param accountSid - account sid
      * @param clientSid - client sid
-     * @return boolean - true if no errors, otherwise false
      */
-    public boolean enableClientPushSettings(boolean enable, String accountSid, String clientSid){
+    public void enableClientPushSettings(boolean enable, String accountSid, String clientSid) throws RCException{
         boolean ok = false;
         RCLogger.v(TAG, "enableClientPushSettings method started");
         HttpURLConnection connection = null;
@@ -195,21 +195,17 @@ public class FcmConfigurationClient {
             OutputStream outputStream = new BufferedOutputStream(connection.getOutputStream());
             outputStream.write(postData);
             outputStream.close();
-            int responseCode = connection.getResponseCode();
 
-            if (responseCode == HttpURLConnection.HTTP_OK){
-                ok = true;
-            }
+            checkStatusCode(connection);
 
         } catch (Exception ex){
-            RCLogger.e(TAG, ex.toString());
+            handleException(ex, false);
         } finally {
             if (connection != null) {
                 connection.disconnect();
             }
         }
         RCLogger.v(TAG, "enableClientPushSettings method ended; returning ok:" + ok);
-        return ok;
 
     }
 
@@ -218,7 +214,7 @@ public class FcmConfigurationClient {
      * @param applicationName - application name
      * @return FcmApplication - object if everything is okay, otherwise null
      **/
-    public FcmApplication getApplication(String applicationName){
+    public FcmApplication getApplication(String applicationName) throws RCException{
         RCLogger.v(TAG, "getApplication method started");
         FcmApplication fcmApplication = null;
         HttpURLConnection connection = null;
@@ -227,14 +223,13 @@ public class FcmConfigurationClient {
             RCLogger.v(TAG, "calling url: " + url);
             connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("GET");
-            int responseCode = connection.getResponseCode();
 
-            if (responseCode == HttpURLConnection.HTTP_OK){
-                fcmApplication = getApplicationFromConnection(connection, applicationName);
-            }
+            checkStatusCode(connection);
+
+            fcmApplication = getApplicationFromConnection(connection, applicationName);
 
         } catch (Exception ex){
-            RCLogger.e(TAG, ex.toString());
+            handleException(ex, true);
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -250,7 +245,7 @@ public class FcmConfigurationClient {
     * @param application - RCApplication object
     * @return FcmApplication - object if everything is okay, otherwise null
     **/
-    public FcmApplication createApplication(FcmApplication application){
+    public FcmApplication createApplication(FcmApplication application) throws RCException{
         RCLogger.v(TAG, "createApplication method started");
         FcmApplication fcmApplication = null;
         HttpURLConnection connection = null;
@@ -267,14 +262,13 @@ public class FcmConfigurationClient {
             OutputStream outputStream = new BufferedOutputStream(connection.getOutputStream());
             outputStream.write(outputString.getBytes());
             outputStream.close();
-            int responseCode = connection.getResponseCode();
 
-            if (responseCode == HttpURLConnection.HTTP_OK){
-                fcmApplication = getApplicationFromConnection(connection, application.getFriendlyName());
-            }
+            checkStatusCode(connection);
+
+            fcmApplication = getApplicationFromConnection(connection, application.getFriendlyName());
 
         } catch (Exception ex){
-            RCLogger.e(TAG, ex.toString());
+            handleException(ex, true);
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -289,7 +283,7 @@ public class FcmConfigurationClient {
      * @param application - FcmApplication object
      * @return FcmCredentials - object if everything is okay, otherwise null
     **/
-    public FcmCredentials getCredentials(FcmApplication application){
+    public FcmCredentials getCredentials(FcmApplication application) throws RCException{
         RCLogger.v(TAG, "getCredentials method started");
         FcmCredentials fcmCredentials = null;
         HttpURLConnection connection = null;
@@ -298,14 +292,13 @@ public class FcmConfigurationClient {
             RCLogger.v(TAG, "calling url: " + url);
             connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("GET");
-            int responseCode = connection.getResponseCode();
 
-            if (responseCode == HttpURLConnection.HTTP_OK){
-                fcmCredentials = getCredentialsFromConnection(connection, application.getSid());
-            }
+            checkStatusCode(connection);
+
+            fcmCredentials = getCredentialsFromConnection(connection, application.getSid());
 
         } catch (Exception ex){
-            RCLogger.e(TAG, ex.toString());
+            handleException(ex, true);
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -321,7 +314,7 @@ public class FcmConfigurationClient {
     * @param fcmSecret - Server key from firebase client
     * @return FcmCredentials - object if everything is okay, otherwise null
     **/
-    public FcmCredentials createCredentials(FcmCredentials credentials, String fcmSecret){
+    public FcmCredentials createCredentials(FcmCredentials credentials, String fcmSecret) throws RCException{
         RCLogger.v(TAG, "createCredentials method started");
         FcmCredentials fcmCredentials = null;
         HttpURLConnection connection = null;
@@ -340,14 +333,13 @@ public class FcmConfigurationClient {
             OutputStream outputStream = new BufferedOutputStream(connection.getOutputStream());
             outputStream.write(outputString.getBytes());
             outputStream.close();
-            int responseCode = connection.getResponseCode();
 
-            if (responseCode == HttpURLConnection.HTTP_OK){
-                fcmCredentials = getCredentialsFromConnection(connection, credentials.getApplicationSid());
-            }
+            checkStatusCode(connection);
+
+            fcmCredentials = getCredentialsFromConnection(connection, credentials.getApplicationSid());
 
         } catch (Exception ex){
-            RCLogger.e(TAG, ex.toString());
+            handleException(ex, true);
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -357,9 +349,8 @@ public class FcmConfigurationClient {
         return fcmCredentials;
     }
 
-    public FcmCredentials updateCredentials(FcmCredentials credentials, String fcmSecret) {
+    public FcmCredentials updateCredentials(FcmCredentials credentials, String fcmSecret) throws RCException {
         RCLogger.v(TAG, "updateCredentials method started");
-        boolean result = false;
         HttpURLConnection connection = null;
         FcmCredentials fcmCredentials = null;
         try {
@@ -379,15 +370,12 @@ public class FcmConfigurationClient {
             outputStream.write(outputString.getBytes());
             outputStream.close();
 
-            int responseCode = connection.getResponseCode();
+            checkStatusCode(connection);
 
-            if (responseCode == HttpURLConnection.HTTP_OK){
-                fcmCredentials = getCredentialsFromConnection(connection, credentials.getApplicationSid());
-            }
-
+            fcmCredentials = getCredentialsFromConnection(connection, credentials.getApplicationSid());
 
         } catch (Exception ex) {
-            RCLogger.e(TAG, ex.toString());
+            handleException(ex, true);
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -404,7 +392,7 @@ public class FcmConfigurationClient {
     * @param clientSid - Client sid
     * @return FcmBinding - object if everything is okay, otherwise null
     */
-    public FcmBinding getBinding(FcmApplication application, String clientSid){
+    public FcmBinding getBinding(FcmApplication application, String clientSid) throws RCException{
         RCLogger.v(TAG, "getBinding method started");
         FcmBinding fcmBinding = null;
         HttpURLConnection connection = null;
@@ -413,14 +401,13 @@ public class FcmConfigurationClient {
             RCLogger.v(TAG, "calling url: " + url);
             connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("GET");
-            int responseCode = connection.getResponseCode();
 
-            if (responseCode == HttpURLConnection.HTTP_OK){
-                fcmBinding = getBindingFromConnection(connection, application.getSid(), clientSid);
-            }
+            checkStatusCode(connection);
+
+            fcmBinding = getBindingFromConnection(connection, application.getSid(), clientSid);
 
         } catch (Exception ex){
-            RCLogger.e(TAG, ex.toString());
+            handleException(ex, true);
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -436,7 +423,7 @@ public class FcmConfigurationClient {
      * @param binding - FcmBinding object
      * @return FcmBinding - object if everything is okay, otherwise null
      */
-    public FcmBinding createBinding(FcmBinding binding){
+    public FcmBinding createBinding(FcmBinding binding) throws RCException{
         return this.createOrUpdateBinding(binding, null);
     }
 
@@ -445,7 +432,7 @@ public class FcmConfigurationClient {
      * @param binding
      * @return
      */
-    public FcmBinding updateBinding(FcmBinding binding){
+    public FcmBinding updateBinding(FcmBinding binding) throws RCException{
         return this.createOrUpdateBinding(binding, binding.getSid());
     }
 
@@ -455,7 +442,7 @@ public class FcmConfigurationClient {
      * @param bindingSid - binding sid, if null its creating new binding, otherwise its update
      * @return FcmBinding - object if everything is okay, otherwise null
      */
-    private FcmBinding createOrUpdateBinding(FcmBinding binding, String bindingSid){
+    private FcmBinding createOrUpdateBinding(FcmBinding binding, String bindingSid) throws RCException{
         RCLogger.v(TAG, "createBinding method started");
         FcmBinding fcmBinding = null;
         HttpURLConnection connection = null;
@@ -483,14 +470,12 @@ public class FcmConfigurationClient {
             outputStream.write(outputString.getBytes());
             outputStream.close();
 
-            int responseCode = connection.getResponseCode();
+            checkStatusCode(connection);
 
-            if (responseCode == HttpURLConnection.HTTP_OK){
-                fcmBinding = getBindingFromConnection(connection, binding.getApplicationSid(), binding.getIdentity());
-            }
+            fcmBinding = getBindingFromConnection(connection, binding.getApplicationSid(), binding.getIdentity());
 
         } catch (Exception ex){
-            RCLogger.e(TAG, ex.toString());
+            handleException(ex, true);
         } finally {
             if (connection != null) {
                 connection.disconnect();
@@ -501,34 +486,45 @@ public class FcmConfigurationClient {
     }
 
 
-    public boolean deleteBinding(String bindingSid){
+    public void deleteBinding(String bindingSid) throws RCException{
         RCLogger.v(TAG, "deleteBinding method started");
-        boolean result = false;
         HttpURLConnection connection = null;
         try{
             String url = "https://" + pushDomain + "/" + this.pushPath + "/bindings/" + bindingSid;
             RCLogger.v(TAG, "calling url: " + url);
             connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("DELETE");
-            int responseCode = connection.getResponseCode();
 
-            if (responseCode == HttpURLConnection.HTTP_OK){
-               result = true;
-            }
+            checkStatusCode(connection);
 
         } catch (Exception ex){
-            RCLogger.e(TAG, ex.toString());
+            handleException(ex, true);
         } finally {
             if (connection != null) {
                 connection.disconnect();
             }
         }
         RCLogger.v(TAG, "deleteBinding method ended;");
-        return result;
 
     }
 
     //-------------------------Helper methods -----------------------------//
+    private void checkStatusCode(HttpURLConnection connection) throws Exception{
+        int responseCode = connection.getResponseCode();
+        if (responseCode != HttpURLConnection.HTTP_OK) {
+            switch (responseCode) {
+                case 401:
+                case 403:
+                    throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_AUTHENTICATION_FORBIDDEN);
+                case 404:
+                    throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_HTTP_NOT_FOUND);
+                case 408:
+                    throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_TIMED_OUT);
+                default:
+                    throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_UNKNOWN_ERROR);
+            }
+        }
+    }
 
     private FcmApplication getApplicationFromConnection(HttpURLConnection connection, String applicationName) throws IOException, JSONException{
         String jsonString = getJsonFromStream(connection.getInputStream());
@@ -628,6 +624,21 @@ public class FcmConfigurationClient {
             return new FcmBinding(sid, identity, applicationSid, bindingType, address);
         }
         return null;
+    }
+
+    private void handleException(Exception ex, boolean checkPushDomain) throws RCException{
+        RCLogger.e(TAG, ex.toString());
+        if (ex instanceof UnknownHostException) {
+            if (checkPushDomain) {
+                throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_INVALID_PUSH_DOMAIN);
+            } else {
+                throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_INVALID_HTTP_DOMAIN);
+            }
+        } else if (ex instanceof  RCException){
+            throw (RCException)ex;
+        } else {
+            throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_UNKNOWN_ERROR);
+        }
     }
 
 
