@@ -406,14 +406,14 @@ public class MainActivity extends AppCompatActivity
       if (view.getId() == R.id.imageButton_add) {
          // TODO: Issue #380: once we figure out the issue with the backgrounding we need to uncomment this,
          // but also place it to a suitable place :)
+/*
          Intent intent = new Intent(this, CallActivity.class);
          intent.setAction(RCDevice.ACTION_RESUME_CALL);
          startActivityForResult(intent, CONNECTION_REQUEST);
+*/
 
-/*
          AddUserDialogFragment newFragment = AddUserDialogFragment.newInstance(AddUserDialogFragment.DIALOG_TYPE_ADD_CONTACT, "", "");
          newFragment.show(getSupportFragmentManager(), "dialog");
-*/
       }
    }
 

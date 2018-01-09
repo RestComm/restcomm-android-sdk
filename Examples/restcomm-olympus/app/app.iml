@@ -131,6 +131,7 @@
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/blame" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/check-manifest" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/classes" />
+      <excludeFolder url="file://$MODULE_DIR$/build/intermediates/classes-jar" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/incremental" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/javaPrecompile" />
       <excludeFolder url="file://$MODULE_DIR$/build/intermediates/jniLibs" />
@@ -198,7 +199,6 @@
     <orderEntry type="library" name="org.webrtc:google-webrtc-1.0.21217" level="project" />
     <orderEntry type="library" scope="TEST" name="com.android.support.test:rules-1.0.1" level="project" />
     <orderEntry type="library" name="dnsjava:dnsjava:2.1.7@jar" level="project" />
-    <orderEntry type="library" name="org.restcomm.android:libwebrtc-1.0.0-beta5-16765" level="project" />
     <orderEntry type="library" name="com.google.guava:guava:16.0.1@jar" level="project" />
     <orderEntry type="library" name="com.firebase:firebase-jobdispatcher-0.6.0" level="project" />
     <orderEntry type="library" name="org.slf4j:slf4j-log4j12:1.6.1@jar" level="project" />

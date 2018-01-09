@@ -18,7 +18,7 @@
     <color name="colorAccent">#1D1D1D</color>
     -->
     <color name="colorDtmfColor">#6D6E70</color>
-    <color name="colorPrimaryLight">#FF5FDFDA</color>
+    <color name="colorPrimaryLight">#5fdfda</color>
     <color name="colorButtonWhite">#EEEEEE</color>
     <color name="colorTextPrimary">#3D3D3D</color>
     <color name="colorTextSecondary">#6D6D6D</color>

@@ -1602,7 +1602,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
             @Override
             public void run() {
                 try {
-                    device.updateParams(params);
+                    device.reconfigure(params);
                 } catch (Exception e) {
                     Log.e(TAG, "RCDevice update Error: " + e.toString());
                 }
