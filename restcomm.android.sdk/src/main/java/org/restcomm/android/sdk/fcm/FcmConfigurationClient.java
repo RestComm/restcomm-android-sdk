@@ -510,24 +510,19 @@ public class FcmConfigurationClient {
 
     //-------------------------Helper methods -----------------------------//
     private void checkStatusCode(HttpURLConnection connection) throws Exception{
-
-        try {
-            int responseCode = connection.getResponseCode();
-            if (responseCode != HttpURLConnection.HTTP_OK) {
-                switch (responseCode) {
-                    case 401:
-                    case 403:
-                        throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_AUTHENTICATION_FORBIDDEN);
-                    case 404:
-                        throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_HTTP_NOT_FOUND);
-                    case 408:
-                        throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_TIMED_OUT);
-                    default:
-                        throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_UNKNOWN_ERROR);
-                }
+        int responseCode = connection.getResponseCode();
+        if (responseCode != HttpURLConnection.HTTP_OK) {
+            switch (responseCode) {
+                case 401:
+                case 403:
+                    throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_AUTHENTICATION_FORBIDDEN);
+                case 404:
+                    throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_HTTP_NOT_FOUND);
+                case 408:
+                    throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_TIMED_OUT);
+                default:
+                    throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_UNKNOWN_ERROR);
             }
-        } catch (Exception e) {
-            throw e;
         }
     }
 
