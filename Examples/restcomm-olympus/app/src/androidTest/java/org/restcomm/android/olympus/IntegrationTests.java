@@ -174,7 +174,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
     private boolean deviceInitialized, deviceReleased, serviceConnected, connectionConnected, connectionDisconnected, deviceStartedListening,
             deviceStoppedListening, deviceConnectivityUpdated, connectionConnecting, connectionDigitSent, connectionCancelled,
             connectionDeclined, connectionError, connectionLocalVideo, connectionRemoteVideo, messageAcked, connectionArrived,
-            messageArrived;
+            messageArrived, deviceReconfigured;
 
     private RCDevice.RCDeviceBinder binder;
 
@@ -224,6 +224,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         messageAcked = false;
         connectionArrived = false;
         messageArrived = false;
+        deviceReconfigured = false;
 
         IntentFilter filter = new IntentFilter();
         filter.addAction(RCDevice.ACTION_INCOMING_CALL);
@@ -1459,7 +1460,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceInitialized"), equalTo(true));
         assertThat(context.get("status-code")).isEqualTo(RCClient.ErrorCodes.SUCCESS.ordinal());
 
-        deviceInitialized = false;
+        deviceReconfigured = false;
         //disable
         params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
         clientHandler.post(new Runnable() {
@@ -1473,7 +1474,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
             }
         });
 
-        await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceInitialized"), equalTo(true));
+        await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceReconfigured"), equalTo(true));
         assertThat(context.get("status-code")).isEqualTo(RCClient.ErrorCodes.SUCCESS.ordinal());
 
         clientHandler.post(new Runnable() {
@@ -1542,7 +1543,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceInitialized"), equalTo(true));
         assertThat(context.get("status-code")).isEqualTo(RCClient.ErrorCodes.SUCCESS.ordinal());
 
-        deviceInitialized = false;
+        deviceReconfigured = false;
 
         //enable
         params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, true);
@@ -1557,7 +1558,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
             }
         });
 
-        await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceInitialized"), equalTo(true));
+        await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceReconfigured"), equalTo(true));
         assertThat(context.get("status-code")).isEqualTo(RCClient.ErrorCodes.SUCCESS.ordinal());
 
 
@@ -1631,6 +1632,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         context.put("status-code", statusCode);
 
         deviceStartedListening = true;
+        deviceReconfigured = true;
     }
 
     public void onError(RCDevice device, int statusCode, String statusText)

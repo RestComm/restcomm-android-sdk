@@ -179,32 +179,31 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
          try {
             HashMap<String, Object> prefHashMap = (HashMap<String, Object>) prefs.getAll();
             if (updated || pushUpdated) {
-               // There a slight difference between the data structure of SharedPreferences and
-               // the one that the SDK understands. In SharedPreferences the value for
-               // MEDIA_ICE_SERVERS_DISCOVERY_TYPE key is a String, which the SDK wants a
-               // MediaIceServersDiscoveryType enum, so we need to convert between the 2.
-               // In this case we remove the one and introduce the other
-               String iceServersDiscoveryType = "0";
-               if (prefHashMap.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE)) {
-                  iceServersDiscoveryType = (String) prefHashMap.get(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE);
-                  prefHashMap.remove(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE);
-               }
-               prefHashMap.put(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE,
-                       RCDevice.MediaIceServersDiscoveryType.values()[Integer.parseInt(iceServersDiscoveryType)]
-               );
+                // There a slight difference between the data structure of SharedPreferences and
+                // the one that the SDK understands. In SharedPreferences the value for
+                // MEDIA_ICE_SERVERS_DISCOVERY_TYPE key is a String, which the SDK wants a
+                // MediaIceServersDiscoveryType enum, so we need to convert between the 2.
+                // In this case we remove the one and introduce the other
+                String iceServersDiscoveryType = "0";
+                if (prefHashMap.containsKey(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE)) {
+                    iceServersDiscoveryType = (String) prefHashMap.get(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE);
+                    prefHashMap.remove(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE);
+                }
+                prefHashMap.put(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE,
+                        RCDevice.MediaIceServersDiscoveryType.values()[Integer.parseInt(iceServersDiscoveryType)]
+                );
 
-               // Same for candidate timeout
-               String candidateTimeout = "0";
-               if (prefHashMap.containsKey(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT)) {
-                  candidateTimeout = (String) prefHashMap.get(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT);
-                  prefHashMap.remove(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT);
-               }
-               prefHashMap.put(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT,
-                       Integer.parseInt(candidateTimeout)
-               );
+                // Same for candidate timeout
+                String candidateTimeout = "0";
+                if (prefHashMap.containsKey(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT)) {
+                    candidateTimeout = (String) prefHashMap.get(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT);
+                    prefHashMap.remove(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT);
+                }
+                prefHashMap.put(RCConnection.ParameterKeys.DEBUG_CONNECTION_CANDIDATE_TIMEOUT,
+                        Integer.parseInt(candidateTimeout)
+                );
 
-            try {
-               device.reconfigure(params);
+                device.reconfigure(params);
             }
             NavUtils.navigateUpFromSameTask(this);
          } catch (RCException e) {
