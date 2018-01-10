@@ -237,9 +237,6 @@ public class RCUtils {
    }
 
    public static boolean shouldRegisterForPush(HashMap<String, Object> parameters, StorageManagerInterface storageManagerInterface) {
-      // @Oggie: I moved it outside, in RCDevice.updateParams(), now called RCDevice.reconfigure(), let me know if you see any issue here, since I
-      // might be missing something
-      //validatePushSettings(parameters);
 
       //when binding is missing we need to register for push
       if (TextUtils.isEmpty(storageManagerInterface.getString(FcmConfigurationHandler.FCM_BINDING, null))){

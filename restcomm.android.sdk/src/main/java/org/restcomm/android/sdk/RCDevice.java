@@ -603,10 +603,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          //this.updateCapabilityToken(capabilityToken);
          this.listener = deviceListener;
 
-         // With this enhancement (i.e. #784) we are making signaling and push related settings equally important and both should block initialization
-         // so I believe we can pull validateDeviceParms() out of validateSettings(), right? @Oggie, let me know if you have any concerns
+
          RCUtils.validateDeviceParms(parameters);
-         //validateSettings(parameters);
 
          //save parameters to storage
          storageManagerPreferences = new StorageManagerPreferences(this);
@@ -1842,6 +1840,29 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
                     RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS)));
          }
       }
+   }
+
+   /**
+    * We need to have push notification parameters saved /cashed
+    * if we need the SDK to work in the background.
+    * This method is used to clear the cache!
+    *
+    * IMPORTANT!!!
+    * Use this method wisely and only after RCDevice() is released.
+
+    */
+   public void clearCache(){
+      //clear push settings
+      final HashMap<String, Object> paramsStorage = new HashMap<String, Object>();
+
+      paramsStorage.put(FcmConfigurationHandler.FCM_ACCOUNT_SID, "");
+      paramsStorage.put(FcmConfigurationHandler.FCM_CLIENT_SID, "");
+      paramsStorage.put(FcmConfigurationHandler.FCM_APPLICATION, "");
+      paramsStorage.put(FcmConfigurationHandler.FCM_BINDING, "");
+
+      StorageManagerPreferences storageManagerPreferences = new StorageManagerPreferences(this);
+      StorageUtils.saveParams(storageManagerPreferences, paramsStorage);
+
    }
 
    // -- FcmMessageListener

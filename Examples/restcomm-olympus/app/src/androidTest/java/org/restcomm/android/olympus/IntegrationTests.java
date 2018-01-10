@@ -1066,7 +1066,9 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+
+                device.clearCache();
+
                 HashMap<String, Object> params = new HashMap<String, Object>();
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_CALL, new Intent(RCDevice.ACTION_INCOMING_CALL, null, InstrumentationRegistry.getTargetContext(), CallActivity.class));
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE, new Intent(RCDevice.ACTION_INCOMING_MESSAGE, null, InstrumentationRegistry.getTargetContext(), MessageActivity.class));
@@ -1116,7 +1118,9 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+
+                device.clearCache();
+
                 HashMap<String, Object> params = new HashMap<String, Object>();
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_CALL, new Intent(RCDevice.ACTION_INCOMING_CALL, null, InstrumentationRegistry.getTargetContext(), CallActivity.class));
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE, new Intent(RCDevice.ACTION_INCOMING_MESSAGE, null, InstrumentationRegistry.getTargetContext(), MessageActivity.class));
@@ -1168,7 +1172,8 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+
+                device.clearCache();
 
                 HashMap<String, Object> params = new HashMap<String, Object>();
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_CALL, new Intent(RCDevice.ACTION_INCOMING_CALL, null, InstrumentationRegistry.getTargetContext(), CallActivity.class));
@@ -1220,7 +1225,9 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+
+                device.clearCache();
+
                 HashMap<String, Object> params = new HashMap<String, Object>();
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_CALL, new Intent(RCDevice.ACTION_INCOMING_CALL, null, InstrumentationRegistry.getTargetContext(), CallActivity.class));
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE, new Intent(RCDevice.ACTION_INCOMING_MESSAGE, null, InstrumentationRegistry.getTargetContext(), MessageActivity.class));
@@ -1271,7 +1278,9 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+
+                device.clearCache();
+
                 HashMap<String, Object> params = new HashMap<String, Object>();
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_CALL, new Intent(RCDevice.ACTION_INCOMING_CALL, null, InstrumentationRegistry.getTargetContext(), CallActivity.class));
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE, new Intent(RCDevice.ACTION_INCOMING_MESSAGE, null, InstrumentationRegistry.getTargetContext(), MessageActivity.class));
@@ -1322,7 +1331,9 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+
+                device.clearCache();
+
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_CALL, new Intent(RCDevice.ACTION_INCOMING_CALL, null, InstrumentationRegistry.getTargetContext(), CallActivity.class));
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE, new Intent(RCDevice.ACTION_INCOMING_MESSAGE, null, InstrumentationRegistry.getTargetContext(), MessageActivity.class));
                 params.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN, SERVER_HOST + ":" + SERVER_PORT);
@@ -1361,7 +1372,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+                device.clearCache();
                 device.release();
             }
         });
@@ -1386,7 +1397,9 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+
+                device.clearCache();
+
                 device.release();
             }
         });
@@ -1409,7 +1422,9 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+
+                device.clearCache();
+
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_CALL, new Intent(RCDevice.ACTION_INCOMING_CALL, null, InstrumentationRegistry.getTargetContext(), CallActivity.class));
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE, new Intent(RCDevice.ACTION_INCOMING_MESSAGE, null, InstrumentationRegistry.getTargetContext(), MessageActivity.class));
                 params.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN, SERVER_HOST + ":" + SERVER_PORT);
@@ -1464,7 +1479,9 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+
+                device.clearCache();
+
                 device.release();
             }
         });
@@ -1487,7 +1504,9 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+
+                device.clearCache();
+
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_CALL, new Intent(RCDevice.ACTION_INCOMING_CALL, null, InstrumentationRegistry.getTargetContext(), CallActivity.class));
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE, new Intent(RCDevice.ACTION_INCOMING_MESSAGE, null, InstrumentationRegistry.getTargetContext(), MessageActivity.class));
                 params.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN, SERVER_HOST + ":" + SERVER_PORT);
@@ -1545,7 +1564,9 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+
+                device.clearCache();
+
                 device.release();
             }
         });
@@ -2020,20 +2041,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         });
     }
 
-    //helper method (resets push parameters in storage)
-    private void resetPushConfiguration(){
-        //clear push settings
-        final HashMap<String, Object> paramsStorage = new HashMap<String, Object>();
 
-        paramsStorage.put(FcmConfigurationHandler.FCM_ACCOUNT_SID, "");
-        paramsStorage.put(FcmConfigurationHandler.FCM_CLIENT_SID, "");
-        paramsStorage.put(FcmConfigurationHandler.FCM_APPLICATION, "");
-        paramsStorage.put(FcmConfigurationHandler.FCM_BINDING, "");
-
-        StorageManagerPreferences storageManagerPreferences = new StorageManagerPreferences(InstrumentationRegistry.getTargetContext());
-        StorageUtils.saveParams(storageManagerPreferences, paramsStorage);
-
-    }
 
 /*    public SSLContext getSslContext() {
 
