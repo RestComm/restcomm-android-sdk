@@ -29,17 +29,19 @@
 
 
         <TextView
-            android:id="@+id/imageButton"
+            android:id="@+id/resume_call"
             android:layout_width="match_parent"
-            android:layout_height="30dp"
+            android:layout_height="40dp"
             android:background="@color/colorPrimaryLight"
+            android:clickable="true"
             android:contentDescription="@string/button_to_resume_ongoing_call"
             android:elevation="1dp"
+            android:focusable="true"
+            android:gravity="center"
             android:text="@string/resume_ongoing_call_text"
             android:textAlignment="center"
-            android:gravity="center"
-            android:clickable="true"
-            android:focusable="true"
+            android:textStyle="bold"
+            android:textSize="18sp"
             android:visibility="gone"
             />
 

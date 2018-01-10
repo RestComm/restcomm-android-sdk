@@ -240,7 +240,7 @@
     <string name="push_domain">Push domain, like: \'push.restcomm.com\'</string>
     <string name="http_domain">Http domain, like: \'cloud.restcomm.com\'</string>
     <string name="button_to_resume_ongoing_call">Button to resume ongoing call</string>
-    <string name="resume_ongoing_call_text">Ongoing call with X</string>
+    <string name="resume_ongoing_call_text">Tap to return to call with</string>
 
 
 </resources>

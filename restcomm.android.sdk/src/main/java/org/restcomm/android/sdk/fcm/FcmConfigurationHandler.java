@@ -24,7 +24,6 @@ package org.restcomm.android.sdk.fcm;
 
 import android.os.AsyncTask;
 import android.text.TextUtils;
-import android.util.Log;
 import android.util.Pair;
 
 import com.google.firebase.iid.FirebaseInstanceId;
@@ -39,7 +38,6 @@ import org.restcomm.android.sdk.util.RCException;
 import org.restcomm.android.sdk.util.RCLogger;
 import org.restcomm.android.sdk.util.RCUtils;
 
-import java.net.UnknownHostException;
 import java.util.HashMap;
 
 /**
@@ -66,7 +64,6 @@ public class FcmConfigurationHandler {
     private boolean mEnablePush;
 
     private FcmPushRegistrationListener mListener;
-
 
     /**
      *  @param listener
@@ -98,13 +95,14 @@ public class FcmConfigurationHandler {
     /**
      *  It will register device and application for push notifications
      * @param parameters, paramaters to check
-     * @param clearFcmData , true if new data should be used for registration
-     * @return true if an actual asynchronous operation started to update push configuration, false if an updated wasn't deemed necessary
+     * @param actionIsUpdate, true if registerForPush() is called as a result of RCDevice.reconfigure() and new data should be used for registration,
+     *                  false if called as a result of RCDevice.initialize()
+     * @return true if an actual asynchronous operation started in order to update push configuration, false if an updated wasn't deemed necessary
      */
-    public boolean registerForPush(HashMap<String, Object> parameters, boolean clearFcmData) {
+    public boolean registerForPush(HashMap<String, Object> parameters, boolean actionIsUpdate) {
         boolean needUpdate = false;
         boolean bindingExists = mStorageManager.getString(FcmConfigurationHandler.FCM_BINDING, null) != null;
-        if (clearFcmData){
+        if (actionIsUpdate){
             mStorageManager.saveString(FCM_ACCOUNT_SID, null);
             mStorageManager.saveString(FCM_CLIENT_SID, null);
             mStorageManager.saveString(FCM_APPLICATION, null);
@@ -114,24 +112,24 @@ public class FcmConfigurationHandler {
         // if there is no data for push and we have flag disable we will ignore it
         if (!mEnablePush){
             if (bindingExists) {
-                registerOrUpdateForPush(false);
+                registerOrUpdateForPush(false, actionIsUpdate);
                 needUpdate = true;
             }
         } else if (RCUtils.shouldRegisterForPush(parameters, mStorageManager)) {
-            registerOrUpdateForPush(false);
+            registerOrUpdateForPush(false, actionIsUpdate);
             needUpdate = true;
         }
 
         return needUpdate;
     }
 
-    public void updateBinding(){
+    void updateBinding(){
         //we will not update the push with token
         //if we don't have the app registered
         RCLogger.v(TAG, "updateBinding started");
         if (mEnablePush && !TextUtils.isEmpty(mUsername)) {
             RCLogger.v(TAG, "Push is enabled and username is found. Updating the server");
-            registerOrUpdateForPush(true);
+            registerOrUpdateForPush(true, true);
         } else {
             RCLogger.v(TAG, "Push is not enabled or username cannot be found. Updating the server will not happened.");
         }
@@ -142,7 +140,7 @@ public class FcmConfigurationHandler {
      * server
      **/
     @SuppressWarnings("unchecked")
-    private void registerOrUpdateForPush(boolean update){
+    private void registerOrUpdateForPush(boolean updateToken, boolean actionIsUpdate){
         //get all data before running in background (we don't want context from storage manager to be inside)
         String accountSid = mStorageManager.getString(FCM_ACCOUNT_SID, null);
         String clientSid = mStorageManager.getString(FCM_CLIENT_SID, null);
@@ -155,7 +153,7 @@ public class FcmConfigurationHandler {
         map.put(FCM_APPLICATION, applicationString);
         map.put(FCM_BINDING, bindingString);
 
-        new AsyncTaskRegisterForPush(mEmail, mFcmConfigurationClient, mUsername, mApplicationName, mFcmSecretKey, update).execute(map);
+        new AsyncTaskRegisterForPush(mEmail, mFcmConfigurationClient, mUsername, mApplicationName, mFcmSecretKey, updateToken, actionIsUpdate).execute(map);
     }
 
     private class AsyncTaskRegisterForPush extends AsyncTask<HashMap<String, String>, Void, Pair<HashMap<String, String>, RCClient.ErrorCodes>> {
@@ -164,16 +162,18 @@ public class FcmConfigurationHandler {
         String username;
         String applicationName;
         String fcmSecretKey;
-        boolean update;
+        boolean updateToken;
+        boolean actionIsUpdate;
 
         public AsyncTaskRegisterForPush(String email, FcmConfigurationClient fcmConfigurationClient,
-                                        String username, String applicationName, String fcmSecretKey, boolean update) {
+                                        String username, String applicationName, String fcmSecretKey, boolean updateToken, boolean actionIsUpdate) {
             this.email = email;
             this.username = username;
             this.fcmConfigurationClient = fcmConfigurationClient;
             this.applicationName = applicationName;
             this.fcmSecretKey = fcmSecretKey;
-            this.update = update;
+            this.updateToken = updateToken;
+            this.actionIsUpdate = actionIsUpdate;
         }
 
         @Override
@@ -182,8 +182,8 @@ public class FcmConfigurationHandler {
             HashMap<String, String> inputHashMap = hashMap[0];
 
             try{
-                if (update && mEnablePush) {
-                    RCLogger.v(TAG, "Its un update token;");
+                if (updateToken && mEnablePush) {
+                    RCLogger.v(TAG, "Its an update token;");
                     String bindingString = inputHashMap.get(FCM_BINDING);
 
                     if (bindingString != null) {
@@ -361,14 +361,14 @@ public class FcmConfigurationHandler {
 
                 //if listener exists
                 if (mListener != null) {
-                    mListener.onRegisteredForPush(RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS));
+                    mListener.onRegisteredForPush(RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS), actionIsUpdate);
                 }
 
             } else {
                 RCClient.ErrorCodes errorCode = result.second;
                 RCLogger.e(TAG, "Push notifications configuration failed, status: " + RCClient.errorText(errorCode));
                 if (mListener != null) {
-                    mListener.onRegisteredForPush(errorCode, RCClient.errorText(errorCode));
+                    mListener.onRegisteredForPush(errorCode, RCClient.errorText(errorCode), actionIsUpdate);
                 }
             }
 

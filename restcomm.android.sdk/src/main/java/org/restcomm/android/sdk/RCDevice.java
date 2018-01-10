@@ -1166,7 +1166,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       RCLogger.i(TAG, "onReconfigureReply(): id: " + jobId + ", connectivityStatus: " + connectivityStatus + ", status: " + status + ", text: " + text);
       cachedConnectivityStatus = connectivityStatus;
 
-      registrationFsm.fire(RegistrationFsm.FSMEvent.signalingRegistrationEvent, new RegistrationFsmContext(connectivityStatus, status, text));
+      registrationFsm.fire(RegistrationFsm.FSMEvent.signalingReconfigureRegistrationEvent, new RegistrationFsmContext(connectivityStatus, status, text));
    }
 
     /**
@@ -1851,32 +1851,34 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       startForeground(ONCALL_NOTIFICATION_ID, builder.build());
    }
 
-   public void registerForPushNotifications(boolean itsUpdate){
-      //try {
+   public void registerForPushNotifications(boolean isUpdate){
       if (storageManagerPreferences != null) {
-         boolean neededUpdate = new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(parameters, itsUpdate);
+         boolean neededUpdate = new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(parameters, isUpdate);
          if (!neededUpdate) {
             // if no update is needed, we need to notify FSM right away that push registration is not needed, so that we don't get stuck here
-            registrationFsm.fire(RegistrationFsm.FSMEvent.pushRegistrationNotNeededEvent, new RegistrationFsmContext(cachedConnectivityStatus,
-                    RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS)));
+            if (!isUpdate) {
+               registrationFsm.fire(RegistrationFsm.FSMEvent.pushRegistrationNotNeededEvent, new RegistrationFsmContext(cachedConnectivityStatus,
+                       RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS)));
+            }
+            else {
+               registrationFsm.fire(RegistrationFsm.FSMEvent.pushReconfigureRegistrationNotNeededEvent, new RegistrationFsmContext(cachedConnectivityStatus,
+                       RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS)));
+            }
          }
       }
-      /*
-      } catch (RCException e) {
-         if (isAttached() && listener != null) {
-            listener.onWarning(this, e.errorCode.ordinal(), e.errorText);
-         }
-         RCLogger.w(TAG, "RegisterForPush  warning: " + e.errorText);
-      }
-      */
    }
 
    // -- FcmMessageListener
     @Override
-    public void onRegisteredForPush(RCClient.ErrorCodes status, String text) {
-       RCLogger.i(TAG, "onRegisteredForPush(): status: " + status + ", text: " + text);
+    public void onRegisteredForPush(RCClient.ErrorCodes status, String text, boolean isUpdate) {
+       RCLogger.i(TAG, "onRegisteredForPush(): status: " + status + ", text: " + text + ", update: " + isUpdate);
 
-       registrationFsm.fire(RegistrationFsm.FSMEvent.pushRegistrationEvent, new RegistrationFsmContext(cachedConnectivityStatus, status, text));
+       if (!isUpdate) {
+          registrationFsm.fire(RegistrationFsm.FSMEvent.pushRegistrationEvent, new RegistrationFsmContext(cachedConnectivityStatus, status, text));
+       }
+       else {
+          registrationFsm.fire(RegistrationFsm.FSMEvent.pushReconfigureRegistrationEvent, new RegistrationFsmContext(cachedConnectivityStatus, status, text));
+       }
     }
 
     // ------ Helpers
@@ -2005,23 +2007,44 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       //fsmBuilder.transit().fromAny().to(RegistrationFsm.FSMState.pushReadyState).on(RegistrationFsm.FSMEvent.pushRegistrationEvent).callMethod("toPushInitializationReady");
 
       // Set up the state transitions of the FSM and associate methods to handle them
-      // transitions to signaling ready
+      // transitions to signaling ready, either during initialization or reconfiguration
       fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.initialState).to(RegistrationFsm.FSMState.signalingReadyState)
               .on(RegistrationFsm.FSMEvent.signalingRegistrationEvent).callMethod("toSignalingInitializationReady");
       fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.pushReadyState).to(RegistrationFsm.FSMState.signalingReadyState)
               .on(RegistrationFsm.FSMEvent.signalingRegistrationEvent).callMethod("toSignalingInitializationReady");
 
-      // transitions to push ready when push configuration really happens asynchronously
+      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.initialState).to(RegistrationFsm.FSMState.signalingReadyState)
+              .on(RegistrationFsm.FSMEvent.signalingReconfigureRegistrationEvent).callMethod("toSignalingReconfigurationReady");
+      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.pushReadyState).to(RegistrationFsm.FSMState.signalingReadyState)
+              .on(RegistrationFsm.FSMEvent.signalingReconfigureRegistrationEvent).callMethod("toSignalingReconfigurationReady");
+
+
+      // transitions to push ready when push configuration really happens asynchronously,
+      // either during initialization or reconfiguration
       fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.initialState).to(RegistrationFsm.FSMState.pushReadyState)
               .on(RegistrationFsm.FSMEvent.pushRegistrationEvent).callMethod("toPushInitializationReady");
       fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.signalingReadyState).to(RegistrationFsm.FSMState.pushReadyState)
               .on(RegistrationFsm.FSMEvent.pushRegistrationEvent).callMethod("toPushInitializationReady");
 
-      // transitions to push ready when push configuration is not necessary because server already up to date
+      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.initialState).to(RegistrationFsm.FSMState.pushReadyState)
+              .on(RegistrationFsm.FSMEvent.pushReconfigureRegistrationEvent).callMethod("toPushReconfigurationReady");
+      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.signalingReadyState).to(RegistrationFsm.FSMState.pushReadyState)
+              .on(RegistrationFsm.FSMEvent.pushReconfigureRegistrationEvent).callMethod("toPushReconfigurationReady");
+
+
+
+      // transitions to push ready when push configuration is not necessary because server already up to date,
+      // either during initialization or reconfiguration
       fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.initialState).to(RegistrationFsm.FSMState.pushReadyState)
               .on(RegistrationFsm.FSMEvent.pushRegistrationNotNeededEvent).callMethod("toPushInitializationReady");
       fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.signalingReadyState).to(RegistrationFsm.FSMState.pushReadyState)
               .on(RegistrationFsm.FSMEvent.pushRegistrationNotNeededEvent).callMethod("toPushInitializationReady");
+
+      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.initialState).to(RegistrationFsm.FSMState.pushReadyState)
+              .on(RegistrationFsm.FSMEvent.pushReconfigureRegistrationNotNeededEvent).callMethod("toPushReconfigurationReady");
+      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.signalingReadyState).to(RegistrationFsm.FSMState.pushReadyState)
+              .on(RegistrationFsm.FSMEvent.pushReconfigureRegistrationNotNeededEvent).callMethod("toPushReconfigurationReady");
+
 
       // transitions back to initial state
       fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.signalingReadyState).to(RegistrationFsm.FSMState.initialState)
@@ -2032,6 +2055,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       HashMap<String, String> map = new HashMap<>();
       // notice the extraParams argument is passed to the RegistrationFsm constructor
       registrationFsm = fsmBuilder.newStateMachine(RegistrationFsm.FSMState.initialState, this);
+/*
       registrationFsm.addStateMachineListener(new StateMachine.StateMachineListener<UntypedStateMachine, Object, Object, Object>() {
          @Override
          public void stateMachineEvent(StateMachine.StateMachineEvent<UntypedStateMachine, Object, Object, Object> event)
@@ -2039,6 +2063,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
             RCLogger.i(TAG, "stateMachineEvent():" + event);
          }
       });
+*/
    }
 
    private void stopRegistrationFsm()
