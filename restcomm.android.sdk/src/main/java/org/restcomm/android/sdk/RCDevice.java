@@ -313,7 +313,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    public static String EXTRA_VIDEO_ENABLED = "org.restcomm.android.sdk.VIDEO_ENABLED";
 
    // Notification ids for calls and messages. Key is the sender and value in the notification id. We mainly need those
-   // to make sure that notifications from a specific user are shown in a single slot, to avoid confusing the user. This means
+   // to make sure that notifications from a specific user are shown onReconfiguredin a single slot, to avoid confusing the user. This means
    // that after we add a user in one of the maps they are never removed. Reason is there's a lot of overhead needed of
    // passing all intents back to RCDevice service even for messages and missed calls which are auto-answered, with not
    // too much value, at least for now
@@ -603,10 +603,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          //this.updateCapabilityToken(capabilityToken);
          this.listener = deviceListener;
 
-         // With this enhancement (i.e. #784) we are making signaling and push related settings equally important and both should block initialization
-         // so I believe we can pull validateDeviceParms() out of validateSettings(), right? @Oggie, let me know if you have any concerns
+
          RCUtils.validateDeviceParms(parameters);
-         //validateSettings(parameters);
 
          //save parameters to storage
          storageManagerPreferences = new StorageManagerPreferences(this);
@@ -1128,8 +1126,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    {
       RCLogger.i(TAG, "onCloseReply(): id: " + jobId + ", status: " + status + ", text: " + text);
 
-      if (listener != null) {
-         listener.onReleased(this, status.ordinal(), text);
+      if (this.listener != null) {
+         this.listener.onReleased(this, status.ordinal(), text);
       }
       this.listener = null;
       // Shut down the service
@@ -1164,7 +1162,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       RCLogger.i(TAG, "onMessageReply(): id: " + jobId + ", status: " + status + ", text: " + text);
 
       if (isAttached()) {
-         listener.onMessageSent(this, status.ordinal(), text, jobId);
+         this.listener.onMessageSent(this, status.ordinal(), text, jobId);
       }
       else {
          RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onMessageSent(): " +
@@ -1250,7 +1248,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       RCLogger.i(TAG, "onRegisteringEvent(): id: " + jobId);
       state = DeviceState.OFFLINE;
       if (isAttached()) {
-         listener.onConnectivityUpdate(this, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone);
+         this.listener.onConnectivityUpdate(this, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone);
       }
       else {
          RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onConnectivityUpdate() due to new registering");
@@ -1326,18 +1324,15 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       RCLogger.e(TAG, "onErrorEvent(): id: " + jobId + ", connectivityStatus: " + connectivityStatus + ", status: " + status + ", text: " + text);
       stopForeground(true);
       cachedConnectivityStatus = connectivityStatus;
-      if (status == RCClient.ErrorCodes.SUCCESS) {
-      }
-      else {
+      if (status != RCClient.ErrorCodes.SUCCESS) {
          if (isAttached()) {
-            listener.onError(this, status.ordinal(), text);
-         }
-         else {
+            this.listener.onError(this, status.ordinal(), text);
+         } else {
             RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onError(): " +
-                  RCClient.errorText(status));
+                    RCClient.errorText(status));
          }
-
       }
+
    }
 
     /**
@@ -1356,7 +1351,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          state = DeviceState.OFFLINE;
       }
       if (isAttached()) {
-         listener.onConnectivityUpdate(this, connectivityStatus);
+         this.listener.onConnectivityUpdate(this, connectivityStatus);
       }
       else {
          RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onConnectivityUpdate(): " +
@@ -1759,7 +1754,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    public void onDeviceFSMInitializeDone(RCDeviceListener.RCConnectivityStatus connectivityStatus, RCClient.ErrorCodes status, String text)
    {
       if (isAttached()) {
-         listener.onInitialized(this, connectivityStatus, status.ordinal(), text);
+         this.listener.onInitialized(this, connectivityStatus, status.ordinal(), text);
       } else {
          RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onInitialized(): " +
                  RCClient.errorText(status));
@@ -1793,7 +1788,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       }
 
       if (isAttached()) {
-         listener.onReconfigured(this, connectivityStatus, status.ordinal(), text);
+         this.listener.onReconfigured(this, connectivityStatus, status.ordinal(), text);
       }
       else {
          RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onReconfigured(): " +
@@ -1837,7 +1832,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    }
 
    public void registerForPushNotifications(boolean itsUpdate){
-      //try {
       if (storageManagerPreferences != null) {
          boolean neededUpdate = new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(parameters, itsUpdate);
          if (!neededUpdate) {
@@ -1846,14 +1840,29 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
                     RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS)));
          }
       }
-      /*
-      } catch (RCException e) {
-         if (isAttached() && listener != null) {
-            listener.onWarning(this, e.errorCode.ordinal(), e.errorText);
-         }
-         RCLogger.w(TAG, "RegisterForPush  warning: " + e.errorText);
-      }
-      */
+   }
+
+   /**
+    * We need to have push notification parameters saved /cashed
+    * if we need the SDK to work in the background.
+    * This method is used to clear the cache!
+    *
+    * IMPORTANT!!!
+    * Use this method wisely and only after RCDevice() is released.
+
+    */
+   public void clearCache(){
+      //clear push settings
+      final HashMap<String, Object> paramsStorage = new HashMap<String, Object>();
+
+      paramsStorage.put(FcmConfigurationHandler.FCM_ACCOUNT_SID, "");
+      paramsStorage.put(FcmConfigurationHandler.FCM_CLIENT_SID, "");
+      paramsStorage.put(FcmConfigurationHandler.FCM_APPLICATION, "");
+      paramsStorage.put(FcmConfigurationHandler.FCM_BINDING, "");
+
+      StorageManagerPreferences storageManagerPreferences = new StorageManagerPreferences(this);
+      StorageUtils.saveParams(storageManagerPreferences, paramsStorage);
+
    }
 
    // -- FcmMessageListener

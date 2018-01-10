@@ -174,7 +174,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
     private boolean deviceInitialized, deviceReleased, serviceConnected, connectionConnected, connectionDisconnected, deviceStartedListening,
             deviceStoppedListening, deviceConnectivityUpdated, connectionConnecting, connectionDigitSent, connectionCancelled,
             connectionDeclined, connectionError, connectionLocalVideo, connectionRemoteVideo, messageAcked, connectionArrived,
-            messageArrived, onWarningReceived;
+            messageArrived;
 
     private RCDevice.RCDeviceBinder binder;
 
@@ -1066,7 +1066,9 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+
+                device.clearCache();
+
                 HashMap<String, Object> params = new HashMap<String, Object>();
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_CALL, new Intent(RCDevice.ACTION_INCOMING_CALL, null, InstrumentationRegistry.getTargetContext(), CallActivity.class));
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE, new Intent(RCDevice.ACTION_INCOMING_MESSAGE, null, InstrumentationRegistry.getTargetContext(), MessageActivity.class));
@@ -1094,25 +1096,11 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 try {
                     device.initialize(InstrumentationRegistry.getTargetContext(), params, IntegrationTests.this);
                 } catch (RCException e) {
-                    Log.e(TAG, "RCDevice Initialization Error: " + e.errorText);
+                    //error is fired synchronous
+                    assertThat(e.errorCode).isEqualTo(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_FCM_SERVER_KEY_MISSING);
                 }
             }
         });
-
-        await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("onWarningReceived"), equalTo(true));
-        assertThat(context.get("status-code")).isEqualTo(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_FCM_SERVER_KEY_MISSING.ordinal());
-
-        clientHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                resetPushConfiguration();
-                device.release();
-            }
-        });
-
-        await().atMost(SIGNALING_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceReleased"), equalTo(true));
-        assertThat(((RCDevice) context.get("device")).getState()).isEqualTo(RCDevice.DeviceState.OFFLINE);
-        assertThat(context.get("status-code")).isEqualTo(0);
 
         InstrumentationRegistry.getTargetContext().unbindService(this);
     }
@@ -1130,7 +1118,9 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+
+                device.clearCache();
+
                 HashMap<String, Object> params = new HashMap<String, Object>();
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_CALL, new Intent(RCDevice.ACTION_INCOMING_CALL, null, InstrumentationRegistry.getTargetContext(), CallActivity.class));
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE, new Intent(RCDevice.ACTION_INCOMING_MESSAGE, null, InstrumentationRegistry.getTargetContext(), MessageActivity.class));
@@ -1159,25 +1149,11 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 try {
                     device.initialize(InstrumentationRegistry.getTargetContext(), params, IntegrationTests.this);
                 } catch (RCException e) {
-                    Log.e(TAG, "RCDevice Initialization Error: " + e.errorText);
+                    //error is fired synchronous
+                    assertThat(e.errorCode).isEqualTo(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_APPLICATION_NAME_MISSING);
                 }
             }
         });
-
-        await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("onWarningReceived"), equalTo(true));
-        assertThat(context.get("status-code")).isEqualTo(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_APPLICATION_NAME_MISSING.ordinal());
-
-        clientHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                resetPushConfiguration();
-                device.release();
-            }
-        });
-
-        await().atMost(SIGNALING_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceReleased"), equalTo(true));
-        assertThat(((RCDevice) context.get("device")).getState()).isEqualTo(RCDevice.DeviceState.OFFLINE);
-        assertThat(context.get("status-code")).isEqualTo(0);
 
         InstrumentationRegistry.getTargetContext().unbindService(this);
 
@@ -1196,7 +1172,8 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+
+                device.clearCache();
 
                 HashMap<String, Object> params = new HashMap<String, Object>();
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_CALL, new Intent(RCDevice.ACTION_INCOMING_CALL, null, InstrumentationRegistry.getTargetContext(), CallActivity.class));
@@ -1226,25 +1203,11 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 try {
                     device.initialize(InstrumentationRegistry.getTargetContext(), params, IntegrationTests.this);
                 } catch (RCException e) {
-                    Log.e(TAG, "RCDevice Initialization Error: " + e.errorText);
+                    //error is fired synchronous
+                    assertThat(e.errorCode).isEqualTo(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_AUTHENTICATION_FORBIDDEN);
                 }
             }
         });
-
-        await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("onWarningReceived"), equalTo(true));
-        assertThat(context.get("status-code")).isEqualTo(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_AUTHENTICATION_FORBIDDEN.ordinal());
-
-        clientHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                resetPushConfiguration();
-                device.release();
-            }
-        });
-
-        await().atMost(SIGNALING_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceReleased"), equalTo(true));
-        assertThat(((RCDevice) context.get("device")).getState()).isEqualTo(RCDevice.DeviceState.OFFLINE);
-        assertThat(context.get("status-code")).isEqualTo(0);
 
         InstrumentationRegistry.getTargetContext().unbindService(this);
     }
@@ -1262,7 +1225,9 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+
+                device.clearCache();
+
                 HashMap<String, Object> params = new HashMap<String, Object>();
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_CALL, new Intent(RCDevice.ACTION_INCOMING_CALL, null, InstrumentationRegistry.getTargetContext(), CallActivity.class));
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE, new Intent(RCDevice.ACTION_INCOMING_MESSAGE, null, InstrumentationRegistry.getTargetContext(), MessageActivity.class));
@@ -1291,25 +1256,11 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 try {
                     device.initialize(InstrumentationRegistry.getTargetContext(), params, IntegrationTests.this);
                 } catch (RCException e) {
-                    Log.e(TAG, "RCDevice Initialization Error: " + e.errorText);
+                    //error is fired synchronous
+                    assertThat(e.errorCode).isEqualTo(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_INVALID_PUSH_DOMAIN);
                 }
             }
         });
-
-        await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("onWarningReceived"), equalTo(true));
-        assertThat(context.get("status-code")).isEqualTo(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_INVALID_PUSH_DOMAIN.ordinal());
-
-        clientHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                resetPushConfiguration();
-                device.release();
-            }
-        });
-
-        await().atMost(SIGNALING_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceReleased"), equalTo(true));
-        assertThat(((RCDevice) context.get("device")).getState()).isEqualTo(RCDevice.DeviceState.OFFLINE);
-        assertThat(context.get("status-code")).isEqualTo(0);
 
         InstrumentationRegistry.getTargetContext().unbindService(this);
     }
@@ -1327,7 +1278,9 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+
+                device.clearCache();
+
                 HashMap<String, Object> params = new HashMap<String, Object>();
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_CALL, new Intent(RCDevice.ACTION_INCOMING_CALL, null, InstrumentationRegistry.getTargetContext(), CallActivity.class));
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE, new Intent(RCDevice.ACTION_INCOMING_MESSAGE, null, InstrumentationRegistry.getTargetContext(), MessageActivity.class));
@@ -1356,25 +1309,10 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 try {
                     device.initialize(InstrumentationRegistry.getTargetContext(), params, IntegrationTests.this);
                 } catch (RCException e) {
-                    Log.e(TAG, "RCDevice Initialization Error: " + e.errorText);
+                    assertThat(e.errorCode).isEqualTo(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_INVALID_HTTP_DOMAIN);
                 }
             }
         });
-
-        await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("onWarningReceived"), equalTo(true));
-        assertThat(context.get("status-code")).isEqualTo(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_INVALID_HTTP_DOMAIN.ordinal());
-
-        clientHandler.post(new Runnable() {
-            @Override
-            public void run() {
-                resetPushConfiguration();
-                device.release();
-            }
-        });
-
-        await().atMost(SIGNALING_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceReleased"), equalTo(true));
-        assertThat(((RCDevice) context.get("device")).getState()).isEqualTo(RCDevice.DeviceState.OFFLINE);
-        assertThat(context.get("status-code")).isEqualTo(0);
 
         InstrumentationRegistry.getTargetContext().unbindService(this);
     }
@@ -1393,7 +1331,9 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+
+                device.clearCache();
+
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_CALL, new Intent(RCDevice.ACTION_INCOMING_CALL, null, InstrumentationRegistry.getTargetContext(), CallActivity.class));
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE, new Intent(RCDevice.ACTION_INCOMING_MESSAGE, null, InstrumentationRegistry.getTargetContext(), MessageActivity.class));
                 params.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN, SERVER_HOST + ":" + SERVER_PORT);
@@ -1426,14 +1366,13 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
             }
         });
 
-        await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("onWarningReceived"), equalTo(true));
+        await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceInitialized"), equalTo(true));
         assertThat(context.get("status-code")).isEqualTo(RCClient.ErrorCodes.SUCCESS.ordinal());
-        onWarningReceived = false;
 
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+                device.clearCache();
                 device.release();
             }
         });
@@ -1452,13 +1391,15 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                                }
                            });
 
-        await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("onWarningReceived"), equalTo(true));
+        await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceInitialized"), equalTo(true));
         assertThat(context.get("status-code")).isEqualTo(RCClient.ErrorCodes.SUCCESS.ordinal());
 
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+
+                device.clearCache();
+
                 device.release();
             }
         });
@@ -1481,7 +1422,9 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+
+                device.clearCache();
+
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_CALL, new Intent(RCDevice.ACTION_INCOMING_CALL, null, InstrumentationRegistry.getTargetContext(), CallActivity.class));
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE, new Intent(RCDevice.ACTION_INCOMING_MESSAGE, null, InstrumentationRegistry.getTargetContext(), MessageActivity.class));
                 params.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN, SERVER_HOST + ":" + SERVER_PORT);
@@ -1513,11 +1456,10 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 }
             }
         });
-        await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("onWarningReceived"), equalTo(true));
+        await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceInitialized"), equalTo(true));
         assertThat(context.get("status-code")).isEqualTo(RCClient.ErrorCodes.SUCCESS.ordinal());
 
-        onWarningReceived = false;
-
+        deviceInitialized = false;
         //disable
         params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
         clientHandler.post(new Runnable() {
@@ -1531,13 +1473,15 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
             }
         });
 
-        await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("onWarningReceived"), equalTo(true));
+        await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceInitialized"), equalTo(true));
         assertThat(context.get("status-code")).isEqualTo(RCClient.ErrorCodes.SUCCESS.ordinal());
 
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+
+                device.clearCache();
+
                 device.release();
             }
         });
@@ -1560,7 +1504,9 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+
+                device.clearCache();
+
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_CALL, new Intent(RCDevice.ACTION_INCOMING_CALL, null, InstrumentationRegistry.getTargetContext(), CallActivity.class));
                 params.put(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE, new Intent(RCDevice.ACTION_INCOMING_MESSAGE, null, InstrumentationRegistry.getTargetContext(), MessageActivity.class));
                 params.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN, SERVER_HOST + ":" + SERVER_PORT);
@@ -1593,8 +1539,10 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
             }
         });
 
-        await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("onWarningReceived"), equalTo(true));
+        await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceInitialized"), equalTo(true));
         assertThat(context.get("status-code")).isEqualTo(RCClient.ErrorCodes.SUCCESS.ordinal());
+
+        deviceInitialized = false;
 
         //enable
         params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, true);
@@ -1602,20 +1550,23 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
             @Override
             public void run() {
                 try {
-                    device.updateParams(params);
+                    device.reconfigure(params);
                 } catch (Exception e) {
                     Log.e(TAG, "RCDevice update Error: " + e.toString());
                 }
             }
         });
 
-        //if binding is saved its created on server
-        StorageManagerPreferences storageManagerPreferences = new StorageManagerPreferences(InstrumentationRegistry.getTargetContext());
-        assertThat(!TextUtils.isEmpty(storageManagerPreferences.getString(FcmConfigurationHandler.FCM_BINDING,"")));
+        await().atMost(PUSH_TIMEOUT, TimeUnit.SECONDS).until(fieldIn(this).ofType(boolean.class).andWithName("deviceInitialized"), equalTo(true));
+        assertThat(context.get("status-code")).isEqualTo(RCClient.ErrorCodes.SUCCESS.ordinal());
+
+
         clientHandler.post(new Runnable() {
             @Override
             public void run() {
-                resetPushConfiguration();
+
+                device.clearCache();
+
                 device.release();
             }
         });
@@ -1677,6 +1628,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         context.clear();
         context.put("device", device);
         context.put("connectivity-status", connectivityStatus);
+        context.put("status-code", statusCode);
 
         deviceStartedListening = true;
     }
@@ -1684,6 +1636,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
     public void onError(RCDevice device, int statusCode, String statusText)
     {
         Log.i(TAG, "%% onError: " + statusText);
+
 
         context.clear();
         context.put("device", device);
@@ -1702,16 +1655,6 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         context.put("status-code", statusCode);
 
         deviceInitialized = true;
-    }
-
-    public void onWarning(RCDevice device, int statusCode, String statusText)
-    {
-        Log.e(TAG," %% onWarning: " + statusText);
-        context.clear();
-        context.put("device", device);
-        context.put("status-code", statusCode);
-
-        onWarningReceived = true;
     }
 
     public void onReleased(RCDevice device, int statusCode, String statusText)
@@ -2098,20 +2041,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
         });
     }
 
-    //helper method (resets push parameters in storage)
-    private void resetPushConfiguration(){
-        //clear push settings
-        final HashMap<String, Object> paramsStorage = new HashMap<String, Object>();
 
-        paramsStorage.put(FcmConfigurationHandler.FCM_ACCOUNT_SID, "");
-        paramsStorage.put(FcmConfigurationHandler.FCM_CLIENT_SID, "");
-        paramsStorage.put(FcmConfigurationHandler.FCM_APPLICATION, "");
-        paramsStorage.put(FcmConfigurationHandler.FCM_BINDING, "");
-
-        StorageManagerPreferences storageManagerPreferences = new StorageManagerPreferences(InstrumentationRegistry.getTargetContext());
-        StorageUtils.saveParams(storageManagerPreferences, paramsStorage);
-
-    }
 
 /*    public SSLContext getSslContext() {
 
