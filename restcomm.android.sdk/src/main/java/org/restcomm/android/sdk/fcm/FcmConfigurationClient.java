@@ -437,7 +437,7 @@ public class FcmConfigurationClient {
     }
 
     /**
-     * Creates or update binding on server for the given FcmBinding object
+     * Creates or updates binding on server for the given FcmBinding object
      * @param binding - FcmBinding object
      * @param bindingSid - binding sid, if null its creating new binding, otherwise its update
      * @return FcmBinding - object if everything is okay, otherwise null

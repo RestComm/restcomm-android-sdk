@@ -51,7 +51,6 @@ import org.restcomm.android.sdk.util.RegistrationFsmContext;
 import org.restcomm.android.sdk.util.RCException;
 import org.restcomm.android.sdk.util.RCLogger;
 import org.restcomm.android.sdk.util.RCUtils;
-import org.squirrelframework.foundation.fsm.StateMachine;
 import org.squirrelframework.foundation.fsm.StateMachineBuilderFactory;
 import org.squirrelframework.foundation.fsm.UntypedStateMachine;
 import org.squirrelframework.foundation.fsm.UntypedStateMachineBuilder;
@@ -243,10 +242,18 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    public static String ACTION_INCOMING_CALL_ANSWER_VIDEO = "org.restcomm.android.sdk.ACTION_INCOMING_CALL_ANSWER_VIDEO";
 
    /**
-    * Call Activity Intent action sent when a live background call is resumed via Notification Drawer. The Application
+    * Call Activity Intent action sent when a live background call is resumed (either via Notification Drawer or via App opening). The Application
     * should just allow the existing Call Activity to open.
     */
    public static String ACTION_RESUME_CALL = "org.restcomm.android.sdk.ACTION_RESUME_CALL";
+
+   /**
+    * Call Activity Intent action sent when the call activity has been destroyed previously and we want to re-created it. One such case is when the user is in the Call Activity and presses back
+    * to navigate to Messages screen in order for example to send a text message while talking. When back is pressed the  Call Activity is destroyed and so are the webrtc video views. This intent
+    * ensures that any media resources like local and remote video are bound to relevant Activity resources, like views, etc in a seamless manner
+    */
+   //public static String ACTION_RESUME_CALL_DESTROYED_ACTIVITY = "org.restcomm.android.sdk.ACTION_RESUME_CALL_DESTROYED_ACTIVITY";
+
    /**
     * Call Activity Intent action sent when a ringing call was declined via Notification Drawer. You don't have to act on that,
     * but it usually provides a better user experience if you do. If you don't act on that then the Call Activity
@@ -467,7 +474,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    @Override
    public IBinder onBind(Intent intent)
    {
-      Log.i(TAG, "%%  onBind");
+      Log.i(TAG, "%% onBind");
 
       // We want the service to be both 'bound' and 'started' so that it lingers on after all clients have been unbound (I know the application is supposed
       // to call startService(), but let's make an exception in order to keep the API simple and easy to use
@@ -485,7 +492,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    @Override
    public void onRebind(Intent intent)
    {
-      Log.i(TAG, "%%  onRebind");
+      Log.i(TAG, "%% onRebind");
 
       isServiceAttached = true;
    }
@@ -520,7 +527,15 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          release();
       }
 
-      return false;
+      // We need to return true so that the service's onRebind(Intent) method is called later when new clients bind to it
+      // Reason this is important is to make sure isServiceAttached is always consistent and up to date. Consider this case:
+      // 1. User starts call and hits Home button while call is ongoing. At that point call activity is stopped and service
+      //   is unbound (and hence isServiceAttached is set to false). Notice though that it's still running as a foreground service,
+      //   since the call is still live)
+      // 2. User taps on the App launcher and resumes the call by being navigated to the call screen
+      // 3. In the call activity code we are binding to the service, but because onUnbind() returned false previously, no onBind() or onRebind()
+      //   is called and hence isServiceAttached remains false, even though we are attached to it and this messes up the service state.
+      return true;
    }
 
    @Override
@@ -1112,7 +1127,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
        cachedConnectivityStatus = connectivityStatus;
 
-       registrationFsm.fire(RegistrationFsm.FSMEvent.signalingRegistrationEvent, new RegistrationFsmContext(connectivityStatus, status, text));
+       registrationFsm.fire(RegistrationFsm.FSMEvent.signalingInitializationRegistrationEvent, new RegistrationFsmContext(connectivityStatus, status, text));
     }
 
 
@@ -1148,7 +1163,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       RCLogger.i(TAG, "onReconfigureReply(): id: " + jobId + ", connectivityStatus: " + connectivityStatus + ", status: " + status + ", text: " + text);
       cachedConnectivityStatus = connectivityStatus;
 
-      registrationFsm.fire(RegistrationFsm.FSMEvent.signalingRegistrationEvent, new RegistrationFsmContext(connectivityStatus, status, text));
+      registrationFsm.fire(RegistrationFsm.FSMEvent.signalingReconfigureRegistrationEvent, new RegistrationFsmContext(connectivityStatus, status, text));
    }
 
     /**
@@ -1467,17 +1482,16 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
       NotificationCompat.Builder builder = getNotificationBuilder(true);
       builder.setSmallIcon(R.drawable.ic_chat_24dp)
-      .setContentTitle(peerUsername)
-      .setContentText(messageText);
+              .setContentTitle(peerUsername)
+              .setContentText(messageText);
       if (audioManager != null)
          builder.setSound(Uri.parse("android.resource://" + getPackageName() + "/" + audioManager.getResourceIdForKey(ParameterKeys.RESOURCE_SOUND_MESSAGE)))  // R.raw.message_sample)) //
-
-      // Need this to show up as Heads-up Notification
-      .setPriority(NotificationCompat.PRIORITY_HIGH)
-      .setAutoCancel(true)  // cancel notification when user acts on it
-      .setVibrate(notificationVibrationPattern)
-      .setLights(notificationColor, notificationColorPattern[0], notificationColorPattern[1])
-      .setContentIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDefault, PendingIntent.FLAG_ONE_SHOT));
+                 // Need this to show up as Heads-up Notification
+                 .setPriority(NotificationCompat.PRIORITY_HIGH)
+                 .setAutoCancel(true)  // cancel notification when user acts on it
+                 .setVibrate(notificationVibrationPattern)
+                 .setLights(notificationColor, notificationColorPattern[0], notificationColorPattern[1])
+                 .setContentIntent(PendingIntent.getService(getApplicationContext(), 0, serviceIntentDefault, PendingIntent.FLAG_ONE_SHOT));
 
       boolean notificationIdExists = true;
       Integer activeNotificationId = messageNotifications.get(peerUsername);
@@ -1820,24 +1834,30 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       NotificationCompat.Builder builder = getNotificationBuilder(false);
 
       builder.setSmallIcon(R.drawable.ic_phone_in_talk_24dp)
-      .setContentTitle(peerUsername)
-      .setContentText("Tap to return to call")
-      // Notice that for some reason using FLAG_UPDATE_CURRENT doesn't work. The problem is that the intent creates a new Call Activity instead of
-      // taking us to the existing.
-      .addAction(resId, muteString, PendingIntent.getService(getApplicationContext(), 0, serviceIntentMute, PendingIntent.FLAG_CANCEL_CURRENT))
-      .addAction(R.drawable.ic_call_end_24dp, "Hang up", PendingIntent.getService(getApplicationContext(), 0, serviceIntentDisconnect, PendingIntent.FLAG_CANCEL_CURRENT))
-      .setContentIntent(PendingIntent.getActivity(getApplicationContext(), 0, callIntent, PendingIntent.FLAG_CANCEL_CURRENT));
+              .setContentTitle(peerUsername)
+              .setContentText("Tap to return to call")
+              // Notice that for some reason using FLAG_UPDATE_CURRENT doesn't work. The problem is that the intent creates a new Call Activity instead of
+              // taking us to the existing.
+              .addAction(resId, muteString, PendingIntent.getService(getApplicationContext(), 0, serviceIntentMute, PendingIntent.FLAG_CANCEL_CURRENT))
+              .addAction(R.drawable.ic_call_end_24dp, "Hang up", PendingIntent.getService(getApplicationContext(), 0, serviceIntentDisconnect, PendingIntent.FLAG_CANCEL_CURRENT))
+              .setContentIntent(PendingIntent.getActivity(getApplicationContext(), 0, callIntent, PendingIntent.FLAG_CANCEL_CURRENT));
 
       startForeground(ONCALL_NOTIFICATION_ID, builder.build());
    }
 
-   public void registerForPushNotifications(boolean itsUpdate){
+   public void registerForPushNotifications(boolean isUpdate)
+   {
       if (storageManagerPreferences != null) {
-         boolean neededUpdate = new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(parameters, itsUpdate);
+         boolean neededUpdate = new FcmConfigurationHandler(storageManagerPreferences, this).registerForPush(parameters, isUpdate);
          if (!neededUpdate) {
             // if no update is needed, we need to notify FSM right away that push registration is not needed, so that we don't get stuck here
-            registrationFsm.fire(RegistrationFsm.FSMEvent.pushRegistrationNotNeededEvent, new RegistrationFsmContext(cachedConnectivityStatus,
-                    RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS)));
+            if (!isUpdate) {
+               registrationFsm.fire(RegistrationFsm.FSMEvent.pushInitializationRegistrationNotNeededEvent, new RegistrationFsmContext(cachedConnectivityStatus,
+                       RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS)));
+            } else {
+               registrationFsm.fire(RegistrationFsm.FSMEvent.pushReconfigureRegistrationNotNeededEvent, new RegistrationFsmContext(cachedConnectivityStatus,
+                       RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS)));
+            }
          }
       }
    }
@@ -1846,12 +1866,12 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     * We need to have push notification parameters saved /cashed
     * if we need the SDK to work in the background.
     * This method is used to clear the cache!
-    *
+    * <p>
     * IMPORTANT!!!
     * Use this method wisely and only after RCDevice() is released.
-
     */
-   public void clearCache(){
+   public void clearCache()
+   {
       //clear push settings
       final HashMap<String, Object> paramsStorage = new HashMap<String, Object>();
 
@@ -1862,15 +1882,19 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
       StorageManagerPreferences storageManagerPreferences = new StorageManagerPreferences(this);
       StorageUtils.saveParams(storageManagerPreferences, paramsStorage);
-
    }
 
    // -- FcmMessageListener
     @Override
-    public void onRegisteredForPush(RCClient.ErrorCodes status, String text) {
-       RCLogger.i(TAG, "onRegisteredForPush(): status: " + status + ", text: " + text);
+    public void onRegisteredForPush(RCClient.ErrorCodes status, String text, boolean isUpdate) {
+       RCLogger.i(TAG, "onRegisteredForPush(): status: " + status + ", text: " + text + ", update: " + isUpdate);
 
-       registrationFsm.fire(RegistrationFsm.FSMEvent.pushRegistrationEvent, new RegistrationFsmContext(cachedConnectivityStatus, status, text));
+       if (!isUpdate) {
+          registrationFsm.fire(RegistrationFsm.FSMEvent.pushInitializationRegistrationEvent, new RegistrationFsmContext(cachedConnectivityStatus, status, text));
+       }
+       else {
+          registrationFsm.fire(RegistrationFsm.FSMEvent.pushReconfigureRegistrationEvent, new RegistrationFsmContext(cachedConnectivityStatus, status, text));
+       }
     }
 
     // ------ Helpers
@@ -1995,27 +2019,48 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       UntypedStateMachineBuilder fsmBuilder = StateMachineBuilderFactory.create(RegistrationFsm.class, RegistrationFsm.RCDeviceFSMListener.class);
 
       // Seems 'fromAny' doesn't work as expected, so sadly we need to add more states. Let's leave this around though in case we can improve in the future
-      //fsmBuilder.transit().fromAny().to(RegistrationFsm.FSMState.signalingReadyState).on(RegistrationFsm.FSMEvent.signalingRegistrationEvent).callMethod("toSignalingInitializationReady");
-      //fsmBuilder.transit().fromAny().to(RegistrationFsm.FSMState.pushReadyState).on(RegistrationFsm.FSMEvent.pushRegistrationEvent).callMethod("toPushInitializationReady");
+      //fsmBuilder.transit().fromAny().to(RegistrationFsm.FSMState.signalingReadyState).on(RegistrationFsm.FSMEvent.signalingInitializationRegistrationEvent).callMethod("toSignalingInitializationReady");
+      //fsmBuilder.transit().fromAny().to(RegistrationFsm.FSMState.pushReadyState).on(RegistrationFsm.FSMEvent.pushInitializationRegistrationEvent).callMethod("toPushInitializationReady");
 
       // Set up the state transitions of the FSM and associate methods to handle them
-      // transitions to signaling ready
+      // transitions to signaling ready, either during initialization or reconfiguration
       fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.initialState).to(RegistrationFsm.FSMState.signalingReadyState)
-              .on(RegistrationFsm.FSMEvent.signalingRegistrationEvent).callMethod("toSignalingInitializationReady");
+              .on(RegistrationFsm.FSMEvent.signalingInitializationRegistrationEvent).callMethod("toSignalingInitializationReady");
       fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.pushReadyState).to(RegistrationFsm.FSMState.signalingReadyState)
-              .on(RegistrationFsm.FSMEvent.signalingRegistrationEvent).callMethod("toSignalingInitializationReady");
+              .on(RegistrationFsm.FSMEvent.signalingInitializationRegistrationEvent).callMethod("toSignalingInitializationReady");
 
-      // transitions to push ready when push configuration really happens asynchronously
-      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.initialState).to(RegistrationFsm.FSMState.pushReadyState)
-              .on(RegistrationFsm.FSMEvent.pushRegistrationEvent).callMethod("toPushInitializationReady");
-      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.signalingReadyState).to(RegistrationFsm.FSMState.pushReadyState)
-              .on(RegistrationFsm.FSMEvent.pushRegistrationEvent).callMethod("toPushInitializationReady");
+      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.initialState).to(RegistrationFsm.FSMState.signalingReadyState)
+              .on(RegistrationFsm.FSMEvent.signalingReconfigureRegistrationEvent).callMethod("toSignalingReconfigurationReady");
+      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.pushReadyState).to(RegistrationFsm.FSMState.signalingReadyState)
+              .on(RegistrationFsm.FSMEvent.signalingReconfigureRegistrationEvent).callMethod("toSignalingReconfigurationReady");
 
-      // transitions to push ready when push configuration is not necessary because server already up to date
+
+      // transitions to push ready when push configuration really happens asynchronously,
+      // either during initialization or reconfiguration
       fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.initialState).to(RegistrationFsm.FSMState.pushReadyState)
-              .on(RegistrationFsm.FSMEvent.pushRegistrationNotNeededEvent).callMethod("toPushInitializationReady");
+              .on(RegistrationFsm.FSMEvent.pushInitializationRegistrationEvent).callMethod("toPushInitializationReady");
       fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.signalingReadyState).to(RegistrationFsm.FSMState.pushReadyState)
-              .on(RegistrationFsm.FSMEvent.pushRegistrationNotNeededEvent).callMethod("toPushInitializationReady");
+              .on(RegistrationFsm.FSMEvent.pushInitializationRegistrationEvent).callMethod("toPushInitializationReady");
+
+      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.initialState).to(RegistrationFsm.FSMState.pushReadyState)
+              .on(RegistrationFsm.FSMEvent.pushReconfigureRegistrationEvent).callMethod("toPushReconfigurationReady");
+      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.signalingReadyState).to(RegistrationFsm.FSMState.pushReadyState)
+              .on(RegistrationFsm.FSMEvent.pushReconfigureRegistrationEvent).callMethod("toPushReconfigurationReady");
+
+
+
+      // transitions to push ready when push configuration is not necessary because server already up to date,
+      // either during initialization or reconfiguration
+      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.initialState).to(RegistrationFsm.FSMState.pushReadyState)
+              .on(RegistrationFsm.FSMEvent.pushInitializationRegistrationNotNeededEvent).callMethod("toPushInitializationReady");
+      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.signalingReadyState).to(RegistrationFsm.FSMState.pushReadyState)
+              .on(RegistrationFsm.FSMEvent.pushInitializationRegistrationNotNeededEvent).callMethod("toPushInitializationReady");
+
+      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.initialState).to(RegistrationFsm.FSMState.pushReadyState)
+              .on(RegistrationFsm.FSMEvent.pushReconfigureRegistrationNotNeededEvent).callMethod("toPushReconfigurationReady");
+      fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.signalingReadyState).to(RegistrationFsm.FSMState.pushReadyState)
+              .on(RegistrationFsm.FSMEvent.pushReconfigureRegistrationNotNeededEvent).callMethod("toPushReconfigurationReady");
+
 
       // transitions back to initial state
       fsmBuilder.externalTransition().from(RegistrationFsm.FSMState.signalingReadyState).to(RegistrationFsm.FSMState.initialState)
@@ -2026,6 +2071,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       HashMap<String, String> map = new HashMap<>();
       // notice the extraParams argument is passed to the RegistrationFsm constructor
       registrationFsm = fsmBuilder.newStateMachine(RegistrationFsm.FSMState.initialState, this);
+/*
       registrationFsm.addStateMachineListener(new StateMachine.StateMachineListener<UntypedStateMachine, Object, Object, Object>() {
          @Override
          public void stateMachineEvent(StateMachine.StateMachineEvent<UntypedStateMachine, Object, Object, Object> event)
@@ -2033,6 +2079,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
             RCLogger.i(TAG, "stateMachineEvent():" + event);
          }
       });
+*/
    }
 
    private void stopRegistrationFsm()

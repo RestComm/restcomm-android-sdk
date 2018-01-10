@@ -52,12 +52,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.ListIterator;
+import java.util.Locale;
 
-import org.json.JSONException;
-import org.json.JSONObject;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCConnectionListener;
 import org.restcomm.android.sdk.RCDevice;
+import org.restcomm.android.sdk.util.PercentFrameLayout;
 import org.restcomm.android.sdk.util.RCException;
 
 
@@ -80,6 +80,8 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
     int secondsElapsed = 0;
     private final int PERMISSION_REQUEST_DANGEROUS = 1;
     private AlertDialog alertDialog;
+    private long timeConnected = 0;
+    public static final String LIVE_CALL_PAUSE_TIME = "live-call-pause-time";
     private boolean callOutgoing = true;
 
     ImageButton btnMuteAudio, btnMuteVideo;
@@ -165,9 +167,18 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         super.onPause();
         Log.i(TAG, "%% onPause");
 
+        // TODO: Issue #380: once we figure out the issue with the backgrounding we need to uncomment this
+        // I don't think we need this, but let's keep it around until we 're done with pausing video view functionality
+        /*
         if (connection != null && connection.getState() == RCConnection.ConnectionState.CONNECTED) {
             connection.pauseVideo();
         }
+        */
+
+        if (connection != null && connection.getState() == RCConnection.ConnectionState.CONNECTED) {
+            connection.detachVideo();
+        }
+
     }
 
     @Override
@@ -179,7 +190,7 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
        // User requested to disconnect via foreground service notification. At this point the service has already
        // disconnected the call, so let's close the call activity
        if (getIntent().getAction().equals(RCDevice.ACTION_CALL_DISCONNECT)) {
-          Intent intent = new Intent(this, MainActivity.class);
+           Intent intent = new Intent(this, MainActivity.class);
            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
            intent.setAction(MainActivity.ACTION_DISCONNECTED_BACKGROUND);
            startActivity(intent);
@@ -213,9 +224,14 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         // The activity has become visible (it is now "resumed").
         Log.i(TAG, "%% onResume");
         if (connection != null && connection.getState() == RCConnection.ConnectionState.CONNECTED) {
-           connection.resumeVideo();
+           // update the intent action if there's an ongoing call that we need to resume so that we provide a hint
+           // to handleCall() to do proper handling
+           getIntent().setAction(RCDevice.ACTION_RESUME_CALL);
+           //connection.resumeVideo();
+            //connection.reattachVideo((PercentFrameLayout)findViewById(R.id.local_video_layout),
+            //        (PercentFrameLayout)findViewById(R.id.remote_video_layout));
 
-           // Now that we can mute/umnute via notification, we need to update the UI accordingly if there was a change
+            // Now that we can mute/umnute via notification, we need to update the UI accordingly if there was a change
            // while we were not in the foreground
            muteAudio = connection.isAudioMuted();
            if (!muteAudio) {
@@ -247,8 +263,10 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
                 // incoming established or outgoing any state (pending, connecting, connected)
                 if (connection.getState() == RCConnection.ConnectionState.CONNECTED) {
                     // If user leaves activity while on call we need to stop local video
-                    //connection.pauseVideo();
-                    connection.disconnect();
+                    ///connection.disconnect();
+
+                    // TODO: Issue #380: once we figure out the issue with the backgrounding we need to uncomment this
+                    //connection.detachVideo();
                 }
                 else {
                     connection = null;
@@ -289,7 +307,55 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         serviceBound = false;
     }
 
-    private void handleCall(Intent intent) {
+    private void handleCall(Intent intent)
+    {
+        if (intent.getAction().equals(RCDevice.ACTION_RESUME_CALL)) {
+            String text;
+            connection = device.getLiveConnection();
+            if (connection != null) {
+                connection.setConnectionListener(this);
+
+                if (connection.isIncoming()) {
+                    // Incoming
+                    if (connection.getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) {
+                        text = "Video Call from ";
+                    } else {
+                        text = "Audio Call from ";
+                    }
+                } else {
+                    // Outgoing
+                    if (connection.getLocalMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) {
+                        text = "Video Calling ";
+                    } else {
+                        text = "Audio Calling ";
+                    }
+                }
+
+                lblCall.setText(text + connection.getPeer().replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
+                lblStatus.setText("Connected");
+                connection.reattachVideo((PercentFrameLayout) findViewById(R.id.local_video_layout),
+                        (PercentFrameLayout) findViewById(R.id.remote_video_layout));
+
+                // Get the time when we paused call so that now that we are resuming we can show correct time
+                long difference = (System.currentTimeMillis() - prefs.getLong(LIVE_CALL_PAUSE_TIME, 0));
+                int duration = (int)(difference/1000);
+                startTimer(duration);
+
+                // Hide answering buttons and show mute & keypad
+                btnAnswer.setVisibility(View.INVISIBLE);
+                btnAnswerAudio.setVisibility(View.INVISIBLE);
+                btnMuteAudio.setVisibility(View.VISIBLE);
+                btnMuteVideo.setVisibility(View.VISIBLE);
+                btnKeypad.setVisibility(View.VISIBLE);
+                lblTimer.setVisibility(View.VISIBLE);
+            }
+            else {
+                showOkAlert("Resume ongoing call", "No call to resume");
+            }
+
+            return;
+        }
+
         if (connection != null) {
             return;
         }
@@ -310,8 +376,8 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
             connectParams = new HashMap<String, Object>();
             connectParams.put(RCConnection.ParameterKeys.CONNECTION_PEER, intent.getStringExtra(RCDevice.EXTRA_DID));
             connectParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, intent.getBooleanExtra(RCDevice.EXTRA_VIDEO_ENABLED, false));
-            connectParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
-            connectParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
+            connectParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, (PercentFrameLayout)findViewById(R.id.local_video_layout));
+            connectParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, (PercentFrameLayout)findViewById(R.id.remote_video_layout));
             // by default we use VP8 for video as it tends to be more adopted, but you can override that and specify VP9 or H264 as follows:
             connectParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC,
                   audioCodecString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, ""))
@@ -388,8 +454,8 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
 
                     acceptParams = new HashMap<String, Object>();
                     acceptParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, answerVideo);
-                    acceptParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
-                    acceptParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
+                    acceptParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, (PercentFrameLayout)findViewById(R.id.local_video_layout));
+                    acceptParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, (PercentFrameLayout)findViewById(R.id.remote_video_layout));
                     acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC,
                             audioCodecString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, ""))
                     );
@@ -420,46 +486,6 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
                 Log.w(TAG, "Warning: pendingConnection is null, probably reusing past intent");
             }
         }
-        /* TODO: Issue #380: once we figure out the issue with the backgrounding we need to uncomment this
-        if (intent.getAction().equals(RCDevice.LIVE_CALL)) {
-            String text;
-            connection = device.getLiveConnection();
-            connection.setConnectionListener(this);
-
-            if (connection.isIncoming()) {
-                // Incoming
-                if (connection.getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) {
-                    text = "Video Call from ";
-                }
-                else {
-                    text = "Audio Call from ";
-                }
-            }
-            else {
-                // Outgoing
-                if (connection.getLocalMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) {
-                    text = "Video Calling ";
-                }
-                else {
-                    text = "Audio Calling ";
-                }
-            }
-
-            lblCall.setText(text + connection.getPeer().replaceAll(".*?sip:", "").replaceAll("@.*$", ""));
-            lblStatus.setText("Connected");
-            connection.resumeVideo((PercentFrameLayout)findViewById(R.id.local_video_layout),
-                    (PercentFrameLayout)findViewById(R.id.remote_video_layout));
-
-            // Hide answering buttons and show mute & keypad
-            btnAnswer.setVisibility(View.INVISIBLE);
-            btnAnswerAudio.setVisibility(View.INVISIBLE);
-            btnMuteAudio.setVisibility(View.VISIBLE);
-            btnMuteVideo.setVisibility(View.VISIBLE);
-            btnKeypad.setVisibility(View.VISIBLE);
-
-            lblTimer.setVisibility(View.VISIBLE);
-        }
-        */
     }
 
     // UI Events
@@ -490,8 +516,8 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
 
                 acceptParams = new HashMap<String, Object>();
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, true);
-                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
-                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
+                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, (PercentFrameLayout)findViewById(R.id.local_video_layout));
+                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, (PercentFrameLayout)findViewById(R.id.remote_video_layout));
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC,
                       audioCodecString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, ""))
                 );
@@ -520,8 +546,8 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
 
                 acceptParams = new HashMap<String, Object>();
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, false);
-                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, findViewById(R.id.local_video_layout));
-                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, findViewById(R.id.remote_video_layout));
+                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_LOCAL_VIDEO, (PercentFrameLayout)findViewById(R.id.local_video_layout));
+                acceptParams.put(RCConnection.ParameterKeys.CONNECTION_REMOTE_VIDEO, (PercentFrameLayout)findViewById(R.id.remote_video_layout));
                 acceptParams.put(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC,
                       audioCodecString2Enum(prefs.getString(RCConnection.ParameterKeys.CONNECTION_PREFERRED_AUDIO_CODEC, ""))
                 );
@@ -557,12 +583,10 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
                 muteVideo = !muteVideo;
                 if (muteVideo) {
                     btnMuteVideo.setImageResource(R.drawable.video_muted);
-                    //connection.off();
-                    //connection.pauseVideo();
+                    //connection.detachVideo();
                 } else {
                     btnMuteVideo.setImageResource(R.drawable.video_unmuted);
-                    //connection.on((PercentFrameLayout)findViewById(R.id.local_video_layout), (PercentFrameLayout)findViewById(R.id.remote_video_layout));
-                    //connection.resumeVideo((PercentFrameLayout)findViewById(R.id.local_video_layout), (PercentFrameLayout)findViewById(R.id.remote_video_layout));
+                    //connection.reattachVideo((PercentFrameLayout)findViewById(R.id.local_video_layout), (PercentFrameLayout)findViewById(R.id.remote_video_layout));
                 }
 
                 connection.setVideoMuted(muteVideo);
@@ -607,7 +631,13 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         btnKeypad.setVisibility(View.VISIBLE);
 
         lblTimer.setVisibility(View.VISIBLE);
-        startTimer();
+
+        // Save time we got connected in case the call is paused and we need to resume it
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putLong(LIVE_CALL_PAUSE_TIME, System.currentTimeMillis());
+        editor.apply();
+
+        startTimer(0);
 
         // reset to no mute at beggining of new call
         muteAudio = false;
@@ -820,7 +850,8 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         }
     }
 
-    public void startTimer() {
+    public void startTimer(int startSeconds) {
+        secondsElapsed = startSeconds;
         String time = String.format("%02d:%02d:%02d", secondsElapsed / 3600, (secondsElapsed % 3600) / 60, secondsElapsed % 60);
         lblTimer.setText(time);
         secondsElapsed++;
@@ -830,7 +861,7 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         Runnable timerRunnable = new Runnable() {
             @Override
             public void run() {
-                startTimer();
+                startTimer(secondsElapsed);
             }
         };
         timerHandler.postDelayed(timerRunnable, 1000);

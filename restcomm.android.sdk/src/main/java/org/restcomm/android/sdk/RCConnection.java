@@ -76,9 +76,8 @@ import org.restcomm.android.sdk.MediaClient.util.IceServerFetcher;
 import org.restcomm.android.sdk.util.PercentFrameLayout;
 import org.restcomm.android.sdk.util.RCLogger;
 import org.webrtc.Camera1Enumerator;
-import org.webrtc.Camera2Enumerator;
 import org.webrtc.CameraEnumerator;
-import org.webrtc.EglBase;
+//import org.webrtc.EglBase;
 import org.webrtc.FileVideoCapturer;
 import org.webrtc.IceCandidate;
 import org.webrtc.Logging;
@@ -89,7 +88,7 @@ import org.webrtc.StatsReport;
 import org.webrtc.SurfaceViewRenderer;
 import org.webrtc.RendererCommon.ScalingType;
 import org.webrtc.VideoCapturer;
-import org.webrtc.VideoTrack;
+
 
 /**
  * RCConnection represents a call. An RCConnection can be either incoming or outgoing. RCConnections are not created by themselves but
@@ -361,7 +360,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private SignalingClient signalingClient;
    private String incomingCallSdp = "";
    private String peer;
-   private EglBase rootEglBase;
+   //private EglBase rootEglBase;
    private boolean localVideoReceived = false;
    private boolean remoteVideoReceived = false;
    private SurfaceViewRenderer localRender;
@@ -1471,6 +1470,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    }
    */
 
+   /*
    // Pause webrtc video, intended for allowing a call to transition to the background where we only want audio enabled
    public void pauseVideo()
    {
@@ -1480,7 +1480,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
    }
 
-   // Resume webrtc video, intented for allowing a call to transition from the background into the foreground where we want video enabled (it it was enabled to start with)
+   // Resume webrtc video, intended for allowing a call to transition from the background into the foreground where we want video enabled (it it was enabled to start with)
    public void resumeVideo()
    {
       if (localMediaType == ConnectionMediaType.AUDIO_VIDEO) {
@@ -1488,19 +1488,23 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          setVideoMuted(videoExpectedMuted);
       }
    }
+   */
 
-   /*
+   /**/
    // TODO: Issue #380: We should uncomment this once we figure out https://groups.google.com/forum/#!searchin/discuss-webrtc/tsakiridis$20android%7Csort:relevance/discuss-webrtc/XE2Ok67B1Ks/RrqmfZh9AQAJ
    // Implementation above is meant to be a temporary solution, as it doesn't allow for the call Activity to be destroyed and then re-created
-   public void pauseVideo()
+   public void detachVideo()
    {
+      RCLogger.i(TAG, "detachVideo()");
       // TODO: handle case of audio only call
       localRender.setVisibility(View.INVISIBLE);
       remoteRender.setVisibility(View.INVISIBLE);
-      peerConnectionClient.pauseVideo();
+      peerConnectionClient.detachVideo();
    }
-   public void resumeVideo(final PercentFrameLayout localRenderLayout, final PercentFrameLayout remoteRenderLayout)
+
+   public void reattachVideo(final PercentFrameLayout localRenderLayout, final PercentFrameLayout remoteRenderLayout)
    {
+      RCLogger.i(TAG, "reattachVideo()");
       boolean videoEnabled = false;
       if ((isIncoming() && getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) ||
               (!isIncoming() && getLocalMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO))  {
@@ -1508,20 +1512,23 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
 
       initializeVideo(videoEnabled, localRenderLayout, remoteRenderLayout);
-      peerConnectionClient.resumeVideo(localRender, remoteRender);
+      peerConnectionClient.reattachVideo(localRender, remoteRender);
    }
-   */
+   /**/
 
    // Callback fired when video is paused after call to pauseVideo()
    // IMPORTANT: runs in media thread, need to post on Main thread
-   public void onVideoPaused()
+   public void onVideoDetached()
    {
       Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
          @Override
          public void run()
          {
-            RCLogger.i(TAG, "onVideoPaused");
+            RCLogger.i(TAG, "onVideoDetached");
+            ///localRender.setVisibility(View.INVISIBLE);
+            ///remoteRender.setVisibility(View.INVISIBLE);
+
             releaseVideo();
          }
       };
@@ -1530,14 +1537,14 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    // Callback fired when video is resumed after call to resumeVideo()
    // IMPORTANT: runs in media thread, need to post on Main thread
-   public void onVideoResumed()
+   public void onVideoReattached()
    {
       Handler mainHandler = new Handler(device.getMainLooper());
       Runnable myRunnable = new Runnable() {
          @Override
          public void run()
          {
-            RCLogger.i(TAG, "onVideoResumed");
+            RCLogger.i(TAG, "onVideoReattached");
             updateVideoView(VideoViewState.ICE_CONNECTED);
 
             /*
@@ -1574,13 +1581,16 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       this.localRenderLayout = localRenderLayout;
       this.remoteRenderLayout = remoteRenderLayout;
 
-      rootEglBase = EglBase.create();
+      // Create peer connection client
+      //peerConnectionClient = new PeerConnectionClient();
+
+      //rootEglBase = EglBase.create();
       localRender = (SurfaceViewRenderer)localRenderLayout.getChildAt(0);
       remoteRender = (SurfaceViewRenderer)remoteRenderLayout.getChildAt(0);
 
-      localRender.init(rootEglBase.getEglBaseContext(), null);
+      localRender.init(peerConnectionClient.getRenderContext(), null);
       localRender.setZOrderMediaOverlay(true);
-      remoteRender.init(rootEglBase.getEglBaseContext(), null);
+      remoteRender.init(peerConnectionClient.getRenderContext(), null);
       updateVideoView(VideoViewState.NONE);
    }
 
@@ -1708,6 +1718,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          localMediaType = ConnectionMediaType.AUDIO;
       }
 
+      // Create peer connection client
+      peerConnectionClient = new PeerConnectionClient();
+
       if (localRenderLayout != null && remoteRenderLayout != null) {
          initializeVideo(videoEnabled, localRenderLayout, remoteRenderLayout);
       }
@@ -1740,6 +1753,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
             false,  // disable builtin AEC
             false,  // disable builtin AGC
             false,  // disable builtin NS
+            false,
             false);  // enable level control
 
       createPeerConnectionFactory();
@@ -1747,6 +1761,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
 
    private void updateVideoView(VideoViewState state)
    {
+      RCLogger.i(TAG, "updateVideoView(), state: " + state);
       // only if both local and remote views for video have been provided do we want to go ahead
       // and update the video views
       if (this.localRenderLayout == null && this.remoteRenderLayout == null) {
@@ -1843,10 +1858,12 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          remoteRenderLayout = null;
       }
 
+      /*
       if (rootEglBase != null) {
          rootEglBase.release();
          rootEglBase = null;
       }
+      */
    }
 
    /*
@@ -1869,10 +1886,10 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          public void run()
          {
             RCLogger.i(TAG, "createPeerConnectionFactory");
-            if (peerConnectionClient == null) {
+            if (peerConnectionClient != null) {
                final long delta = System.currentTimeMillis() - callStartedTimeMs;
                RCLogger.d(TAG, "Creating peer connection factory, delay=" + delta + "ms");
-               peerConnectionClient = PeerConnectionClient.getInstance();
+               //peerConnectionClient = PeerConnectionClient.getInstance();
                peerConnectionClient.createPeerConnectionFactory(device,
                      peerConnectionParameters,
                      connection);
@@ -2335,8 +2352,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
 
       logAndToast("Creating peer connection, delay=" + delta + "ms");
-      peerConnectionClient.createPeerConnection(rootEglBase != null ? rootEglBase.getEglBaseContext(): null,
-            localRender, remoteRender, videoCapturer, signalingParameters);
+      peerConnectionClient.createPeerConnection(localRender, remoteRender, videoCapturer, signalingParameters);
 
       if (signalingParameters.initiator) {
          logAndToast("Creating OFFER...");

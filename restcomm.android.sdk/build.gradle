@@ -60,6 +60,10 @@ android {
     lintOptions {
         abortOnError false
     }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
 gradle.taskGraph.whenReady { taskGraph ->
@@ -94,7 +98,8 @@ repositories {
 
 dependencies {
     //compile project(':libwebrtc')
-    compile 'org.restcomm.android:libwebrtc:1.0.0-beta5-16765@aar'
+    compile 'org.webrtc:google-webrtc:1.0.21217'
+    //compile 'org.restcomm.android:libwebrtc:1.0.0-beta5-16765@aar'
     //compile files('libs/libjingle_peerconnection_java.jar')
     compile 'com.android.support:appcompat-v7:26.1.0'
     // for RCDevice FSM
@@ -112,7 +117,6 @@ dependencies {
     compile 'com.madgag.spongycastle:pkix:1.54.0.0'
     // Required for local unit tests (JUnit 4 framework)
     //testCompile 'junit:junit:4.12'
-
     // Even though sdk doesn't directly use dnsjava, we need it for android-jain-sip-ext. The reason is that for now android-jain-sip-ext declares its dependency to
     // dnsjava as 'provided', because in non android environment it is provided already (i.e. sip servlets). Until we fix the android-jain-sip-ext .pom let's leave it
     // at that

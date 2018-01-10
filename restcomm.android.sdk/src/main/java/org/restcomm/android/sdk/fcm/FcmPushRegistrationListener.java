@@ -29,7 +29,9 @@ public interface FcmPushRegistrationListener {
      *   It will be called when registering for push notification is completed.
      *   @param status Error Code - if different than SUCCESS text will be filled with error
      *   @param text Error text
+     *   @param isUpdate is this push registration triggered as a resule of
+     *                   RCDevice.initialize (false) or RCDevice.reconfigure (true)
     **/
-    void onRegisteredForPush(RCClient.ErrorCodes status, String text);
+    void onRegisteredForPush(RCClient.ErrorCodes status, String text, boolean isUpdate);
 
 }

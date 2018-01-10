@@ -64,9 +64,12 @@ public class RegistrationFsm extends AbstractUntypedStateMachine {
 
     // Define FSM events, notice that each of those events are valid both when initializing RCDevice as well as when reconfiguring it
     public enum FSMEvent {
-        signalingRegistrationEvent,  // signaling facilities registration finished
-        pushRegistrationEvent,  // push registered finished
-        pushRegistrationNotNeededEvent,  // push registration isn't needed (it's already up to date)
+        signalingInitializationRegistrationEvent,  // signaling facilities registration finished
+        pushInitializationRegistrationEvent,  // push registered finished
+        pushInitializationRegistrationNotNeededEvent,  // push registration isn't needed (it's already up to date)
+        signalingReconfigureRegistrationEvent,
+        pushReconfigureRegistrationEvent,
+        pushReconfigureRegistrationNotNeededEvent,
         resetStateMachine,  // reset state machine to original state
     }
 
@@ -78,6 +81,15 @@ public class RegistrationFsm extends AbstractUntypedStateMachine {
         finishedState,
     }
 
+    // Define FSM transaction type, which means which category the set of actions to be executed belong to?
+    // Initialization i.e. start with RCDevice.initialize(), or reconfiguration i.e. started with RCDevice.reconfigure()?
+/*
+    public enum FSMTransactionType {
+        fsmTransactionInitialization,
+        fsmTransactionReconfiguration,
+    }
+*/
+
     RegistrationFsm(RCDeviceFSMListener listener)
     {
         this.listener = listener;
@@ -86,13 +98,15 @@ public class RegistrationFsm extends AbstractUntypedStateMachine {
     // keep internal context as we need to keep data around between state changes
     private RegistrationFsmContext savedContext;
     private RCDeviceFSMListener listener;
+    //private FSMTransactionType transactionType;
 
     // Methods relevant to RCDevice.initialize()
     public void toPushInitializationReady(FSMState from, FSMState to, FSMEvent event, RegistrationFsmContext context)
     {
-        RCLogger.i(TAG, event + ": " + from + " -> " + to + ", context '" + context + "'");
+        RCLogger.i(TAG, "toPushInitializationReady, " + event + ": " + from + " -> " + to + ", context '" + context + "'");
 
         if (from == FSMState.initialState) {
+            //transactionType = FSMTransactionType.fsmTransactionInitialization;
             // we haven't finished signaling registration; let's keep the state around so that we can use it when signaling is finished
             savedContext = context;
         } else if (from == FSMState.signalingReadyState) {
@@ -117,9 +131,10 @@ public class RegistrationFsm extends AbstractUntypedStateMachine {
 
     public void toSignalingInitializationReady(FSMState from, FSMState to, FSMEvent event, RegistrationFsmContext context)
     {
-        RCLogger.i(TAG, event + ": " + from + " -> " + to + ", context '" + context + "'");
+        RCLogger.i(TAG, "toSignalingInitializationReady, " + event + ": " + from + " -> " + to + ", context '" + context + "'");
 
         if (from == FSMState.initialState) {
+            //transactionType = FSMTransactionType.fsmTransactionInitialization;
             // we haven't finished signaling registration; let's keep the state around so that we can use it when signaling is finished
             savedContext = context;
         } else if (from == FSMState.pushReadyState) {
@@ -150,9 +165,10 @@ public class RegistrationFsm extends AbstractUntypedStateMachine {
     // Methods relevant to RCDevice.reconfigure()
     public void toPushReconfigurationReady(FSMState from, FSMState to, FSMEvent event, RegistrationFsmContext context)
     {
-        RCLogger.i(TAG, event + ": " + from + " -> " + to + ", context '" + context + "'");
+        RCLogger.i(TAG, "toPushReconfigurationReady, " + event + ": " + from + " -> " + to + ", context '" + context + "'");
 
         if (from == FSMState.initialState) {
+            //transactionType = FSMTransactionType.fsmTransactionReconfiguration;
             // we haven't finished signaling registration; let's keep the state around so that we can use it when signaling is finished
             savedContext = context;
         } else if (from == FSMState.signalingReadyState) {
@@ -174,9 +190,10 @@ public class RegistrationFsm extends AbstractUntypedStateMachine {
 
     public void toSignalingReconfigurationReady(FSMState from, FSMState to, FSMEvent event, RegistrationFsmContext context)
     {
-        RCLogger.i(TAG, event + ": " + from + " -> " + to + ", context '" + context + "'");
+        RCLogger.i(TAG, "toSignalingReconfigurationReady, " + event + ": " + from + " -> " + to + ", context '" + context + "'");
 
         if (from == FSMState.initialState) {
+            //transactionType = FSMTransactionType.fsmTransactionReconfiguration;
             // we haven't finished signaling registration; let's keep the state around so that we can use it when signaling is finished
             savedContext = context;
         } else if (from == FSMState.pushReadyState) {
@@ -205,7 +222,7 @@ public class RegistrationFsm extends AbstractUntypedStateMachine {
 
     public void toInitialState(FSMState from, FSMState to, FSMEvent event, RegistrationFsmContext context)
     {
-        RCLogger.i(TAG, event + ": " + from + " -> " + to + ", context '" + context + "'");
+        RCLogger.i(TAG, "toInitialState, " + event + ": " + from + " -> " + to + ", context '" + context + "'");
         savedContext = null;
     }
 }

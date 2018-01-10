@@ -31,6 +31,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -41,6 +42,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.restcomm.android.sdk.RCClient;
@@ -50,6 +52,7 @@ import org.restcomm.android.sdk.RCDeviceListener;
 import org.restcomm.android.sdk.util.RCException;
 
 import java.util.HashMap;
+import java.util.Locale;
 
 public class MessageActivity extends AppCompatActivity
       implements MessageFragment.Callbacks, RCDeviceListener,
@@ -65,8 +68,14 @@ public class MessageActivity extends AppCompatActivity
    private String currentPeer;
    private String fullPeer;
 
+   // Timer that starts if there's a live call on another Activity and periodically checks if the call is over to update the UI
+   // TODO: need to improve this from polling to event based but we need to think in terms of general SDK API. Let's leave it like
+   // this for now and we will revisit
+   private Handler timerHandler = new Handler();
+
    ImageButton btnSend;
    EditText txtMessage;
+   TextView lblOngoingCall;
    public static String ACTION_OPEN_MESSAGE_SCREEN = "org.restcomm.android.olympus.ACTION_OPEN_MESSAGE_SCREEN";
    public static String EXTRA_CONTACT_NAME = "org.restcomm.android.olympus.EXTRA_CONTACT_NAME";
 
@@ -102,6 +111,8 @@ public class MessageActivity extends AppCompatActivity
       btnSend.setOnClickListener(this);
       txtMessage = (EditText) findViewById(R.id.text_message);
       txtMessage.setOnClickListener(this);
+      lblOngoingCall = findViewById(R.id.resume_call);
+      lblOngoingCall.setOnClickListener(this);
 
       fullPeer = getIntent().getStringExtra(RCDevice.EXTRA_DID);
       // keep on note of the current peer we are texting with
@@ -151,6 +162,14 @@ public class MessageActivity extends AppCompatActivity
       // The activity is no longer visible (it is now "stopped")
       Log.i(TAG, "%% onStop");
 
+      if (lblOngoingCall.getVisibility() != View.GONE) {
+         lblOngoingCall.setVisibility(View.GONE);
+
+         if (timerHandler != null) {
+            timerHandler.removeCallbacksAndMessages(null);
+         }
+      }
+
       // Unbind from the service
       if (serviceBound) {
          //device.detach();
@@ -189,6 +208,16 @@ public class MessageActivity extends AppCompatActivity
       // We've bound to LocalService, cast the IBinder and get LocalService instance
       RCDevice.RCDeviceBinder binder = (RCDevice.RCDeviceBinder) service;
       device = binder.getService();
+
+      if (device.isInitialized()) {
+         RCConnection connection = device.getLiveConnection();
+         if (connection != null) {
+            // we have a live connection ongoing, need to update UI so that it can be resumed
+            lblOngoingCall.setText(String.format("%s %s", getString(R.string.resume_ongoing_call_text), connection.getPeer()));
+            lblOngoingCall.setVisibility(View.VISIBLE);
+            startTimer();
+         }
+      }
 
       // needed if we are returning from Message screen that becomes the Device listener
       device.setDeviceListener(this);
@@ -269,6 +298,11 @@ public class MessageActivity extends AppCompatActivity
          } catch (RCException e) {
             showOkAlert("RCDevice Error", "No Wifi connectivity");
          }
+      }
+      else if (view.getId() == R.id.resume_call) {
+         Intent intent = new Intent(this, CallActivity.class);
+         intent.setAction(RCDevice.ACTION_RESUME_CALL);
+         startActivity(intent);
       }
    }
 
@@ -427,6 +461,24 @@ public class MessageActivity extends AppCompatActivity
       }
 
       Toast.makeText(getApplicationContext(), text, Toast.LENGTH_LONG).show();
+   }
+
+   public void startTimer() {
+      timerHandler.removeCallbacksAndMessages(null);
+      // schedule a registration update after 'registrationRefresh' seconds
+      Runnable timerRunnable = new Runnable() {
+         @Override
+         public void run() {
+            if (device != null && device.isInitialized() && (device.getLiveConnection() == null)) {
+               if (lblOngoingCall.getVisibility() != View.GONE) {
+                  lblOngoingCall.setVisibility(View.GONE);
+                  return;
+               }
+            }
+            startTimer();
+         }
+      };
+      timerHandler.postDelayed(timerRunnable, 1000);
    }
 
 }

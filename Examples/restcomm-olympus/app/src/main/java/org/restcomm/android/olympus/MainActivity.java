@@ -36,6 +36,7 @@ import android.content.res.Configuration;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
@@ -45,12 +46,14 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 import com.testfairy.TestFairy;
 //import net.hockeyapp.android.CrashManager;
 //import net.hockeyapp.android.UpdateManager;
 
 import org.restcomm.android.sdk.RCClient;
+import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.RCDeviceListener;
 import org.restcomm.android.sdk.util.RCException;
@@ -80,7 +83,14 @@ public class MainActivity extends AppCompatActivity
    private RCConnectivityStatus previousConnectivityStatus = RCConnectivityStatus.RCConnectivityStatusNone;
    private static final String APP_VERSION = "Restcomm Android Olympus Client " + BuildConfig.VERSION_NAME + "#" + BuildConfig.VERSION_CODE; //"Restcomm Android Olympus Client 1.0.0-BETA4#20";
    FloatingActionButton btnAdd;
+   TextView lblOngoingCall;
    public static String ACTION_DISCONNECTED_BACKGROUND = "org.restcomm.android.olympus.ACTION_DISCONNECTED_BACKGROUND";
+
+   // Timer that starts if there's a live call on another Activity and periodically checks if the call is over to update the UI
+   // TODO: need to improve this from polling to event based but we need to think in terms of general SDK API. Let's leave it like
+   // this for now and we will revisit
+   private Handler timerHandler = new Handler();
+
 
    private static final int CONNECTION_REQUEST = 1;
 
@@ -109,6 +119,8 @@ public class MainActivity extends AppCompatActivity
 
       btnAdd = (FloatingActionButton) findViewById(R.id.imageButton_add);
       btnAdd.setOnClickListener(this);
+      lblOngoingCall = findViewById(R.id.resume_call);
+      lblOngoingCall.setOnClickListener(this);
 
       alertDialog = new AlertDialog.Builder(MainActivity.this, R.style.SimpleAlertStyle).create();
 
@@ -166,6 +178,14 @@ public class MainActivity extends AppCompatActivity
       // The activity is no longer visible (it is now "stopped")
       Log.i(TAG, "%% onStop");
 
+      if (lblOngoingCall.getVisibility() != View.GONE) {
+         lblOngoingCall.setVisibility(View.GONE);
+
+         if (timerHandler != null) {
+            timerHandler.removeCallbacksAndMessages(null);
+         }
+      }
+
       // Unbind from the service
       if (serviceBound) {
          //device.detach();
@@ -220,7 +240,7 @@ public class MainActivity extends AppCompatActivity
       super.onNewIntent(intent);
 
       // We get this intent from CallActivity, when the App is in the background and the user has requested hangup via notification
-      // In that case we don't wont to interrupt the user from what they are currently doing in the foreground, so we just finish()
+      // In that case we don't want to interrupt the user from what they are currently doing in the foreground, so we just finish()
       if (intent.getAction() != null && intent.getAction().equals(ACTION_DISCONNECTED_BACKGROUND)) {
          finish();
       }
@@ -306,6 +326,18 @@ public class MainActivity extends AppCompatActivity
             showOkAlert("RCDevice Initialization Error", e.errorText);
          }
       }
+      else {
+         if (device.isInitialized()) {
+            RCConnection connection = device.getLiveConnection();
+            if (connection != null) {
+               // we have a live connection ongoing, need to update UI so that it can be resumed
+               lblOngoingCall.setText(String.format("%s %s", getString(R.string.resume_ongoing_call_text), connection.getPeer()));
+               lblOngoingCall.setVisibility(View.VISIBLE);
+               startTimer();
+            }
+         }
+      }
+
 
       if (device.getState() == RCDevice.DeviceState.OFFLINE) {
          getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorTextSecondary)));
@@ -404,25 +436,18 @@ public class MainActivity extends AppCompatActivity
    public void onClick(View view)
    {
       if (view.getId() == R.id.imageButton_add) {
-         /* TODO: Issue #380: once we figure out the issue with the backgrounding we need to uncomment this, but also place it to a suitable place
-         Intent intent = new Intent(this, CallActivity.class);
-         intent.setAction(RCDevice.LIVE_CALL);
-         startActivityForResult(intent, CONNECTION_REQUEST);
-         */
-         //DialogFragment newFragment = AddUserDialogFragment.newInstance(AddUserDialogFragment.DIALOG_TYPE_ADD_CONTACT, "", "");
-         //newFragment.show(getFragmentManager(), "dialog");
+         // TODO: Issue #380: once we figure out the issue with the backgrounding we need to uncomment this,
+         // but also place it to a suitable place :)
 
          AddUserDialogFragment newFragment = AddUserDialogFragment.newInstance(AddUserDialogFragment.DIALOG_TYPE_ADD_CONTACT, "", "");
          newFragment.show(getSupportFragmentManager(), "dialog");
-
-         // DEBUG: for adding memory pressure to the App
-         /*
-         for (int i = 0; i < 200; i++) {
-            list.add(new String[100000]);
-         }
-         Log.i(TAG, "List size: " + list.size());
-         */
       }
+      else if (view.getId() == R.id.resume_call) {
+         Intent intent = new Intent(this, CallActivity.class);
+         intent.setAction(RCDevice.ACTION_RESUME_CALL);
+         startActivity(intent);
+      }
+
    }
 
    /**
@@ -430,7 +455,14 @@ public class MainActivity extends AppCompatActivity
     */
    public void onReconfigured(RCDevice device, RCConnectivityStatus connectivityStatus, int statusCode, String statusText)
    {
-      handleConnectivityUpdate(connectivityStatus, null);
+      Log.i(TAG, "%% onReconfigured");
+      if (statusCode == RCClient.ErrorCodes.SUCCESS.ordinal()) {
+         handleConnectivityUpdate(connectivityStatus, "RCDevice: " + statusText);
+      }
+      else {
+         handleConnectivityUpdate(RCConnectivityStatus.RCConnectivityStatusNone, "RCDevice Error: " + statusText);
+      }
+
    }
 
    public void onError(RCDevice device, int errorCode, String errorText)
@@ -455,10 +487,6 @@ public class MainActivity extends AppCompatActivity
          handleConnectivityUpdate(connectivityStatus, null);
       }
       else {
-         //Toast.makeText(getApplicationContext(), "RCDevice Initialization Error: " + statusText, Toast.LENGTH_LONG).show();
-         //showOkAlert("RCDevice Initialization Error", statusText);
-         //handleConnectivityUpdate(connectivityStatus, "RCDevice Initialization Error: " + statusText);
-         //Toast.makeText(getApplicationContext(), "RCDevice Initialization Error: " + statusText, Toast.LENGTH_LONG).show();
          if (!isFinishing()) {
             showOkAlert("RCDevice Initialization Error", statusText);
          }
@@ -633,6 +661,25 @@ public class MainActivity extends AppCompatActivity
          alertDialog.show();
 
    }
+
+   public void startTimer() {
+      timerHandler.removeCallbacksAndMessages(null);
+      // schedule a registration update after 'registrationRefresh' seconds
+      Runnable timerRunnable = new Runnable() {
+         @Override
+         public void run() {
+            if (device != null && device.isInitialized() && (device.getLiveConnection() == null)) {
+               if (lblOngoingCall.getVisibility() != View.GONE) {
+                  lblOngoingCall.setVisibility(View.GONE);
+                  return;
+               }
+            }
+            startTimer();
+         }
+      };
+      timerHandler.postDelayed(timerRunnable, 1000);
+   }
+
 
 /*   private RCDevice.MediaIceServersDiscoveryType iceServersDiscoveryTypeString2Enum(String iceServersDiscoveryTypeString)
    {

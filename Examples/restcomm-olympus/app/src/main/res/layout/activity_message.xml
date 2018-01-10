@@ -22,6 +22,23 @@
         app:popupTheme="@style/ThemeOverlay.AppCompat.Light"
         />
 
+    <TextView
+        android:id="@+id/resume_call"
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:layout_below="@+id/message_toolbar"
+        android:background="@color/colorPrimaryLight"
+        android:clickable="true"
+        android:contentDescription="@string/button_to_resume_ongoing_call"
+        android:elevation="1dp"
+        android:focusable="true"
+        android:gravity="center"
+        android:text="@string/resume_ongoing_call_text"
+        android:textAlignment="center"
+        android:textStyle="bold"
+        android:textSize="18sp"
+        android:visibility="gone"/>
+
     <fragment xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:tools="http://schemas.android.com/tools"
         android:id="@+id/message_list"
@@ -30,7 +47,7 @@
         android:layout_height="wrap_content"
         tools:context="org.restcomm.android.olympus.MessageActivity"
         tools:layout="@android:layout/list_content"
-        android:layout_below="@+id/message_toolbar"
+        android:layout_below="@+id/resume_call"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
         android:layout_above="@+id/button_send"
