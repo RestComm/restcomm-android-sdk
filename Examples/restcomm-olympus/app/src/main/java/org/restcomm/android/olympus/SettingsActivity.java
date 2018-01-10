@@ -203,8 +203,7 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
                        Integer.parseInt(candidateTimeout)
                );
 
-               // TODO: this needs to be moved internally
-               RCUtils.validateSettingsParms(prefHashMap);
+            try {
                device.reconfigure(params);
             }
             NavUtils.navigateUpFromSameTask(this);
