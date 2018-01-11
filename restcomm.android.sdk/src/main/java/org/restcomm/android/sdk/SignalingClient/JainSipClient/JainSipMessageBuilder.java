@@ -508,6 +508,7 @@ class JainSipMessageBuilder {
          supportedTransports.add(listeningPoint.getTransport());
          DefaultDNSServerLocator dnsServerLocator = new DefaultDNSServerLocator(supportedTransports);
          Queue<Hop> hops = dnsServerLocator.locateHops(jainSipAddressFactory.createURI(domain));
+         RCLogger.i(TAG, "DNS hops: " + hops.toString());
          SipURI routeUri = jainSipAddressFactory.createSipURI(null, hops.peek().getHost());
          routeUri.setParameter(DNSAwareRouter.DNS_ROUTE, Boolean.TRUE.toString());
          routeUri.setPort(hops.peek().getPort());

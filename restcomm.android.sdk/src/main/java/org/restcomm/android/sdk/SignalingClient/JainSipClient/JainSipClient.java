@@ -969,29 +969,32 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
    // the ip address corresponding to it
    private String interface2Address(boolean useIPv4, String networkInterfacePrefix) throws SocketException
    {
+      RCLogger.i(TAG, "interface2Address(): searching for address using prefix regex: " + networkInterfacePrefix);
       String stringAddress = "";
 
       List<NetworkInterface> interfaces = Collections.list(NetworkInterface.getNetworkInterfaces());
       for (NetworkInterface intf : interfaces) {
          RCLogger.i(TAG, "interface2Address(): Current interface: " + intf.toString());
-         if (intf.isUp() && intf.getName().matches(networkInterfacePrefix + ".*")) {
+         if (intf.isUp()) {
             List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
             for (InetAddress addr : addrs) {
                if (!addr.isLoopbackAddress()) {
                   String sAddr = addr.getHostAddress().toUpperCase();
-                  boolean isIPv4 = addr instanceof Inet4Address;  //InetAddressUtils.isIPv4Address(sAddr);
-                  if (useIPv4) {
-                     if (isIPv4) {
-                        stringAddress = sAddr;
-                        break;
-                     }
-                  }
-                  else {
-                     if (!isIPv4) {
-                        int delim = sAddr.indexOf('%'); // drop ip6 port
-                        // suffix
-                        stringAddress = delim < 0 ? sAddr : sAddr.substring(0, delim);
-                        break;
+                  RCLogger.i(TAG, "interface2Address(): Current address (if): " + sAddr + " (" + intf.getName() + ")");
+                  if (intf.getName().matches(networkInterfacePrefix + ".*")) {
+                     boolean isIPv4 = addr instanceof Inet4Address;  //InetAddressUtils.isIPv4Address(sAddr);
+                     if (useIPv4) {
+                        if (isIPv4) {
+                           stringAddress = sAddr;
+                           break;
+                        }
+                     } else {
+                        if (!isIPv4) {
+                           int delim = sAddr.indexOf('%'); // drop ip6 port
+                           // suffix
+                           stringAddress = delim < 0 ? sAddr : sAddr.substring(0, delim);
+                           break;
+                        }
                      }
                   }
                }
@@ -1007,7 +1010,8 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       // right away in that unlikely event.
       RCLogger.v(TAG, "interface2Address(): stringAddress: " + stringAddress + ", for currently active network: " + networkInterfacePrefix + ", interfaces: " + interfaces.toString());
       if (stringAddress.isEmpty()) {
-         RCLogger.e(TAG, "Couldn't retrieve IP address for currently active network");
+         RCLogger.e(TAG, "interface2Address(): Couldn't retrieve IP address for currently active network");
+         throw new RuntimeException("Failed to find a viable network interface to use for signaling facilities");
       }
 
       return stringAddress;
@@ -1029,7 +1033,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
          if (Build.FINGERPRINT.contains("generic")) {
             // Emulator; when using emulator, network access is provided via Cellular interface (no idea why this happens instead of ConnectivityManager.TYPE_ETHERNET)
             // but the actual interface name is usually 'eth0', so let's pass that as well in the network interface prefix argument
-            stringAddress = interface2Address(useIPv4, "(rmnet|eth)");
+            stringAddress = interface2Address(useIPv4, "(rmnet|eth|radio)");
          }
          else {
             // Real device
