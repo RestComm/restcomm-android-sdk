@@ -320,7 +320,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    public static String EXTRA_VIDEO_ENABLED = "org.restcomm.android.sdk.VIDEO_ENABLED";
 
    // Notification ids for calls and messages. Key is the sender and value in the notification id. We mainly need those
-   // to make sure that notifications from a specific user are shown onReconfiguredin a single slot, to avoid confusing the user. This means
+   // to make sure that notifications from a specific user are shown in a single slot, to avoid confusing the user. This means
    // that after we add a user in one of the maps they are never removed. Reason is there's a lot of overhead needed of
    // passing all intents back to RCDevice service even for messages and missed calls which are auto-answered, with not
    // too much value, at least for now
@@ -617,12 +617,11 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
          //this.updateCapabilityToken(capabilityToken);
          this.listener = deviceListener;
+         storageManagerPreferences = new StorageManagerPreferences(this);
 
-
-         RCUtils.validateDeviceParms(parameters);
+         RCUtils.validateDeviceParms(parameters, storageManagerPreferences.getAllEntries());
 
          //save parameters to storage
-         storageManagerPreferences = new StorageManagerPreferences(this);
          StorageUtils.saveParams(storageManagerPreferences, parameters);
 
          //because intents are saved as uri strings we need to check; do we have an
@@ -821,7 +820,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    {
       RCLogger.i(TAG, "connect(): " + parameters.toString());
 
-      RCUtils.validateConnectionParms(parameters);
+      RCUtils.validateConnectionParms(parameters, new StorageManagerPreferences(this).getAllEntries());
 
       if (cachedConnectivityStatus == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
          // Phone state Intents to capture connection failed event
@@ -1075,16 +1074,17 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
       // TODO: bring this back when we finalize how partial parms can be properly validated inside SDK. Right now we only have all the parms
       // outside SDK, inside SettingsActivity. Could we use StorageManagerPreferences to work around that?
-      //RCUtils.validateSettingsParms(params);
+
+      if (storageManagerPreferences == null) {
+         storageManagerPreferences = new StorageManagerPreferences(this);
+      }
+      RCUtils.validateSettingsParms(params, storageManagerPreferences.getAllEntries());
 
       // remember that the new parameters can be just a subset of the currently stored in this.parameters, so to update the current parameters we need
       // to merge them with the new (i.e. keep the old and replace any new keys with new values)
       this.parameters = JainSipConfiguration.mergeParameters(this.parameters, params);
 
       //save params for background
-      if (storageManagerPreferences == null) {
-         storageManagerPreferences = new StorageManagerPreferences(this);
-      }
       StorageUtils.saveParams(storageManagerPreferences, parameters);
 
       signalingClient.reconfigure(params);
