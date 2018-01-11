@@ -505,7 +505,10 @@ class JainSipMessageBuilder {
          //SipURI routeUri = (SipURI) jainSipAddressFactory.createURI(route);
 
          Set<String> supportedTransports = new HashSet<String>();
-         supportedTransports.add(listeningPoint.getTransport());
+         // Somehow only in Android Oreo and only when using cleartext signaling dnsServerLocator.locateHops() breaks
+         // because somehow the transport string that reaches DefaultDNSServerLocator.getDefaultTransportForSipUri() isn't uppercase
+         // and hence the matching fails to identify trasport. So let's workaround that by always uppercasing it
+         supportedTransports.add(listeningPoint.getTransport().toUpperCase());
          DefaultDNSServerLocator dnsServerLocator = new DefaultDNSServerLocator(supportedTransports);
          Queue<Hop> hops = dnsServerLocator.locateHops(jainSipAddressFactory.createURI(domain));
          RCLogger.i(TAG, "DNS hops: " + hops.toString());
