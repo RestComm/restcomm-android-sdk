@@ -161,7 +161,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
       params.put(RCDevice.ParameterKeys.SIGNALING_DOMAIN, "");
       params.put(RCDevice.ParameterKeys.SIGNALING_USERNAME, "android-sdk");
       params.put(RCDevice.ParameterKeys.SIGNALING_PASSWORD, "1234");
-      params.put(RCDevice.ParameterKeys.MEDIA_ICE_URL, "https://service.xirsys.com/ice");
+      params.put(RCDevice.ParameterKeys.MEDIA_ICE_URL, "https://es.xirsys.com/_turn");
       params.put(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN, "cloud.restcomm.com");
       params.put(RCDevice.ParameterKeys.MEDIA_ICE_USERNAME, "atsakiridis");
       params.put(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD, "4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7");
@@ -276,11 +276,6 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
 
    }
 
-   @Override
-   public void onWarning(RCDevice device, int statusCode, String statusText) {
-      Log.w(TAG, statusText);
-   }
-
    // RCConnection Listeners
    public void onConnecting(RCConnection connection)
    {
@@ -341,12 +336,23 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
    {
    }
 
+   @Override
+   public void onError(RCDevice device, int statusCode, String statusText) {
+
+   }
+
    public void onReleased(RCDevice device, int statusCode, String statusText)
    {
    }
 
    public void onInitialized(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus, int statusCode, String statusText)
    {
+      Log.i(TAG, "onInitialized");
+   }
+
+   @Override
+   public void onReconfigured(RCDevice device, RCConnectivityStatus connectivityStatus, int statusCode, String statusText) {
+
    }
 
    // Resume call after permissions are checked
