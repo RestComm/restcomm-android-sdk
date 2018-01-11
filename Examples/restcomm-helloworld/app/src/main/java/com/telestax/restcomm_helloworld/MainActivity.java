@@ -347,7 +347,7 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
 
    public void onInitialized(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus, int statusCode, String statusText)
    {
-      Log.e(TAG, "onInitialized");
+      Log.i(TAG, "onInitialized");
    }
 
    @Override
