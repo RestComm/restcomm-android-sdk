@@ -1859,6 +1859,17 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
                        RCClient.ErrorCodes.SUCCESS, RCClient.errorText(RCClient.ErrorCodes.SUCCESS)));
             }
          }
+         else {
+            // update is needed. We are now asynchronously handling push registration updates;
+            // we need that to convey to the UI that we are offline for a bit, until we get a response to the registrations
+            state = DeviceState.OFFLINE;
+            if (isAttached()) {
+               this.listener.onConnectivityUpdate(this, RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone);
+            }
+            else {
+               RCLogger.w(TAG, "RCDeviceListener event suppressed since Restcomm Client Service not attached: onConnectivityUpdate() due to new push registering");
+            }
+         }
       }
    }
 
