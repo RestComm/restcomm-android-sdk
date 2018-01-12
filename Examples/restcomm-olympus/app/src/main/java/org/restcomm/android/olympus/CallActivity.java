@@ -32,6 +32,7 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -59,6 +60,8 @@ import org.restcomm.android.sdk.RCConnectionListener;
 import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.util.PercentFrameLayout;
 import org.restcomm.android.sdk.util.RCException;
+
+import static org.restcomm.android.sdk.RCConnection.ConnectionMediaType.AUDIO_VIDEO;
 
 
 public class CallActivity extends AppCompatActivity implements RCConnectionListener, View.OnClickListener,
@@ -317,14 +320,14 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
 
                 if (connection.isIncoming()) {
                     // Incoming
-                    if (connection.getRemoteMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) {
+                    if (connection.getRemoteMediaType() == AUDIO_VIDEO) {
                         text = "Video Call from ";
                     } else {
                         text = "Audio Call from ";
                     }
                 } else {
                     // Outgoing
-                    if (connection.getLocalMediaType() == RCConnection.ConnectionMediaType.AUDIO_VIDEO) {
+                    if (connection.getLocalMediaType() == AUDIO_VIDEO) {
                         text = "Video Calling ";
                     } else {
                         text = "Audio Calling ";
@@ -347,8 +350,14 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
                 if (connection.isAudioMuted()){
                     btnMuteAudio.setImageResource(R.drawable.audio_muted);
                 }
-                if (connection.isVideoMuted()){
-                    btnMuteVideo.setImageResource(R.drawable.video_muted);
+                if (connection.getLocalMediaType() != AUDIO_VIDEO) {
+                    btnMuteVideo.setEnabled(false);
+                    btnMuteVideo.setColorFilter(Color.parseColor(getString(R.string.string_color_filter_video_disabled)));
+                }
+                else {
+                    if (connection.isVideoMuted()){
+                        btnMuteVideo.setImageResource(R.drawable.video_muted);
+                    }
                 }
 
                 // Hide answering buttons and show mute & keypad
@@ -637,6 +646,10 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         lblStatus.setText("Connected");
 
         btnMuteAudio.setVisibility(View.VISIBLE);
+        if (!isVideo) {
+            btnMuteVideo.setEnabled(false);
+            btnMuteVideo.setColorFilter(Color.parseColor(getString(R.string.string_color_filter_video_disabled)));
+        }
         btnMuteVideo.setVisibility(View.VISIBLE);
         btnKeypad.setVisibility(View.VISIBLE);
 

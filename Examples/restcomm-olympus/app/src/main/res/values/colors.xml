@@ -25,6 +25,7 @@
     <color name="colorSeparator">#CDCDCD</color>
     <color name="colorGreyMiddle">#8D8D8D</color>
     <color name="colorMessagesSeparator">#E1E1E1</color>
+    <color name="colorFilterVideoDisabled">#99FFFFFF</color>
 </resources>
 
 <!--

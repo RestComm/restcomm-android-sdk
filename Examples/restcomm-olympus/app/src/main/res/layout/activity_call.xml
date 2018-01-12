@@ -28,13 +28,6 @@
             android:visibility="gone"/>
     </org.restcomm.android.sdk.util.PercentFrameLayout>
 
-    <!--
-    <org.webrtc.SurfaceViewRenderer
-        android:id="@+id/remote_video_view"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent" />
-    -->
-
     <!-- IMPORTANT: seems that visibility="gone" below fixes the flashing issue somehow (restcomm-android-sdk #354) -->
     <org.restcomm.android.sdk.util.PercentFrameLayout
         android:id="@+id/local_video_layout"
@@ -46,16 +39,6 @@
             android:layout_height="wrap_content"
             android:visibility="gone" />
     </org.restcomm.android.sdk.util.PercentFrameLayout>
-
-    <!--
-    <org.webrtc.SurfaceViewRenderer
-        android:id="@+id/local_video_view"
-        android:layout_width="100dp"
-        android:layout_height="180dp"
-        android:layout_alignParentRight="true"
-        android:layout_marginTop="5dp"
-        android:layout_marginRight="5dp" />
-        -->
 
     <TextView
         android:layout_width="wrap_content"
@@ -109,9 +92,7 @@
         android:src="@drawable/answer_call_video"
         android:id="@+id/button_answer"
         android:layout_alignBottom="@+id/button_hangup"
-        android:layout_toLeftOf="@+id/button_hangup"
         android:layout_toStartOf="@+id/button_hangup"
-        android:layout_marginRight="58dp"
         android:layout_marginEnd="58dp" />
 
     <ImageButton
@@ -121,9 +102,7 @@
         android:background="@android:color/transparent"
         android:src="@drawable/answer_call_audio"
         android:layout_alignBottom="@+id/button_hangup"
-        android:layout_toRightOf="@+id/button_hangup"
         android:layout_toEndOf="@+id/button_hangup"
-        android:layout_marginLeft="58dp"
         android:layout_marginStart="58dp" />
 
 
@@ -139,16 +118,14 @@
         android:layout_marginBottom="20dp" />
 
     <ImageButton
+        android:id="@+id/button_mute_video"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:background="@android:color/transparent"
-        android:src="@drawable/video_unmuted"
-        android:id="@+id/button_mute_video"
         android:layout_alignBottom="@+id/button_hangup"
-        android:layout_toLeftOf="@+id/button_hangup"
+        android:layout_marginEnd="58dp"
         android:layout_toStartOf="@+id/button_hangup"
-        android:layout_marginRight="58dp"
-        android:layout_marginEnd="58dp" />
+        android:background="@android:color/transparent"
+        android:src="@drawable/video_unmuted" />
 
     <ImageButton
         android:layout_width="wrap_content"
@@ -157,9 +134,7 @@
         android:background="@android:color/transparent"
         android:src="@drawable/audio_unmuted"
         android:layout_alignBottom="@+id/button_hangup"
-        android:layout_toRightOf="@+id/button_hangup"
         android:layout_toEndOf="@+id/button_hangup"
-        android:layout_marginLeft="58dp"
         android:layout_marginStart="58dp" />
 
     <!-- placeholder for keypad fragment -->
