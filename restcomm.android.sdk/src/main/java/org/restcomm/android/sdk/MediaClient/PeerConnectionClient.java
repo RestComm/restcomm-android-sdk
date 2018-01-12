@@ -151,7 +151,8 @@ public class PeerConnectionClient {
   private MediaStream mediaStream;
   private VideoCapturer videoCapturer;
   // enableVideo is set to true if video should be rendered and sent.
-  private boolean renderVideo;
+  private boolean renderLocalVideo;
+  private boolean renderRemoteVideo;
   private VideoTrack localVideoTrack;
   private VideoTrack remoteVideoTrack;
   private RtpSender localVideoSender;
@@ -348,7 +349,8 @@ public class PeerConnectionClient {
     localSdp = null; // either offer or answer SDP
     mediaStream = null;
     videoCapturer = null;
-    renderVideo = true;
+    renderLocalVideo = true;
+    renderRemoteVideo = true;
     localVideoTrack = null;
     remoteVideoTrack = null;
     localVideoSender = null;
@@ -844,9 +846,9 @@ public class PeerConnectionClient {
       @Override
       public void run()
       {
-        renderVideo = enable;
+        renderLocalVideo = enable;
         if (localVideoTrack != null) {
-          localVideoTrack.setEnabled(renderVideo);
+          localVideoTrack.setEnabled(renderLocalVideo);
         }
       }
     });
@@ -855,12 +857,13 @@ public class PeerConnectionClient {
     executor.execute(new Runnable() {
       @Override
       public void run() {
-        renderVideo = enable;
+        renderLocalVideo = enable;
+        renderRemoteVideo = enable;
         if (localVideoTrack != null) {
-          localVideoTrack.setEnabled(renderVideo);
+          localVideoTrack.setEnabled(renderLocalVideo);
         }
         if (remoteVideoTrack != null) {
-          remoteVideoTrack.setEnabled(renderVideo);
+          remoteVideoTrack.setEnabled(renderRemoteVideo);
         }
       }
     });
@@ -981,7 +984,7 @@ public class PeerConnectionClient {
   }
 
   // Reattach webrtc video, by attaching new views/renders to existing video tracks and resuming playback. For more info please refer to doc for detachVideo()
-  public void reattachVideo(final VideoSink localRender, final VideoRenderer.Callbacks remoteRender)
+  public void reattachVideo(final VideoSink localRender, final VideoRenderer.Callbacks remoteRender, boolean localEnabled)
   {
     Log.d(TAG, "reattachVideo()");
 
@@ -992,10 +995,10 @@ public class PeerConnectionClient {
       @Override
       public void run()
       {
-        //startVideoSource();
-
-        addLocalRenderer(localRender);
-        addRemoteRenderer(remoteRender);
+        // Important: when reattaching local video is subject to user's mute preference
+        addLocalRenderer(localRender, localEnabled);
+        // When reattaching remote video should always be enabled since it's not controlled by the user
+        addRemoteRenderer(remoteRender, true);
 
         events.onVideoReattached();
       }
@@ -1009,6 +1012,7 @@ public class PeerConnectionClient {
     if (localVideoTrack != null) {
       localVideoTrack.setEnabled(false);
       localVideoTrack.removeSink(localRender);
+      renderLocalVideo = false;
       localRender = null;
     }
   }
@@ -1018,26 +1022,29 @@ public class PeerConnectionClient {
     if (remoteVideoTrack != null) {
       remoteVideoTrack.setEnabled(false);
       remoteVideoTrack.removeRenderer(remoteVideoRenderer);
+      renderRemoteVideo = false;
       remoteRenders = null;
     }
   }
 
   // For video pause/resume functionality
-  private void addLocalRenderer(final VideoSink localRender)
+  private void addLocalRenderer(final VideoSink localRender, boolean enabled)
   {
     if (localVideoTrack != null) {
-      localVideoTrack.setEnabled(renderVideo);
+      localVideoTrack.setEnabled(enabled);
       localVideoTrack.addSink(localRender);
+      renderLocalVideo = enabled;
       this.localRender = localRender;
     }
   }
 
-  private void addRemoteRenderer(final VideoRenderer.Callbacks remoteRender)
+  private void addRemoteRenderer(final VideoRenderer.Callbacks remoteRender, boolean enabled)
   {
     if (remoteVideoTrack != null) {
-      remoteVideoTrack.setEnabled(renderVideo);
+      remoteVideoTrack.setEnabled(enabled);
       remoteVideoRenderer = new VideoRenderer(remoteRender);
       remoteVideoTrack.addRenderer(remoteVideoRenderer);
+      renderRemoteVideo = enabled;
     }
   }
 
@@ -1127,7 +1134,7 @@ public class PeerConnectionClient {
     capturer.startCapture(videoWidth, videoHeight, videoFps);
 
     localVideoTrack = factory.createVideoTrack(VIDEO_TRACK_ID, videoSource);
-    localVideoTrack.setEnabled(renderVideo);
+    localVideoTrack.setEnabled(renderLocalVideo);
     localVideoTrack.addSink(localRender);
     return localVideoTrack;
   }
@@ -1409,7 +1416,7 @@ public class PeerConnectionClient {
           }
           if (stream.videoTracks.size() == 1) {
             remoteVideoTrack = stream.videoTracks.get(0);
-            remoteVideoTrack.setEnabled(renderVideo);
+            remoteVideoTrack.setEnabled(renderRemoteVideo);
             if (remoteRenders.size() > 1) {
               // until we get the backgrounding working let's only handle 1
               throw new RuntimeException("Only supporting size 1 remoteRenders");

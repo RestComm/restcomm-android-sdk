@@ -341,6 +341,16 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
                 int duration = (int)(difference/1000);
                 startTimer(duration);
 
+                // resume UI state
+                muteAudio = connection.isAudioMuted();
+                muteVideo = connection.isVideoMuted();
+                if (connection.isAudioMuted()){
+                    btnMuteAudio.setImageResource(R.drawable.audio_muted);
+                }
+                if (connection.isVideoMuted()){
+                    btnMuteVideo.setImageResource(R.drawable.video_muted);
+                }
+
                 // Hide answering buttons and show mute & keypad
                 btnAnswer.setVisibility(View.INVISIBLE);
                 btnAnswerAudio.setVisibility(View.INVISIBLE);

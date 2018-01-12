@@ -375,9 +375,10 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    private PeerConnectionClient.PeerConnectionParameters peerConnectionParameters;
    private boolean iceConnected;
    private HashMap<String, Object> callParams = null;
-   // Has user muted video? Notice the distinction between user having muted video and video being actually muted in PeerConnection level. For example when a call is paused via pauseVideo(), then
-   // automatically video will be muted in PeerConnection level, but user hasn't actually muted it. We need that state to properly handle transitions
-   private boolean videoExpectedMuted;
+   // Has user actually muted video? Notice the distinction between user having muted video and video being muted
+   // in PeerConnection level automatically because user detachedVideo(). Hence apart from the PC state for video mute,
+   // we need another parameter to keep track of user preference so that we can reattachVideo() properly
+   private boolean hasUserMutedVideo;
    private long callStartedTimeMs = 0;
    private final boolean DO_TOAST = false;
    // if a call takes too long to establish this handler is used to emit a time out
@@ -690,6 +691,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
    }
 
+   // Not implemented yet
    /**
     * Gather connection statistics asynchronously. The actual stats are delivered when onStatsGathered() is called and are retrieved with RCConnection.getStats().
     * Right now we 're only supporting webrtc media stats (coming from PeerConnection.getStats()), but in the future we can extend to add more stats/qos info,
@@ -865,7 +867,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    public void setVideoMuted(boolean muted)
    {
       RCLogger.i(TAG, "setVideoMuted(): " + muted);
-      videoExpectedMuted = muted;
+      hasUserMutedVideo = muted;
       handleVideoMuted(muted);
    }
 
@@ -1455,41 +1457,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
    }
 
-
-   /*
-   // DEBUG (Issue #380)
-   public void off()
-   {
-      peerConnectionClient.off();
-   }
-   // DEBUG
-   public void on(final PercentFrameLayout localRenderLayout, final PercentFrameLayout remoteRenderLayout)
-   {
-      initializeVideo(true, localRenderLayout, remoteRenderLayout);
-      peerConnectionClient.on((SurfaceViewRenderer)localRenderLayout.getChildAt(0), (SurfaceViewRenderer)remoteRenderLayout.getChildAt(0));
-   }
-   */
-
-   /*
-   // Pause webrtc video, intended for allowing a call to transition to the background where we only want audio enabled
-   public void pauseVideo()
-   {
-      if (localMediaType == ConnectionMediaType.AUDIO_VIDEO) {
-         handleVideoMuted(true);
-         peerConnectionClient.stopVideoSource();
-      }
-   }
-
-   // Resume webrtc video, intended for allowing a call to transition from the background into the foreground where we want video enabled (it it was enabled to start with)
-   public void resumeVideo()
-   {
-      if (localMediaType == ConnectionMediaType.AUDIO_VIDEO) {
-         peerConnectionClient.startVideoSource();
-         setVideoMuted(videoExpectedMuted);
-      }
-   }
-   */
-
    /**/
    // TODO: Issue #380: We should uncomment this once we figure out https://groups.google.com/forum/#!searchin/discuss-webrtc/tsakiridis$20android%7Csort:relevance/discuss-webrtc/XE2Ok67B1Ks/RrqmfZh9AQAJ
    // Implementation above is meant to be a temporary solution, as it doesn't allow for the call Activity to be destroyed and then re-created
@@ -1512,7 +1479,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       }
 
       initializeVideo(videoEnabled, localRenderLayout, remoteRenderLayout);
-      peerConnectionClient.reattachVideo(localRender, remoteRender);
+      peerConnectionClient.reattachVideo(localRender, remoteRender, !hasUserMutedVideo);
    }
    /**/
 
@@ -1526,8 +1493,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          public void run()
          {
             RCLogger.i(TAG, "onVideoDetached");
-            ///localRender.setVisibility(View.INVISIBLE);
-            ///remoteRender.setVisibility(View.INVISIBLE);
 
             releaseVideo();
          }
@@ -1546,24 +1511,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          {
             RCLogger.i(TAG, "onVideoReattached");
             updateVideoView(VideoViewState.ICE_CONNECTED);
-
-            /*
-            remoteRenderLayout.setPosition(REMOTE_X, REMOTE_Y, REMOTE_WIDTH, REMOTE_HEIGHT);
-            remoteRender.setScalingType(scalingType);
-            remoteRender.setMirror(false);
-            remoteRender.setVisibility(View.VISIBLE);
-
-            if (localRender.getVisibility() != View.VISIBLE) {
-               localRender.setVisibility(View.VISIBLE);
-            }
-            localRenderLayout.setPosition(
-                  LOCAL_X_CONNECTED, LOCAL_Y_CONNECTED, LOCAL_WIDTH_CONNECTED, LOCAL_HEIGHT_CONNECTED);
-            localRender.setScalingType(ScalingType.SCALE_ASPECT_FIT);
-            localRender.setMirror(true);
-
-            localRender.requestLayout();
-            remoteRender.requestLayout();
-            */
          }
       };
       mainHandler.post(myRunnable);
@@ -1581,10 +1528,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       this.localRenderLayout = localRenderLayout;
       this.remoteRenderLayout = remoteRenderLayout;
 
-      // Create peer connection client
-      //peerConnectionClient = new PeerConnectionClient();
-
-      //rootEglBase = EglBase.create();
       localRender = (SurfaceViewRenderer)localRenderLayout.getChildAt(0);
       remoteRender = (SurfaceViewRenderer)remoteRenderLayout.getChildAt(0);
 
@@ -1706,7 +1649,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
                                  VideoFrameRate videoFrameRate)
    {
       RCLogger.i(TAG, "initializeWebrtc()");
-      //Context context = RCClient.getContext();
 
       iceConnected = false;
       signalingParameters = null;
@@ -1821,8 +1763,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       // Start room connection.
       logAndToast("Preparing call");
 
-      //audioManager.startCall();
-
       // we don't have room functionality to notify us when ready; instead, we start connecting right now
       this.onConnectedToRoom(signalingParameters);
    }
@@ -1857,13 +1797,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       if (remoteRenderLayout != null) {
          remoteRenderLayout = null;
       }
-
-      /*
-      if (rootEglBase != null) {
-         rootEglBase.release();
-         rootEglBase = null;
-      }
-      */
    }
 
    /*
@@ -2077,18 +2010,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          }
       };
       mainHandler.post(myRunnable);
-
-/*
-      Runnable myRunnable2 = new Runnable() {
-         @Override
-         public void run()
-         {
-            RCLogger.i(TAG, "requesting media stats");
-            peerConnectionClient.
-         }
-      };
-      mainHandler.postDelayed(myRunnable2, 3000);
-*/
    }
 
    @Override
@@ -2124,13 +2045,6 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
          public void run()
          {
             // by the time stats are returned (when requested at disconnect(), iceConnected might have transitioned to disconnected
-/*
-            if (iceConnected) {
-               for (StatsReport report: reports) {
-               }
-               //hudFragment.updateEncoderStatistics(reports);
-            }
-*/
             webrtcReportsJsonString = webrtcStatsReports2JsonString(reports);
             try {
                //String statsJsonString = webrtcReportsJsonString;
