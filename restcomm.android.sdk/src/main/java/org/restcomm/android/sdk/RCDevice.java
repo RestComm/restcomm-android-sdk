@@ -1081,7 +1081,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       HashMap<String, Object>  caschedParams = (HashMap<String, Object>)storageManagerPreferences.getAllEntries();
       caschedParams.putAll(params);
 
-      RCUtils.validateSettingsParms(params);
+      RCUtils.validateSettingsParms(caschedParams);
 
       // remember that the new parameters can be just a subset of the currently stored in this.parameters, so to update the current parameters we need
       // to merge them with the new (i.e. keep the old and replace any new keys with new values)
