@@ -617,11 +617,11 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
          //this.updateCapabilityToken(capabilityToken);
          this.listener = deviceListener;
+
+
+         RCUtils.validateDeviceParms(parameters);
+
          storageManagerPreferences = new StorageManagerPreferences(this);
-
-         RCUtils.validateDeviceParms(parameters, storageManagerPreferences.getAllEntries());
-
-         //save parameters to storage
          StorageUtils.saveParams(storageManagerPreferences, parameters);
 
          //because intents are saved as uri strings we need to check; do we have an
@@ -820,7 +820,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    {
       RCLogger.i(TAG, "connect(): " + parameters.toString());
 
-      RCUtils.validateConnectionParms(parameters, new StorageManagerPreferences(this).getAllEntries());
+      RCUtils.validateConnectionParms(parameters);
 
       if (cachedConnectivityStatus == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
          // Phone state Intents to capture connection failed event
@@ -1067,23 +1067,25 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     *                <b>RCDevice.ParameterKeys.PUSH_NOTIFICATION_TIMEOUT_MESSAGING_SERVICE</b>: RCDevice will have timer introduced for closing because of the message background logic this is introduced in the design. The timer by default will be 5 seconds; It can be changed by sending parameter with value (in milliseconds)
     * @see RCDevice
     */
+   @SuppressWarnings("unchecked")
    public void reconfigure(HashMap<String, Object> params) throws RCException
    {
       // Let's try to fail early & synchronously on validation issues to make them easy to spot,
       // and if something comes up asynchronously either in signaling or push configuration, we notify via callback
 
-      // TODO: bring this back when we finalize how partial parms can be properly validated inside SDK. Right now we only have all the parms
-      // outside SDK, inside SettingsActivity. Could we use StorageManagerPreferences to work around that?
 
       if (storageManagerPreferences == null) {
          storageManagerPreferences = new StorageManagerPreferences(this);
       }
-      RCUtils.validateSettingsParms(params, storageManagerPreferences.getAllEntries());
+
+      HashMap<String, Object>  caschedParams = (HashMap<String, Object>)storageManagerPreferences.getAllEntries();
+      caschedParams.putAll(params);
+
+      RCUtils.validateSettingsParms(params);
 
       // remember that the new parameters can be just a subset of the currently stored in this.parameters, so to update the current parameters we need
       // to merge them with the new (i.e. keep the old and replace any new keys with new values)
-      this.parameters = JainSipConfiguration.mergeParameters(this.parameters, params);
-
+      this.parameters = JainSipConfiguration.mergeParameters(this.parameters, caschedParams);
       //save params for background
       StorageUtils.saveParams(storageManagerPreferences, parameters);
 
