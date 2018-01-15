@@ -5,7 +5,7 @@ RestComm Mobile - Android SDK
 [![CI Status](http://img.shields.io/travis/RestComm/restcomm-android-sdk/master.svg?style=flat)](https://travis-ci.org/RestComm/restcomm-android-sdk)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bhttps%3A%2F%2Fgithub.com%2FRestComm%2Frestcomm-android-sdk.svg?type=shield)](https://app.fossa.io/projects/git%2Bhttps%3A%2F%2Fgithub.com%2FRestComm%2Frestcomm-android-sdk?ref=badge_shield)
 
-Android Mobile SDK to easily integrate communication features (messaging, presence, voice, video, screensharing) based on [RestComm](http://restcomm.com/) into native Mobile Applications.
+Android Mobile SDK to easily integrate communication features (WebRTC, messaging, presence, voice, video, screensharing) based on [RestComm](http://restcomm.com/) into native Mobile Applications.
 
 Quick Start guide
 ================
