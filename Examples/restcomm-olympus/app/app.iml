@@ -218,5 +218,8 @@
     <orderEntry type="library" name="com.google.firebase:firebase-analytics-impl-license-11.6.2" level="project" />
     <orderEntry type="library" name="com.google.android.gms:play-services-tasks-license-11.6.2" level="project" />
     <orderEntry type="module" module-name="restcomm.android.sdk" />
+    <orderEntry type="module" module-name="restcomm.android.sdk" />
+    <orderEntry type="module" module-name="restcomm.android.sdk" />
+    <orderEntry type="module" module-name="restcomm.android.sdk" />
   </component>
 </module>

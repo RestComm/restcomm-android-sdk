@@ -47,16 +47,6 @@ android {
         logger.info("-- Using versionName: " + VERSION_NAME)
         versionName VERSION_NAME
 
-        // ICE_USERNAME, ICE_PASSWORD & ICE_DOMAIN are defined in project gradle.properties for community builds, but also overriden
-        // by gradle properties passed from command line (i.e. $ gradlew ... -PICE_DOMAIN=...) for Telestax builds from our
-        // CI scripts. Reason for this is that Telestax builds use different settings
-        // for ICE that are meant for production systems, and which should remain secret 
-        if (project.hasProperty('ICE_USERNAME') && project.hasProperty('ICE_PASSWORD') && project.hasProperty('ICE_DOMAIN')) {
-            // Add them as resource values which are available in preferences.xml
-            resValue "string", "ICE_USERNAME", ICE_USERNAME
-            resValue "string", "ICE_PASSWORD", ICE_PASSWORD
-            resValue "string", "ICE_DOMAIN", ICE_DOMAIN
-        }
         testInstrumentationRunner 'android.support.test.runner.AndroidJUnitRunner'
         multiDexEnabled true
     }
@@ -81,6 +71,10 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
             signingConfig signingConfigs.release_signing_config
+
+            // TODO: Let's allow release builds to be debuggable (so that logcat is available) for now as we 're using them locally
+            // for daily use and need to be able to troubleshoot easily. Let's revisit before GA
+            debuggable true
         }
 
         debug {
@@ -126,6 +120,19 @@ android {
             buildConfigField "boolean", "ENABLE_TEST_FAIRY_RUNTIME", "false"
             buildConfigField "String", "TESTFAIRY_APP_TOKEN", TESTFAIRY_APP_TOKEN
 
+            // ICE_USERNAME, ICE_PASSWORD, ICE_DOMAIN &ICE_URL are defined in project gradle.properties for community builds, but also overriden
+            // by gradle properties passed from command line (i.e. $ gradlew ... -PICE_DOMAIN=...) for Telestax builds from our
+            // CI scripts. Reason for this is that Telestax builds use different settings
+            // for ICE that are meant for production systems, and which should remain secret
+            if (project.hasProperty('COMMUNITY_ICE_USERNAME') && project.hasProperty('COMMUNITY_ICE_PASSWORD') &&
+                    project.hasProperty('COMMUNITY_ICE_DOMAIN') && project.hasProperty('COMMUNITY_ICE_URL')) {
+                // Add them as resource values which are available in preferences.xml
+                resValue "string", "ICE_USERNAME", COMMUNITY_ICE_USERNAME
+                resValue "string", "ICE_PASSWORD", COMMUNITY_ICE_PASSWORD
+                resValue "string", "ICE_DOMAIN", COMMUNITY_ICE_DOMAIN
+                resValue "string", "ICE_URL", COMMUNITY_ICE_URL
+            }
+
             //applicationIdSuffix ".premium"
         }
 
@@ -136,6 +143,19 @@ android {
             resValue "string", "app_name", "Restcomm Olympus Premium"
             buildConfigField "boolean", "ENABLE_TEST_FAIRY_RUNTIME", "false"
             buildConfigField "String", "TESTFAIRY_APP_TOKEN", TESTFAIRY_APP_TOKEN
+
+            // ICE_USERNAME, ICE_PASSWORD, ICE_DOMAIN &ICE_URL are defined in project gradle.properties for community builds, but also overriden
+            // by gradle properties passed from command line (i.e. $ gradlew ... -PICE_DOMAIN=...) for Telestax builds from our
+            // CI scripts. Reason for this is that Telestax builds use different settings
+            // for ICE that are meant for production systems, and which should remain secret
+            if (project.hasProperty('PREMIUM_ICE_USERNAME') && project.hasProperty('PREMIUM_ICE_PASSWORD') &&
+                    project.hasProperty('PREMIUM_ICE_DOMAIN') && project.hasProperty('PREMIUM_ICE_URL')) {
+                // Add them as resource values which are available in preferences.xml
+                resValue "string", "ICE_USERNAME", PREMIUM_ICE_USERNAME
+                resValue "string", "ICE_PASSWORD", PREMIUM_ICE_PASSWORD
+                resValue "string", "ICE_DOMAIN", PREMIUM_ICE_DOMAIN
+                resValue "string", "ICE_URL", PREMIUM_ICE_URL
+            }
         }
     }
 

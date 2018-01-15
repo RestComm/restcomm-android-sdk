@@ -110,7 +110,7 @@
              android:entries="@array/candidate_timeout_entries"
              android:entryValues="@array/candidate_timeout_values"/>
          <EditTextPreference
-            android:defaultValue="https://es.xirsys.com/_turn"
+            android:defaultValue="@string/ICE_URL"
             android:key="turn-url"
             android:title="ICE URL"
             android:summary="Base URL to use for ICE"/>
