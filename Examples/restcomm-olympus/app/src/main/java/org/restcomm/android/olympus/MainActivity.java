@@ -318,12 +318,14 @@ public class MainActivity extends AppCompatActivity
          params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY ,""));
 
 
+         // If exception is raised, we will close activity only if it comes from login
+         // otherwise we will just show the error dialog
          device.setLogLevel(Log.VERBOSE);
          try {
             device.initialize(getApplicationContext(), params, this);
          }
          catch (RCException e) {
-            showOkAlert("RCDevice Initialization Error", e.errorText, true);
+            showOkAlert("RCDevice Initialization Error", e.errorText, !isTaskRoot());
          }
       }
       else {
