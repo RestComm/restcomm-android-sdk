@@ -184,8 +184,9 @@ public class RCUtils {
     }
 
     static void validatePushSettings(HashMap<String, Object> parameters) throws RCException{
-        if (!parameters.containsKey(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT)){
-            throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ENABLE_DISABLE_PUSH_NOTIFICATION);
+        if (!parameters.containsKey(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT) ||
+                parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT) == null){
+            return;
         }
 
         boolean validatePushParameters = (Boolean) parameters.get(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT);
@@ -232,9 +233,6 @@ public class RCUtils {
     }
 
     public static boolean shouldRegisterForPush(HashMap<String, Object> parameters, StorageManagerInterface storageManagerInterface) {
-        // @Oggie: I moved it outside, in RCDevice.updateParams(), now called RCDevice.reconfigure(), let me know if you see any issue here, since I
-        // might be missing something
-        //validatePushSettings(parameters);
 
         //when binding is missing we need to register for push
         if (TextUtils.isEmpty(storageManagerInterface.getString(FcmConfigurationHandler.FCM_BINDING, null))){

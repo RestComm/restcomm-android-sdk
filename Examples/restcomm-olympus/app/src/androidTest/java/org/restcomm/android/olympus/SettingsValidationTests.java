@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 /**
  *  This class represent the tests of validation
@@ -57,7 +58,6 @@ public class SettingsValidationTests {
             assertThat(ex.errorCode).isEqualTo(RCClient.ErrorCodes.ERROR_CONNECTION_MISSING_PEER);
         }
 
-        //CONNECTION_PEER ok
         connectParams = new HashMap<String, Object>();
 
         //CONNECTION_VIDEO_ENABLED not passed
@@ -65,7 +65,7 @@ public class SettingsValidationTests {
             connectParams.put(RCConnection.ParameterKeys.CONNECTION_PEER, "restcomm");
             RCUtils.validateConnectionParms(connectParams);
         } catch (RCException ex) {
-            assertThat(ex.errorCode).isEqualTo(RCClient.ErrorCodes.SUCCESS);
+           fail(ex.toString());
         }
 
         //CONNECTION_LOCAL_VIDEO == null
@@ -108,8 +108,7 @@ public class SettingsValidationTests {
             connectParams.put(RCConnection.ParameterKeys.CONNECTION_VIDEO_ENABLED, false);
             RCUtils.validateConnectionParms(connectParams);
         } catch (RCException ex) {
-            //this shouldn't happened
-            assertThat(ex.errorCode).isEqualTo(RCClient.ErrorCodes.SUCCESS);
+            fail(ex.toString());
         }
     }
 
@@ -121,7 +120,7 @@ public class SettingsValidationTests {
         try {
             RCUtils.validateSettingsParms(settingParams);
         } catch (RCException ex) {
-            assertThat(ex.errorCode).isEqualTo(RCClient.ErrorCodes.ERROR_DEVICE_PUSH_NOTIFICATION_ENABLE_DISABLE_PUSH_NOTIFICATION);
+            assertThat(ex.errorCode).isEqualTo(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_USERNAME);
         }
 
         //PUSH_NOTIFICATIONS_FCM_SERVER_KEY missing
@@ -534,7 +533,7 @@ public class SettingsValidationTests {
 
             RCUtils.validateSettingsParms(settingParams);
         } catch (RCException ex) {
-            assertThat(ex.errorCode).isEqualTo(RCClient.ErrorCodes.SUCCESS);
+            fail(ex.toString());
         }
     }
 
@@ -573,8 +572,7 @@ public class SettingsValidationTests {
 
             RCUtils.validateDeviceParms(settingParams);
         } catch (RCException ex) {
-            //this shouldn't happened
-            assertThat(ex.errorCode).isEqualTo(RCClient.ErrorCodes.SUCCESS);
+            fail(ex.toString());
         }
     }
 

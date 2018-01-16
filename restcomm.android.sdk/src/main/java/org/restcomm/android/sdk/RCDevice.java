@@ -1078,14 +1078,14 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          storageManagerPreferences = new StorageManagerPreferences(this);
       }
 
-      HashMap<String, Object>  caschedParams = (HashMap<String, Object>)storageManagerPreferences.getAllEntries();
-      caschedParams.putAll(params);
+      HashMap<String, Object>  cachedParams = (HashMap<String, Object>)storageManagerPreferences.getAllEntries();
+      cachedParams.putAll(params);
 
-      RCUtils.validateSettingsParms(caschedParams);
+      RCUtils.validateSettingsParms(cachedParams);
 
       // remember that the new parameters can be just a subset of the currently stored in this.parameters, so to update the current parameters we need
       // to merge them with the new (i.e. keep the old and replace any new keys with new values)
-      this.parameters = JainSipConfiguration.mergeParameters(params, caschedParams);
+      this.parameters = JainSipConfiguration.mergeParameters(params, cachedParams);
       //save params for background
       StorageUtils.saveParams(storageManagerPreferences, parameters);
 
