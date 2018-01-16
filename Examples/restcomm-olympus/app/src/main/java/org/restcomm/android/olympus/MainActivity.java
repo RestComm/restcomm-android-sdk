@@ -318,12 +318,14 @@ public class MainActivity extends AppCompatActivity
          params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, prefs.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY ,""));
 
 
+         // If exception is raised, we will close activity only if it comes from login
+         // otherwise we will just show the error dialog
          device.setLogLevel(Log.VERBOSE);
          try {
             device.initialize(getApplicationContext(), params, this);
          }
          catch (RCException e) {
-            showOkAlert("RCDevice Initialization Error", e.errorText);
+            showOkAlert("RCDevice Initialization Error", e.errorText, !isTaskRoot());
          }
       }
       else {
@@ -488,7 +490,7 @@ public class MainActivity extends AppCompatActivity
       }
       else {
          if (!isFinishing()) {
-            showOkAlert("RCDevice Initialization Error", statusText);
+            showOkAlert("RCDevice Initialization Error", statusText, false);
          }
       }
    }
@@ -644,7 +646,7 @@ public class MainActivity extends AppCompatActivity
    /**
     * Helpers
     */
-   private void showOkAlert(final String title, final String detail) {
+   private void showOkAlert(final String title, final String detail, final boolean close) {
       if (alertDialog.isShowing()) {
          Log.w(TAG, "Alert already showing, hiding to show new alert");
          alertDialog.hide();
@@ -655,10 +657,13 @@ public class MainActivity extends AppCompatActivity
       alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
          public void onClick(DialogInterface dialog, int which) {
             dialog.dismiss();
+            if (close){
+               MainActivity.this.finish();
+            }
          }
       });
 
-         alertDialog.show();
+      alertDialog.show();
 
    }
 
