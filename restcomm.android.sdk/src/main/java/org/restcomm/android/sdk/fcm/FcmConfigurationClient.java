@@ -33,10 +33,7 @@ import org.restcomm.android.sdk.fcm.model.FcmCredentials;
 import org.restcomm.android.sdk.util.RCException;
 import org.restcomm.android.sdk.util.RCLogger;
 
-import android.text.BoringLayout;
 import android.util.Base64;
-import android.util.Log;
-import android.util.Pair;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -44,6 +41,17 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
+
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSession;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.X509TrustManager;
 
 
 /**
@@ -70,18 +78,33 @@ public class FcmConfigurationClient {
      * @param password - password for an account
      * @param restcommDomain - restcomm domain
      * @param pushDomain - push notification domain
-    **/
+     **/
     public FcmConfigurationClient(String accountEmail, String password, String pushDomain, String restcommDomain){
+        this(accountEmail, password, pushDomain, restcommDomain, false);
+    }
+
+    /**
+     * Constructor
+     * @param accountEmail - account's email
+     * @param password - password for an account
+     * @param restcommDomain - restcomm domain
+     * @param pushDomain - push notification domain
+     * @param disableCertificateVerification - if true SSLCertificate checking will be skipped
+     **/
+    public FcmConfigurationClient(String accountEmail, String password, String pushDomain, String restcommDomain, boolean disableCertificateVerification){
         this.accountEmail = accountEmail;
         this.password = password;
         this.pushDomain = pushDomain;
         this.restcommDomain = restcommDomain;
 
+        if (disableCertificateVerification) {
+            disableSSLCertificateChecking();
+        }
+
         this.pushPath = PUSH_PATH;
         if (pushDomain.equals("staging.restcomm.com")){
             this.pushPath = PUSH_PATH_STAGING;
         }
-
     }
 
     private HttpURLConnection createUrlRequestWithUrl(String urlString) throws Exception{
@@ -103,7 +126,8 @@ public class FcmConfigurationClient {
         HttpURLConnection connection = null;
         try {
             String encodedEmail = URLEncoder.encode(accountEmail, "UTF-8");
-            String url = "https://" + restcommDomain + ACCOUNT_SID_URL + "/" + encodedEmail;
+            String url = restcommDomain + ACCOUNT_SID_URL + "/" + encodedEmail;
+
             RCLogger.v(TAG, "calling url: " + url);
             connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("GET");
@@ -139,7 +163,7 @@ public class FcmConfigurationClient {
         String clientSid = null;
         HttpURLConnection connection = null;
         try{
-            String url = "https://" + restcommDomain + CLIENT_SID_URL + "/" + accountSid + "/Clients.json";
+            String url = restcommDomain + CLIENT_SID_URL + "/" + accountSid + "/Clients.json";
             connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("GET");
 
@@ -181,8 +205,7 @@ public class FcmConfigurationClient {
         RCLogger.v(TAG, "enableClientPushSettings method started");
         HttpURLConnection connection = null;
         try{
-           // String url = "https://" + accountSid + ":" + authToken + "@" + this.restcommDomain + CLIENT_SID_URL + "/" + accountSid + "/Clients/" + clientSid;
-            String url = "https://" + restcommDomain + CLIENT_SID_URL + "/" + accountSid + "/Clients/" + clientSid;
+            String url = restcommDomain + CLIENT_SID_URL + "/" + accountSid + "/Clients/" + clientSid;
             RCLogger.v(TAG, "calling url: " + url);
             String urlParameters  = "IsPushEnabled=" + enable;
             byte[] postData = urlParameters.getBytes( StandardCharsets.UTF_8 );
@@ -219,7 +242,7 @@ public class FcmConfigurationClient {
         FcmApplication fcmApplication = null;
         HttpURLConnection connection = null;
         try{
-            String url = "https://" + pushDomain + "/" + this.pushPath + "/applications";
+            String url = pushDomain + "/" + this.pushPath + "/applications";
             RCLogger.v(TAG, "calling url: " + url);
             connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("GET");
@@ -250,7 +273,7 @@ public class FcmConfigurationClient {
         FcmApplication fcmApplication = null;
         HttpURLConnection connection = null;
         try{
-            String url = "https://" + pushDomain + "/" + this.pushPath + "/applications";
+            String url = pushDomain + "/" + this.pushPath + "/applications";
             RCLogger.v(TAG, "calling url: " + url);
             connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("POST");
@@ -288,7 +311,7 @@ public class FcmConfigurationClient {
         FcmCredentials fcmCredentials = null;
         HttpURLConnection connection = null;
         try{
-            String url = "https://" + pushDomain + "/" + this.pushPath + "/credentials";
+            String url = pushDomain + "/" + this.pushPath + "/credentials";
             RCLogger.v(TAG, "calling url: " + url);
             connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("GET");
@@ -319,7 +342,7 @@ public class FcmConfigurationClient {
         FcmCredentials fcmCredentials = null;
         HttpURLConnection connection = null;
         try{
-            String url = "https://" + pushDomain + "/" + this.pushPath + "/credentials";
+            String url = pushDomain + "/" + this.pushPath + "/credentials";
             RCLogger.v(TAG, "calling url: " + url);
             connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("POST");
@@ -354,7 +377,7 @@ public class FcmConfigurationClient {
         HttpURLConnection connection = null;
         FcmCredentials fcmCredentials = null;
         try {
-            String url = "https://" + pushDomain + "/" + this.pushPath + "/credentials/" + credentials.getSid();
+            String url = pushDomain + "/" + this.pushPath + "/credentials/" + credentials.getSid();
             RCLogger.v(TAG, "calling url: " + url);
             connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("PUT");
@@ -397,7 +420,7 @@ public class FcmConfigurationClient {
         FcmBinding fcmBinding = null;
         HttpURLConnection connection = null;
         try{
-            String url = "https://" + pushDomain + "/" + this.pushPath + "/bindings";
+            String url = pushDomain + "/" + this.pushPath + "/bindings";
             RCLogger.v(TAG, "calling url: " + url);
             connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("GET");
@@ -447,9 +470,9 @@ public class FcmConfigurationClient {
         FcmBinding fcmBinding = null;
         HttpURLConnection connection = null;
         try{
-            String url = "https://" + pushDomain + "/" + this.pushPath + "/bindings";
+            String url = pushDomain + "/" + this.pushPath + "/bindings";
             if (bindingSid != null){
-                url = "https://" + pushDomain + "/" + this.pushPath + "/bindings/" + bindingSid;
+                url = pushDomain + "/" + this.pushPath + "/bindings/" + bindingSid;
             }
             RCLogger.v(TAG, "calling url: " + url);
             connection = createUrlRequestWithUrl(url);
@@ -490,7 +513,7 @@ public class FcmConfigurationClient {
         RCLogger.v(TAG, "deleteBinding method started");
         HttpURLConnection connection = null;
         try{
-            String url = "https://" + pushDomain + "/" + this.pushPath + "/bindings/" + bindingSid;
+            String url = pushDomain + "/" + this.pushPath + "/bindings/" + bindingSid;
             RCLogger.v(TAG, "calling url: " + url);
             connection = createUrlRequestWithUrl(url);
             connection.setRequestMethod("DELETE");
@@ -657,4 +680,29 @@ public class FcmConfigurationClient {
         return sb.toString();
     }
 
+    private static void disableSSLCertificateChecking() {
+        TrustManager[] trustAllCerts = new TrustManager[] { new X509TrustManager() {
+            public X509Certificate[] getAcceptedIssuers() {
+                return null;
+            }
+            @Override
+            public void checkClientTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+                // Not implemented
+            }
+            @Override
+            public void checkServerTrusted(X509Certificate[] arg0, String arg1) throws CertificateException {
+                // Not implemented
+            }
+        } };
+        try {
+            SSLContext sc = SSLContext.getInstance("TLS");
+            sc.init(null, trustAllCerts, new java.security.SecureRandom());
+            HttpsURLConnection.setDefaultHostnameVerifier(new HostnameVerifier() { @Override public boolean verify(String hostname, SSLSession session) { return true; } });
+            HttpsURLConnection.setDefaultSSLSocketFactory(sc.getSocketFactory());
+        } catch (KeyManagementException e) {
+            e.printStackTrace();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+    }
 }
