@@ -188,7 +188,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       public static final String SIGNALING_SECURE_ENABLED = "signaling-secure";
       public static final String SIGNALING_LOCAL_PORT = "signaling-local-port";
       public static final String DEBUG_JAIN_SIP_LOGGING_ENABLED = "jain-sip-logging-enabled";
-      public static final String DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION = "jain-sip-disable-certificate-verification";
+      public static final String DEBUG_DISABLE_CERTIFICATE_VERIFICATION = "disable-certificate-verification";
       // WARNING This is NOT for production. It's for Integration Tests, where there is no activity to receive call/message events
       public static final String DEBUG_USE_BROADCASTS_FOR_EVENTS = "debug-use-broadcast-for-events";
       public static final String MEDIA_TURN_ENABLED = "turn-enabled";

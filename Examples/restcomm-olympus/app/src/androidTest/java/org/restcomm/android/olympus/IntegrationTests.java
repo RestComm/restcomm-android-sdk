@@ -14,7 +14,6 @@ import android.os.Looper;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.rule.GrantPermissionRule;
 import android.support.test.runner.AndroidJUnit4;
-import android.text.TextUtils;
 import android.util.Log;
 
 import com.loopj.android.http.AsyncHttpClient;
@@ -36,9 +35,6 @@ import org.restcomm.android.sdk.RCConnectionListener;
 import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.RCDeviceListener;
 
-import org.restcomm.android.sdk.fcm.FcmConfigurationHandler;
-import org.restcomm.android.sdk.storage.StorageManagerPreferences;
-import org.restcomm.android.sdk.storage.StorageUtils;
 import org.restcomm.android.sdk.util.PercentFrameLayout;
 import org.restcomm.android.sdk.util.RCException;
 import org.webrtc.SurfaceViewRenderer;
@@ -284,7 +280,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
-                params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
+                params.put(RCDevice.ParameterKeys.DEBUG_DISABLE_CERTIFICATE_VERIFICATION, true);
 
                 device.setLogLevel(Log.VERBOSE);
 
@@ -348,7 +344,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
-                params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
+                params.put(RCDevice.ParameterKeys.DEBUG_DISABLE_CERTIFICATE_VERIFICATION, true);
 
                 device.setLogLevel(Log.VERBOSE);
 
@@ -417,7 +413,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
-                params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
+                params.put(RCDevice.ParameterKeys.DEBUG_DISABLE_CERTIFICATE_VERIFICATION, true);
 
                 device.setLogLevel(Log.VERBOSE);
 
@@ -517,7 +513,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
-                params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
+                params.put(RCDevice.ParameterKeys.DEBUG_DISABLE_CERTIFICATE_VERIFICATION, true);
 
                 device.setLogLevel(Log.VERBOSE);
 
@@ -616,7 +612,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
-                params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
+                params.put(RCDevice.ParameterKeys.DEBUG_DISABLE_CERTIFICATE_VERIFICATION, true);
 
                 device.setLogLevel(Log.VERBOSE);
 
@@ -711,7 +707,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
-                params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
+                params.put(RCDevice.ParameterKeys.DEBUG_DISABLE_CERTIFICATE_VERIFICATION, true);
 
                 device.setLogLevel(Log.VERBOSE);
 
@@ -805,7 +801,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_ICE_DOMAIN, ICE_DOMAIN);
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
-                params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
+                params.put(RCDevice.ParameterKeys.DEBUG_DISABLE_CERTIFICATE_VERIFICATION, true);
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
                 params.put(RCDevice.ParameterKeys.DEBUG_USE_BROADCASTS_FOR_EVENTS, true);
 
@@ -920,7 +916,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
-                params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
+                params.put(RCDevice.ParameterKeys.DEBUG_DISABLE_CERTIFICATE_VERIFICATION, true);
 
                 device.setLogLevel(Log.VERBOSE);
 
@@ -996,7 +992,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
-                params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
+                params.put(RCDevice.ParameterKeys.DEBUG_DISABLE_CERTIFICATE_VERIFICATION, true);
                 params.put(RCDevice.ParameterKeys.DEBUG_USE_BROADCASTS_FOR_EVENTS, true);
 
                 device.setLogLevel(Log.VERBOSE);
@@ -1083,7 +1079,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, true);
-                params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
+                params.put(RCDevice.ParameterKeys.DEBUG_DISABLE_CERTIFICATE_VERIFICATION, true);
 
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, "");
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, "");
@@ -1135,7 +1131,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, true);
-                params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
+                params.put(RCDevice.ParameterKeys.DEBUG_DISABLE_CERTIFICATE_VERIFICATION, true);
 
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, "");
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, "");
@@ -1189,7 +1185,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, true);
-                params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
+                params.put(RCDevice.ParameterKeys.DEBUG_DISABLE_CERTIFICATE_VERIFICATION, true);
 
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, PUSH_APPLICATION_NAME);
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, "invalid_email@test.com");
@@ -1242,7 +1238,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, true);
-                params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
+                params.put(RCDevice.ParameterKeys.DEBUG_DISABLE_CERTIFICATE_VERIFICATION, true);
 
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, PUSH_APPLICATION_NAME);
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, PUSH_ACCOUNT);
@@ -1295,7 +1291,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, true);
-                params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
+                params.put(RCDevice.ParameterKeys.DEBUG_DISABLE_CERTIFICATE_VERIFICATION, true);
 
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, PUSH_APPLICATION_NAME);
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, PUSH_ACCOUNT);
@@ -1347,7 +1343,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, true);
-                params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
+                params.put(RCDevice.ParameterKeys.DEBUG_DISABLE_CERTIFICATE_VERIFICATION, true);
 
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, PUSH_APPLICATION_NAME);
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, PUSH_ACCOUNT);
@@ -1438,7 +1434,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, true);
-                params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
+                params.put(RCDevice.ParameterKeys.DEBUG_DISABLE_CERTIFICATE_VERIFICATION, true);
 
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, PUSH_APPLICATION_NAME);
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, PUSH_ACCOUNT);
@@ -1520,7 +1516,7 @@ public class IntegrationTests extends BroadcastReceiver implements RCDeviceListe
                 params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
                 params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, false);
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
-                params.put(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION, true);
+                params.put(RCDevice.ParameterKeys.DEBUG_DISABLE_CERTIFICATE_VERIFICATION, true);
 
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, PUSH_APPLICATION_NAME);
                 params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, PUSH_ACCOUNT);
