@@ -29,10 +29,12 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.IBinder;
+import android.preference.PreferenceManager;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
@@ -45,6 +47,7 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.restcomm.android.olympus.Util.Utils;
 import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCDevice;
@@ -127,7 +130,6 @@ public class MessageActivity extends AppCompatActivity
       // The activity is about to become visible.
       Log.i(TAG, "%% onStart");
 
-      //handleCall(getIntent());
       bindService(new Intent(this, RCDevice.class), this, Context.BIND_AUTO_CREATE);
    }
 
@@ -217,6 +219,23 @@ public class MessageActivity extends AppCompatActivity
             lblOngoingCall.setVisibility(View.VISIBLE);
             startTimer();
          }
+      }
+      else {
+         Log.i(TAG, "RCDevice not initialized; initializing");
+         PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
+         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+
+         HashMap<String, Object> params = Utils.createParameters(prefs, this);
+
+         // If exception is raised, we will close activity only if it comes from login
+         // otherwise we will just show the error dialog
+         device.setLogLevel(Log.VERBOSE);
+         try {
+            device.initialize(getApplicationContext(), params, this);
+         } catch (RCException e) {
+            showOkAlert("RCDevice Initialization Error", e.errorText);
+         }
+
       }
 
       // needed if we are returning from Message screen that becomes the Device listener
@@ -312,6 +331,18 @@ public class MessageActivity extends AppCompatActivity
    public void onInitialized(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus, int statusCode, String statusText)
    {
       Log.i(TAG, "%% onInitialized");
+      if (statusCode == RCClient.ErrorCodes.SUCCESS.ordinal()) {
+         handleConnectivityUpdate(connectivityStatus, "RCDevice successfully initialized, using: " + connectivityStatus);
+      }
+      else if (statusCode == RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY.ordinal()) {
+         // This is not really an error, since if connectivity comes back the RCDevice will resume automatically
+         handleConnectivityUpdate(connectivityStatus, null);
+      }
+      else {
+         if (!isFinishing()) {
+            showOkAlert("RCDevice Initialization Error", statusText);
+         }
+      }
    }
 
    public void onReconfigured(RCDevice device, RCConnectivityStatus connectivityStatus, int statusCode, String statusText)
@@ -336,33 +367,11 @@ public class MessageActivity extends AppCompatActivity
       handleConnectivityUpdate(connectivityStatus, null);
    }
 
-/*
-   @Override
-   public void onWarning(RCDevice device, int statusCode, String statusText) {
-      if (statusCode != RCClient.ErrorCodes.SUCCESS.ordinal()) {
-         Toast.makeText(getApplicationContext(), "RCDevice Warning message: " + statusText, Toast.LENGTH_LONG).show();
-      }
-   }
-*/
-
    public void onMessageSent(RCDevice device, int statusCode, String statusText, String jobId)
    {
       Log.i(TAG, "onMessageSent(): statusCode: " + statusCode + ", statusText: " + statusText);
 
-      //Integer index = indexes.get(jobId);
-
       listFragment.updateMessageDeliveryStatus(jobId, statusCode, currentPeer);
-      /*
-      if (statusCode != RCClient.ErrorCodes.SUCCESS.ordinal()) {
-         //listView.getAdapter().getItem(index);
-         //messageTextView.setTextColor(ContextCompat.getColor(this, R.color.colorError));
-      }
-      else {
-         //messageTextView.setTextColor(ContextCompat.getColor(this, R.color.colorTextSecondary));
-      }
-      */
-
-      //indexes.remove(jobId);
    }
 
    public void onReleased(RCDevice device, int statusCode, String statusText)

@@ -510,8 +510,15 @@ class JainSipMessageBuilder {
          // and hence the matching fails to identify trasport. So let's workaround that by always uppercasing it
          supportedTransports.add(listeningPoint.getTransport().toUpperCase());
          DefaultDNSServerLocator dnsServerLocator = new DefaultDNSServerLocator(supportedTransports);
+
+         // This is a synchronous call that does one or more DNS queries (depending on if DNS SRV is used), let's time it to keep track of any big delays
+         long startTime = System.currentTimeMillis();
          Queue<Hop> hops = dnsServerLocator.locateHops(jainSipAddressFactory.createURI(domain));
-         RCLogger.i(TAG, "DNS hops: " + hops.toString());
+         long queryDuration = System.currentTimeMillis() - startTime;
+         RCLogger.i(TAG, "createRouteHeader(): DNS query time: " + queryDuration + " ms, hops: " + hops.toString());
+         if (queryDuration > 3000) {
+            RCLogger.w(TAG, "Siginaling DNS queries are taking too long, you might need to check your setup");
+         }
          SipURI routeUri = jainSipAddressFactory.createSipURI(null, hops.peek().getHost());
          routeUri.setParameter(DNSAwareRouter.DNS_ROUTE, Boolean.TRUE.toString());
          routeUri.setPort(hops.peek().getPort());

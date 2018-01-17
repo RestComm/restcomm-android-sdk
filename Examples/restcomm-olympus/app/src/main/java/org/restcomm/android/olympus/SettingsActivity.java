@@ -40,17 +40,21 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.view.MenuItem;
+import android.widget.Toast;
 
+import org.restcomm.android.olympus.Util.Utils;
+import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCDevice;
 //import org.restcomm.android.sdk.util.ErrorStruct;
+import org.restcomm.android.sdk.RCDeviceListener;
 import org.restcomm.android.sdk.util.RCException;
 import org.restcomm.android.sdk.util.RCUtils;
 
 import java.util.HashMap;
 
 public class SettingsActivity extends AppCompatActivity implements SharedPreferences.OnSharedPreferenceChangeListener,
-      ServiceConnection {
+      ServiceConnection, RCDeviceListener {
    private SettingsFragment settingsFragment;
    SharedPreferences prefs;
    HashMap<String, Object> params;
@@ -149,6 +153,22 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
       // We've bound to LocalService, cast the IBinder and get LocalService instance
       RCDevice.RCDeviceBinder binder = (RCDevice.RCDeviceBinder) service;
       device = binder.getService();
+
+      // Remember there's a chance that the user navigates to Settings and then hits home. In that case,
+      // when they come back RCDevice won't be initialized
+      if (!device.isInitialized()) {
+         Log.i(TAG, "RCDevice not initialized; initializing");
+         HashMap<String, Object> params = Utils.createParameters(prefs, this);
+
+         // If exception is raised, we will close activity only if it comes from login
+         // otherwise we will just show the error dialog
+         device.setLogLevel(Log.VERBOSE);
+         try {
+            device.initialize(getApplicationContext(), params, this);
+         } catch (RCException e) {
+            showOkAlert("RCDevice Initialization Error", e.errorText);
+         }
+      }
 
       // We have the device reference
       if (device.getState() == RCDevice.DeviceState.OFFLINE) {
@@ -357,5 +377,93 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
       return summary;
    }
 
+
+   /**
+    * RCDeviceListener callbacks
+    */
+   public void onInitialized(RCDevice device, RCDeviceListener.RCConnectivityStatus connectivityStatus, int statusCode, String statusText)
+   {
+      Log.i(TAG, "%% onInitialized");
+      if (statusCode == RCClient.ErrorCodes.SUCCESS.ordinal()) {
+         handleConnectivityUpdate(connectivityStatus, "RCDevice successfully initialized, using: " + connectivityStatus);
+      }
+      else if (statusCode == RCClient.ErrorCodes.ERROR_DEVICE_NO_CONNECTIVITY.ordinal()) {
+         // This is not really an error, since if connectivity comes back the RCDevice will resume automatically
+         handleConnectivityUpdate(connectivityStatus, null);
+      }
+      else {
+         if (!isFinishing()) {
+            showOkAlert("RCDevice Initialization Error", statusText);
+         }
+      }
+   }
+
+   public void onReconfigured(RCDevice device, RCConnectivityStatus connectivityStatus, int statusCode, String statusText)
+   {
+      Log.i(TAG, "%% onReconfigured");
+   }
+
+   public void onError(RCDevice device, int errorCode, String errorText)
+   {
+      if (errorCode == RCClient.ErrorCodes.SUCCESS.ordinal()) {
+         handleConnectivityUpdate(RCConnectivityStatus.RCConnectivityStatusNone, "RCDevice: " + errorText);
+      }
+      else {
+         handleConnectivityUpdate(RCConnectivityStatus.RCConnectivityStatusNone, "RCDevice Error: " + errorText);
+      }
+   }
+
+   public void onConnectivityUpdate(RCDevice device, RCConnectivityStatus connectivityStatus)
+   {
+      Log.i(TAG, "%% onConnectivityUpdate");
+
+      handleConnectivityUpdate(connectivityStatus, null);
+   }
+
+   public void onMessageSent(RCDevice device, int statusCode, String statusText, String jobId)
+   {
+      Log.i(TAG, "onMessageSent(): statusCode: " + statusCode + ", statusText: " + statusText);
+   }
+
+   public void onReleased(RCDevice device, int statusCode, String statusText)
+   {
+      if (statusCode != RCClient.ErrorCodes.SUCCESS.ordinal()) {
+         showOkAlert("RCDevice Error", statusText);
+      }
+
+      //maybe we stopped the activity before onReleased is called
+      if (serviceBound) {
+         unbindService(this);
+         serviceBound = false;
+      }
+   }
+
+   public void handleConnectivityUpdate(RCConnectivityStatus connectivityStatus, String text)
+   {
+      if (text == null) {
+         if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusNone) {
+            text = "RCDevice connectivity change: Lost connectivity";
+         }
+         if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusWiFi) {
+            text = "RCDevice connectivity change: Reestablished connectivity (Wifi)";
+         }
+         if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusCellular) {
+            text = "RCDevice connectivity change: Reestablished connectivity (Cellular)";
+         }
+         if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusEthernet) {
+            text = "RCDevice connectivity change: Reestablished connectivity (Ethernet)";
+         }
+
+      }
+
+      if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusNone) {
+         getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorTextSecondary)));
+      }
+      else {
+         getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorPrimary)));
+      }
+
+      Toast.makeText(getApplicationContext(), text, Toast.LENGTH_LONG).show();
+   }
 
 }
