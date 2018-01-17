@@ -60,7 +60,6 @@ import android.os.SystemClock;
 import android.text.format.Formatter;
 
 //import org.apache.http.conn.util.InetAddressUtils;
-import org.restcomm.android.sdk.R;
 import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCDevice;
@@ -68,10 +67,6 @@ import org.restcomm.android.sdk.RCDeviceListener;
 import org.restcomm.android.sdk.util.RCLogger;
 
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.NetworkInterface;
@@ -201,7 +196,7 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
       String keystoreFilename = "restcomm-android.keystore";
       HashMap<String, String> securityParameters = JainSipSecurityHelper.generateKeystore(androidContext, keystoreFilename);
       JainSipSecurityHelper.setProperties(properties, securityParameters.get("keystore-path"), securityParameters.get("keystore-password"),
-            (Boolean)configuration.get(RCDevice.ParameterKeys.DEBUG_JAIN_DISABLE_CERTIFICATE_VERIFICATION));
+            (Boolean)configuration.get(RCDevice.ParameterKeys.DEBUG_DISABLE_CERTIFICATE_VERIFICATION));
 
       if (configuration.containsKey(RCDevice.ParameterKeys.DEBUG_JAIN_SIP_LOGGING_ENABLED) &&
             (Boolean)configuration.get(RCDevice.ParameterKeys.DEBUG_JAIN_SIP_LOGGING_ENABLED)) {

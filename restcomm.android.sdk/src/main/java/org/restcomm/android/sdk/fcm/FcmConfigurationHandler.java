@@ -89,7 +89,18 @@ public class FcmConfigurationHandler {
         mUsername = this.mStorageManager.getString(RCDevice.ParameterKeys.SIGNALING_USERNAME, "");
         mApplicationName = this.mStorageManager.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, "");
         mFcmSecretKey = this.mStorageManager.getString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, "");
-        this.mFcmConfigurationClient = new FcmConfigurationClient(mEmail, password, pushDomain, httpDomain);
+
+        Boolean disableCertificate = this.mStorageManager.getBoolean(RCDevice.ParameterKeys.DEBUG_DISABLE_CERTIFICATE_VERIFICATION, false);
+
+        if (!pushDomain.contains("http://") && !pushDomain.contains("https://")){
+            pushDomain = "https://" + pushDomain;
+        }
+
+        if (!httpDomain.contains("http://") && !httpDomain.contains("https://")){
+            httpDomain = "https://" + httpDomain;
+        }
+
+        this.mFcmConfigurationClient = new FcmConfigurationClient(mEmail, password, pushDomain, httpDomain, disableCertificate);
     }
 
     /**
