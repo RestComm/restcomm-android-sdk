@@ -353,7 +353,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    private HashMap<String, RCConnection> connections;
    //private RCConnection incomingConnection;
    private RCDeviceListener.RCConnectivityStatus cachedConnectivityStatus = RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone;
-   //private SignalingClient signalingClient;
+   private SignalingClient signalingClient;
    private AppRTCAudioManager audioManager = null;
    //private Context context = null;
 
@@ -667,7 +667,10 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
 
          // check if TURN keys are there
          //params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
-         SignalingClient.open(this, getApplicationContext(), parameters);
+         if (signalingClient == null) {
+            signalingClient = new SignalingClient();
+            signalingClient.open(this, getApplicationContext(), parameters);
+         }
 
          registerForPushNotifications(false);
 
@@ -739,9 +742,10 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          audioManager = null;
       }
 
-      // TODO: check if initialized
-      SignalingClient.close();
-
+      if (signalingClient != null) {
+         signalingClient.close();
+         signalingClient = null;
+      }
       state = DeviceState.OFFLINE;
 
       isServiceAttached = false;
