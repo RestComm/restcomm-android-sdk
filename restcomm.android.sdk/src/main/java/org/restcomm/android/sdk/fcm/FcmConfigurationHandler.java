@@ -121,7 +121,7 @@ public class FcmConfigurationHandler {
         }
 
         // if there is no data for push and we have flag disable we will ignore it
-        if (!mEnablePush){
+        if (!mEnablePush) {
             if (bindingExists) {
                 registerOrUpdateForPush(false, actionIsUpdate);
                 needUpdate = true;
@@ -378,6 +378,12 @@ public class FcmConfigurationHandler {
             } else {
                 RCClient.ErrorCodes errorCode = result.second;
                 RCLogger.e(TAG, "Push notifications configuration failed, status: " + RCClient.errorText(errorCode));
+                if (mStorageManager != null) {
+                    mStorageManager.saveString(FCM_ACCOUNT_SID, null);
+                    mStorageManager.saveString(FCM_CLIENT_SID, null);
+                    mStorageManager.saveString(FCM_APPLICATION, null);
+                    mStorageManager.saveString(FCM_BINDING, null);
+                }
                 if (mListener != null) {
                     mListener.onRegisteredForPush(errorCode, RCClient.errorText(errorCode), actionIsUpdate);
                 }

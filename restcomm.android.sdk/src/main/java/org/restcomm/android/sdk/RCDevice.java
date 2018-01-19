@@ -44,6 +44,7 @@ import org.restcomm.android.sdk.SignalingClient.JainSipClient.JainSipConfigurati
 import org.restcomm.android.sdk.SignalingClient.SignalingClient;
 import org.restcomm.android.sdk.fcm.FcmConfigurationHandler;
 import org.restcomm.android.sdk.fcm.FcmPushRegistrationListener;
+import org.restcomm.android.sdk.fcm.model.FcmBinding;
 import org.restcomm.android.sdk.storage.StorageManagerPreferences;
 import org.restcomm.android.sdk.storage.StorageUtils;
 import org.restcomm.android.sdk.util.RegistrationFsm;
@@ -1361,8 +1362,18 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    {
       RCLogger.i(TAG, "onConnectivityEvent(): id: " + jobId + ", connectivityStatus: " + connectivityStatus);
       cachedConnectivityStatus = connectivityStatus;
-      if (state == DeviceState.OFFLINE && connectivityStatus != RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
-         state = DeviceState.READY;
+
+      storageManagerPreferences = new StorageManagerPreferences(this);
+      boolean pushEnabled = storageManagerPreferences.getBoolean(ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
+      String binding = storageManagerPreferences.getString(FcmConfigurationHandler.FCM_BINDING, null);
+      boolean registeredForPush = binding!=null;
+
+      if (state == DeviceState.OFFLINE && connectivityStatus != RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone){
+         if (pushEnabled && registeredForPush) {
+            state = DeviceState.READY;
+         } else if (!pushEnabled) {
+            state = DeviceState.READY;
+         }
       }
       if (state != DeviceState.OFFLINE && connectivityStatus == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
          state = DeviceState.OFFLINE;

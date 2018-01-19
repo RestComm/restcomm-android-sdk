@@ -31,6 +31,7 @@ import org.restcomm.android.sdk.RCDevice;
 import org.restcomm.android.sdk.fcm.FcmConfigurationHandler;
 import org.restcomm.android.sdk.storage.StorageManagerInterface;
 
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,8 +46,16 @@ public class RCUtils {
     {
         validateSettingsParms(parameters);
 
-        if (!parameters.containsKey(RCDevice.ParameterKeys.INTENT_INCOMING_CALL) || !(parameters.get(RCDevice.ParameterKeys.INTENT_INCOMING_CALL) instanceof Intent)) {
+        if (!parameters.containsKey(RCDevice.ParameterKeys.INTENT_INCOMING_CALL)) {
             throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_CALL_INTENT);
+        } else {
+            if (parameters.get(RCDevice.ParameterKeys.INTENT_INCOMING_CALL) instanceof String){
+                try {
+                    Intent.parseUri((String) parameters.get(RCDevice.ParameterKeys.INTENT_INCOMING_CALL), Intent.URI_INTENT_SCHEME);
+                } catch (URISyntaxException e) {
+                    throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_MISSING_CALL_INTENT);
+                }
+            }
         }
         if (!parameters.containsKey(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE)) {
             RCLogger.w(TAG, "validateDeviceParms(): Intent missing for incoming text messages, your App will work but won't be able to be notified on such event");
