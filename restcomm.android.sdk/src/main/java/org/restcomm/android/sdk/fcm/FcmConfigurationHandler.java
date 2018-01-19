@@ -126,13 +126,9 @@ public class FcmConfigurationHandler {
                 registerOrUpdateForPush(false, actionIsUpdate);
                 needUpdate = true;
             }
-        }else{
-
-        //} else if (RCUtils.shouldRegisterForPush(parameters, mStorageManager)) {
-//            else {
-                registerOrUpdateForPush(false, actionIsUpdate);
-                needUpdate = true;
-//            }
+        } else if (RCUtils.shouldRegisterForPush(parameters, mStorageManager)) {
+            registerOrUpdateForPush(false, actionIsUpdate);
+            needUpdate = true;
         }
 
         return needUpdate;

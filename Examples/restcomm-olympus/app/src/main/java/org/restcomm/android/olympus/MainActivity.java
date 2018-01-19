@@ -479,7 +479,7 @@ public class MainActivity extends AppCompatActivity
          }
       }
 
-      if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusNone || device.getState() == RCDevice.DeviceState.OFFLINE) {
+      if (connectivityStatus == RCConnectivityStatus.RCConnectivityStatusNone) {
          getSupportActionBar().setBackgroundDrawable(new ColorDrawable(getResources().getColor(R.color.colorTextSecondary)));
       }
       else {
