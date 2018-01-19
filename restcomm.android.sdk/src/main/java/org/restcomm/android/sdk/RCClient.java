@@ -62,6 +62,7 @@ public final class RCClient {
       ERROR_DEVICE_FAILED_TO_START_NETWORKING,
       ERROR_DEVICE_REGISTER_INTENT_CALL_MISSING,
       ERROR_DEVICE_REGISTER_INTENT_MESSAGE_MISSING,
+      ERROR_DEVICE_SIGNALING_FACILITIES_ALREADY_INITIALIZED,
 
       ERROR_CONNECTION_AUTHENTICATION_FORBIDDEN,
       ERROR_CONNECTION_DEVICE_NOT_READY,
@@ -205,6 +206,9 @@ public final class RCClient {
       }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_REGISTER_INTENT_MESSAGE_MISSING) {
          return "Device networking facilities failed to start; please check if intent for message is missing.";
+      }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_SIGNALING_FACILITIES_ALREADY_INITIALIZED) {
+         return "Device initialization failed; siginaling facilities already intialized";
       }
 
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_AUTHENTICATION_FORBIDDEN) {

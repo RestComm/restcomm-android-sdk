@@ -29,6 +29,7 @@ import android.util.Log;
 
 import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.RCDeviceListener;
+import org.restcomm.android.sdk.util.RCException;
 import org.restcomm.android.sdk.util.RCLogger;
 
 import java.util.HashMap;
@@ -55,6 +56,9 @@ import java.util.HashMap;
  * that handles them by dispatching them to JainSipClient that encapsulates JAIN SIP. When a response/event comes in from JAIN SIP to JainSipClient
  * the reverse happens: a message is created from the Signaling thread to the UI thread and after it is received at handleMessage() the respective
  * listener callback is used to notify the UI.
+ *
+ * Note: Although it would make sense to make SignalingClient static in order to accommodate some improvements over the current design, the problem is that
+ * we need an object to extend Handler and we definitely need SignalingClient to also be a Handler.
  */
 public class SignalingClient extends Handler {
 
@@ -141,12 +145,12 @@ public class SignalingClient extends Handler {
    private static boolean initialized = false;
 
    // private constructor to avoid client applications to use constructor
-   public SignalingClient()
+   public SignalingClient() throws RCException
    {
       super();
 
       if (initialized) {
-         throw new RuntimeException("SignalingClient already initialized");
+         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_SIGNALING_FACILITIES_ALREADY_INITIALIZED);
       }
 
       // create signaling handler thread and handler/signal
@@ -319,7 +323,6 @@ public class SignalingClient extends Handler {
    {
       // Gets the image task from the incoming Message object.
       SignalingMessage message = (SignalingMessage) inputMessage.obj;
-
 
       RCLogger.i(TAG, "handleMessage: type: " + message.type + ", jobId: " + message.jobId);
 
