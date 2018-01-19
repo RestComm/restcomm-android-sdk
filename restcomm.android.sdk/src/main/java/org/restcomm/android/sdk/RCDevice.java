@@ -1371,6 +1371,8 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
       if (state == DeviceState.OFFLINE && connectivityStatus != RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone){
          if (pushEnabled && registeredForPush) {
             state = DeviceState.READY;
+         } else if (!pushEnabled) {
+            state = DeviceState.READY;
          }
       }
       if (state != DeviceState.OFFLINE && connectivityStatus == RCDeviceListener.RCConnectivityStatus.RCConnectivityStatusNone) {
