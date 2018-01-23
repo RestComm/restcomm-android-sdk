@@ -2,7 +2,7 @@
     <!-- We 're setting the app_name through Olympus build.gradle to account for flavors
     <string name="app_name">Restcomm Olympus</string>
     -->
-    <string name="contacts_activity_label">Olympus</string>
+    <string name="contacts_activity_label">Restcomm Demo</string>
 
     <string name="action_audio_call">Make Audio Call</string>
     <string name="action_video_call">Make Video Call</string>
@@ -229,19 +229,21 @@
     -->
 
     <!-- sign in activity -->
-    <string name="welcome_to_olympus">Welcome to \nRestcomm Olympus</string>
-    <string name="username">"Username, like \'bob\'</string>
-    <string name="password">Password</string>
+    <string name="welcome_to_olympus">Welcome to \nRestcomm WebRTC Demo</string>
+    <string name="username">Restcomm Client name, like \'bob\'</string>
+    <string name="password">Restcomm Client password</string>
     <string name="domain">Domain, like \'cloud.restcomm.com\'</string>
     <string name="sign_in">Sign in</string>
     <string name="enable_push_notifications">Enable push notifications</string>
-    <string name="push_account_email">Restcomm-Connect account email</string>
-    <string name="push_account_password">Password for Restcomm-Connect account</string>
+    <string name="push_account_email">Restcomm account email</string>
+    <string name="push_account_password">Restcomm account password</string>
     <string name="push_domain">Push domain, like: \'push.restcomm.com\'</string>
     <string name="http_domain">Http domain, like: \'cloud.restcomm.com\'</string>
     <string name="button_to_resume_ongoing_call">Button to resume ongoing call</string>
     <string name="resume_ongoing_call_text">Tap to return to call with</string>
     <string name="string_color_filter_video_disabled">#99FFFFFF</string>
+    <string name="signin_sip_configuration_label">SIP Configuration</string>
+    <string name="signin_push_configuration_label">Push Configuration</string>
 
 
 </resources>

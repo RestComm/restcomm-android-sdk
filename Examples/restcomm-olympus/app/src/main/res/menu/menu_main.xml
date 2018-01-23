@@ -9,13 +9,14 @@
     android:title="@string/action_settings"
     app:showAsAction="ifRoom"/>
 
-<!-- About, should appear as button, if possible -->
+<!-- About, should appear as button, if possible. Notice that using ifRoom here doesn't hide it,
+even if the title can't fit the screen. Turning to never, as we need the title to be very prominent for the Demo App -->
 <item android:id="@+id/action_submit_logs"
       android:icon="@drawable/ic_bug_report_black_24dp"
       android:title="@string/action_submit_bug_report"
-      app:showAsAction="always"/>
+      app:showAsAction="never"/>
 
-    <!-- About, should appear as button, if possible -->
+<!-- About, should appear as button, if possible -->
 <item android:id="@+id/action_about"
     android:icon="@drawable/ic_info_outline_black_24dp"
     android:title="@string/action_about"
