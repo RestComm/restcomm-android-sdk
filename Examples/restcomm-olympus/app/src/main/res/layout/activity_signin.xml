@@ -37,7 +37,7 @@
                 android:layout_height="wrap_content"
                 android:textStyle="bold"
                 android:textColor="@color/colorAccent"
-                android:text="SIP Configuration"
+                android:text="@string/signin_sip_configuration_label"
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="8dp"/>
 
@@ -93,7 +93,7 @@
                 android:id="@+id/push_configuration_label"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Push Configuration"
+                android:text="@string/signin_push_configuration_label"
                 android:textStyle="bold"
                 android:textColor="@color/colorAccent"
                 android:layout_marginTop="8dp"

@@ -298,7 +298,7 @@ public class MessageActivity extends AppCompatActivity
    }
 
    /**
-    * Main Activity onClick
+    * Message Activity onClick
     */
    public void onClick(View view)
    {
@@ -426,20 +426,26 @@ public class MessageActivity extends AppCompatActivity
       // automatically handle clicks on the Home/Up button, so long
       // as you specify a parent activity in AndroidManifest.xml.
       int id = item.getItemId();
-      if (id == R.id.action_video_call) {
-         Intent intent = new Intent(this, CallActivity.class);
-         intent.setAction(RCDevice.ACTION_OUTGOING_CALL);
-         intent.putExtra(RCDevice.EXTRA_DID, fullPeer);
-         intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, true);
-         startActivity(intent);
+      if (device.getState() == RCDevice.DeviceState.READY) {
+         if (id == R.id.action_video_call) {
+            Intent intent = new Intent(this, CallActivity.class);
+            intent.setAction(RCDevice.ACTION_OUTGOING_CALL);
+            intent.putExtra(RCDevice.EXTRA_DID, fullPeer);
+            intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, true);
+            startActivity(intent);
+         }
+         if (id == R.id.action_audio_call) {
+            Intent intent = new Intent(this, CallActivity.class);
+            intent.setAction(RCDevice.ACTION_OUTGOING_CALL);
+            intent.putExtra(RCDevice.EXTRA_DID, fullPeer);
+            intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, false);
+            startActivity(intent);
+         }
       }
-      if (id == R.id.action_audio_call) {
-         Intent intent = new Intent(this, CallActivity.class);
-         intent.setAction(RCDevice.ACTION_OUTGOING_CALL);
-         intent.putExtra(RCDevice.EXTRA_DID, fullPeer);
-         intent.putExtra(RCDevice.EXTRA_VIDEO_ENABLED, false);
-         startActivity(intent);
+      else if (device.getState() == RCDevice.DeviceState.BUSY) {
+         showOkAlert("RCDevice is busy", "Call already ongoing, please hang up first if you want to start a new one");
       }
+
       return super.onOptionsItemSelected(item);
    }
 
