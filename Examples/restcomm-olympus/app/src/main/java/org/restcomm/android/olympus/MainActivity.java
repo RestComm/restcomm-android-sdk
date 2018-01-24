@@ -266,6 +266,7 @@ public class MainActivity extends AppCompatActivity
       }
       else {
          if (device.isInitialized()) {
+            device.setDeviceListener(this);
             RCConnection connection = device.getLiveConnection();
             if (connection != null) {
                // we have a live connection ongoing, need to update UI so that it can be resumed
