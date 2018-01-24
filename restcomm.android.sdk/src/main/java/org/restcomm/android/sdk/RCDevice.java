@@ -361,7 +361,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    // Binder given to clients
    private final IBinder deviceBinder = new RCDeviceBinder();
    // Has RCDevice been initialized?
-   boolean isServiceInitialized = false;
+   public static boolean isServiceInitialized = false;
    // Is an activity currently attached to RCDevice service?
    public static boolean isServiceAttached = false;
 
@@ -371,7 +371,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    private long messageTimeOutInterval;
    private long messageTimeOutIntervalLimit = 10000; //10 seconds
    private static final long TIMEOUT_INTERVAL_TICK = 1000; //1 second
-   public static boolean messageReceivingInProgress = false;
    //handler for message timeout count
    private Handler messageTimeoutHandler;
    // FSM to synchonize between signaling and push registration
@@ -1982,9 +1981,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
           if (messageTimeOutInterval >= 0){
              messageTimeOutInterval -= TIMEOUT_INTERVAL_TICK;
              messageTimeoutHandler.postDelayed(mStatusChecker, TIMEOUT_INTERVAL_TICK);
-             messageReceivingInProgress = true;
           } else {
-             messageReceivingInProgress = false;
              stopRepeatingTask();
              release();
           }
