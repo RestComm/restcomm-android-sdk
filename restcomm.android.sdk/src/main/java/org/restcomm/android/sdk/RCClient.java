@@ -63,6 +63,7 @@ public final class RCClient {
       ERROR_DEVICE_REGISTER_INTENT_CALL_MISSING,
       ERROR_DEVICE_REGISTER_INTENT_MESSAGE_MISSING,
       ERROR_DEVICE_SIGNALING_FACILITIES_ALREADY_INITIALIZED,
+      ERROR_DEVICE_SIGNALING_DOMAIN_INVALID,
 
       ERROR_CONNECTION_AUTHENTICATION_FORBIDDEN,
       ERROR_CONNECTION_DEVICE_NOT_READY,
@@ -190,7 +191,7 @@ public final class RCClient {
          return "Device could not connect to Service";
       }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_REGISTER_URI_INVALID) {
-         return "Register Domain URI is invalid";
+         return "Device register domain URI is invalid";
       }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_REGISTER_SERVICE_UNAVAILABLE) {
          return "Device failed to register; service unavailable";
@@ -209,6 +210,9 @@ public final class RCClient {
       }
       else if (errorCode == ErrorCodes.ERROR_DEVICE_SIGNALING_FACILITIES_ALREADY_INITIALIZED) {
          return "Device initialization failed; siginaling facilities already intialized";
+      }
+      else if (errorCode == ErrorCodes.ERROR_DEVICE_SIGNALING_DOMAIN_INVALID) {
+         return "Device signaling domain is invalid";
       }
 
       else if (errorCode == ErrorCodes.ERROR_CONNECTION_AUTHENTICATION_FORBIDDEN) {

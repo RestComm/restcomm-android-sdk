@@ -57,6 +57,7 @@ import org.restcomm.android.sdk.BuildConfig;
 import org.restcomm.android.sdk.RCClient;
 import org.restcomm.android.sdk.RCConnection;
 import org.restcomm.android.sdk.RCDevice;
+import org.restcomm.android.sdk.util.RCException;
 import org.restcomm.android.sdk.util.RCLogger;
 //import org.xbill.DNS.Lookup;
 //import org.xbill.DNS.Resolver;
@@ -499,7 +500,7 @@ class JainSipMessageBuilder {
     * @param listeningPoint currently active listening point
     * @return route based on DNS SRV query
     */
-   private RouteHeader createRouteHeader(String domain, ListeningPoint listeningPoint)
+   private RouteHeader createRouteHeader(String domain, ListeningPoint listeningPoint) throws JainSipException
    {
       try {
          //SipURI routeUri = (SipURI) jainSipAddressFactory.createURI(route);
@@ -514,10 +515,13 @@ class JainSipMessageBuilder {
          // This is a synchronous call that does one or more DNS queries (depending on if DNS SRV is used), let's time it to keep track of any big delays
          long startTime = System.currentTimeMillis();
          Queue<Hop> hops = dnsServerLocator.locateHops(jainSipAddressFactory.createURI(domain));
+         if (hops.size() == 0) {
+            throw new JainSipException(RCClient.ErrorCodes.ERROR_DEVICE_SIGNALING_DOMAIN_INVALID);
+         }
          long queryDuration = System.currentTimeMillis() - startTime;
          RCLogger.i(TAG, "createRouteHeader(): DNS query time: " + queryDuration + " ms, hops: " + hops.toString());
          if (queryDuration > 3000) {
-            RCLogger.w(TAG, "Siginaling DNS queries are taking too long, you might need to check your setup");
+            RCLogger.w(TAG, "Signaling DNS queries are taking too long, you might need to check your setup");
          }
          SipURI routeUri = jainSipAddressFactory.createSipURI(null, hops.peek().getHost());
          routeUri.setParameter(DNSAwareRouter.DNS_ROUTE, Boolean.TRUE.toString());
