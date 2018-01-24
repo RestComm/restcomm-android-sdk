@@ -1464,6 +1464,9 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
    {
       RCLogger.i(TAG, "detachVideo()");
       // TODO: handle case of audio only call
+      if (localRenderLayout == null ||remoteRenderLayout == null) {
+         return;
+      }
       localRender.setVisibility(View.INVISIBLE);
       remoteRender.setVisibility(View.INVISIBLE);
       peerConnectionClient.detachVideo();

@@ -169,7 +169,7 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
     protected void onPause() {
         super.onPause();
         Log.i(TAG, "%% onPause");
-
+        activityVisible = false;
         // TODO: Issue #380: once we figure out the issue with the backgrounding we need to uncomment this
         // I don't think we need this, but let's keep it around until we 're done with pausing video view functionality
         /*
@@ -210,7 +210,6 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
     protected void onStop() {
         super.onStop();
         Log.i(TAG, "%% onStop");
-        activityVisible = false;
 
         // Unbind from the service
         if (serviceBound) {
