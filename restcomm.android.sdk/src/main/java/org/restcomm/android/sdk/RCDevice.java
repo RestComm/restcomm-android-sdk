@@ -361,7 +361,7 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
    // Binder given to clients
    private final IBinder deviceBinder = new RCDeviceBinder();
    // Has RCDevice been initialized?
-   boolean isServiceInitialized = false;
+   public static boolean isServiceInitialized = false;
    // Is an activity currently attached to RCDevice service?
    public static boolean isServiceAttached = false;
 

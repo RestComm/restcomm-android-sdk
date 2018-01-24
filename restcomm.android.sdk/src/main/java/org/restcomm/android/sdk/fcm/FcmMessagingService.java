@@ -44,7 +44,7 @@ public class FcmMessagingService extends FirebaseMessagingService {
         //start service
         //we dont need to start a service if its already running.
         //The restcomm server will always send the push...
-        if (!RCDevice.isServiceAttached){
+        if (!RCDevice.isServiceAttached && !RCDevice.isServiceInitialized){
             Log.d(TAG, "service is not attached");
             Intent intent = new Intent(this, RCDevice.class);
             intent.setAction(RCDevice.ACTION_FCM);
