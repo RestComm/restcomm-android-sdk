@@ -1982,7 +1982,6 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
           if (messageTimeOutInterval >= 0){
              messageTimeOutInterval -= TIMEOUT_INTERVAL_TICK;
              messageTimeoutHandler.postDelayed(mStatusChecker, TIMEOUT_INTERVAL_TICK);
-             Log.e("Ognjen", "FCM message time logic: " + messageTimeOutInterval);
              messageReceivingInProgress = true;
           } else {
              messageReceivingInProgress = false;
