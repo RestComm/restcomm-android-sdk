@@ -1,7 +1,7 @@
 <resources>
-    <!-- -->
+    <!-- Provided by build.gradle for the App so that it can be parameterized based on flavor
     <string name="app_name">Restcomm Olympus</string>
-    <!-- -->
+     -->
 
     <string name="messenger">Messenger</string>
     <string name="action_settings">Settings</string>

@@ -116,9 +116,9 @@ android {
             // or org.restcomm.android.olympus.debug depending on buildType
 
             // Set specific application name as a resource, so that it's clear in the device what flavor a user is looking at
-            resValue "string", "app_name", "Restcomm Olympus Community"
-            buildConfigField "boolean", "ENABLE_TEST_FAIRY_RUNTIME", "false"
-            buildConfigField "String", "TESTFAIRY_APP_TOKEN", TESTFAIRY_APP_TOKEN
+            resValue "string", "app_name", "Restcomm WebRTC Demo Community"
+            //buildConfigField "boolean", "ENABLE_TEST_FAIRY_RUNTIME", "false"
+            //buildConfigField "String", "TESTFAIRY_APP_TOKEN", TESTFAIRY_APP_TOKEN
 
             // ICE_USERNAME, ICE_PASSWORD, ICE_DOMAIN &ICE_URL are defined in project gradle.properties for community builds, but also overriden
             // by gradle properties passed from command line (i.e. $ gradlew ... -PICE_DOMAIN=...) for Telestax builds from our
@@ -140,9 +140,9 @@ android {
             applicationIdSuffix ".premium"
 
             // Set specific application name as a resource, so that it's clear in the device what flavor a user is looking at
-            resValue "string", "app_name", "Restcomm Olympus Premium"
-            buildConfigField "boolean", "ENABLE_TEST_FAIRY_RUNTIME", "false"
-            buildConfigField "String", "TESTFAIRY_APP_TOKEN", TESTFAIRY_APP_TOKEN
+            resValue "string", "app_name", "Restcomm WebRTC Demo Premium"
+            //buildConfigField "boolean", "ENABLE_TEST_FAIRY_RUNTIME", "false"
+            //buildConfigField "String", "TESTFAIRY_APP_TOKEN", TESTFAIRY_APP_TOKEN
 
             // ICE_USERNAME, ICE_PASSWORD, ICE_DOMAIN &ICE_URL are defined in project gradle.properties for community builds, but also overriden
             // by gradle properties passed from command line (i.e. $ gradlew ... -PICE_DOMAIN=...) for Telestax builds from our
