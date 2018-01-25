@@ -223,7 +223,13 @@ public class SettingsActivity extends AppCompatActivity implements SharedPrefere
                         Integer.parseInt(candidateTimeout)
                 );
 
-                device.reconfigure(params);
+                if (device.isInitialized()) {
+                   device.reconfigure(params);
+                } else {
+                   //try to initialize with params
+                   device.initialize(this, params, this);
+                }
+
             }
             NavUtils.navigateUpFromSameTask(this);
          } catch (RCException e) {

@@ -606,99 +606,105 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
     */
    public boolean initialize(Context activityContext, HashMap<String, Object> parameters, RCDeviceListener deviceListener) throws RCException
    {
+      try {
+         if (!isServiceInitialized) {
 
-      if (!isServiceInitialized) {
+            isServiceInitialized = true;
+            //context = activityContext;
+            state = DeviceState.OFFLINE;
 
-         isServiceInitialized = true;
-         //context = activityContext;
-         state = DeviceState.OFFLINE;
-
-         RCLogger.i(TAG, "RCDevice(): " + parameters.toString());
-
-
-         //this.updateCapabilityToken(capabilityToken);
-         this.listener = deviceListener;
+            RCLogger.i(TAG, "RCDevice(): " + parameters.toString());
 
 
-         RCUtils.validateDeviceParms(parameters);
+            //this.updateCapabilityToken(capabilityToken);
+            this.listener = deviceListener;
 
-         storageManagerPreferences = new StorageManagerPreferences(this);
-         StorageUtils.saveParams(storageManagerPreferences, parameters);
 
-         //because intents are saved as uri strings we need to check; do we have an
-         //actual intent. If not, we must check is it a string and return an intent
-         Object callObj = parameters.get(RCDevice.ParameterKeys.INTENT_INCOMING_CALL);
-         Object messageObj = parameters.get(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE);
+            RCUtils.validateDeviceParms(parameters);
 
-         if (callObj instanceof String && messageObj instanceof String) {
-            Intent intentCall;
-            Intent intentMessage;
+            storageManagerPreferences = new StorageManagerPreferences(this);
+            StorageUtils.saveParams(storageManagerPreferences, parameters);
 
-            try {
-               intentCall = Intent.parseUri((String) callObj, Intent.URI_INTENT_SCHEME);
-            } catch (URISyntaxException e) {
-               throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_INTENT_CALL_MISSING);
+            //because intents are saved as uri strings we need to check; do we have an
+            //actual intent. If not, we must check is it a string and return an intent
+            Object callObj = parameters.get(RCDevice.ParameterKeys.INTENT_INCOMING_CALL);
+            Object messageObj = parameters.get(RCDevice.ParameterKeys.INTENT_INCOMING_MESSAGE);
+
+            if (callObj instanceof String && messageObj instanceof String) {
+               Intent intentCall;
+               Intent intentMessage;
+
+               try {
+                  intentCall = Intent.parseUri((String) callObj, Intent.URI_INTENT_SCHEME);
+               } catch (URISyntaxException e) {
+                  throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_INTENT_CALL_MISSING);
+               }
+
+               try {
+                  intentMessage = Intent.parseUri((String) messageObj, Intent.URI_INTENT_SCHEME);
+               } catch (URISyntaxException e) {
+                  throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_INTENT_MESSAGE_MISSING);
+               }
+
+               setIntents(intentCall, intentMessage);
+            } else if (callObj instanceof Intent && messageObj instanceof Intent){
+               setIntents((Intent) callObj, (Intent) messageObj);
             }
 
-            try {
-               intentMessage = Intent.parseUri((String) messageObj, Intent.URI_INTENT_SCHEME);
-            } catch (URISyntaxException e) {
-               throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_REGISTER_INTENT_MESSAGE_MISSING);
+            //set messages timer
+            if (parameters.get(ParameterKeys.PUSH_NOTIFICATION_TIMEOUT_MESSAGING_SERVICE) != null){
+               messageTimeOutIntervalLimit = (long) parameters.get(ParameterKeys.PUSH_NOTIFICATION_TIMEOUT_MESSAGING_SERVICE);
             }
 
-            setIntents(intentCall, intentMessage);
-         } else if (callObj instanceof Intent && messageObj instanceof Intent){
-            setIntents((Intent) callObj, (Intent) messageObj);
-         }
+            connections = new HashMap<String, RCConnection>();
 
-         //set messages timer
-         if (parameters.get(ParameterKeys.PUSH_NOTIFICATION_TIMEOUT_MESSAGING_SERVICE) != null){
-            messageTimeOutIntervalLimit = (long) parameters.get(ParameterKeys.PUSH_NOTIFICATION_TIMEOUT_MESSAGING_SERVICE);
-         }
+            //if there is already data for registering to push, dont clear it (onOpenReply is using this parameter)
+            // initialize JAIN SIP if we have connectivity
+            this.parameters = parameters;
 
-         connections = new HashMap<String, RCConnection>();
+            // initialize registration FSM before we start signaling and push notification registrations
+            // important: needs to happen *before* signaling and push registration
+            startRegistrationFsm();
 
-         //if there is already data for registering to push, dont clear it (onOpenReply is using this parameter)
-         // initialize JAIN SIP if we have connectivity
-         this.parameters = parameters;
+            // check if TURN keys are there
+            //params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
+            if (signalingClient == null) {
+               signalingClient = new SignalingClient();
+               signalingClient.open(this, getApplicationContext(), parameters);
+            }
 
-         // initialize registration FSM before we start signaling and push notification registrations
-         // important: needs to happen *before* signaling and push registration
-         startRegistrationFsm();
+            registerForPushNotifications(false);
 
-         // check if TURN keys are there
-         //params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, prefs.getBoolean(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true));
-         if (signalingClient == null) {
-            signalingClient = new SignalingClient();
-            signalingClient.open(this, getApplicationContext(), parameters);
-         }
-
-         registerForPushNotifications(false);
-
-         if (audioManager == null) {
-            // Create and audio manager that will take care of audio routing,
-            // audio modes, audio device enumeration etc.
-            audioManager = AppRTCAudioManager.create(getApplicationContext(), new Runnable() {
-                       // This method will be called each time the audio state (number and
-                       // type of devices) has been changed.
-                       @Override
-                       public void run() {
-                          onAudioManagerChangedState();
+            if (audioManager == null) {
+               // Create and audio manager that will take care of audio routing,
+               // audio modes, audio device enumeration etc.
+               audioManager = AppRTCAudioManager.create(getApplicationContext(), new Runnable() {
+                          // This method will be called each time the audio state (number and
+                          // type of devices) has been changed.
+                          @Override
+                          public void run() {
+                             onAudioManagerChangedState();
+                          }
                        }
-                    }
-            );
+               );
 
-            // Store existing audio settings and change audio mode to
-            // MODE_IN_COMMUNICATION for best possible VoIP performance.
-            RCLogger.d(TAG, "Initializing the audio manager...");
-            audioManager.init(parameters);
+               // Store existing audio settings and change audio mode to
+               // MODE_IN_COMMUNICATION for best possible VoIP performance.
+               RCLogger.d(TAG, "Initializing the audio manager...");
+               audioManager.init(parameters);
+            }
          }
-      }
-      else {
-         throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_ALREADY_INITIALIZED);
+         else {
+            throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_ALREADY_INITIALIZED);
+         }
+
+      }catch (RCException e){
+         isServiceInitialized = false;
+         throw e;
+      } finally {
+         return true;
       }
 
-      return true;
    }
 
    /**
