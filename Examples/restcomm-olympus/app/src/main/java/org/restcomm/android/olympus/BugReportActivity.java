@@ -209,7 +209,7 @@ public class BugReportActivity extends AppCompatActivity implements AdapterView.
          // Send logs via email and add timezone in the subject so that we can exactly correlate
          Intent i = new Intent(Intent.ACTION_SEND);
          i.setType("message/rfc822");
-         i.putExtra(Intent.EXTRA_EMAIL, new String[]{"antonis.tsakiridis@telestax.com"});
+         i.putExtra(Intent.EXTRA_EMAIL, new String[]{"mobile-sdks-squad@telestax.com"});
          i.putExtra(Intent.EXTRA_SUBJECT, "[restcomm-android-sdk] User bug report for Olympus");
          i.putExtra(Intent.EXTRA_TEXT, emailBody);
          //i.putExtra(Intent.EXTRA_HTML_TEXT, logs);

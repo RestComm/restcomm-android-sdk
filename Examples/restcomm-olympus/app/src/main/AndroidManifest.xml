@@ -34,10 +34,16 @@
 
         <!-- <meta-data android:name="net.hockeyapp.android.appIdentifier" android:value="${HOCKEYAPP_APP_ID}" /> -->
 
+        <!--
+        Notice a workaround: we 're using the app_name as the label of the signin activity. Reason for this is that without it somehow
+        the value we put there gets picked up as the name of the App as a whole and shows up in the launcher. Similar to
+        https://stackoverflow.com/questions/39971859/app-name-doesnt-change-in-launcher-when-using-product-flavors, check comments on the
+        submitter
+        -->
         <activity
             android:name=".SigninActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
-            android:label="@string/title_activity_signin" >
+            android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
 

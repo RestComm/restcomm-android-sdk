@@ -133,8 +133,6 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
 
         alertDialog = new AlertDialog.Builder(CallActivity.this, R.style.SimpleAlertStyle).create();
 
-        //device = RCClient.listDevices().get(0);
-
         PreferenceManager.setDefaultValues(this, "preferences.xml", MODE_PRIVATE, R.xml.preferences, false);
         prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
@@ -170,13 +168,6 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
         super.onPause();
         Log.i(TAG, "%% onPause");
         activityVisible = false;
-        // TODO: Issue #380: once we figure out the issue with the backgrounding we need to uncomment this
-        // I don't think we need this, but let's keep it around until we 're done with pausing video view functionality
-        /*
-        if (connection != null && connection.getState() == RCConnection.ConnectionState.CONNECTED) {
-            connection.pauseVideo();
-        }
-        */
 
         if (connection != null && connection.getState() == RCConnection.ConnectionState.CONNECTED) {
             connection.detachVideo();
@@ -225,23 +216,26 @@ public class CallActivity extends AppCompatActivity implements RCConnectionListe
 
         // The activity has become visible (it is now "resumed").
         Log.i(TAG, "%% onResume");
-        if (connection != null && connection.getState() == RCConnection.ConnectionState.CONNECTED) {
-           // update the intent action if there's an ongoing call that we need to resume so that we provide a hint
-           // to handleCall() to do proper handling
-           getIntent().setAction(RCDevice.ACTION_RESUME_CALL);
-           //connection.resumeVideo();
-            //connection.reattachVideo((PercentFrameLayout)findViewById(R.id.local_video_layout),
-            //        (PercentFrameLayout)findViewById(R.id.remote_video_layout));
+        if (connection != null) {
+            if (connection.getState() == RCConnection.ConnectionState.CONNECTED) {
+                // update the intent action if there's an ongoing call that we need to resume so that we provide a hint
+                // to handleCall() to do proper handling
+                getIntent().setAction(RCDevice.ACTION_RESUME_CALL);
 
-            // Now that we can mute/umnute via notification, we need to update the UI accordingly if there was a change
-           // while we were not in the foreground
-           muteAudio = connection.isAudioMuted();
-           if (!muteAudio) {
-              btnMuteAudio.setImageResource(R.drawable.audio_unmuted);
-           }
-           else {
-              btnMuteAudio.setImageResource(R.drawable.audio_muted);
-           }
+                // Now that we can mute/umnute via notification, we need to update the UI accordingly if there was a change
+                // while we were not in the foreground
+                muteAudio = connection.isAudioMuted();
+                if (!muteAudio) {
+                    btnMuteAudio.setImageResource(R.drawable.audio_unmuted);
+                } else {
+                    btnMuteAudio.setImageResource(R.drawable.audio_muted);
+                }
+            }
+            else if (connection.getState() == RCConnection.ConnectionState.DISCONNECTED) {
+                // When a user returns to CallActivity, after the call was hung up by the peer, while App
+                // was in the background, we need to just close the Activity
+                finish();
+            }
         }
     }
 
