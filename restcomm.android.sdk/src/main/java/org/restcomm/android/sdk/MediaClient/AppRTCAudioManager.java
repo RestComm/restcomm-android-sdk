@@ -216,48 +216,18 @@ public class AppRTCAudioManager implements AudioManager.OnAudioFocusChangeListen
       if (callAudioInitialized) {
          return;
       }
-
-      // Create and initialize the proximity sensor.
-      // Tablet devices (e.g. Nexus 7) does not support proximity sensors.
-      // Note that, the sensor will not be active until start() has been called.
-      proximitySensor = AppRTCProximitySensor.create(apprtcContext, new Runnable() {
-         // This method will be called each time a state change is detected.
-         // Example: user holds his hand over the device (closer than ~5 cm),
-         // or removes his hand from the device.
-         public void run()
-         {
-            onProximitySensorChangedState();
-         }
-      });
-
-      // Store current audio state so we can restore it when close() is called.
-      savedAudioMode = audioManager.getMode();
-      savedIsSpeakerPhoneOn = audioManager.isSpeakerphoneOn();
-      savedIsMicrophoneMute = audioManager.isMicrophoneMute();
-
-      // Request audio focus before making any device switch.
-      audioManager.requestAudioFocus(null, AudioManager.STREAM_VOICE_CALL,
-            AudioManager.AUDIOFOCUS_GAIN);
-
-      // Start by setting MODE_IN_COMMUNICATION as default audio mode. It is
-      // required to be in this mode when playout and/or recording starts for
-      // best possible VoIP performance.
-      // TODO(henrika): we migh want to start with RINGTONE mode here instead.
-      audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
-
-      // Always disable microphone mute during a WebRTC call.
-      setMicrophoneMute(false);
-
+      // Update the list of available audio devices.
+      audioDevices.clear();
       // Do initial selection of audio device. This setting can later be changed
       // either by adding/removing a wired headset or by covering/uncovering the
       // proximity sensor.
-      updateAudioDeviceState(hasWiredHeadset());
+//      updateAudioDeviceState(hasWiredHeadset());
 
       // Register receiver for broadcast intents related to adding/removing a
       // wired headset (Intent.ACTION_HEADSET_PLUG).
       registerForWiredHeadsetIntentBroadcast();
 
-      callAudioInitialized = true;
+
    }
 
    public void requestFocus()
@@ -403,6 +373,38 @@ public class AppRTCAudioManager implements AudioManager.OnAudioFocusChangeListen
          @Override
          public void onReceive(Context context, Intent intent)
          {
+
+            // Create and initialize the proximity sensor.
+            // Tablet devices (e.g. Nexus 7) does not support proximity sensors.
+            // Note that, the sensor will not be active until start() has been called.
+            proximitySensor = AppRTCProximitySensor.create(apprtcContext, new Runnable() {
+               // This method will be called each time a state change is detected.
+               // Example: user holds his hand over the device (closer than ~5 cm),
+               // or removes his hand from the device.
+               public void run()
+               {
+                  onProximitySensorChangedState();
+               }
+            });
+
+            // Store current audio state so we can restore it when close() is called.
+            savedAudioMode = audioManager.getMode();
+            savedIsSpeakerPhoneOn = audioManager.isSpeakerphoneOn();
+            savedIsMicrophoneMute = audioManager.isMicrophoneMute();
+
+            // Request audio focus before making any device switch.
+            audioManager.requestAudioFocus(null, AudioManager.STREAM_VOICE_CALL,
+                    AudioManager.AUDIOFOCUS_GAIN);
+
+            // Start by setting MODE_IN_COMMUNICATION as default audio mode. It is
+            // required to be in this mode when playout and/or recording starts for
+            // best possible VoIP performance.
+            // TODO(henrika): we migh want to start with RINGTONE mode here instead.
+            audioManager.setMode(AudioManager.MODE_IN_COMMUNICATION);
+
+            // Always disable microphone mute during a WebRTC call.
+            setMicrophoneMute(false);
+
             int state = intent.getIntExtra("state", STATE_UNPLUGGED);
             int microphone = intent.getIntExtra("microphone", HAS_NO_MIC);
             String name = intent.getStringExtra("name");
@@ -414,20 +416,21 @@ public class AppRTCAudioManager implements AudioManager.OnAudioFocusChangeListen
                   + ", n=" + name
                   + ", sb=" + isInitialStickyBroadcast());
 
-            boolean hasWiredHeadset = (state == STATE_PLUGGED) ? true : false;
             switch (state) {
                case STATE_UNPLUGGED:
-                  updateAudioDeviceState(hasWiredHeadset);
+                  updateAudioDeviceState(false);
                   break;
                case STATE_PLUGGED:
                   if (selectedAudioDevice != AudioDevice.WIRED_HEADSET) {
-                     updateAudioDeviceState(hasWiredHeadset);
+                     updateAudioDeviceState(true);
                   }
                   break;
                default:
                   RCLogger.e(TAG, "Invalid state");
                   break;
             }
+
+            callAudioInitialized = true;
          }
       };
 
@@ -504,8 +507,6 @@ public class AppRTCAudioManager implements AudioManager.OnAudioFocusChangeListen
     */
    private void updateAudioDeviceState(boolean hasWiredHeadset)
    {
-      // Update the list of available audio devices.
-      audioDevices.clear();
       if (hasWiredHeadset) {
          // If a wired headset is connected, then it is the only possible option.
          audioDevices.add(AudioDevice.WIRED_HEADSET);
