@@ -421,9 +421,7 @@ public class AppRTCAudioManager implements AudioManager.OnAudioFocusChangeListen
                   updateAudioDeviceState(false);
                   break;
                case STATE_PLUGGED:
-                  if (selectedAudioDevice != AudioDevice.WIRED_HEADSET) {
-                     updateAudioDeviceState(true);
-                  }
+                  updateAudioDeviceState(true);
                   break;
                default:
                   RCLogger.e(TAG, "Invalid state");
