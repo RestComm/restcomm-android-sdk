@@ -230,6 +230,8 @@ public class AppRTCAudioManager implements AudioManager.OnAudioFocusChangeListen
          }
       });
 
+      updateAudioDeviceState(hasWiredHeadset());
+
       // Store current audio state so we can restore it when close() is called.
       savedAudioMode = audioManager.getMode();
       savedIsSpeakerPhoneOn = audioManager.isSpeakerphoneOn();
@@ -251,7 +253,6 @@ public class AppRTCAudioManager implements AudioManager.OnAudioFocusChangeListen
       // Do initial selection of audio device. This setting can later be changed
       // either by adding/removing a wired headset or by covering/uncovering the
       // proximity sensor.
-      updateAudioDeviceState(hasWiredHeadset());
 
       // Register receiver for broadcast intents related to adding/removing a
       // wired headset (Intent.ACTION_HEADSET_PLUG).
@@ -414,15 +415,12 @@ public class AppRTCAudioManager implements AudioManager.OnAudioFocusChangeListen
                   + ", n=" + name
                   + ", sb=" + isInitialStickyBroadcast());
 
-            boolean hasWiredHeadset = (state == STATE_PLUGGED) ? true : false;
             switch (state) {
                case STATE_UNPLUGGED:
-                  updateAudioDeviceState(hasWiredHeadset);
+                  updateAudioDeviceState(false);
                   break;
                case STATE_PLUGGED:
-                  if (selectedAudioDevice != AudioDevice.WIRED_HEADSET) {
-                     updateAudioDeviceState(hasWiredHeadset);
-                  }
+                  updateAudioDeviceState(true);
                   break;
                default:
                   RCLogger.e(TAG, "Invalid state");

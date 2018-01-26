@@ -1973,6 +1973,7 @@ public class RCConnection implements PeerConnectionClient.PeerConnectionEvents, 
       mainHandler.post(myRunnable);
    }
 
+   @SuppressWarnings("unchecked")
    @Override
    public void onIceConnected()
    {
