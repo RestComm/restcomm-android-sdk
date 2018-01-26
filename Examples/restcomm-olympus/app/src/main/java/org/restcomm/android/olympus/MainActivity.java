@@ -265,7 +265,6 @@ public class MainActivity extends AppCompatActivity
          }
       }
       else {
-         if (device.isInitialized()) {
             device.setDeviceListener(this);
             RCConnection connection = device.getLiveConnection();
             if (connection != null) {
@@ -274,7 +273,6 @@ public class MainActivity extends AppCompatActivity
                lblOngoingCall.setVisibility(View.VISIBLE);
                startTimer();
             }
-         }
       }
 
 

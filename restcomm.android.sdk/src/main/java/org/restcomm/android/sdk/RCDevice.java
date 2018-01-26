@@ -697,14 +697,11 @@ public class RCDevice extends Service implements SignalingClient.SignalingClient
          else {
             throw new RCException(RCClient.ErrorCodes.ERROR_DEVICE_ALREADY_INITIALIZED);
          }
-
+         return false;
       }catch (RCException e){
          isServiceInitialized = false;
          throw e;
-      } finally {
-         return true;
       }
-
    }
 
    /**
