@@ -67,6 +67,7 @@ android {
             // Not specifying applicationIdSuffix since release uses the default applicationId: org.restcomm.android.olympus
             buildConfigField "boolean", "ENABLE_TEST_FAIRY_RUNTIME", "true"
             buildConfigField "String", "TESTFAIRY_APP_TOKEN", TESTFAIRY_APP_TOKEN
+            buildConfigField "String", "TEST_PUSH_FCM_KEY", TEST_PUSH_FCM_KEY
 
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'

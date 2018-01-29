@@ -26,6 +26,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 
+import org.restcomm.android.olympus.BuildConfig;
 import org.restcomm.android.olympus.CallActivity;
 import org.restcomm.android.olympus.MessageActivity;
 import org.restcomm.android.sdk.RCDevice;
