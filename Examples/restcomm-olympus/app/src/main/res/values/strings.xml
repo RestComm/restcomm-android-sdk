@@ -1,6 +1,7 @@
 <resources>
-    <!-- We 're setting the app_name through Olympus build.gradle to account for flavors
-    <string name="app_name">Restcomm Olympus</string>
+    <!-- We 're setting the app_name through Olympus build.gradle to account for flavors,
+         so we should not put it here. Let's keep it around in case we find a way to streamline it more
+    <string name="app_name">Restcomm WebRTCDemo</string>
     -->
     <string name="contacts_activity_label">Restcomm Demo</string>
 

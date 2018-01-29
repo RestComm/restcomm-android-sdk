@@ -29,8 +29,7 @@
 		android:required="true" />
 
 	<application
-		android:allowBackup="true"
-		android:label="@string/app_name">
+		android:allowBackup="true">
 		<service
 			android:name="org.restcomm.android.sdk.RCDevice"
 			android:enabled="true"
