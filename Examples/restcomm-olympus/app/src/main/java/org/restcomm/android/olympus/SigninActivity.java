@@ -256,7 +256,7 @@ public class SigninActivity extends AppCompatActivity implements CompoundButton.
       /** Push notifications will not work if these parameters are replaced with real values: **/
       /** PUSH_NOTIFICATIONS_APPLICATION_NAME, PUSH_NOTIFICATIONS_FCM_SERVER_KEY **/
       prefEdit.putString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_APPLICATION_NAME, "Olympus");
-      prefEdit.putString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, "");
+      prefEdit.putString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_FCM_SERVER_KEY, BuildConfig.TEST_PUSH_FCM_KEY);
 
       prefEdit.putString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_EMAIL, txtPushAccount.getText().toString());
       prefEdit.putString(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ACCOUNT_PASSWORD, txtPushPassword.getText().toString());
