@@ -85,7 +85,7 @@ public interface RCDeviceListener {
 
    /**
     * RCDevice connectivity status has been updated. For example:
-    * a. Internet connectivity was lost regained or transitioned between wifi <-> cellular data
+    * a. Internet connectivity was lost regained or transitioned between wifi and cellular data
     * b. RCDevice.reconfigure() just sent out the registration request (we need that to convey to the UI that we are offline for a bit, until we get a response to the registrations)
     *
     * @param device             Device of interest
