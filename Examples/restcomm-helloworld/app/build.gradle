@@ -47,8 +47,8 @@ repositories {
 
 dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
-   // compile project(':restcomm.android.sdk')
-    compile 'org.restcomm:restcomm-android-sdk:1.0.5-BETA7-174'
+    //compile project(':restcomm.android.sdk')
+    compile 'org.restcomm:restcomm-android-sdk:1.0.6-BETA8-303'
     compile 'com.android.support:appcompat-v7:26.1.0'
 }
 

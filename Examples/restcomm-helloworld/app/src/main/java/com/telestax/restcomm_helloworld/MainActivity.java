@@ -167,7 +167,6 @@ public class MainActivity extends Activity implements RCDeviceListener, RCConnec
       params.put(RCDevice.ParameterKeys.MEDIA_ICE_PASSWORD, "4e89a09e-bf6f-11e5-a15c-69ffdcc2b8a7");
       params.put(RCDevice.ParameterKeys.MEDIA_TURN_ENABLED, true);
       params.put(RCDevice.ParameterKeys.MEDIA_ICE_SERVERS_DISCOVERY_TYPE,1);
-      params.put(RCDevice.ParameterKeys.PUSH_NOTIFICATIONS_ENABLE_PUSH_FOR_ACCOUNT, false);
       params.put(RCDevice.ParameterKeys.SIGNALING_SECURE_ENABLED, true);
 
       // The SDK provides the user with default sounds for calling, ringing, busy (declined) and message, but the user can override them
