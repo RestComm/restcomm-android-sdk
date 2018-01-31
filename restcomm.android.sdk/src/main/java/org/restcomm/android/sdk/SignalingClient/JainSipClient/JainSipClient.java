@@ -973,10 +973,14 @@ public class JainSipClient implements SipListener, JainSipNotificationManager.No
          if (intf.isUp()) {
             List<InetAddress> addrs = Collections.list(intf.getInetAddresses());
             for (InetAddress addr : addrs) {
-               if (!addr.isLoopbackAddress()) {
+                
+               // IP-Address has to be of Global Scope to make sip requests
+               if (!addr.isLoopbackAddress() && !addr.isLinkLocalAddress() && !addr.isAnyLocalAddress()) {
                   String sAddr = addr.getHostAddress().toUpperCase();
                   RCLogger.i(TAG, "interface2Address(): Current address (if): " + sAddr + " (" + intf.getName() + ")");
-                  if (intf.getName().matches(networkInterfacePrefix + ".*")) {
+                  
+                  //regex match example: v4-rmnet-data0, rmnet-data0, radio0, eth0, etc..
+                  if (intf.getName().matches("(.+)?"+networkInterfacePrefix+".*")) {
                      boolean isIPv4 = addr instanceof Inet4Address;  //InetAddressUtils.isIPv4Address(sAddr);
                      if (useIPv4) {
                         if (isIPv4) {
