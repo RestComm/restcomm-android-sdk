@@ -84,7 +84,7 @@ public class JainSipSecurityHelper {
             ks.load(null);
 
             // Generate key pair using Elliptic Curve algorithm and Bouncy Castle provider
-            KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", "BC");
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC");
             kpg.initialize(new ECGenParameterSpec("secp256r1"));
             KeyPair kp = kpg.generateKeyPair();
 
@@ -182,7 +182,7 @@ public class JainSipSecurityHelper {
         certGen.addExtension(X509Extensions.SubjectAlternativeName, false, new GeneralNames(new GeneralName(GeneralName.rfc822Name, "android-sdk@cloud.restcomm.com")));
 
         // provider is Bouncy Castle
-        return certGen.generateX509Certificate(pair.getPrivate(), "BC");
+        return certGen.generateX509Certificate(pair.getPrivate());
     }
 
     public static void setProperties(Properties properties, String keystorePath, String keystorePassword, Boolean disableCertVerification) {
